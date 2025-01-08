@@ -1,0 +1,6 @@
+@InstruLearn_Application_HostAddress = http://localhost:5084
+
+GET {{InstruLearn_Application_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
