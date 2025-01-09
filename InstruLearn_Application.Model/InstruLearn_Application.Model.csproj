@@ -6,4 +6,13 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Folder Include="Data\" />
+    <Folder Include="Enum\" />
+    <Folder Include="Helper\" />
+    <Folder Include="Mapper\" />
+    <Folder Include="Models\DTO\" />
+    <Folder Include="Commons\" />
+  </ItemGroup>
+
 </Project>
