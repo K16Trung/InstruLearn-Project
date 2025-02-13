@@ -11,6 +11,7 @@ namespace InstruLearn_Application.DAL.Repository.IRepository
     public interface IGenericRepository<T> where T : class
     {
         Task<IEnumerable<T>> GetAllAsync();
+        IQueryable<T> GetQuery();
 
         Task<T?> GetByIdAsync(int id);
         Task AddAsync(T entity);

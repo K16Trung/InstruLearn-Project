@@ -24,9 +24,7 @@ namespace InstruLearn_Application.DAL.Repository
 
         public async Task<Account?> GetByUserName(string Username)
         {
-            return await _appDbContext.Accounts
-                .Include(a => a.Learner)
-                .SingleOrDefaultAsync(u => u.Username == Username);
+            return await _appDbContext.Accounts.SingleOrDefaultAsync(u => u.Username == Username);
         }
 
         public async Task<Account> GetByEmail(string email)

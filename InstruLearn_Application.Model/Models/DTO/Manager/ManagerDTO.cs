@@ -9,7 +9,7 @@ namespace InstruLearn_Application.Model.Models.DTO.Manager
     public class ManagerDTO
     {
         public int ManagerId { get; set; }
-        public int AccountId { get; set; }
+        public string AccountId { get; set; }
         public string Fullname { get; set; }
     }
 }

@@ -23,7 +23,5 @@ namespace InstruLearn_Application.Model.Models
         public string RefreshToken { get; set; }
         public DateTime RefreshTokenExpires { get; set; }
 
-        public Learner Learner { get; set; }
-
     }
 }

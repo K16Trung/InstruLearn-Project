@@ -23,9 +23,9 @@ namespace InstruLearn_Application.Model.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Entity<Account>()
-                .HasOne(a => a.Learner)
-                .WithOne(u => u.Account)
+            modelBuilder.Entity<Learner>()
+                .HasOne(a => a.Account)
+                .WithOne()
                 .HasForeignKey<Learner>(u => u.AccountId);
 
             modelBuilder.Entity<Admin>()

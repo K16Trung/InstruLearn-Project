@@ -1,4 +1,5 @@
-﻿using InstruLearn_Application.Model.Data;
+﻿using InstruLearn_Application.DAL.Repository.IRepository;
+using InstruLearn_Application.Model.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +10,9 @@ namespace InstruLearn_Application.DAL.UoW.IUoW
 {
     public interface IUnitOfWork
     {
+        ITeacherRepository TeacherRepository { get; }
+        IAccountRepository AccountRepository { get; }
+        ILearnerRepository LearnerRepository { get; }
         ApplicationDbContext dbContext { get; }
         public Task<int> SaveChangeAsync();
     }

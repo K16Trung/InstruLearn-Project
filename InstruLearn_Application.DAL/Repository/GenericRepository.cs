@@ -56,6 +56,12 @@ namespace InstruLearn_Application.DAL.Repository
             return await _dbSet.ToListAsync();
         }
 
+        public IQueryable<T> GetQuery()
+        {
+            return _dbSet.AsQueryable();
+        }
+
+
 
         //GET By string ID
         public async Task<T> GetByIdAsync(string id)
