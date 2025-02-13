@@ -8,7 +8,7 @@ namespace InstruLearn_Application.Model.Models.DTO.Account
 {
     public class AccountDTO
     {
-        public int AccountId { get; set; }
+        public string AccountId { get; set; }
         public string Username { get; set; }
         public string Email { get; set; }
         public string Role { get; set; }

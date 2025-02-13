@@ -4,6 +4,7 @@ using InstruLearn_Application.Model.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InstruLearn_Application.Model.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250213143900_teacher_db")]
+    partial class teacher_db
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -64,7 +67,7 @@ namespace InstruLearn_Application.Model.Migrations
 
                     b.HasKey("AccountId");
 
-                    b.ToTable("Accounts", (string)null);
+                    b.ToTable("Accounts");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Admin", b =>
@@ -88,7 +91,7 @@ namespace InstruLearn_Application.Model.Migrations
                     b.HasIndex("AccountId")
                         .IsUnique();
 
-                    b.ToTable("Admins", (string)null);
+                    b.ToTable("Admins");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Learner", b =>
@@ -116,7 +119,7 @@ namespace InstruLearn_Application.Model.Migrations
                     b.HasIndex("AccountId")
                         .IsUnique();
 
-                    b.ToTable("Learners", (string)null);
+                    b.ToTable("Learners");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Manager", b =>
@@ -140,7 +143,7 @@ namespace InstruLearn_Application.Model.Migrations
                     b.HasIndex("AccountId")
                         .IsUnique();
 
-                    b.ToTable("Managers", (string)null);
+                    b.ToTable("Managers");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Staff", b =>
@@ -164,7 +167,7 @@ namespace InstruLearn_Application.Model.Migrations
                     b.HasIndex("AccountId")
                         .IsUnique();
 
-                    b.ToTable("Staffs", (string)null);
+                    b.ToTable("Staffs");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Teacher", b =>
@@ -197,7 +200,7 @@ namespace InstruLearn_Application.Model.Migrations
                     b.HasIndex("AccountId")
                         .IsUnique();
 
-                    b.ToTable("Teachers", (string)null);
+                    b.ToTable("Teachers");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Admin", b =>

@@ -4,12 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace InstruLearn_Application.Model.Models.DTO.Staff
+namespace InstruLearn_Application.Model.Models.DTO.Teacher
 {
-    public class StaffDTO
+    public class CreateTeacherDTO
     {
-        public int StaffId { get; set; }
-        public string AccountId { get; set; }
         public string Fullname { get; set; }
+        public string Password { get; set; }
+        public string Email { get; set; }
     }
 }

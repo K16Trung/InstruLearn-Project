@@ -13,10 +13,9 @@ namespace InstruLearn_Application.Model.Models
         public int TeacherId { get; set; }
         public string AccountId { get; set; }
         public Account Account { get; set; }
-
         public string Fullname { get; set; }
-        public string Heading { get; set; }
-        public string Details { get; set; }
-        public string Links { get; set; }
+        public string? Heading { get; set; }
+        public string? Details { get; set; }
+        public string? Links { get; set; }
     }
 }

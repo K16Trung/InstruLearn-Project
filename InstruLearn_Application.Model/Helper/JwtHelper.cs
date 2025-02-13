@@ -32,8 +32,6 @@ namespace InstruLearn_Application.Model.Helper
             {
                 new Claim(JwtRegisteredClaimNames.NameId, account.AccountId),
                 new Claim(JwtRegisteredClaimNames.Email, account.Email),
-                new Claim(ClaimTypes.Name, account.Learner.FullName),
-                new Claim(ClaimTypes.MobilePhone, account.Learner.PhoneNumber),
                 new Claim(ClaimTypes.Role, account.Role.ToString()),
                 // Add more claims as needed
             }),

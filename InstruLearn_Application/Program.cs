@@ -9,6 +9,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using InstruLearn_Application.BLL.Service.IService;
 using InstruLearn_Application.BLL.Service;
+using InstruLearn_Application.DAL.UoW.IUoW;
+using InstruLearn_Application.DAL.UoW;
 
 namespace InstruLearn_Application
 {
@@ -39,8 +41,13 @@ namespace InstruLearn_Application
             builder.Services.AddSingleton<JwtHelper>();
             builder.Services.AddScoped<IAuthRepository, AuthRepository>();
             builder.Services.AddScoped<ILearnerRepository, LearnerRepository>();
+            builder.Services.AddScoped<IAccountRepository, AccountRepository>();
+            builder.Services.AddScoped<ITeacherRepository, TeacherRepository>();
+            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             builder.Services.AddScoped<IAuthService, AuthService>();
+            builder.Services.AddScoped<ITeacherService, TeacherService>();
+
 
             builder.Services.AddAutoMapper(typeof(MappingProfile));
 
