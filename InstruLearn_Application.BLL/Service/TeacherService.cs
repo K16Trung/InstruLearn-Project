@@ -43,6 +43,7 @@ namespace InstruLearn_Application.BLL.Service
             var teacherDTOs = _mapper.Map<IEnumerable<TeacherDTO>>(teachers);
 
             response.IsSucceed = true;
+            response.Message = "data retrieved successfully";
             response.Data = teacherDTOs;
             return response;
         }

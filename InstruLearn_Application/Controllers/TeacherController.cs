@@ -23,17 +23,17 @@ namespace InstruLearn_Application.Controllers
             return Ok(result);
         }
 
-        [HttpPost("create")]
-        public async Task<IActionResult> CreateTeacher(CreateTeacherDTO createTeacherDTO)
-        {
-            var result = await _teacherService.CreateTeacherAsync(createTeacherDTO);
-            return Ok(result);
-        }
-
         [HttpGet("{id}")]
         public async Task<IActionResult> GetTeacherById(int id)
         {
             var result = await _teacherService.GetTeacherByIdAsync(id);
+            return Ok(result);
+        }
+
+        [HttpPost("create")]
+        public async Task<IActionResult> CreateTeacher(CreateTeacherDTO createTeacherDTO)
+        {
+            var result = await _teacherService.CreateTeacherAsync(createTeacherDTO);
             return Ok(result);
         }
 
