@@ -7,12 +7,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\InstruLearn_Application.Model\InstruLearn_Application.Model.csproj" />
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.10">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Repository\IRepository\" />
-    <Folder Include="UoW\" />
+    <ProjectReference Include="..\InstruLearn_Application.Model\InstruLearn_Application.Model.csproj" />
   </ItemGroup>
 
 </Project>
