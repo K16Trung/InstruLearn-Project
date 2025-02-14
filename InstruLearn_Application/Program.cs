@@ -46,6 +46,7 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             builder.Services.AddScoped<IAuthService, AuthService>();
+            builder.Services.AddScoped<ILearnerService, LearnerService>();
             builder.Services.AddScoped<ITeacherService, TeacherService>();
 
 
