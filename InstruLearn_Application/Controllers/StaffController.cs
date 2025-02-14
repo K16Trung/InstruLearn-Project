@@ -31,7 +31,7 @@ namespace InstruLearn_Application.Controllers
         }
 
         [HttpPost("create")]
-        public async Task<IActionResult> CreateTeacher(CreateStaffDTO createStaffDTO)
+        public async Task<IActionResult> CreateStaff(CreateStaffDTO createStaffDTO)
         {
             var result = await _staffService.CreateStaffAsync(createStaffDTO);
             return Ok(result);
