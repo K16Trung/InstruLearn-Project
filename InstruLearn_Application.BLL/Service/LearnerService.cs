@@ -39,7 +39,7 @@ namespace InstruLearn_Application.BLL.Service
             var learnerDTOs = _mapper.Map<IEnumerable<LearnerDTO>>(learners);
 
             response.IsSucceed = true;
-            response.Message = "data retrieved successfully";
+            response.Message = "Data retrieved successfully";
             response.Data = learnerDTOs;
             return response;
         }
@@ -78,7 +78,7 @@ namespace InstruLearn_Application.BLL.Service
             var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(learnerId);
             if (learner == null)
             {
-                response.Message = "learner not found.";
+                response.Message = "Learner not found.";
                 return response;
             }
 
@@ -122,7 +122,7 @@ namespace InstruLearn_Application.BLL.Service
             var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(learnerId);
             if (learner == null)
             {
-                response.Message = "learner not found.";
+                response.Message = "Learner not found.";
                 return response;
             }
 
