@@ -10,7 +10,6 @@ namespace InstruLearn_Application.BLL.Service.IService
 {
     public interface ILearnerService
     {
-        Task<ResponseDTO> CreateLearnerAsync(CreateLearnerDTO createLearnerDTO);
         Task<ResponseDTO> GetLearnerByIdAsync(int learnerId);
         Task<ResponseDTO> UpdateLearnerAsync(int learnerId, UpdateLearnerDTO updateLearnerDTO);
         Task<ResponseDTO> DeleteLearnerAsync(int learnerId);

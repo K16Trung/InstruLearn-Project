@@ -43,52 +43,6 @@ namespace InstruLearn_Application.BLL.Service
             response.Data = learnerDTOs;
             return response;
         }
-
-        public async Task<ResponseDTO> CreateLearnerAsync(CreateLearnerDTO createLearnerDTO)
-        {
-            var response = new ResponseDTO();
-
-            // Check if email is already used
-            var accounts = _unitOfWork.AccountRepository.GetFilter(x => x.Email == createLearnerDTO.Email);
-            var existingAccount = accounts.Items.FirstOrDefault();
-            if (existingAccount != null)
-            {
-                response.Message = "Email already exists.";
-                return response;
-            }
-
-            // Create Account
-            var account = new Account
-            {
-                AccountId = Guid.NewGuid().ToString(),
-                Username = createLearnerDTO.Email,
-                Email = createLearnerDTO.Email,
-                PasswordHash = HashPassword(createLearnerDTO.Password),
-                Role = AccountRoles.Teacher,
-                IsActive = AccountStatus.Active,
-
-                RefreshToken = _jwtHelper.GenerateRefreshToken(),
-                RefreshTokenExpires = DateTime.Now.AddDays(7)
-            };
-
-            account.Token = _jwtHelper.GenerateJwtToken(account);
-            account.TokenExpires = DateTime.Now.AddHours(1);
-
-            await _unitOfWork.AccountRepository.AddAsync(account);
-
-            // Create Teacher
-            var learner = new Learner
-            {
-                AccountId = account.AccountId,
-                FullName = createLearnerDTO.Fullname
-            };
-
-            await _unitOfWork.LearnerRepository.AddAsync(learner);
-
-            response.IsSucceed = true;
-            response.Message = "Learner created successfully!";
-            return response;
-        }
         public async Task<ResponseDTO> DeleteLearnerAsync(int learnerId)
         {
             var response = new ResponseDTO();
@@ -113,7 +67,7 @@ namespace InstruLearn_Application.BLL.Service
             }
 
             response.IsSucceed = true;
-            response.Message = "Learner banned successfully!";
+            response.Message = "Learner delete successfully!";
             return response;
         }
 
@@ -185,10 +139,6 @@ namespace InstruLearn_Application.BLL.Service
             response.IsSucceed = true;
             response.Message = "Learner updated successfully!";
             return response;
-        }
-        private string HashPassword(string password)
-        {
-            return BCrypt.Net.BCrypt.HashPassword(password);
         }
     }
 }

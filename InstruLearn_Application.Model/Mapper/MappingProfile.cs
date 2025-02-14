@@ -31,6 +31,39 @@ namespace InstruLearn_Application.Model.Mapper
             .ForMember(dest => dest.Username, opt => opt.MapFrom(src => src.Username))
             .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email));
 
+            //Admin mapping
+            CreateMap<Admin, AdminDTO>().ReverseMap();
+            CreateMap<CreateAdminDTO, Admin>().ReverseMap();
+            CreateMap<UpdateAdminDTO, Admin>().ReverseMap();
+
+            CreateMap<Admin, AdminResponseDTO>()
+            .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Account.Email))
+            .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.Account.CreatedAt))
+            .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.Account.IsActive))
+            .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Account.Role));
+
+            // Manager mapping
+            CreateMap<Manager, ManagerDTO>().ReverseMap();
+            CreateMap<CreateManagerDTO, Manager>().ReverseMap();
+            CreateMap<UpdateManagerDTO, Manager>().ReverseMap();
+
+            CreateMap<Manager, ManagerResponseDTO>()
+            .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Account.Email))
+            .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.Account.CreatedAt))
+            .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.Account.IsActive))
+            .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Account.Role));
+
+            // Staff mapping
+            CreateMap<Staff, StaffDTO>().ReverseMap();
+            CreateMap<CreateStaffDTO, Staff>().ReverseMap();
+            CreateMap<UpdateStaffDTO, Staff>().ReverseMap();
+
+            CreateMap<Staff, StaffResponseDTO>()
+            .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Account.Email))
+            .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.Account.CreatedAt))
+            .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.Account.IsActive))
+            .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Account.Role));
+
             // Learner mapping
             CreateMap<Learner, LearnerDTO>().ReverseMap();
             CreateMap<Learner, RegisterDTO>()

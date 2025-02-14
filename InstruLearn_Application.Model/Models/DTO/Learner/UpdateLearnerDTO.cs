@@ -8,7 +8,6 @@ namespace InstruLearn_Application.Model.Models.DTO.Learner
 {
     public class UpdateLearnerDTO
     {
-        public string FullName { get; set; }
         public string PhoneNumber { get; set; }
     }
 }

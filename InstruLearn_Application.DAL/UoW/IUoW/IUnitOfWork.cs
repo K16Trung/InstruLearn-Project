@@ -13,6 +13,9 @@ namespace InstruLearn_Application.DAL.UoW.IUoW
         ITeacherRepository TeacherRepository { get; }
         IAccountRepository AccountRepository { get; }
         ILearnerRepository LearnerRepository { get; }
+        IAdminRepository AdminRepository { get; }
+        IStaffRepository StaffRepository { get; }
+        IManagerRepository ManagerRepository { get; }
         ApplicationDbContext dbContext { get; }
         public Task<int> SaveChangeAsync();
     }

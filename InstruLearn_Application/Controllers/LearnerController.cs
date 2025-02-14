@@ -30,13 +30,6 @@ namespace InstruLearn_Application.Controllers
             return Ok(result);
         }
 
-        [HttpPost("create")]
-        public async Task<IActionResult> CreateLearner(CreateLearnerDTO createLearnerDTO)
-        {
-            var result = await _learnerService.CreateLearnerAsync(createLearnerDTO);
-            return Ok(result);
-        }
-
         [HttpPut("update/{id}")]
         public async Task<IActionResult> UpdateLearner(int id, UpdateLearnerDTO updateLearnerDTO)
         {

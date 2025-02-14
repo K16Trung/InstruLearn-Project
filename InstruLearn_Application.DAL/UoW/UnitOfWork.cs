@@ -12,19 +12,28 @@ namespace InstruLearn_Application.DAL.UoW
     public class UnitOfWork : IUnitOfWork, IDisposable
     {
         private readonly IAccountRepository _accountRepository;
+        private readonly IAdminRepository _adminRepository;
+        private readonly IManagerRepository _managerRepository;
+        private readonly IStaffRepository _staffRepository;
         private readonly ILearnerRepository _learnerRepository;
         private readonly ITeacherRepository _teacherRepository;
         private readonly ApplicationDbContext _dbContext;
         private bool disposed = false;
 
         public IAccountRepository AccountRepository { get { return _accountRepository; } }
+        public IAdminRepository AdminRepository { get { return _adminRepository; } }
+        public IManagerRepository ManagerRepository { get { return _managerRepository; } }
+        public IStaffRepository StaffRepository { get { return _staffRepository; } }
         public ILearnerRepository LearnerRepository { get { return _learnerRepository; } }
         public ITeacherRepository TeacherRepository { get { return _teacherRepository; } }
         public ApplicationDbContext dbContext { get { return _dbContext; } }
 
-        public UnitOfWork(ApplicationDbContext dbContext, IAccountRepository accountRepository, ILearnerRepository learnerRepository, ITeacherRepository teacherRepository)
+        public UnitOfWork(ApplicationDbContext dbContext, IAccountRepository accountRepository, IAdminRepository adminRepository, IManagerRepository managerRepository, IStaffRepository staffRepository, ILearnerRepository learnerRepository, ITeacherRepository teacherRepository)
         {
             _dbContext = dbContext;
+            _adminRepository = adminRepository;
+            _managerRepository = managerRepository;
+            _staffRepository = staffRepository;
             _accountRepository = accountRepository;
             _learnerRepository = learnerRepository;
             _teacherRepository = teacherRepository;
