@@ -4,6 +4,7 @@ using InstruLearn_Application.Model.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InstruLearn_Application.Model.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250215132125_course_data")]
+    partial class course_data
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -120,31 +123,12 @@ namespace InstruLearn_Application.Model.Migrations
                     b.Property<int>("Rating")
                         .HasColumnType("int");
 
-                    b.Property<int>("TypeId")
+                    b.Property<int>("Type")
                         .HasColumnType("int");
 
                     b.HasKey("CourseId");
 
-                    b.HasIndex("TypeId");
-
                     b.ToTable("Courses");
-                });
-
-            modelBuilder.Entity("InstruLearn_Application.Model.Models.CourseType", b =>
-                {
-                    b.Property<int>("TypeId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TypeId"));
-
-                    b.Property<string>("TypeName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("TypeId");
-
-                    b.ToTable("CourseType");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Course_Content", b =>
@@ -311,17 +295,6 @@ namespace InstruLearn_Application.Model.Migrations
                     b.Navigation("Account");
                 });
 
-            modelBuilder.Entity("InstruLearn_Application.Model.Models.Course", b =>
-                {
-                    b.HasOne("InstruLearn_Application.Model.Models.CourseType", "Type")
-                        .WithMany("Courses")
-                        .HasForeignKey("TypeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Type");
-                });
-
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Course_Content", b =>
                 {
                     b.HasOne("InstruLearn_Application.Model.Models.Course", "Course")
@@ -391,11 +364,6 @@ namespace InstruLearn_Application.Model.Migrations
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Course", b =>
                 {
                     b.Navigation("CourseContents");
-                });
-
-            modelBuilder.Entity("InstruLearn_Application.Model.Models.CourseType", b =>
-                {
-                    b.Navigation("Courses");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Course_Content", b =>

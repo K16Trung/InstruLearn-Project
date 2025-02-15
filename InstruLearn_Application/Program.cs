@@ -11,6 +11,7 @@ using InstruLearn_Application.BLL.Service.IService;
 using InstruLearn_Application.BLL.Service;
 using InstruLearn_Application.DAL.UoW.IUoW;
 using InstruLearn_Application.DAL.UoW;
+using Microsoft.AspNetCore.Cors.Infrastructure;
 
 namespace InstruLearn_Application
 {
@@ -46,6 +47,8 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<ILearnerRepository, LearnerRepository>();
             builder.Services.AddScoped<IAccountRepository, AccountRepository>();
             builder.Services.AddScoped<ITeacherRepository, TeacherRepository>();
+            builder.Services.AddScoped<ICourseRepository, CourseRepository>();
+            builder.Services.AddScoped<ICourseTypeRepository, CourseTypeRepository>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             builder.Services.AddScoped<IAuthService, AuthService>();
@@ -54,6 +57,8 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<IStaffService, StaffService>();
             builder.Services.AddScoped<ILearnerService, LearnerService>();
             builder.Services.AddScoped<ITeacherService, TeacherService>();
+            builder.Services.AddScoped<ICourseService, CourseService>();
+            builder.Services.AddScoped<ICourseTypeService, CourseTypeService>();
 
 
             builder.Services.AddAutoMapper(typeof(MappingProfile));

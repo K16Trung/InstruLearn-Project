@@ -17,6 +17,8 @@ namespace InstruLearn_Application.DAL.UoW
         private readonly IStaffRepository _staffRepository;
         private readonly ILearnerRepository _learnerRepository;
         private readonly ITeacherRepository _teacherRepository;
+        private readonly ICourseRepository _courseRepository;
+        private readonly ICourseTypeRepository _courseTypeRepository;
         private readonly ApplicationDbContext _dbContext;
         private bool disposed = false;
 
@@ -26,9 +28,11 @@ namespace InstruLearn_Application.DAL.UoW
         public IStaffRepository StaffRepository { get { return _staffRepository; } }
         public ILearnerRepository LearnerRepository { get { return _learnerRepository; } }
         public ITeacherRepository TeacherRepository { get { return _teacherRepository; } }
+        public ICourseRepository CourseRepository { get { return _courseRepository; } }
+        public ICourseTypeRepository CourseTypeRepository {  get { return _courseTypeRepository; } }
         public ApplicationDbContext dbContext { get { return _dbContext; } }
 
-        public UnitOfWork(ApplicationDbContext dbContext, IAccountRepository accountRepository, IAdminRepository adminRepository, IManagerRepository managerRepository, IStaffRepository staffRepository, ILearnerRepository learnerRepository, ITeacherRepository teacherRepository)
+        public UnitOfWork(ApplicationDbContext dbContext, IAccountRepository accountRepository, IAdminRepository adminRepository, IManagerRepository managerRepository, IStaffRepository staffRepository, ILearnerRepository learnerRepository, ITeacherRepository teacherRepository, ICourseRepository courseRepository, ICourseTypeRepository courseTypeRepository)
         {
             _dbContext = dbContext;
             _adminRepository = adminRepository;
@@ -37,6 +41,8 @@ namespace InstruLearn_Application.DAL.UoW
             _accountRepository = accountRepository;
             _learnerRepository = learnerRepository;
             _teacherRepository = teacherRepository;
+            _courseRepository = courseRepository;
+            _courseTypeRepository = courseTypeRepository;
         }
 
         protected virtual void Dispose(bool disposing)

@@ -18,6 +18,9 @@ namespace InstruLearn_Application.Model.Data
         public DbSet<Staff> Staffs { get; set; }
         public DbSet<Manager> Managers { get; set; }
         public DbSet<Teacher> Teachers { get; set; }
+        public DbSet<Course> Courses { get; set; }
+        public DbSet<Course_Content> Course_Contents { get; set; }
+        public DbSet<Course_Content_Item> Course_Content_Items { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -47,6 +50,28 @@ namespace InstruLearn_Application.Model.Data
                 .HasOne(s => s.Account)
                 .WithOne()
                 .HasForeignKey<Manager>(s => s.AccountId);
+
+            modelBuilder.Entity<Course>()
+                .Property(c => c.Price)
+                .HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<Course>()
+                .HasOne(c => c.Type)
+                .WithMany(ct => ct.Courses)
+                .HasForeignKey(c => c.TypeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Course>()
+                .HasMany(c => c.CourseContents)
+                .WithOne(cc => cc.Course)
+                .HasForeignKey(cc => cc.CourseId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Course_Content>()
+                .HasMany(cc => cc.CourseContentItems)
+                .WithOne(ci => ci.CourseContent)
+                .HasForeignKey(ci => ci.ContentId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

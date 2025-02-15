@@ -3,6 +3,8 @@ using InstruLearn_Application.Model.Models;
 using InstruLearn_Application.Model.Models.DTO.Account;
 using InstruLearn_Application.Model.Models.DTO.Admin;
 using InstruLearn_Application.Model.Models.DTO.Auth;
+using InstruLearn_Application.Model.Models.DTO.Course;
+using InstruLearn_Application.Model.Models.DTO.CourseType;
 using InstruLearn_Application.Model.Models.DTO.Learner;
 using InstruLearn_Application.Model.Models.DTO.Manager;
 using InstruLearn_Application.Model.Models.DTO.Staff;
@@ -87,7 +89,18 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<UpdateTeacherDTO, Teacher>()
             .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
 
+            // Course mapping
+            CreateMap<Course, CourseDTO>().ReverseMap();
+            CreateMap<CreateCourseDTO, Course>().ReverseMap();
+            CreateMap<UpdateCourseDTO, Course>().ReverseMap();
 
+            CreateMap<Course, CourseDTO>()
+            .ForMember(dest => dest.TypeName, opt => opt.MapFrom(src => src.Type.TypeName));
+
+            // Course Type mapping
+            CreateMap<CourseType, CourseTypeDTO>().ReverseMap();
+            CreateMap<CreateCourseTypeDTO, CourseType>().ReverseMap();
+            CreateMap<UpdateCourseTypeDTO, CourseType>().ReverseMap();
         }
     }
 }
