@@ -7,14 +7,11 @@ using System.Threading.Tasks;
 
 namespace InstruLearn_Application.Model.Models
 {
-    public class Course_Content_Item
+    public class ItemTypes
     {
         [Key]
-        public int ItemId { get; set; }
-        public int ContentId { get; set; }
-        public Course_Content CourseContent { get; set; }
         public int ItemTypeId { get; set; }
-        public ItemTypes ItemType { get; set; }
-        public string ItemDes { get; set; }
+        public string ItemTypeName { get; set; }
+        public ICollection<Course_Content_Item> CourseContentItems { get; set; }
     }
 }

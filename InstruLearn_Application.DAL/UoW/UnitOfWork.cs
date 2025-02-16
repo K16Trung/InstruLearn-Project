@@ -19,6 +19,9 @@ namespace InstruLearn_Application.DAL.UoW
         private readonly ITeacherRepository _teacherRepository;
         private readonly ICourseRepository _courseRepository;
         private readonly ICourseTypeRepository _courseTypeRepository;
+        private readonly ICourseContentRepository _courseContentRepository;
+        private readonly IItemTypeRepository _itemTypeRepository;
+        private readonly ICourseContentItemRepository _courseContentItemRepository;
         private readonly ApplicationDbContext _dbContext;
         private bool disposed = false;
 
@@ -30,9 +33,12 @@ namespace InstruLearn_Application.DAL.UoW
         public ITeacherRepository TeacherRepository { get { return _teacherRepository; } }
         public ICourseRepository CourseRepository { get { return _courseRepository; } }
         public ICourseTypeRepository CourseTypeRepository {  get { return _courseTypeRepository; } }
+        public ICourseContentRepository CourseContentRepository { get { return _courseContentRepository; } }
+        public IItemTypeRepository ItemTypeRepository { get { return _itemTypeRepository; } }
+        public ICourseContentItemRepository CourseContentItemRepository { get { return _courseContentItemRepository; } }
         public ApplicationDbContext dbContext { get { return _dbContext; } }
 
-        public UnitOfWork(ApplicationDbContext dbContext, IAccountRepository accountRepository, IAdminRepository adminRepository, IManagerRepository managerRepository, IStaffRepository staffRepository, ILearnerRepository learnerRepository, ITeacherRepository teacherRepository, ICourseRepository courseRepository, ICourseTypeRepository courseTypeRepository)
+        public UnitOfWork(ApplicationDbContext dbContext, IAccountRepository accountRepository, IAdminRepository adminRepository, IManagerRepository managerRepository, IStaffRepository staffRepository, ILearnerRepository learnerRepository, ITeacherRepository teacherRepository, ICourseRepository courseRepository, ICourseTypeRepository courseTypeRepository, ICourseContentRepository courseContentRepository, IItemTypeRepository itemTypeRepository, ICourseContentItemRepository courseContentItemRepository)
         {
             _dbContext = dbContext;
             _adminRepository = adminRepository;
@@ -43,6 +49,9 @@ namespace InstruLearn_Application.DAL.UoW
             _teacherRepository = teacherRepository;
             _courseRepository = courseRepository;
             _courseTypeRepository = courseTypeRepository;
+            _courseContentRepository = courseContentRepository;
+            _itemTypeRepository = itemTypeRepository;
+            _courseContentItemRepository = courseContentItemRepository;
         }
 
         protected virtual void Dispose(bool disposing)

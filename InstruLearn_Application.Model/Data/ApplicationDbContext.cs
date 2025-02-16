@@ -72,6 +72,12 @@ namespace InstruLearn_Application.Model.Data
                 .WithOne(ci => ci.CourseContent)
                 .HasForeignKey(ci => ci.ContentId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Course_Content_Item>()
+                .HasOne(c => c.ItemType)
+                .WithMany(ct => ct.CourseContentItems)
+                .HasForeignKey(c => c.ItemTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

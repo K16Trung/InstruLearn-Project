@@ -184,11 +184,33 @@ namespace InstruLearn_Application.Model.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("ItemTypeId")
+                        .HasColumnType("int");
+
                     b.HasKey("ItemId");
 
                     b.HasIndex("ContentId");
 
+                    b.HasIndex("ItemTypeId");
+
                     b.ToTable("Course_Content_Items");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.ItemTypes", b =>
+                {
+                    b.Property<int>("ItemTypeId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ItemTypeId"));
+
+                    b.Property<string>("ItemTypeName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("ItemTypeId");
+
+                    b.ToTable("ItemTypes");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Learner", b =>
@@ -341,7 +363,15 @@ namespace InstruLearn_Application.Model.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("InstruLearn_Application.Model.Models.ItemTypes", "ItemType")
+                        .WithMany("CourseContentItems")
+                        .HasForeignKey("ItemTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("CourseContent");
+
+                    b.Navigation("ItemType");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Learner", b =>
@@ -399,6 +429,11 @@ namespace InstruLearn_Application.Model.Migrations
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Course_Content", b =>
+                {
+                    b.Navigation("CourseContentItems");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.ItemTypes", b =>
                 {
                     b.Navigation("CourseContentItems");
                 });

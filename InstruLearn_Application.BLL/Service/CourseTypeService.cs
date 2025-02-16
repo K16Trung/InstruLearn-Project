@@ -100,7 +100,7 @@ namespace InstruLearn_Application.BLL.Service
                     Message = "Course type not found."
                 };
             }
-            await _unitOfWork.CourseTypeRepository.GetByIdAsync(courseTypeId);
+            await _unitOfWork.CourseTypeRepository.DeleteAsync(courseTypeId);
             return new ResponseDTO
             {
                 IsSucceed = true,
