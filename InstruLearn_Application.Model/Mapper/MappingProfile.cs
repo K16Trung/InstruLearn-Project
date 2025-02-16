@@ -4,7 +4,10 @@ using InstruLearn_Application.Model.Models.DTO.Account;
 using InstruLearn_Application.Model.Models.DTO.Admin;
 using InstruLearn_Application.Model.Models.DTO.Auth;
 using InstruLearn_Application.Model.Models.DTO.Course;
+using InstruLearn_Application.Model.Models.DTO.Course_Content;
+using InstruLearn_Application.Model.Models.DTO.Course_Content_Item;
 using InstruLearn_Application.Model.Models.DTO.CourseType;
+using InstruLearn_Application.Model.Models.DTO.ItemTypes;
 using InstruLearn_Application.Model.Models.DTO.Learner;
 using InstruLearn_Application.Model.Models.DTO.Manager;
 using InstruLearn_Application.Model.Models.DTO.Staff;
@@ -101,6 +104,22 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<CourseType, CourseTypeDTO>().ReverseMap();
             CreateMap<CreateCourseTypeDTO, CourseType>().ReverseMap();
             CreateMap<UpdateCourseTypeDTO, CourseType>().ReverseMap();
+
+            // Course_Content mapping
+            CreateMap<Course_Content, CourseContentDTO>().ReverseMap();
+            CreateMap<CreateCourseContentDTO, Course_Content>().ReverseMap();
+            CreateMap<UpdateCourseContentDTO, Course_Content>().ReverseMap();
+
+            // Item Type mapping
+            CreateMap<ItemTypes, ItemTypeDTO>().ReverseMap();
+            CreateMap<CreateItemTypeDTO, ItemTypes>().ReverseMap();
+            CreateMap<UpdateItemTypeDTO, ItemTypes>().ReverseMap();
+
+            // Course_Content_Item mapping
+            CreateMap<Course_Content_Item, CourseContentItemDTO>().ReverseMap();
+            CreateMap<CreateCourseContentItemDTO, Course_Content_Item>().ReverseMap();
+            CreateMap<UpdateCourseContentItemDTO, Course_Content_Item>().ReverseMap();
+
         }
     }
 }

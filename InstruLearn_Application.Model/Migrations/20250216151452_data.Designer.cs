@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InstruLearn_Application.Model.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250213085749_Account_DB")]
-    partial class Account_DB
+    [Migration("20250216151452_data")]
+    partial class data
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -92,6 +92,128 @@ namespace InstruLearn_Application.Model.Migrations
                         .IsUnique();
 
                     b.ToTable("Admins");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.Course", b =>
+                {
+                    b.Property<int>("CourseId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CourseId"));
+
+                    b.Property<string>("CourseDescription")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CourseName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Discount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Headline")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("Rating")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TypeId")
+                        .HasColumnType("int");
+
+                    b.HasKey("CourseId");
+
+                    b.HasIndex("TypeId");
+
+                    b.ToTable("Courses");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.CourseType", b =>
+                {
+                    b.Property<int>("TypeId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TypeId"));
+
+                    b.Property<string>("TypeName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("TypeId");
+
+                    b.ToTable("CourseType");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.Course_Content", b =>
+                {
+                    b.Property<int>("ContentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ContentId"));
+
+                    b.Property<int>("CourseId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Heading")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("ContentId");
+
+                    b.HasIndex("CourseId");
+
+                    b.ToTable("Course_Contents");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.Course_Content_Item", b =>
+                {
+                    b.Property<int>("ItemId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ItemId"));
+
+                    b.Property<int>("ContentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ItemDes")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ItemTypeId")
+                        .HasColumnType("int");
+
+                    b.HasKey("ItemId");
+
+                    b.HasIndex("ContentId");
+
+                    b.HasIndex("ItemTypeId");
+
+                    b.ToTable("Course_Content_Items");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.ItemTypes", b =>
+                {
+                    b.Property<int>("ItemTypeId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ItemTypeId"));
+
+                    b.Property<string>("ItemTypeName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("ItemTypeId");
+
+                    b.ToTable("ItemTypes");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Learner", b =>
@@ -183,7 +305,6 @@ namespace InstruLearn_Application.Model.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Details")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Fullname")
@@ -191,11 +312,9 @@ namespace InstruLearn_Application.Model.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Heading")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Links")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("TeacherId");
@@ -217,10 +336,51 @@ namespace InstruLearn_Application.Model.Migrations
                     b.Navigation("Account");
                 });
 
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.Course", b =>
+                {
+                    b.HasOne("InstruLearn_Application.Model.Models.CourseType", "Type")
+                        .WithMany("Courses")
+                        .HasForeignKey("TypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Type");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.Course_Content", b =>
+                {
+                    b.HasOne("InstruLearn_Application.Model.Models.Course", "Course")
+                        .WithMany("CourseContents")
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.Course_Content_Item", b =>
+                {
+                    b.HasOne("InstruLearn_Application.Model.Models.Course_Content", "CourseContent")
+                        .WithMany("CourseContentItems")
+                        .HasForeignKey("ContentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("InstruLearn_Application.Model.Models.ItemTypes", "ItemType")
+                        .WithMany("CourseContentItems")
+                        .HasForeignKey("ItemTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CourseContent");
+
+                    b.Navigation("ItemType");
+                });
+
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Learner", b =>
                 {
                     b.HasOne("InstruLearn_Application.Model.Models.Account", "Account")
-                        .WithOne("Learner")
+                        .WithOne()
                         .HasForeignKey("InstruLearn_Application.Model.Models.Learner", "AccountId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -261,10 +421,24 @@ namespace InstruLearn_Application.Model.Migrations
                     b.Navigation("Account");
                 });
 
-            modelBuilder.Entity("InstruLearn_Application.Model.Models.Account", b =>
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.Course", b =>
                 {
-                    b.Navigation("Learner")
-                        .IsRequired();
+                    b.Navigation("CourseContents");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.CourseType", b =>
+                {
+                    b.Navigation("Courses");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.Course_Content", b =>
+                {
+                    b.Navigation("CourseContentItems");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.ItemTypes", b =>
+                {
+                    b.Navigation("CourseContentItems");
                 });
 #pragma warning restore 612, 618
         }
