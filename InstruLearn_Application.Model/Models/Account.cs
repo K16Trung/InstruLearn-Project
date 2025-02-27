@@ -23,5 +23,12 @@ namespace InstruLearn_Application.Model.Models
         public string RefreshToken { get; set; }
         public DateTime RefreshTokenExpires { get; set; }
 
+        // Navigation Properties
+        public virtual Admin? Admin { get; set; }
+        public virtual Staff? Staff { get; set; }
+        public virtual Teacher? Teacher { get; set; }
+        public virtual Manager? Manager { get; set; }
+        public virtual Learner? Learner { get; set; }
+
     }
 }
