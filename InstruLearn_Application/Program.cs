@@ -12,6 +12,8 @@ using InstruLearn_Application.BLL.Service;
 using InstruLearn_Application.DAL.UoW.IUoW;
 using InstruLearn_Application.DAL.UoW;
 using Microsoft.AspNetCore.Cors.Infrastructure;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace InstruLearn_Application
 {
@@ -28,6 +30,30 @@ namespace InstruLearn_Application
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
+            // Add JWT Authentication
+            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.RequireHttpsMetadata = false;
+                    options.SaveToken = true;
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Secret"])),
+
+                        ValidateIssuer = true, 
+                        ValidateAudience = true, 
+
+                        ValidIssuer = builder.Configuration["Jwt:validissuer"],
+                        ValidAudience = builder.Configuration["Jwt:validAudience"], 
+
+                        ClockSkew = TimeSpan.Zero // Ensure token expiration is strict
+                    };
+                });
+
+            builder.Services.AddAuthorization();
+
+
             // Add DB
             builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
             builder.Services.AddDbContext<ApplicationDbContext>(option =>
@@ -39,7 +65,7 @@ namespace InstruLearn_Application
             // Inject app Dependency Injection
             builder.Services.AddScoped<ApplicationDbContext>();
             builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
-            builder.Services.AddSingleton<JwtHelper>();
+            builder.Services.AddScoped<JwtHelper>();
             builder.Services.AddScoped<IAuthRepository, AuthRepository>();
             builder.Services.AddScoped<IAdminRepository, AdminRepository>();
             builder.Services.AddScoped<IManagerRepository, ManagerRepository>();
@@ -125,6 +151,8 @@ namespace InstruLearn_Application
             });
 
             app.UseHttpsRedirection();
+
+            app.UseAuthentication();
 
             app.UseAuthorization();
 
