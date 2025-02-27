@@ -26,30 +26,30 @@ namespace InstruLearn_Application.Model.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Entity<Learner>()
-                .HasOne(a => a.Account)
-                .WithOne()
-                .HasForeignKey<Learner>(u => u.AccountId);
+            modelBuilder.Entity<Account>()
+        .HasOne(a => a.Admin)
+        .WithOne(a => a.Account)
+        .HasForeignKey<Admin>(a => a.AccountId);
 
-            modelBuilder.Entity<Admin>()
-                .HasOne(a => a.Account)
-                .WithOne()
-                .HasForeignKey<Admin>(a => a.AccountId);
-            
-            modelBuilder.Entity<Staff>()
-                .HasOne(s => s.Account)
-                .WithOne()
-                .HasForeignKey<Staff>(s => s.AccountId);
-            
-            modelBuilder.Entity<Teacher>()
-                .HasOne(s => s.Account)
-                .WithOne()
-                .HasForeignKey<Teacher>(s => s.AccountId);
-            
-            modelBuilder.Entity<Manager>()
-                .HasOne(s => s.Account)
-                .WithOne()
-                .HasForeignKey<Manager>(s => s.AccountId);
+            modelBuilder.Entity<Account>()
+                .HasOne(a => a.Learner)
+                .WithOne(a => a.Account)
+                .HasForeignKey<Learner>(a => a.AccountId);
+
+            modelBuilder.Entity<Account>()
+                .HasOne(a => a.Staff)
+                .WithOne(a => a.Account)
+                .HasForeignKey<Staff>(a => a.AccountId);
+
+            modelBuilder.Entity<Account>()
+                .HasOne(a => a.Teacher)
+                .WithOne(a => a.Account)
+                .HasForeignKey<Teacher>(a => a.AccountId);
+
+            modelBuilder.Entity<Account>()
+                .HasOne(a => a.Manager)
+                .WithOne(a => a.Account)
+                .HasForeignKey<Manager>(a => a.AccountId);
 
             modelBuilder.Entity<Course>()
                 .Property(c => c.Price)

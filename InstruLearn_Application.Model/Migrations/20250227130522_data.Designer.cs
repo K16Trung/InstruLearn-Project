@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InstruLearn_Application.Model.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250216151452_data")]
+    [Migration("20250227130522_data")]
     partial class data
     {
         /// <inheritdoc />
@@ -328,7 +328,7 @@ namespace InstruLearn_Application.Model.Migrations
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Admin", b =>
                 {
                     b.HasOne("InstruLearn_Application.Model.Models.Account", "Account")
-                        .WithOne()
+                        .WithOne("Admin")
                         .HasForeignKey("InstruLearn_Application.Model.Models.Admin", "AccountId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -380,7 +380,7 @@ namespace InstruLearn_Application.Model.Migrations
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Learner", b =>
                 {
                     b.HasOne("InstruLearn_Application.Model.Models.Account", "Account")
-                        .WithOne()
+                        .WithOne("Learner")
                         .HasForeignKey("InstruLearn_Application.Model.Models.Learner", "AccountId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -391,7 +391,7 @@ namespace InstruLearn_Application.Model.Migrations
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Manager", b =>
                 {
                     b.HasOne("InstruLearn_Application.Model.Models.Account", "Account")
-                        .WithOne()
+                        .WithOne("Manager")
                         .HasForeignKey("InstruLearn_Application.Model.Models.Manager", "AccountId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -402,7 +402,7 @@ namespace InstruLearn_Application.Model.Migrations
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Staff", b =>
                 {
                     b.HasOne("InstruLearn_Application.Model.Models.Account", "Account")
-                        .WithOne()
+                        .WithOne("Staff")
                         .HasForeignKey("InstruLearn_Application.Model.Models.Staff", "AccountId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -413,12 +413,25 @@ namespace InstruLearn_Application.Model.Migrations
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Teacher", b =>
                 {
                     b.HasOne("InstruLearn_Application.Model.Models.Account", "Account")
-                        .WithOne()
+                        .WithOne("Teacher")
                         .HasForeignKey("InstruLearn_Application.Model.Models.Teacher", "AccountId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Account");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.Account", b =>
+                {
+                    b.Navigation("Admin");
+
+                    b.Navigation("Learner");
+
+                    b.Navigation("Manager");
+
+                    b.Navigation("Staff");
+
+                    b.Navigation("Teacher");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Course", b =>
