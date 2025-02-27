@@ -1,3 +1,11 @@
 {
-  "dependencies": {}
+  "dependencies": {
+    "mssql1": {
+      "serviceConnectorResourceId": "/subscriptions/[parameters('subscriptionId')]/resourcegroups/[parameters('serviceConnectorResourceGroupName')]/providers/Microsoft.Web/sites/InstruLearnApplication/providers/Microsoft.ServiceLinker/linkers/ConnectionStringsDatabaseConnection_85C4DE9A7C",
+      "secretStore": "AzureAppSettings",
+      "resourceId": "/subscriptions/[parameters('subscriptionId')]/resourcegroups/[parameters('resourceGroupName')]/providers/Microsoft.Sql/servers/instrulearn-applicationdbserver/databases/InstruLearn_Application_db",
+      "type": "mssql.azure",
+      "connectionId": "ConnectionStrings:DatabaseConnection"
+    }
+  }
 }
