@@ -78,6 +78,10 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<ICourseContentRepository, CourseContentRepository>();
             builder.Services.AddScoped<IItemTypeRepository, ItemTypeRepository>();
             builder.Services.AddScoped<ICourseContentItemRepository, CourseContentItemRepository>();
+            builder.Services.AddScoped<IFeedbackRepository, FeedbackRepository>();
+            builder.Services.AddScoped<IFeedbackRepliesRepository, FeedbackRepliesRepository>();
+            builder.Services.AddScoped<IQnARepository, IQnARepository>();
+            builder.Services.AddScoped<IQnARepliesRepository, IQnARepliesRepository>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             builder.Services.AddScoped<IAuthService, AuthService>();
@@ -91,6 +95,10 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<ICourseContentService, CourseContentService>();
             builder.Services.AddScoped<IItemTypeService, ItemTypeService>();
             builder.Services.AddScoped<ICourseContentItemService, CourseContentItemService>();
+            builder.Services.AddScoped<IFeedbackService, FeedbackService>();
+            builder.Services.AddScoped<IFeedbackRepliesService, FeedbackRepliesService>();
+            builder.Services.AddScoped<IQnAService, IQnAService>();
+            builder.Services.AddScoped<IQnARepliesService, IQnARepliesService>();
 
 
             builder.Services.AddAutoMapper(typeof(MappingProfile));
