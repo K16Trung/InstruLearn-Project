@@ -7,9 +7,13 @@ using InstruLearn_Application.Model.Models.DTO.Course;
 using InstruLearn_Application.Model.Models.DTO.Course_Content;
 using InstruLearn_Application.Model.Models.DTO.Course_Content_Item;
 using InstruLearn_Application.Model.Models.DTO.CourseType;
+using InstruLearn_Application.Model.Models.DTO.Feedback;
+using InstruLearn_Application.Model.Models.DTO.FeedbackReplies;
 using InstruLearn_Application.Model.Models.DTO.ItemTypes;
 using InstruLearn_Application.Model.Models.DTO.Learner;
 using InstruLearn_Application.Model.Models.DTO.Manager;
+using InstruLearn_Application.Model.Models.DTO.QnA;
+using InstruLearn_Application.Model.Models.DTO.QnAReplies;
 using InstruLearn_Application.Model.Models.DTO.Staff;
 using InstruLearn_Application.Model.Models.DTO.Teacher;
 using System;
@@ -119,6 +123,44 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<Course_Content_Item, CourseContentItemDTO>().ReverseMap();
             CreateMap<CreateCourseContentItemDTO, Course_Content_Item>().ReverseMap();
             CreateMap<UpdateCourseContentItemDTO, Course_Content_Item>().ReverseMap();
+
+            // 🔹 Feedback Mappings
+            CreateMap<FeedBack, FeedbackDTO>()
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Account.Email))
+                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Account.Role.ToString()))
+                .ForMember(dest => dest.Replies, opt => opt.MapFrom(src => src.FeedbackReplies))
+                .ReverseMap();
+
+            CreateMap<CreateFeedbackDTO, FeedBack>();
+            CreateMap<UpdateFeedbackDTO, FeedBack>();
+
+            // 🔹 FeedbackReplies Mappings
+            CreateMap<FeedbackReplies, FeedbackRepliesDTO>()
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Account.Email))
+                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Account.Role.ToString()))
+                .ReverseMap();
+
+            CreateMap<CreateFeedbackRepliesDTO, FeedbackReplies>();
+            CreateMap<UpdateFeedbackRepliesDTO, FeedbackReplies>();
+
+            // 🔹 QnA Mappings
+            CreateMap<QnA, QnADTO>()
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Account.Email))
+                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Account.Role.ToString()))
+                .ForMember(dest => dest.Replies, opt => opt.MapFrom(src => src.QnAReplies))
+                .ReverseMap();
+
+            CreateMap<CreateQnADTO, QnA>();
+            CreateMap<UpdateQnADTO, QnA>();
+
+            // 🔹 QnAReplies Mappings
+            CreateMap<QnAReplies, QnARepliesDTO>()
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Account.Email))
+                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Account.Role.ToString()))
+                .ReverseMap();
+
+            CreateMap<CreateQnARepliesDTO, QnAReplies>();
+            CreateMap<UpdateQnARepliesDTO, QnAReplies>();
 
         }
     }
