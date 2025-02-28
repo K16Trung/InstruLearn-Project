@@ -29,6 +29,11 @@ namespace InstruLearn_Application.Model.Models
         public virtual Teacher? Teacher { get; set; }
         public virtual Manager? Manager { get; set; }
         public virtual Learner? Learner { get; set; }
+        public ICollection<FeedBack> FeedBacks { get; set; }
+        public ICollection<QnA> QnAs { get; set; }
+        public ICollection<FeedbackReplies> FeedbackReplies { get; set; }
+        public ICollection<QnAReplies> QnAReplies { get; set; }
+
 
     }
 }

@@ -21,15 +21,19 @@ namespace InstruLearn_Application.Model.Data
         public DbSet<Course> Courses { get; set; }
         public DbSet<Course_Content> Course_Contents { get; set; }
         public DbSet<Course_Content_Item> Course_Content_Items { get; set; }
+        public DbSet<FeedBack> FeedBacks { get; set; }
+        public DbSet<FeedbackReplies> FeedbackReplies { get; set; }
+        public DbSet<QnA> QnA { get; set; }
+        public DbSet<QnAReplies> QnAReplies { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<Account>()
-        .HasOne(a => a.Admin)
-        .WithOne(a => a.Account)
-        .HasForeignKey<Admin>(a => a.AccountId);
+                .HasOne(a => a.Admin)
+                .WithOne(a => a.Account)
+                .HasForeignKey<Admin>(a => a.AccountId);
 
             modelBuilder.Entity<Account>()
                 .HasOne(a => a.Learner)
@@ -78,6 +82,54 @@ namespace InstruLearn_Application.Model.Data
                 .WithMany(ct => ct.CourseContentItems)
                 .HasForeignKey(c => c.ItemTypeId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<FeedBack>()
+                .HasOne(f => f.Course)
+                .WithMany(c => c.FeedBacks)
+                .HasForeignKey(f => f.CourseId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<FeedBack>()
+                .HasOne(f => f.Account)
+                .WithMany(a => a.FeedBacks)
+                .HasForeignKey(f => f.AccountId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<FeedbackReplies>()
+                .HasOne(fr => fr.FeedBack)
+                .WithMany(f => f.FeedbackReplies)
+                .HasForeignKey(fr => fr.FeedbackId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<FeedbackReplies>()
+                .HasOne(fr => fr.Account)
+                .WithMany(a => a.FeedbackReplies)
+                .HasForeignKey(fr => fr.AccountId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<QnA>()
+                .HasOne(q => q.Account)
+                .WithMany(a => a.QnAs)
+                .HasForeignKey(q => q.AccountId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<QnA>()
+                .HasOne(q => q.Course)
+                .WithMany(c => c.QnAs)
+                .HasForeignKey(q => q.CourseId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<QnAReplies>()
+                .HasOne(qr => qr.QnA)
+                .WithMany(q => q.QnAReplies)
+                .HasForeignKey(qr => qr.QuestionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<QnAReplies>()
+                .HasOne(qr => qr.Account)
+                .WithMany(a => a.QnAReplies)
+                .HasForeignKey(qr => qr.AccountId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }
