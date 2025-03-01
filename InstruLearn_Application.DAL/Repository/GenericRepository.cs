@@ -48,7 +48,10 @@ namespace InstruLearn_Application.DAL.Repository
                 await _context.SaveChangesAsync();
             }
         }
-
+        public async Task<T?> FirstOrDefaultAsync(Expression<Func<T, bool>> predicate)
+        {
+            return await _dbSet.FirstOrDefaultAsync(predicate);
+        }
 
         // GET ALL
         public async Task<IEnumerable<T>> GetAllAsync()

@@ -14,6 +14,7 @@ using InstruLearn_Application.DAL.UoW;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using InstruLearn_Application.Model.Configuration;
 
 namespace InstruLearn_Application
 {
@@ -62,6 +63,9 @@ namespace InstruLearn_Application
                 option.UseSqlServer(connectionString);
             });
 
+            //PayOS
+            builder.Services.Configure<PayOSSettings>(builder.Configuration.GetSection("PayOS"));
+
             // Inject app Dependency Injection
             builder.Services.AddScoped<ApplicationDbContext>();
             builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
@@ -82,6 +86,9 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<IFeedbackRepliesRepository, FeedbackRepliesRepository>();
             builder.Services.AddScoped<IQnARepository, QnARepository>();
             builder.Services.AddScoped<IQnARepliesRepository, QnARepliesRepository>();
+            builder.Services.AddScoped<IWalletRepository, WalletRepository>();
+            builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+            builder.Services.AddScoped<IWalletTransactionRepository, WalletTransactionRepository>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             builder.Services.AddScoped<IAuthService, AuthService>();

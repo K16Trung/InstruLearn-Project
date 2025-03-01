@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using InstruLearn_Application.Model.Enum;
 using InstruLearn_Application.Model.Models;
+using InstruLearn_Application.DAL.Repository;
 
 namespace InstruLearn_Application.BLL.Service
 {
@@ -20,16 +21,18 @@ namespace InstruLearn_Application.BLL.Service
         private readonly IAuthRepository _authRepository;
         private readonly IConfiguration _configuration;
         private readonly ILearnerRepository _learnerRepository;
+        private readonly IWalletRepository _walletRepository;
         private IMapper _mapper;
         private JwtHelper _jwtHelper;
 
-        public AuthService(IAuthRepository authRepository, IConfiguration configuration, IMapper mapper, JwtHelper jwtHelper, ILearnerRepository learnerRepository)
+        public AuthService(IAuthRepository authRepository, IConfiguration configuration, IMapper mapper, JwtHelper jwtHelper, ILearnerRepository learnerRepository, IWalletRepository walletRepository)
         {
             _authRepository = authRepository;
             _configuration = configuration;
             _mapper = mapper;
             _jwtHelper = jwtHelper;
             _learnerRepository = learnerRepository;
+            _walletRepository = walletRepository;
         }
 
         // Login
@@ -104,6 +107,15 @@ namespace InstruLearn_Application.BLL.Service
 
             // Add the customer to the database
             await _learnerRepository.AddAsync(user);
+
+            var wallet = new Wallet
+            {
+                LearnerId = user.LearnerId,
+                Balance = 0,
+                UpdateAt = DateTime.UtcNow
+            };
+
+            await _walletRepository.AddAsync(wallet);
 
             response.IsSucceed = true;
             response.Message = "Registration successful!";

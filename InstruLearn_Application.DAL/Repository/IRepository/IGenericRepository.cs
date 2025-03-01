@@ -12,7 +12,7 @@ namespace InstruLearn_Application.DAL.Repository.IRepository
     {
         Task<IEnumerable<T>> GetAllAsync();
         IQueryable<T> GetQuery();
-
+        Task<T?> FirstOrDefaultAsync(Expression<Func<T, bool>> predicate);
         Task<T?> GetByIdAsync(int id);
         Task AddAsync(T entity);
         Task<bool> UpdateAsync(T entity);
