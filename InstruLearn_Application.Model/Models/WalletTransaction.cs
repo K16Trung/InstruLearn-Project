@@ -12,7 +12,7 @@ namespace InstruLearn_Application.Model.Models
     public class WalletTransaction
     {
         [Key]
-        public int TransactionId { get; set; }
+        public string TransactionId { get; set; }
         public int WalletId { get; set; }
         public Wallet Wallet { get; set; }
         [Column(TypeName = "decimal(18,2)")]

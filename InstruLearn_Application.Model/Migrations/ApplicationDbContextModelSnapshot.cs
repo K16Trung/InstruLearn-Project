@@ -354,8 +354,8 @@ namespace InstruLearn_Application.Model.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
-                    b.Property<int?>("TransactionId")
-                        .HasColumnType("int");
+                    b.Property<string>("TransactionId")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("WalletId")
                         .HasColumnType("int");
@@ -519,11 +519,8 @@ namespace InstruLearn_Application.Model.Migrations
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.WalletTransaction", b =>
                 {
-                    b.Property<int>("TransactionId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TransactionId"));
+                    b.Property<string>("TransactionId")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
