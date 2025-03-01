@@ -8,6 +8,6 @@ namespace InstruLearn_Application.Model.Models.DTO.ItemTypes
 {
     public class CreateItemTypeDTO
     {
-        public int ItemTypeName { get; set; }
+        public string ItemTypeName { get; set; }
     }
 }
