@@ -115,7 +115,8 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<UpdateCourseContentDTO, Course_Content>().ReverseMap();
 
             // Item Type mapping
-            CreateMap<ItemTypes, ItemTypeDTO>().ReverseMap();
+            CreateMap<ItemTypes, ItemTypeDTO>().ReverseMap()
+            .ForMember(dest => dest.ItemTypeName, opt => opt.MapFrom(src => src.ItemTypeName));
             CreateMap<CreateItemTypeDTO, ItemTypes>().ReverseMap();
             CreateMap<UpdateItemTypeDTO, ItemTypes>().ReverseMap();
 

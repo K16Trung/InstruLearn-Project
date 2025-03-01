@@ -22,6 +22,7 @@ namespace InstruLearn_Application.Model.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal Price { get; set; }
         public int Discount { get; set; }
+        public string ImageUrl { get; set; }
         public ICollection<Course_Content> CourseContents { get; set; }
         public ICollection<FeedBack> FeedBacks { get; set; }
         public ICollection<QnA> QnAs { get; set; }
