@@ -55,12 +55,12 @@ namespace InstruLearn_Application.BLL.Service
         };
 
             PaymentData paymentData = new PaymentData(
-                orderCode: transaction.TransactionId,
+                orderCode: long.Parse(transaction.TransactionId),
                 amount: (int)amount,
                 description: "Add Funds to Wallet",
                 items: items,
-                cancelUrl: "https://yourwebsite.com/cancel",
-                returnUrl: "https://yourwebsite.com/success"
+                cancelUrl: "https://www.facebook.com/FPTU.HCM",
+                returnUrl: "https://fap.fpt.edu.vn/"
             );
 
             var createPayment = await payOS.createPaymentLink(paymentData);

@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using InstruLearn_Application.Model.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace InstruLearn_Application
 {
@@ -65,6 +66,7 @@ namespace InstruLearn_Application
 
             //PayOS
             builder.Services.Configure<PayOSSettings>(builder.Configuration.GetSection("PayOS"));
+            builder.Services.AddSingleton<PayOSSettings>(sp => sp.GetRequiredService<IOptions<PayOSSettings>>().Value);
 
             // Inject app Dependency Injection
             builder.Services.AddScoped<ApplicationDbContext>();
@@ -106,7 +108,8 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<IFeedbackRepliesService, FeedbackRepliesService>();
             builder.Services.AddScoped<IQnAService, QnAService>();
             builder.Services.AddScoped<IQnARepliesService, QnARepliesService>();
-
+            builder.Services.AddScoped<IWalletService, WalletService>();
+            builder.Services.AddScoped<IPayOSWebhookService, PayOSWebhookService>();
 
             builder.Services.AddAutoMapper(typeof(MappingProfile));
 
