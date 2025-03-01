@@ -21,6 +21,9 @@ namespace InstruLearn_Application.DAL.UoW.IUoW
         ICourseContentRepository CourseContentRepository { get; }
         IItemTypeRepository ItemTypeRepository { get; }
         ICourseContentItemRepository CourseContentItemRepository { get; }
+        IWalletRepository WalletRepository { get; }
+        IPaymentRepository PaymentsRepository { get; }
+        IWalletTransactionRepository WalletTransactionRepository { get; }
         ApplicationDbContext dbContext { get; }
         public Task<int> SaveChangeAsync();
     }

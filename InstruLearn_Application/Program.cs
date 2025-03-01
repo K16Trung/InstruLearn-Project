@@ -14,6 +14,8 @@ using InstruLearn_Application.DAL.UoW;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using InstruLearn_Application.Model.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace InstruLearn_Application
 {
@@ -62,6 +64,10 @@ namespace InstruLearn_Application
                 option.UseSqlServer(connectionString);
             });
 
+            //PayOS
+            builder.Services.Configure<PayOSSettings>(builder.Configuration.GetSection("PayOS"));
+            builder.Services.AddSingleton<PayOSSettings>(sp => sp.GetRequiredService<IOptions<PayOSSettings>>().Value);
+
             // Inject app Dependency Injection
             builder.Services.AddScoped<ApplicationDbContext>();
             builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
@@ -82,6 +88,9 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<IFeedbackRepliesRepository, FeedbackRepliesRepository>();
             builder.Services.AddScoped<IQnARepository, QnARepository>();
             builder.Services.AddScoped<IQnARepliesRepository, QnARepliesRepository>();
+            builder.Services.AddScoped<IWalletRepository, WalletRepository>();
+            builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+            builder.Services.AddScoped<IWalletTransactionRepository, WalletTransactionRepository>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             builder.Services.AddScoped<IAuthService, AuthService>();
@@ -99,7 +108,8 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<IFeedbackRepliesService, FeedbackRepliesService>();
             builder.Services.AddScoped<IQnAService, QnAService>();
             builder.Services.AddScoped<IQnARepliesService, QnARepliesService>();
-
+            builder.Services.AddScoped<IWalletService, WalletService>();
+            builder.Services.AddScoped<IPayOSWebhookService, PayOSWebhookService>();
 
             builder.Services.AddAutoMapper(typeof(MappingProfile));
 
