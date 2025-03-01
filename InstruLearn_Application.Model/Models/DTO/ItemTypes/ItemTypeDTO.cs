@@ -9,6 +9,6 @@ namespace InstruLearn_Application.Model.Models.DTO.ItemTypes
     public class ItemTypeDTO
     {
         public int ItemTypeId { get; set; }
-        public int ItemTypeName { get; set; }
+        public string ItemTypeName { get; set; }
     }
 }
