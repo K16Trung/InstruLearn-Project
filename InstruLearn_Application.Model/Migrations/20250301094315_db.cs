@@ -291,7 +291,9 @@ namespace InstruLearn_Application.Model.Migrations
                 name: "WalletTransactions",
                 columns: table => new
                 {
-                    TransactionId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    WalletTransactionId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    TransactionId = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     WalletId = table.Column<int>(type: "int", nullable: false),
                     Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     TransactionType = table.Column<int>(type: "int", nullable: false),
@@ -300,7 +302,7 @@ namespace InstruLearn_Application.Model.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_WalletTransactions", x => x.TransactionId);
+                    table.PrimaryKey("PK_WalletTransactions", x => x.WalletTransactionId);
                     table.ForeignKey(
                         name: "FK_WalletTransactions_Wallets_WalletId",
                         column: x => x.WalletId,
@@ -399,7 +401,7 @@ namespace InstruLearn_Application.Model.Migrations
                     PaymentId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     WalletId = table.Column<int>(type: "int", nullable: false),
-                    TransactionId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    WalletTransactionId = table.Column<int>(type: "int", nullable: true),
                     AmountPaid = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     PaymentMethod = table.Column<int>(type: "int", nullable: false),
                     PaymentFor = table.Column<int>(type: "int", nullable: false),
@@ -409,10 +411,10 @@ namespace InstruLearn_Application.Model.Migrations
                 {
                     table.PrimaryKey("PK_Payments", x => x.PaymentId);
                     table.ForeignKey(
-                        name: "FK_Payments_WalletTransactions_TransactionId",
-                        column: x => x.TransactionId,
+                        name: "FK_Payments_WalletTransactions_WalletTransactionId",
+                        column: x => x.WalletTransactionId,
                         principalTable: "WalletTransactions",
-                        principalColumn: "TransactionId",
+                        principalColumn: "WalletTransactionId",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Payments_Wallets_WalletId",
@@ -481,14 +483,14 @@ namespace InstruLearn_Application.Model.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Payments_TransactionId",
-                table: "Payments",
-                column: "TransactionId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Payments_WalletId",
                 table: "Payments",
                 column: "WalletId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Payments_WalletTransactionId",
+                table: "Payments",
+                column: "WalletTransactionId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_QnA_AccountId",

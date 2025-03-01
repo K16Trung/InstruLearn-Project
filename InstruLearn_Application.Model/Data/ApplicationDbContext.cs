@@ -155,7 +155,7 @@ namespace InstruLearn_Application.Model.Data
             modelBuilder.Entity<Payment>()
                 .HasOne(p => p.WalletTransaction)
                 .WithMany(wt => wt.Payments)
-                .HasForeignKey(p => p.TransactionId)
+                .HasForeignKey(p => p.WalletTransactionId)
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
         }

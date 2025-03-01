@@ -12,6 +12,7 @@ namespace InstruLearn_Application.Model.Models
     public class WalletTransaction
     {
         [Key]
+        public int WalletTransactionId { get; set; }
         public string TransactionId { get; set; }
         public int WalletId { get; set; }
         public Wallet Wallet { get; set; }
