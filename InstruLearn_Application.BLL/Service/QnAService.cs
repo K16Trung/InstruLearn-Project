@@ -9,5 +9,6 @@ namespace InstruLearn_Application.BLL.Service
 {
     public class QnAService : IQnAService
     {
+
     }
 }
