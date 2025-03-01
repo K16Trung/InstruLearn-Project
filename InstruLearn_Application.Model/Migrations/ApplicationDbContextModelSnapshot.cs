@@ -354,17 +354,17 @@ namespace InstruLearn_Application.Model.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
-                    b.Property<string>("TransactionId")
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<int>("WalletId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("WalletTransactionId")
                         .HasColumnType("int");
 
                     b.HasKey("PaymentId");
 
-                    b.HasIndex("TransactionId");
-
                     b.HasIndex("WalletId");
+
+                    b.HasIndex("WalletTransactionId");
 
                     b.ToTable("Payments");
                 });
@@ -519,8 +519,11 @@ namespace InstruLearn_Application.Model.Migrations
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.WalletTransaction", b =>
                 {
-                    b.Property<string>("TransactionId")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int>("WalletTransactionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("WalletTransactionId"));
 
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
@@ -531,13 +534,17 @@ namespace InstruLearn_Application.Model.Migrations
                     b.Property<DateTime>("TransactionDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("TransactionId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("TransactionType")
                         .HasColumnType("int");
 
                     b.Property<int>("WalletId")
                         .HasColumnType("int");
 
-                    b.HasKey("TransactionId");
+                    b.HasKey("WalletTransactionId");
 
                     b.HasIndex("WalletId");
 
@@ -658,16 +665,16 @@ namespace InstruLearn_Application.Model.Migrations
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Payment", b =>
                 {
-                    b.HasOne("InstruLearn_Application.Model.Models.WalletTransaction", "WalletTransaction")
-                        .WithMany("Payments")
-                        .HasForeignKey("TransactionId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("InstruLearn_Application.Model.Models.Wallet", "Wallet")
                         .WithMany("Payments")
                         .HasForeignKey("WalletId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("InstruLearn_Application.Model.Models.WalletTransaction", "WalletTransaction")
+                        .WithMany("Payments")
+                        .HasForeignKey("WalletTransactionId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Wallet");
 

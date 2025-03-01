@@ -15,7 +15,7 @@ namespace InstruLearn_Application.Model.Models
         public int PaymentId { get; set; }
         public int WalletId { get; set; }
         public Wallet Wallet { get; set; }
-        public string? TransactionId { get; set; }
+        public int? WalletTransactionId { get; set; }
         public WalletTransaction? WalletTransaction { get; set; }
         [Column(TypeName = "decimal(18,2)")]
         public decimal AmountPaid { get; set; }
