@@ -39,9 +39,10 @@ namespace InstruLearn_Application.BLL.Service
             {
                 WalletId = wallet.WalletId,
                 Amount = amount,
+                TransactionId = Guid.NewGuid().ToString(),
                 TransactionType = TransactionType.AddFuns,
                 Status = TransactionStatus.Pending,
-                TransactionDate = DateTime.UtcNow
+                TransactionDate = DateTime.Now
             };
 
             await _unitOfWork.WalletTransactionRepository.AddAsync(transaction);
@@ -50,18 +51,18 @@ namespace InstruLearn_Application.BLL.Service
             // Use PayOS to generate a payment link
             PayOS payOS = new PayOS(_payOSSettings.ClientId, _payOSSettings.ApiKey, _payOSSettings.ChecksumKey);
             List<ItemData> items = new List<ItemData>
-        {
-            new ItemData("Add Funds to Wallet", 1, (int)amount)
-        };
+            {
+                new ItemData("Add Funds to Wallet", 1, (int)amount)
+            };
 
-            PaymentData paymentData = new PaymentData(
-                orderCode: long.Parse(transaction.TransactionId),
+                PaymentData paymentData = new PaymentData(
+                orderCode: new Random().Next(100000, 999999),
                 amount: (int)amount,
                 description: "Add Funds to Wallet",
                 items: items,
                 cancelUrl: "https://www.facebook.com/FPTU.HCM",
                 returnUrl: "https://fap.fpt.edu.vn/"
-            );
+                );
 
             var createPayment = await payOS.createPaymentLink(paymentData);
 
@@ -82,6 +83,30 @@ namespace InstruLearn_Application.BLL.Service
                     PaymentUrl = createPayment.checkoutUrl
                 }
             };
+        }
+
+        public async Task<ResponseDTO> UpdatePaymentStatusAsync(string orderCode, string status)
+        {
+            var transaction = await _unitOfWork.WalletTransactionRepository
+                .FirstOrDefaultAsync(t => t.TransactionId == orderCode);
+
+            if (transaction == null)
+            {
+                return new ResponseDTO { IsSucceed = false, Message = "Transaction not found" };
+            }
+
+            if (status.ToUpper() == "PAID")
+            {
+                transaction.Status = TransactionStatus.Complete;
+                transaction.Wallet.Balance += transaction.Amount;
+            }
+            else if (status.ToUpper() == "FAILED" || status.ToUpper() == "CANCELED")
+            {
+                transaction.Status = TransactionStatus.Failed;
+            }
+
+            await _unitOfWork.SaveChangeAsync();
+            return new ResponseDTO { IsSucceed = true, Message = "Payment status updated" };
         }
     }
 }

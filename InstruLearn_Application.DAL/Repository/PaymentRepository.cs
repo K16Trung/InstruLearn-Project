@@ -21,7 +21,9 @@ namespace InstruLearn_Application.DAL.Repository
 
         public async Task<Payment?> GetByTransactionIdAsync(string transactionId)
         {
-            return await _appDbContext.Payments.FirstOrDefaultAsync(p => p.TransactionId == transactionId);
+            return await _appDbContext.Payments
+                .Include(p => p.WalletTransaction)
+                .FirstOrDefaultAsync(p => p.WalletTransaction.TransactionId == transactionId);
         }
 
         public async Task UpdatePaymentAsync(Payment payment)
