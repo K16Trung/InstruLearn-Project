@@ -25,6 +25,9 @@ namespace InstruLearn_Application.Model.Data
         public DbSet<FeedbackReplies> FeedbackReplies { get; set; }
         public DbSet<QnA> QnA { get; set; }
         public DbSet<QnAReplies> QnAReplies { get; set; }
+        public DbSet<Wallet> Wallets { get; set; }
+        public DbSet<Payment> Payments { get; set; }
+        public DbSet<WalletTransaction> WalletTransactions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -129,6 +132,31 @@ namespace InstruLearn_Application.Model.Data
                 .HasOne(qr => qr.Account)
                 .WithMany(a => a.QnAReplies)
                 .HasForeignKey(qr => qr.AccountId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Wallet>()
+                .HasOne(w => w.Learner)
+                .WithOne(l => l.Wallet)
+                .HasForeignKey<Wallet>(w => w.LearnerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<WalletTransaction>()
+                .HasOne(wt => wt.Wallet)
+                .WithMany(w => w.WalletTransactions)
+                .HasForeignKey(wt => wt.WalletId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Payment>()
+                .HasOne(p => p.Wallet)
+                .WithMany(w => w.Payments)
+                .HasForeignKey(p => p.WalletId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Payment>()
+                .HasOne(p => p.WalletTransaction)
+                .WithMany(wt => wt.Payments)
+                .HasForeignKey(p => p.WalletTransactionId)
+                .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }

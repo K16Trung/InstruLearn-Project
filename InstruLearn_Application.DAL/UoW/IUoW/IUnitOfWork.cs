@@ -21,6 +21,9 @@ namespace InstruLearn_Application.DAL.UoW.IUoW
         ICourseContentRepository CourseContentRepository { get; }
         IItemTypeRepository ItemTypeRepository { get; }
         ICourseContentItemRepository CourseContentItemRepository { get; }
+        IWalletRepository WalletRepository { get; }
+        IPaymentRepository PaymentsRepository { get; }
+        IWalletTransactionRepository WalletTransactionRepository { get; }
         IFeedbackRepository FeedbackRepository { get; }
         IFeedbackRepliesRepository FeedbackRepliesRepository { get; }
         IQnARepository QnARepository { get; }

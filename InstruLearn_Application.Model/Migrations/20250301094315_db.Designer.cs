@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InstruLearn_Application.Model.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250228130401_feedback_QnA_data")]
-    partial class feedback_QnA_data
+    [Migration("20250301094315_db")]
+    partial class db
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -114,6 +114,10 @@ namespace InstruLearn_Application.Model.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Headline")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ImageUrl")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -333,6 +337,41 @@ namespace InstruLearn_Application.Model.Migrations
                     b.ToTable("Managers");
                 });
 
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.Payment", b =>
+                {
+                    b.Property<int>("PaymentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PaymentId"));
+
+                    b.Property<decimal>("AmountPaid")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("PaymentFor")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PaymentMethod")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int>("WalletId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("WalletTransactionId")
+                        .HasColumnType("int");
+
+                    b.HasKey("PaymentId");
+
+                    b.HasIndex("WalletId");
+
+                    b.HasIndex("WalletTransactionId");
+
+                    b.ToTable("Payments");
+                });
+
             modelBuilder.Entity("InstruLearn_Application.Model.Models.QnA", b =>
                 {
                     b.Property<int>("QuestionId")
@@ -456,6 +495,65 @@ namespace InstruLearn_Application.Model.Migrations
                     b.ToTable("Teachers");
                 });
 
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.Wallet", b =>
+                {
+                    b.Property<int>("WalletId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("WalletId"));
+
+                    b.Property<decimal>("Balance")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("LearnerId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdateAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("WalletId");
+
+                    b.HasIndex("LearnerId")
+                        .IsUnique();
+
+                    b.ToTable("Wallets");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.WalletTransaction", b =>
+                {
+                    b.Property<int>("WalletTransactionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("WalletTransactionId"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("TransactionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TransactionId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TransactionType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("WalletId")
+                        .HasColumnType("int");
+
+                    b.HasKey("WalletTransactionId");
+
+                    b.HasIndex("WalletId");
+
+                    b.ToTable("WalletTransactions");
+                });
+
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Admin", b =>
                 {
                     b.HasOne("InstruLearn_Application.Model.Models.Account", "Account")
@@ -568,6 +666,24 @@ namespace InstruLearn_Application.Model.Migrations
                     b.Navigation("Account");
                 });
 
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.Payment", b =>
+                {
+                    b.HasOne("InstruLearn_Application.Model.Models.Wallet", "Wallet")
+                        .WithMany("Payments")
+                        .HasForeignKey("WalletId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("InstruLearn_Application.Model.Models.WalletTransaction", "WalletTransaction")
+                        .WithMany("Payments")
+                        .HasForeignKey("WalletTransactionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Wallet");
+
+                    b.Navigation("WalletTransaction");
+                });
+
             modelBuilder.Entity("InstruLearn_Application.Model.Models.QnA", b =>
                 {
                     b.HasOne("InstruLearn_Application.Model.Models.Account", "Account")
@@ -628,6 +744,28 @@ namespace InstruLearn_Application.Model.Migrations
                     b.Navigation("Account");
                 });
 
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.Wallet", b =>
+                {
+                    b.HasOne("InstruLearn_Application.Model.Models.Learner", "Learner")
+                        .WithOne("Wallet")
+                        .HasForeignKey("InstruLearn_Application.Model.Models.Wallet", "LearnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Learner");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.WalletTransaction", b =>
+                {
+                    b.HasOne("InstruLearn_Application.Model.Models.Wallet", "Wallet")
+                        .WithMany("WalletTransactions")
+                        .HasForeignKey("WalletId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Wallet");
+                });
+
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Account", b =>
                 {
                     b.Navigation("Admin");
@@ -678,9 +816,27 @@ namespace InstruLearn_Application.Model.Migrations
                     b.Navigation("CourseContentItems");
                 });
 
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.Learner", b =>
+                {
+                    b.Navigation("Wallet")
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("InstruLearn_Application.Model.Models.QnA", b =>
                 {
                     b.Navigation("QnAReplies");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.Wallet", b =>
+                {
+                    b.Navigation("Payments");
+
+                    b.Navigation("WalletTransactions");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.WalletTransaction", b =>
+                {
+                    b.Navigation("Payments");
                 });
 #pragma warning restore 612, 618
         }

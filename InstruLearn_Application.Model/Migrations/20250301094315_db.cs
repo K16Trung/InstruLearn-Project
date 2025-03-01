@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace InstruLearn_Application.Model.Migrations
 {
     /// <inheritdoc />
-    public partial class data : Migration
+    public partial class db : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -174,7 +174,8 @@ namespace InstruLearn_Application.Model.Migrations
                     Headline = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Rating = table.Column<int>(type: "int", nullable: false),
                     Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    Discount = table.Column<int>(type: "int", nullable: false)
+                    Discount = table.Column<int>(type: "int", nullable: false),
+                    ImageUrl = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -184,6 +185,27 @@ namespace InstruLearn_Application.Model.Migrations
                         column: x => x.TypeId,
                         principalTable: "CourseType",
                         principalColumn: "TypeId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Wallets",
+                columns: table => new
+                {
+                    WalletId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    LearnerId = table.Column<int>(type: "int", nullable: false),
+                    Balance = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    UpdateAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Wallets", x => x.WalletId);
+                    table.ForeignKey(
+                        name: "FK_Wallets_Learners_LearnerId",
+                        column: x => x.LearnerId,
+                        principalTable: "Learners",
+                        principalColumn: "LearnerId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -204,6 +226,88 @@ namespace InstruLearn_Application.Model.Migrations
                         column: x => x.CourseId,
                         principalTable: "Courses",
                         principalColumn: "CourseId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "FeedBacks",
+                columns: table => new
+                {
+                    FeedbackId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    AccountId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    CourseId = table.Column<int>(type: "int", nullable: false),
+                    FeedbackContent = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreateAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Rating = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_FeedBacks", x => x.FeedbackId);
+                    table.ForeignKey(
+                        name: "FK_FeedBacks_Accounts_AccountId",
+                        column: x => x.AccountId,
+                        principalTable: "Accounts",
+                        principalColumn: "AccountId",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_FeedBacks_Courses_CourseId",
+                        column: x => x.CourseId,
+                        principalTable: "Courses",
+                        principalColumn: "CourseId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "QnA",
+                columns: table => new
+                {
+                    QuestionId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    AccountId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    CourseId = table.Column<int>(type: "int", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    QuestionContent = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreateAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_QnA", x => x.QuestionId);
+                    table.ForeignKey(
+                        name: "FK_QnA_Accounts_AccountId",
+                        column: x => x.AccountId,
+                        principalTable: "Accounts",
+                        principalColumn: "AccountId",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_QnA_Courses_CourseId",
+                        column: x => x.CourseId,
+                        principalTable: "Courses",
+                        principalColumn: "CourseId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "WalletTransactions",
+                columns: table => new
+                {
+                    WalletTransactionId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    TransactionId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    WalletId = table.Column<int>(type: "int", nullable: false),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    TransactionType = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    TransactionDate = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_WalletTransactions", x => x.WalletTransactionId);
+                    table.ForeignKey(
+                        name: "FK_WalletTransactions_Wallets_WalletId",
+                        column: x => x.WalletId,
+                        principalTable: "Wallets",
+                        principalColumn: "WalletId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -234,6 +338,92 @@ namespace InstruLearn_Application.Model.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "FeedbackReplies",
+                columns: table => new
+                {
+                    FeedbackRepliesId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    FeedbackId = table.Column<int>(type: "int", nullable: false),
+                    AccountId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    CreateAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    RepliesContent = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_FeedbackReplies", x => x.FeedbackRepliesId);
+                    table.ForeignKey(
+                        name: "FK_FeedbackReplies_Accounts_AccountId",
+                        column: x => x.AccountId,
+                        principalTable: "Accounts",
+                        principalColumn: "AccountId",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_FeedbackReplies_FeedBacks_FeedbackId",
+                        column: x => x.FeedbackId,
+                        principalTable: "FeedBacks",
+                        principalColumn: "FeedbackId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "QnAReplies",
+                columns: table => new
+                {
+                    QnARepliesId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    AccountId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    QuestionId = table.Column<int>(type: "int", nullable: false),
+                    QnAContent = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreateAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_QnAReplies", x => x.QnARepliesId);
+                    table.ForeignKey(
+                        name: "FK_QnAReplies_Accounts_AccountId",
+                        column: x => x.AccountId,
+                        principalTable: "Accounts",
+                        principalColumn: "AccountId",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_QnAReplies_QnA_QuestionId",
+                        column: x => x.QuestionId,
+                        principalTable: "QnA",
+                        principalColumn: "QuestionId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Payments",
+                columns: table => new
+                {
+                    PaymentId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    WalletId = table.Column<int>(type: "int", nullable: false),
+                    WalletTransactionId = table.Column<int>(type: "int", nullable: true),
+                    AmountPaid = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    PaymentMethod = table.Column<int>(type: "int", nullable: false),
+                    PaymentFor = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Payments", x => x.PaymentId);
+                    table.ForeignKey(
+                        name: "FK_Payments_WalletTransactions_WalletTransactionId",
+                        column: x => x.WalletTransactionId,
+                        principalTable: "WalletTransactions",
+                        principalColumn: "WalletTransactionId",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Payments_Wallets_WalletId",
+                        column: x => x.WalletId,
+                        principalTable: "Wallets",
+                        principalColumn: "WalletId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_Admins_AccountId",
                 table: "Admins",
@@ -261,6 +451,26 @@ namespace InstruLearn_Application.Model.Migrations
                 column: "TypeId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_FeedbackReplies_AccountId",
+                table: "FeedbackReplies",
+                column: "AccountId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FeedbackReplies_FeedbackId",
+                table: "FeedbackReplies",
+                column: "FeedbackId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FeedBacks_AccountId",
+                table: "FeedBacks",
+                column: "AccountId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FeedBacks_CourseId",
+                table: "FeedBacks",
+                column: "CourseId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Learners_AccountId",
                 table: "Learners",
                 column: "AccountId",
@@ -273,6 +483,36 @@ namespace InstruLearn_Application.Model.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_Payments_WalletId",
+                table: "Payments",
+                column: "WalletId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Payments_WalletTransactionId",
+                table: "Payments",
+                column: "WalletTransactionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_QnA_AccountId",
+                table: "QnA",
+                column: "AccountId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_QnA_CourseId",
+                table: "QnA",
+                column: "CourseId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_QnAReplies_AccountId",
+                table: "QnAReplies",
+                column: "AccountId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_QnAReplies_QuestionId",
+                table: "QnAReplies",
+                column: "QuestionId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Staffs_AccountId",
                 table: "Staffs",
                 column: "AccountId",
@@ -283,6 +523,17 @@ namespace InstruLearn_Application.Model.Migrations
                 table: "Teachers",
                 column: "AccountId",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Wallets_LearnerId",
+                table: "Wallets",
+                column: "LearnerId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WalletTransactions_WalletId",
+                table: "WalletTransactions",
+                column: "WalletId");
         }
 
         /// <inheritdoc />
@@ -295,10 +546,16 @@ namespace InstruLearn_Application.Model.Migrations
                 name: "Course_Content_Items");
 
             migrationBuilder.DropTable(
-                name: "Learners");
+                name: "FeedbackReplies");
 
             migrationBuilder.DropTable(
                 name: "Managers");
+
+            migrationBuilder.DropTable(
+                name: "Payments");
+
+            migrationBuilder.DropTable(
+                name: "QnAReplies");
 
             migrationBuilder.DropTable(
                 name: "Staffs");
@@ -313,13 +570,28 @@ namespace InstruLearn_Application.Model.Migrations
                 name: "ItemTypes");
 
             migrationBuilder.DropTable(
-                name: "Accounts");
+                name: "FeedBacks");
+
+            migrationBuilder.DropTable(
+                name: "WalletTransactions");
+
+            migrationBuilder.DropTable(
+                name: "QnA");
+
+            migrationBuilder.DropTable(
+                name: "Wallets");
 
             migrationBuilder.DropTable(
                 name: "Courses");
 
             migrationBuilder.DropTable(
+                name: "Learners");
+
+            migrationBuilder.DropTable(
                 name: "CourseType");
+
+            migrationBuilder.DropTable(
+                name: "Accounts");
         }
     }
 }
