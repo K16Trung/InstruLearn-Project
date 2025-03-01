@@ -1,8 +1,4 @@
-﻿using InstruLearn_Application.Model.Enum;
-using InstruLearn_Application.Model.Models.DTO.Course_Content;
-using InstruLearn_Application.Model.Models.DTO.Feedback;
-using InstruLearn_Application.Model.Models.DTO.QnA;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace InstruLearn_Application.Model.Models.DTO.Course
 {
-    public class CourseDTO
+    public class GetAllCourseDTO
     {
         public int CourseId { get; set; }
         public string CourseName { get; set; }
@@ -21,8 +17,5 @@ namespace InstruLearn_Application.Model.Models.DTO.Course
         public int Discount { get; set; }
         public string ImageUrl { get; set; }
         public string TypeName { get; set; }
-        public ICollection<CourseContentDTO> CourseContents { get; set; }
-        public ICollection<FeedbackDTO> FeedBacks { get; set; }
-        public ICollection<QnADTO> QnAs { get; set; }
     }
 }

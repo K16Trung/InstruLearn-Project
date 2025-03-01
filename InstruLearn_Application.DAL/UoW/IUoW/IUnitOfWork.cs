@@ -24,6 +24,10 @@ namespace InstruLearn_Application.DAL.UoW.IUoW
         IWalletRepository WalletRepository { get; }
         IPaymentRepository PaymentsRepository { get; }
         IWalletTransactionRepository WalletTransactionRepository { get; }
+        IFeedbackRepository FeedbackRepository { get; }
+        IFeedbackRepliesRepository FeedbackRepliesRepository { get; }
+        IQnARepository QnARepository { get; }
+        IQnARepliesRepository QnARepliesRepository { get; }
         ApplicationDbContext dbContext { get; }
         public Task<int> SaveChangeAsync();
     }

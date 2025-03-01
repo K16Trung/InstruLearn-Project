@@ -18,7 +18,7 @@ namespace InstruLearn_Application.DAL.Repository
             _appDbContext = appDbContext;
         }
 
-        public async Task<IEnumerable<Course_Content_Item>> GetAllWithDetailsAsync()
+        public async Task<IEnumerable<Course_Content_Item>> GetAllAsync()
         {
             return await _appDbContext.Course_Content_Items
                                      .Include(ci => ci.ItemType)
@@ -26,7 +26,7 @@ namespace InstruLearn_Application.DAL.Repository
                                      .ToListAsync();
         }
 
-        public async Task<Course_Content_Item> GetByIdWithDetailsAsync(int itemId)
+        public async Task<Course_Content_Item> GetByIdAsync(int itemId)
         {
             return await _appDbContext.Course_Content_Items
                                      .Include(ci => ci.ItemType)

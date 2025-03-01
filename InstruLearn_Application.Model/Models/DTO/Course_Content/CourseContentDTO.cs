@@ -1,4 +1,5 @@
-﻿using System;
+﻿using InstruLearn_Application.Model.Models.DTO.Course_Content_Item;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,5 +12,6 @@ namespace InstruLearn_Application.Model.Models.DTO.Course_Content
         public int ContentId { get; set; }
         public int CourseId { get; set; }
         public string Heading { get; set; }
+        public ICollection<CourseContentItemDTO> CourseContentItems { get; set; }
     }
 }

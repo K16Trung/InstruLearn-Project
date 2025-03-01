@@ -25,6 +25,10 @@ namespace InstruLearn_Application.DAL.UoW
         private readonly IWalletRepository _walletRepository;
         private readonly IPaymentRepository _paymentRepository;
         private readonly IWalletTransactionRepository _walletTransactionRepository;
+        private readonly IFeedbackRepository _feedbackRepository;
+        private readonly IFeedbackRepliesRepository _feedbackRepliesRepository;
+        private readonly IQnARepository _qnARepository;
+        private readonly IQnARepliesRepository _qnARepliesRepository;
         private readonly ApplicationDbContext _dbContext;
         private bool disposed = false;
 
@@ -42,11 +46,16 @@ namespace InstruLearn_Application.DAL.UoW
         public IWalletRepository WalletRepository {  get { return _walletRepository; } }
         public IPaymentRepository PaymentsRepository { get { return _paymentRepository; } }
         public IWalletTransactionRepository WalletTransactionRepository {  get { return _walletTransactionRepository; } }
+        public IFeedbackRepository FeedbackRepository { get { return _feedbackRepository; } }
+        public IFeedbackRepliesRepository FeedbackRepliesRepository { get { return _feedbackRepliesRepository; } }
+        public IQnARepository QnARepository { get { return _qnARepository; } }
+        public IQnARepliesRepository QnARepliesRepository { get { return _qnARepliesRepository; } }
         public ApplicationDbContext dbContext { get { return _dbContext; } }
 
         
 
         public UnitOfWork(ApplicationDbContext dbContext, IAccountRepository accountRepository, IAdminRepository adminRepository, IManagerRepository managerRepository, IStaffRepository staffRepository, ILearnerRepository learnerRepository, ITeacherRepository teacherRepository, ICourseRepository courseRepository, ICourseTypeRepository courseTypeRepository, ICourseContentRepository courseContentRepository, IItemTypeRepository itemTypeRepository, ICourseContentItemRepository courseContentItemRepository, IWalletRepository walletRepository, IPaymentRepository paymentRepository, IWalletTransactionRepository walletTransactionRepository)
+        public UnitOfWork(ApplicationDbContext dbContext, IAccountRepository accountRepository, IAdminRepository adminRepository, IManagerRepository managerRepository, IStaffRepository staffRepository, ILearnerRepository learnerRepository, ITeacherRepository teacherRepository, ICourseRepository courseRepository, ICourseTypeRepository courseTypeRepository, ICourseContentRepository courseContentRepository, IItemTypeRepository itemTypeRepository, ICourseContentItemRepository courseContentItemRepository, IFeedbackRepository feedbackRepository, IFeedbackRepliesRepository feedbackRepliesRepository, IQnARepository qnARepository, IQnARepliesRepository qnARepliesRepository)
         {
             _dbContext = dbContext;
             _adminRepository = adminRepository;
@@ -63,6 +72,10 @@ namespace InstruLearn_Application.DAL.UoW
             _walletRepository = walletRepository;
             _paymentRepository = paymentRepository;
             _walletTransactionRepository = walletTransactionRepository;
+            _feedbackRepository = feedbackRepository;
+            _feedbackRepliesRepository = feedbackRepliesRepository;
+            _qnARepository = qnARepository;
+            _qnARepliesRepository = qnARepliesRepository;
         }
 
         protected virtual void Dispose(bool disposing)
