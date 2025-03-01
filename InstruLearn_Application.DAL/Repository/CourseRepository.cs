@@ -19,14 +19,29 @@ namespace InstruLearn_Application.DAL.Repository
             _appDbContext = appDbContext;
         }
 
-        public async Task<IEnumerable<Course>> GetAllWithTypeAsync()
+        public async Task<IEnumerable<Course>> GetAllAsync()
         {
-            return await _appDbContext.Courses.Include(c => c.Type).ToListAsync();
+            return await _appDbContext.Courses
+                .Include(c => c.Type)
+                .ToListAsync();
         }
 
-        public async Task<Course> GetByIdWithTypeAsync(int courseId)
+        public async Task<Course> GetByIdAsync(int courseId)
         {
-            return await _appDbContext.Courses.Include(c => c.Type)
+            return await _appDbContext.Courses
+                .Include(c => c.Type)
+                .Include(c => c.CourseContents)
+                    .ThenInclude(cc => cc.CourseContentItems)
+                .Include(c => c.FeedBacks)
+                    .ThenInclude(f => f.Account)
+                .Include(c => c.FeedBacks)
+                    .ThenInclude(f => f.FeedbackReplies)
+                        .ThenInclude(fr => fr.Account)
+                .Include(c => c.QnAs)
+                    .ThenInclude(q => q.Account)
+                .Include(c => c.QnAs)
+                    .ThenInclude(q => q.QnAReplies)
+                        .ThenInclude(qr => qr.Account)
                 .FirstOrDefaultAsync(c => c.CourseId == courseId);
         }
     }

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace InstruLearn_Application.Model.Models.DTO.Feedback
 {
-    internal class CreateFeedbackDTO
+    public class CreateFeedbackDTO
     {
         public int CourseId { get; set; }
         public string AccountId { get; set; }

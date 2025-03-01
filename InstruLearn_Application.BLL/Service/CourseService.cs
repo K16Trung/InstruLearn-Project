@@ -10,6 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using InstruLearn_Application.DAL.UoW.IUoW;
+using InstruLearn_Application.Model.Models.DTO.Feedback;
 
 namespace InstruLearn_Application.BLL.Service
 {
@@ -24,36 +25,18 @@ namespace InstruLearn_Application.BLL.Service
             _mapper = mapper;
         }
 
-        public async Task<ResponseDTO> GetAllCoursesAsync()
+        public async Task<List<GetAllCourseDTO>> GetAllCoursesAsync()
         {
-            var courses = await _unitOfWork.CourseRepository.GetAllWithTypeAsync();
-            var courseDtos = _mapper.Map<IEnumerable<CourseDTO>>(courses);
-            return new ResponseDTO
-            {
-                IsSucceed = true,
-                Message = "Courses retrieved successfully.",
-                Data = courseDtos
-            };
+            var CourseGetAll = await _unitOfWork.CourseRepository.GetAllAsync();
+            var CourseMapper = _mapper.Map<List<GetAllCourseDTO>>(CourseGetAll);
+            return CourseMapper;
         }
 
-        public async Task<ResponseDTO> GetCourseByIdAsync(int courseId)
+        public async Task<CourseDTO> GetCourseByIdAsync(int courseId)
         {
-            var course = await _unitOfWork.CourseRepository.GetByIdWithTypeAsync(courseId);
-            if (course == null)
-            {
-                return new ResponseDTO
-                {
-                    IsSucceed = false,
-                    Message = "Course not found."
-                };
-            }
-            var courseDto = _mapper.Map<CourseDTO>(course);
-            return new ResponseDTO
-            {
-                IsSucceed = true,
-                Message = "Course retrieved successfully.",
-                Data = courseDto
-            };
+            var courseGetById = await _unitOfWork.CourseRepository.GetByIdAsync(courseId);
+            var courseMapper = _mapper.Map<CourseDTO>(courseGetById);
+            return courseMapper;
         }
 
         public async Task<ResponseDTO> AddCourseAsync(CreateCourseDTO createDto)
@@ -69,7 +52,7 @@ namespace InstruLearn_Application.BLL.Service
 
         public async Task<ResponseDTO> UpdateCourseAsync(int courseId, UpdateCourseDTO updateDto)
         {
-            var existingCourse = await _unitOfWork.CourseRepository.GetByIdWithTypeAsync(courseId);
+            var existingCourse = await _unitOfWork.CourseRepository.GetByIdAsync(courseId);
             if (existingCourse == null)
             {
                 return new ResponseDTO
@@ -89,7 +72,7 @@ namespace InstruLearn_Application.BLL.Service
 
         public async Task<ResponseDTO> DeleteCourseAsync(int courseId)
         {
-            var course = await _unitOfWork.CourseRepository.GetByIdWithTypeAsync(courseId);
+            var course = await _unitOfWork.CourseRepository.GetByIdAsync(courseId);
             if (course == null)
             {
                 return new ResponseDTO

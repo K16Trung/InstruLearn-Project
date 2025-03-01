@@ -10,10 +10,10 @@ namespace InstruLearn_Application.BLL.Service.IService
 {
     public interface IFeedbackService
     {
-        Task<ResponseDTO> CreateFeedbackAsync(FeedbackDTO feedbackDTO);
-        Task<ResponseDTO> UpdateFeedbackAsync(int feedbackId, FeedbackDTO feedbackDTO);
+        Task<ResponseDTO> CreateFeedbackAsync(CreateFeedbackDTO feedbackDTO);
+        Task<ResponseDTO> UpdateFeedbackAsync(int feedbackId, UpdateFeedbackDTO feedbackDTO);
         Task<ResponseDTO> DeleteFeedbackAsync(int feedbackId);
-        Task<ResponseDTO> GetFeedbackByIdAsync(int feedbackId);
+        Task<FeedbackDTO> GetFeedbackByIdAsync(int feedbackId);
         Task<List<FeedbackDTO>> GetAllFeedbackAsync();
     }
 }

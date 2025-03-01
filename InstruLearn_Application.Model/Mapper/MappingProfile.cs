@@ -97,7 +97,14 @@ namespace InstruLearn_Application.Model.Mapper
             .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
 
             // Course mapping
-            CreateMap<Course, CourseDTO>().ReverseMap();
+            CreateMap<Course, CourseDTO>()
+            .ForMember(dest => dest.TypeName, opt => opt.MapFrom(src => src.Type.TypeName))
+            .ForMember(dest => dest.CourseContents, opt => opt.MapFrom(src => src.CourseContents))
+            .ForMember(dest => dest.FeedBacks, opt => opt.MapFrom(src => src.FeedBacks))
+            .ForMember(dest => dest.QnAs, opt => opt.MapFrom(src => src.QnAs));
+            CreateMap<Course, GetAllCourseDTO>()
+             .ForMember(dest => dest.TypeName, opt => opt.MapFrom(src => src.Type.TypeName))
+             .ReverseMap();
             CreateMap<CreateCourseDTO, Course>().ReverseMap();
             CreateMap<UpdateCourseDTO, Course>().ReverseMap();
 
@@ -110,7 +117,9 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<UpdateCourseTypeDTO, CourseType>().ReverseMap();
 
             // Course_Content mapping
-            CreateMap<Course_Content, CourseContentDTO>().ReverseMap();
+            CreateMap<Course_Content, CourseContentDTO>().ReverseMap()
+            .ForMember(dest => dest.CourseContentItems, opt => opt.MapFrom(src => src.CourseContentItems))
+            .ReverseMap();
             CreateMap<CreateCourseContentDTO, Course_Content>().ReverseMap();
             CreateMap<UpdateCourseContentDTO, Course_Content>().ReverseMap();
 
@@ -121,7 +130,8 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<UpdateItemTypeDTO, ItemTypes>().ReverseMap();
 
             // Course_Content_Item mapping
-            CreateMap<Course_Content_Item, CourseContentItemDTO>().ReverseMap();
+            CreateMap<Course_Content_Item, CourseContentItemDTO>()
+            .ReverseMap();
             CreateMap<CreateCourseContentItemDTO, Course_Content_Item>().ReverseMap();
             CreateMap<UpdateCourseContentItemDTO, Course_Content_Item>().ReverseMap();
 
@@ -130,6 +140,7 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Account.Email))
                 .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Account.Role.ToString()))
                 .ForMember(dest => dest.Replies, opt => opt.MapFrom(src => src.FeedbackReplies))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreateAt))
                 .ReverseMap();
 
             CreateMap<CreateFeedbackDTO, FeedBack>();
@@ -139,6 +150,7 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<FeedbackReplies, FeedbackRepliesDTO>()
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Account.Email))
                 .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Account.Role.ToString()))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreateAt))
                 .ReverseMap();
 
             CreateMap<CreateFeedbackRepliesDTO, FeedbackReplies>();
@@ -149,6 +161,7 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Account.Email))
                 .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Account.Role.ToString()))
                 .ForMember(dest => dest.Replies, opt => opt.MapFrom(src => src.QnAReplies))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreateAt))
                 .ReverseMap();
 
             CreateMap<CreateQnADTO, QnA>();
@@ -158,6 +171,7 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<QnAReplies, QnARepliesDTO>()
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Account.Email))
                 .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Account.Role.ToString()))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreateAt))
                 .ReverseMap();
 
             CreateMap<CreateQnARepliesDTO, QnAReplies>();

@@ -13,7 +13,7 @@ namespace InstruLearn_Application.BLL.Service.IService
         Task<ResponseDTO> CreateQnAAsync(CreateQnADTO createQnADTO);
         Task<ResponseDTO> UpdateQnAAsync(int questionId, UpdateQnADTO updateQnADTO);
         Task<ResponseDTO> DeleteQnAAsync(int questionId);
-        Task<ResponseDTO> GetQnAByIdAsync(int questionId);
+        Task<QnADTO> GetQnAByIdAsync(int questionId);
         Task<List<QnADTO>> GetAllQnAAsync();
     }
 }
