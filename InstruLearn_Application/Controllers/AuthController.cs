@@ -61,27 +61,27 @@ namespace InstruLearn_Application.Controllers
             {
                 "Admin" => await _dbContext.Admins
                     .Where(a => a.AccountId == accountId)
-                    .Select(a => new { a.AdminId, a.Fullname, a.Account.Email, a.Account.Username, Role = role })
+                    .Select(a => new { a.AdminId, a.AccountId, a.Fullname, a.Account.Email, a.Account.Username, Role = role })
                     .FirstOrDefaultAsync(),
 
                 "Staff" => await _dbContext.Staffs
                     .Where(s => s.AccountId == accountId)
-                    .Select(s => new { s.StaffId, s.Fullname, s.Account.Email, s.Account.Username, Role = role })
+                    .Select(s => new { s.StaffId, s.AccountId, s.Fullname, s.Account.Email, s.Account.Username, Role = role })
                     .FirstOrDefaultAsync(),
 
                 "Teacher" => await _dbContext.Teachers
                     .Where(t => t.AccountId == accountId)
-                    .Select(t => new { t.TeacherId, t.Fullname, t.Heading, t.Details, t.Links, t.Account.Email, t.Account.Username, Role = role })
+                    .Select(t => new { t.TeacherId, t.AccountId, t.Fullname, t.Heading, t.Details, t.Links, t.Account.Email, t.Account.Username, Role = role })
                     .FirstOrDefaultAsync(),
 
                 "Manager" => await _dbContext.Managers
                     .Where(m => m.AccountId == accountId)
-                    .Select(m => new { m.ManagerId, m.Fullname, m.Account.Email, m.Account.Username, Role = role })
+                    .Select(m => new { m.ManagerId, m.AccountId, m.Fullname, m.Account.Email, m.Account.Username, Role = role })
                     .FirstOrDefaultAsync(),
 
                 "Learner" => await _dbContext.Learners
                     .Where(l => l.AccountId == accountId)
-                    .Select(l => new { l.LearnerId, l.FullName, l.PhoneNumber, l.Account.Email, l.Account.Username, Role = role })
+                    .Select(l => new { l.LearnerId, l.AccountId, l.FullName, l.PhoneNumber, l.Account.Email, l.Account.Username, Role = role })
                     .FirstOrDefaultAsync(),
 
                 _ => null
