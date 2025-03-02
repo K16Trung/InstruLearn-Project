@@ -25,7 +25,7 @@ namespace InstruLearn_Application.BLL.Service
         }
         public async Task<ResponseDTO> GetAllCourseContentAsync()
         {
-            var coursesContent = await _unitOfWork.CourseContentRepository.GetAllWithContentAsync();
+            var coursesContent = await _unitOfWork.CourseContentRepository.GetAllAsync();
             var courseContentDtos = _mapper.Map<IEnumerable<CourseContentDTO>>(coursesContent);
             return new ResponseDTO
             {
@@ -37,7 +37,7 @@ namespace InstruLearn_Application.BLL.Service
 
         public async Task<ResponseDTO> GetCourseContentByIdAsync(int courseContentId)
         {
-            var courseContent = await _unitOfWork.CourseContentRepository.GetByIdWithContentAsync(courseContentId);
+            var courseContent = await _unitOfWork.CourseContentRepository.GetByIdAsync(courseContentId);
             if (courseContent == null)
             {
                 return new ResponseDTO

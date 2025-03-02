@@ -9,7 +9,5 @@ namespace InstruLearn_Application.DAL.Repository.IRepository
 {
     public interface ICourseContentRepository : IGenericRepository<Course_Content>
     {
-        Task<IEnumerable<Course_Content>> GetAllWithContentAsync();
-        Task<Course_Content> GetByIdWithContentAsync(int contentId);
     }
 }

@@ -18,14 +18,20 @@ namespace InstruLearn_Application.DAL.Repository
             _appDbContext = appDbContext;
         }
 
-        public async Task<IEnumerable<Course_Content>> GetAllWithContentAsync()
+        public async Task<IEnumerable<Course_Content>> GetAllAsync()
         {
-            return await _appDbContext.Course_Contents.Include(c => c.Course).ToListAsync();
+            return await _appDbContext.Course_Contents
+                .Include(c => c.Course)
+                .Include(c => c.CourseContentItems)
+                .ToListAsync();
         }
 
-        public async Task<Course_Content> GetByIdWithContentAsync(int contentId)
+        public async Task<Course_Content> GetByIdAsync(int contentId)
         {
-            return await _appDbContext.Course_Contents.Include(c => c.Course)
+            return await _appDbContext.Course_Contents
+                .Include(c => c.Course)
+                .Include(c => c.CourseContentItems)
+                    .ThenInclude(ci => ci.ItemType)
                 .FirstOrDefaultAsync(c => c.ContentId == contentId);
         }
     }
