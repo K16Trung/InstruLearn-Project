@@ -29,6 +29,15 @@ namespace InstruLearn_Application.BLL.Service
         {
             var CourseGetAll = await _unitOfWork.CourseRepository.GetAllAsync();
             var CourseMapper = _mapper.Map<List<GetAllCourseDTO>>(CourseGetAll);
+            foreach (var course in CourseGetAll)
+            {
+                var courseDTO = CourseMapper.FirstOrDefault(c => c.CourseId == course.CourseId);
+                if (courseDTO != null)
+                {
+                    var feedbacks = await _unitOfWork.FeedbackRepository.GetFeedbacksByCourseIdAsync(course.CourseId);
+                    courseDTO.Rating = (int)CalculateAverageRating(feedbacks.ToList());
+                }
+            }
             return CourseMapper;
         }
 
@@ -36,6 +45,10 @@ namespace InstruLearn_Application.BLL.Service
         {
             var courseGetById = await _unitOfWork.CourseRepository.GetByIdAsync(courseId);
             var courseMapper = _mapper.Map<CourseDTO>(courseGetById);
+            if (courseGetById != null && courseGetById.FeedBacks != null)
+            {
+                courseMapper.Rating = (int)CalculateAverageRating(courseGetById.FeedBacks);
+            }
             return courseMapper;
         }
 
@@ -88,6 +101,13 @@ namespace InstruLearn_Application.BLL.Service
                 Message = "Course deleted successfully."
             };
         }
-    }
+        private double CalculateAverageRating(ICollection<FeedBack> feedbacks)
+        {
+            if (feedbacks == null || feedbacks.Count == 0)
+                return 0;
 
+            double totalRating = feedbacks.Sum(f => f.Rating);
+            return Math.Round(totalRating / feedbacks.Count, 1);
+        }
+    }
 }
