@@ -17,5 +17,6 @@ namespace InstruLearn_Application.Model.Models
         public string? Heading { get; set; }
         public string? Details { get; set; }
         public string? Links { get; set; }
+        public ICollection<Class> Classes { get; set; }
     }
 }

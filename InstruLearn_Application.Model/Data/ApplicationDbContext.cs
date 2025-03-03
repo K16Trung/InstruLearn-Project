@@ -28,6 +28,10 @@ namespace InstruLearn_Application.Model.Data
         public DbSet<Wallet> Wallets { get; set; }
         public DbSet<Payment> Payments { get; set; }
         public DbSet<WalletTransaction> WalletTransactions { get; set; }
+        public DbSet<Class> Classes { get; set; }
+        public DbSet<ClassDay> ClassDays { get; set; }
+        public DbSet<Center_Course> Center_Courses { get; set; }
+        public DbSet<Curriculum> Curriculums { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -158,6 +162,40 @@ namespace InstruLearn_Application.Model.Data
                 .HasForeignKey(p => p.WalletTransactionId)
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Class>()
+                .HasOne(c => c.CenterCourse)    
+                .WithMany(cc => cc.Classes)
+                .HasForeignKey(c => c.CenterCourseId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Class>()
+                .HasOne(c => c.Curriculum)
+                .WithMany(cu => cu.Classes)
+                .HasForeignKey(c => c.CuriculumId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Class>()
+                .HasOne(c => c.Teacher)
+                .WithMany(t => t.Classes)
+                .HasForeignKey(c => c.TeacherId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Curriculum>()
+                .HasOne(cu => cu.CenterCourse)
+                .WithMany(cc => cc.Curriculums)
+                .HasForeignKey(cu => cu.CenterCourseId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ClassDay>()
+                .HasOne(cd => cd.Class)
+                .WithMany(c => c.ClassDays)
+                .HasForeignKey(cd => cd.ClassId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Class>()
+                .Property(c => c.Price)
+                .HasColumnType("decimal(18,2)");
         }
     }
 }
