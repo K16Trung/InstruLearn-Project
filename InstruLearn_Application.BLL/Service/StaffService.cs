@@ -64,7 +64,7 @@ namespace InstruLearn_Application.BLL.Service
                 Username = createStaffDTO.Email,
                 Email = createStaffDTO.Email,
                 PasswordHash = HashPassword(createStaffDTO.Password),
-                Role = AccountRoles.Teacher,
+                Role = AccountRoles.Staff,
                 IsActive = AccountStatus.Active,
 
                 RefreshToken = _jwtHelper.GenerateRefreshToken(),
