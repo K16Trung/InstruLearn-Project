@@ -1,4 +1,5 @@
-﻿using System;
+﻿using InstruLearn_Application.Model.Enum;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,5 +15,6 @@ namespace InstruLearn_Application.Model.Models.DTO.Learner
         public string Email { get; set; }
         public string Username { get; set; }
         public string PhoneNumber { get; set; }
+        public AccountStatus IsActive { get; set; }
     }
 }
