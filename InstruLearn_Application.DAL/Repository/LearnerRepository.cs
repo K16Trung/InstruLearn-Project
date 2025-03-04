@@ -19,7 +19,7 @@ namespace InstruLearn_Application.DAL.Repository
             _appDbContext = appDbContext;
         }
 
-        public async Task<Learner?> GetById(int leanerId)
+        public async Task<Learner?> GetByIdAsync(int leanerId)
         {
             return await _appDbContext.Learners
                 .Include(c => c.Account)
