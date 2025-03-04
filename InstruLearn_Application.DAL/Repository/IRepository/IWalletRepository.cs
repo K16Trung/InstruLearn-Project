@@ -9,5 +9,6 @@ namespace InstruLearn_Application.DAL.Repository.IRepository
 {
     public interface IWalletRepository : IGenericRepository<Wallet>
     {
+        Task<Wallet> GetWalletByLearnerIdAsync(int learnerId);
     }
 }
