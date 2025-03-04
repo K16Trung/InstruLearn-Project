@@ -61,7 +61,7 @@ namespace InstruLearn_Application.BLL.Service
             var account = new Account
             {
                 AccountId = Guid.NewGuid().ToString(),
-                Username = createManagerDTO.Email,
+                Username = createManagerDTO.Username,
                 Email = createManagerDTO.Email,
                 PasswordHash = HashPassword(createManagerDTO.Password),
                 Role = AccountRoles.Manager,
