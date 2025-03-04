@@ -56,7 +56,7 @@ namespace InstruLearn_Application.BLL.Service
             };
 
                 PaymentData paymentData = new PaymentData(
-                orderCode: new Random().Next(100000, 999999),
+                orderCode: long.TryParse(transaction.TransactionId, out long orderCode) ? orderCode : new Random().Next(100000, 999999),
                 amount: (int)amount,
                 description: "Add Funds to Wallet",
                 items: items,
