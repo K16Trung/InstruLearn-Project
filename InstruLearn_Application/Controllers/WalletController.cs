@@ -45,5 +45,16 @@ namespace InstruLearn_Application.Controllers
             return Ok(new { message = "Payment status updated successfully" });
         }
 
+        [HttpGet("{learnerId}")]
+        public async Task<IActionResult> GetWalletByLearnerId(int learnerId)
+        {
+            var response = await _walletService.GetWalletByLearnerIdAsync(learnerId);
+
+            if (!response.IsSucceed)
+                return NotFound(response);
+
+            return Ok(response);
+        }
+
     }
 }
