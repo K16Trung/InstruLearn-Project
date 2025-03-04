@@ -16,6 +16,7 @@ using InstruLearn_Application.Model.Models.DTO.QnA;
 using InstruLearn_Application.Model.Models.DTO.QnAReplies;
 using InstruLearn_Application.Model.Models.DTO.Staff;
 using InstruLearn_Application.Model.Models.DTO.Teacher;
+using InstruLearn_Application.Model.Models.DTO.Wallet;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -176,6 +177,12 @@ namespace InstruLearn_Application.Model.Mapper
 
             CreateMap<CreateQnARepliesDTO, QnAReplies>();
             CreateMap<UpdateQnARepliesDTO, QnAReplies>();
+
+            // Wallet
+            CreateMap<Wallet, WalletDTO>()
+            .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.Learner.FullName))
+            .ForMember(dest => dest.Username, opt => opt.MapFrom(src => src.Learner.Account.Username))
+            .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Learner.Account.Email));
 
         }
     }

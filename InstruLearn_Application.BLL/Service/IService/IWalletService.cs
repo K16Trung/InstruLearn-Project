@@ -11,5 +11,6 @@ namespace InstruLearn_Application.BLL.Service.IService
     {
         Task<ResponseDTO> AddFundsToWallet(int learnerId, decimal amount);
         Task<ResponseDTO> UpdatePaymentStatusAsync(string orderCode, string status);
+        Task<ResponseDTO> GetWalletByLearnerIdAsync(int learnerId);
     }
 }

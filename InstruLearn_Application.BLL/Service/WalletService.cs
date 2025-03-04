@@ -1,10 +1,13 @@
-﻿using InstruLearn_Application.BLL.Service.IService;
+﻿using AutoMapper;
+using InstruLearn_Application.BLL.Service.IService;
+using InstruLearn_Application.DAL.Repository;
 using InstruLearn_Application.DAL.Repository.IRepository;
 using InstruLearn_Application.DAL.UoW.IUoW;
 using InstruLearn_Application.Model.Configuration;
 using InstruLearn_Application.Model.Enum;
 using InstruLearn_Application.Model.Models;
 using InstruLearn_Application.Model.Models.DTO;
+using InstruLearn_Application.Model.Models.DTO.Wallet;
 using Net.payOS;
 using Net.payOS.Types;
 using System;
@@ -18,12 +21,14 @@ namespace InstruLearn_Application.BLL.Service
     public class WalletService : IWalletService
     {
         private readonly PayOSSettings _payOSSettings;
+        private readonly IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
 
-        public WalletService(PayOSSettings payOSSettings, IUnitOfWork unitOfWork)
+        public WalletService(PayOSSettings payOSSettings, IUnitOfWork unitOfWork, IMapper mapper)
         {
             _payOSSettings = payOSSettings;
             _unitOfWork = unitOfWork;
+            _mapper = mapper;
         }
 
         public async Task<ResponseDTO> AddFundsToWallet(int learnerId, decimal amount)
@@ -88,7 +93,8 @@ namespace InstruLearn_Application.BLL.Service
         public async Task<ResponseDTO> UpdatePaymentStatusAsync(string orderCode, string status)
         {
             var transaction = await _unitOfWork.WalletTransactionRepository
-                .FirstOrDefaultAsync(t => t.TransactionId == orderCode);
+                .GetTransactionWithWalletAsync(orderCode);
+
 
             if (transaction == null)
             {
@@ -107,6 +113,31 @@ namespace InstruLearn_Application.BLL.Service
 
             await _unitOfWork.SaveChangeAsync();
             return new ResponseDTO { IsSucceed = true, Message = "Payment status updated" };
+        }
+
+        public async Task<ResponseDTO> GetWalletByLearnerIdAsync(int learnerId)
+        {
+            var wallet = await _unitOfWork.WalletRepository.GetWalletByLearnerIdAsync(learnerId);
+
+            if (wallet == null)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Wallet not found",
+                    Data = null
+                };
+            }
+
+            // Use AutoMapper to map Wallet entity to WalletDTO
+            var walletDto = _mapper.Map<WalletDTO>(wallet);
+
+            return new ResponseDTO
+            {
+                IsSucceed = true,
+                Message = "Wallet retrieved successfully",
+                Data = walletDto
+            };
         }
     }
 }
