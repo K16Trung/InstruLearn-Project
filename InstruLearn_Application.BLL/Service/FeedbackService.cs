@@ -71,9 +71,9 @@ namespace InstruLearn_Application.BLL.Service
 
             return response;
         }
-        public async Task<ResponseDTO> UpdateFeedbackAsync(int id, UpdateFeedbackDTO updatefeedbackDTO)
+        public async Task<ResponseDTO> UpdateFeedbackAsync(int feedbackId, UpdateFeedbackDTO updatefeedbackDTO)
         {
-            var feedbackUpdate = await _unitOfWork.FeedbackRepository.GetByIdAsync(id);
+            var feedbackUpdate = await _unitOfWork.FeedbackRepository.GetByIdAsync(feedbackId);
             if (feedbackUpdate != null)
             {
                 feedbackUpdate = _mapper.Map(updatefeedbackDTO, feedbackUpdate);
@@ -99,12 +99,12 @@ namespace InstruLearn_Application.BLL.Service
                 Message = "Feedback not found!"
             };
         }
-        public async Task<ResponseDTO> DeleteFeedbackAsync(int id)
+        public async Task<ResponseDTO> DeleteFeedbackAsync(int feedbackId)
         {
-            var deleteFeedback = await _unitOfWork.FeedbackRepository.GetByIdAsync(id);
+            var deleteFeedback = await _unitOfWork.FeedbackRepository.GetByIdAsync(feedbackId);
             if (deleteFeedback != null)
             {
-                await _unitOfWork.FeedbackRepository.DeleteAsync(id);
+                await _unitOfWork.FeedbackRepository.DeleteAsync(feedbackId);
                 await _unitOfWork.SaveChangeAsync();
 
                 return new ResponseDTO
@@ -118,7 +118,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Feedback with ID {id} not found"
+                    Message = $"Feedback with ID {feedbackId} not found"
                 };
             }
 

@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using InstruLearn_Application.BLL.Service.IService;
 using InstruLearn_Application.DAL.UoW.IUoW;
-using InstruLearn_Application.Model.Models.DTO.Feedback;
 using InstruLearn_Application.Model.Models.DTO;
 using InstruLearn_Application.Model.Models;
 using System;
@@ -29,15 +28,15 @@ namespace InstruLearn_Application.BLL.Service
             var classDayMapper = _mapper.Map<List<ClassDayDTO>>(classDayGetAll);
             return classDayMapper;
         }
-        public async Task<ClassDayDTO> GetFeedbackByIdAsync(int classDayId)
+        public async Task<ClassDayDTO> GetClassDayByIdAsync(int classDayId)
         {
             var classDayGetById = await _unitOfWork.ClassDayRepository.GetByIdAsync(classDayId);
             var classDayMapper = _mapper.Map<ClassDayDTO>(classDayGetById);
             return classDayMapper;
         }
-        public async Task<ResponseDTO> CreateClassDayAsync(CreateClassDayDTO createClassDayDTO)
+        public async Task<ResponseDTO> AddClassDayAsync(CreateClassDayDTO createClassDayDTO)
         {
-            var classfind = await _unitOfWork.AccountRepository.GetByIdAsync(createClassDayDTO.ClassId);
+            var classfind = await _unitOfWork.ClassRepository.GetByIdAsync(createClassDayDTO.ClassId);
             if (classfind == null)
             {
                 return new ResponseDTO
@@ -56,51 +55,51 @@ namespace InstruLearn_Application.BLL.Service
             var response = new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Feedback added successfully",
+                Message = "ClassDay added successfully",
             };
 
             return response;
         }
-        public async Task<ResponseDTO> UpdateFeedbackAsync(int id, UpdateFeedbackDTO updatefeedbackDTO)
+        public async Task<ResponseDTO> UpdateClassDayAsync(int classDayId, UpdateClassDayDTO updateClassDayDTO)
         {
-            var feedbackUpdate = await _unitOfWork.FeedbackRepository.GetByIdAsync(id);
-            if (feedbackUpdate != null)
+            var classDayUpdate = await _unitOfWork.ClassDayRepository.GetByIdAsync(classDayId);
+            if (classDayUpdate != null)
             {
-                feedbackUpdate = _mapper.Map(updatefeedbackDTO, feedbackUpdate);
-                await _unitOfWork.FeedbackRepository.UpdateAsync(feedbackUpdate);
+                classDayUpdate = _mapper.Map(updateClassDayDTO, classDayUpdate);
+                await _unitOfWork.ClassDayRepository.UpdateAsync(classDayUpdate);
                 var result = await _unitOfWork.SaveChangeAsync();
                 if (result > 0)
                 {
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "Feedback update successfully!"
+                        Message = "Class update successfully!"
                     };
                 }
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Feedback update failed!"
+                    Message = "Class update failed!"
                 };
             }
             return new ResponseDTO
             {
                 IsSucceed = false,
-                Message = "Feedback not found!"
+                Message = "Class not found!"
             };
         }
-        public async Task<ResponseDTO> DeleteFeedbackAsync(int id)
+        public async Task<ResponseDTO> DeleteClassDayAsync(int classDayId)
         {
-            var deleteFeedback = await _unitOfWork.FeedbackRepository.GetByIdAsync(id);
-            if (deleteFeedback != null)
+            var deleteClassDay = await _unitOfWork.ClassDayRepository.GetByIdAsync(classDayId);
+            if (deleteClassDay != null)
             {
-                await _unitOfWork.FeedbackRepository.DeleteAsync(id);
+                await _unitOfWork.ClassDayRepository.DeleteAsync(classDayId);
                 await _unitOfWork.SaveChangeAsync();
 
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Feedback deleted successfully"
+                    Message = "ClassDay deleted successfully"
                 };
             }
             else
@@ -108,8 +107,9 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Feedback with ID {id} not found"
+                    Message = $"ClassDay with ID {classDayId} not found"
                 };
             }
         }
+    }
 }

@@ -13,7 +13,7 @@ namespace InstruLearn_Application.BLL.Service.IService
         Task<List<ClassDayDTO>> GetAllClassDayAsync();
         Task<ClassDayDTO> GetClassDayByIdAsync(int classDayId);
         Task<ResponseDTO> AddClassDayAsync(CreateClassDayDTO createClassDayDTO);
-        Task<ResponseDTO> UpdateClassDayAsync(UpdateClassDayDTO updateClassDayDTO);
+        Task<ResponseDTO> UpdateClassDayAsync(int classDayId, UpdateClassDayDTO updateClassDayDTO);
         Task<ResponseDTO> DeleteClassDayAsync(int classDayId);
     }
 }

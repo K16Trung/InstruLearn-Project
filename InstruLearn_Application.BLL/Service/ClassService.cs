@@ -85,9 +85,9 @@ namespace InstruLearn_Application.BLL.Service
             return response;
         }
 
-        public async Task<ResponseDTO> UpdateClassAsync(int id, UpdateClassDTO updateClassDTO)
+        public async Task<ResponseDTO> UpdateClassAsync(int classId, UpdateClassDTO updateClassDTO)
         {
-            var classUpdate = await _unitOfWork.ClassRepository.GetByIdAsync(id);
+            var classUpdate = await _unitOfWork.ClassRepository.GetByIdAsync(classId);
             if (classUpdate != null)
             {
                 classUpdate = _mapper.Map(updateClassDTO, classUpdate);
@@ -114,12 +114,12 @@ namespace InstruLearn_Application.BLL.Service
             };
         }
 
-        public async Task<ResponseDTO> DeleteClassAsync(string id)
+        public async Task<ResponseDTO> DeleteClassAsync(int classId)
         {
-            var deleteFeedback = await _unitOfWork.ClassRepository.GetByIdAsync(id);
+            var deleteFeedback = await _unitOfWork.ClassRepository.GetByIdAsync(classId);
             if (deleteFeedback != null)
             {
-                await _unitOfWork.ClassRepository.DeleteAsync(id);
+                await _unitOfWork.ClassRepository.DeleteAsync(classId);
                 await _unitOfWork.SaveChangeAsync();
 
                 return new ResponseDTO
@@ -133,7 +133,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Class with ID {id} not found"
+                    Message = $"Class with ID {classId} not found"
                 };
             }
         }
