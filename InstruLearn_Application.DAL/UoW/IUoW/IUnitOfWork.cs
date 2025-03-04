@@ -28,6 +28,10 @@ namespace InstruLearn_Application.DAL.UoW.IUoW
         IFeedbackRepliesRepository FeedbackRepliesRepository { get; }
         IQnARepository QnARepository { get; }
         IQnARepliesRepository QnARepliesRepository { get; }
+        IClassRepository ClassRepository { get; }
+        IClassDayRepository ClassDayRepository { get; }
+        ICenterCourseRepository CenterCourseRepository { get; }
+        ICurriculumRepository CurriculumRepository { get; } 
         ApplicationDbContext dbContext { get; }
         public Task<int> SaveChangeAsync();
     }

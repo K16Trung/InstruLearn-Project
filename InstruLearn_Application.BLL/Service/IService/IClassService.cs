@@ -10,8 +10,8 @@ namespace InstruLearn_Application.BLL.Service.IService
 {
     public interface IClassService
     {
-        Task<ResponseDTO> GetAllClassAsync();
-        Task<ResponseDTO> GetClassByIdAsync (string id);
+        Task<ClassDTO> GetAllClassAsync();
+        Task<ClassDTO> GetClassByIdAsync (int classid);
         Task<ResponseDTO> AddClassAsync (CreateClassDTO createClassDTO);
         Task<ResponseDTO> UpdateClassAsync (UpdateClassDTO updateClassDTO);
         Task<ResponseDTO> DeleteClassAsync (string id);

@@ -6,7 +6,10 @@ using System.Threading.Tasks;
 
 namespace InstruLearn_Application.Model.Models.DTO.ClassDay
 {
-    class CreateClassDayDTO
+    public class CreateClassDayDTO
     {
+        public int classDayId { get; set; }
+        public int ClassId { get; set; }
+        public DayOfWeek Day { get; set; }
     }
 }
