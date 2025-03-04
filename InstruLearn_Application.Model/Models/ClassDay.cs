@@ -15,7 +15,7 @@ namespace InstruLearn_Application.Model.Models
         public DayOfWeek Day { get; set; }
 
         // Navigation property
-        public virtual Class Class { get; set; }
+        public Class Class { get; set; }
     }
 
 }
