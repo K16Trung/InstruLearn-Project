@@ -11,5 +11,7 @@ namespace InstruLearn_Application.Model.Models.DTO.Staff
         public int StaffId { get; set; }
         public string AccountId { get; set; }
         public string Fullname { get; set; }
+        public string Email { get; set; }
+        public string Username { get; set; }
     }
 }

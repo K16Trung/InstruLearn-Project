@@ -57,7 +57,9 @@ namespace InstruLearn_Application.Model.Mapper
             .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Account.Role));
 
             // Manager mapping
-            CreateMap<Manager, ManagerDTO>().ReverseMap();
+            CreateMap<Manager, ManagerDTO>()
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Account.Email))
+                .ForMember(dest => dest.Username, opt => opt.MapFrom(src => src.Account.Username));
             CreateMap<CreateManagerDTO, Manager>().ReverseMap();
             CreateMap<UpdateManagerDTO, Manager>().ReverseMap();
 
@@ -68,7 +70,9 @@ namespace InstruLearn_Application.Model.Mapper
             .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Account.Role));
 
             // Staff mapping
-            CreateMap<Staff, StaffDTO>().ReverseMap();
+            CreateMap<Staff, StaffDTO>()
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Account.Email))
+                .ForMember(dest => dest.Username, opt => opt.MapFrom(src => src.Account.Username));
             CreateMap<CreateStaffDTO, Staff>().ReverseMap();
             CreateMap<UpdateStaffDTO, Staff>().ReverseMap();
 
@@ -79,7 +83,9 @@ namespace InstruLearn_Application.Model.Mapper
             .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Account.Role));
 
             // Learner mapping
-            CreateMap<Learner, LearnerDTO>().ReverseMap();
+            CreateMap<Learner, LearnerDTO>()
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Account.Email))
+                .ForMember(dest => dest.Username, opt => opt.MapFrom(src => src.Account.Username));
             CreateMap<Learner, RegisterDTO>()
             .ForMember(dest => dest.Username, opt => opt.MapFrom(src => src.Account.Username))
             .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Account.Email))
