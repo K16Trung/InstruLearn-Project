@@ -23,4 +23,9 @@
     <PackageReference Include="payOS" Version="1.0.9" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Models\DTO\CenterCourse\" />
+    <Folder Include="Models\DTO\Curriculum\" />
+  </ItemGroup>
+
 </Project>
