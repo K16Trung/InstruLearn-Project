@@ -70,7 +70,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "Curriculum update successfully!"
+                        Message = "Curriculum update successfully! "
                     };
                 }
                 return new ResponseDTO
