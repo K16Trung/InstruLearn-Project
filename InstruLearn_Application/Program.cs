@@ -95,6 +95,7 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<IClassDayRepository, ClassDayRepository>();
             builder.Services.AddScoped<ICurriculumRepository, CurriculumRepository>();
             builder.Services.AddScoped<ICenterCourseRepository, CenterCourseRepository>();
+            builder.Services.AddScoped<IMajorRepository, MajorRepository>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             builder.Services.AddScoped<IAuthService, AuthService>();
@@ -118,6 +119,7 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<IClassDayService, ClassDayService>();
             builder.Services.AddScoped<ICurriculumService, CurriculumService>();
             builder.Services.AddScoped<ICenterCourseService, CenterCourseService>();
+            builder.Services.AddScoped<IMajorService, MajorService>();
 
             builder.Services.AddAutoMapper(typeof(MappingProfile));
 
