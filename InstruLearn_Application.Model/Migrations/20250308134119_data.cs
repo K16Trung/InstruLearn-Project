@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace InstruLearn_Application.Model.Migrations
 {
     /// <inheritdoc />
-    public partial class db : Migration
+    public partial class data : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -33,6 +33,19 @@ namespace InstruLearn_Application.Model.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Center_Courses",
+                columns: table => new
+                {
+                    CenterCourseId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CenterCourseName = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Center_Courses", x => x.CenterCourseId);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "CourseType",
                 columns: table => new
                 {
@@ -56,6 +69,19 @@ namespace InstruLearn_Application.Model.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ItemTypes", x => x.ItemTypeId);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Majors",
+                columns: table => new
+                {
+                    MajorId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    MajorName = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Majors", x => x.MajorId);
                 });
 
             migrationBuilder.CreateTable(
@@ -163,6 +189,27 @@ namespace InstruLearn_Application.Model.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Curriculums",
+                columns: table => new
+                {
+                    CurriculumId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CenterCourseId = table.Column<int>(type: "int", nullable: false),
+                    CurriculumName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Curriculums", x => x.CurriculumId);
+                    table.ForeignKey(
+                        name: "FK_Curriculums_Center_Courses_CenterCourseId",
+                        column: x => x.CenterCourseId,
+                        principalTable: "Center_Courses",
+                        principalColumn: "CenterCourseId",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Courses",
                 columns: table => new
                 {
@@ -189,6 +236,26 @@ namespace InstruLearn_Application.Model.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "MajorTests",
+                columns: table => new
+                {
+                    MajorTestId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    MajorId = table.Column<int>(type: "int", nullable: false),
+                    MajorTestName = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MajorTests", x => x.MajorTestId);
+                    table.ForeignKey(
+                        name: "FK_MajorTests_Majors_MajorId",
+                        column: x => x.MajorId,
+                        principalTable: "Majors",
+                        principalColumn: "MajorId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Wallets",
                 columns: table => new
                 {
@@ -207,6 +274,83 @@ namespace InstruLearn_Application.Model.Migrations
                         principalTable: "Learners",
                         principalColumn: "LearnerId",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "OneOnOneRequests",
+                columns: table => new
+                {
+                    RequestId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    LearnerId = table.Column<int>(type: "int", nullable: false),
+                    TeacherId = table.Column<int>(type: "int", nullable: true),
+                    MajorId = table.Column<int>(type: "int", nullable: false),
+                    TimeStart = table.Column<TimeOnly>(type: "time", nullable: false),
+                    NumberOfSessions = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OneOnOneRequests", x => x.RequestId);
+                    table.ForeignKey(
+                        name: "FK_OneOnOneRequests_Learners_LearnerId",
+                        column: x => x.LearnerId,
+                        principalTable: "Learners",
+                        principalColumn: "LearnerId",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_OneOnOneRequests_Majors_MajorId",
+                        column: x => x.MajorId,
+                        principalTable: "Majors",
+                        principalColumn: "MajorId",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_OneOnOneRequests_Teachers_TeacherId",
+                        column: x => x.TeacherId,
+                        principalTable: "Teachers",
+                        principalColumn: "TeacherId",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Classes",
+                columns: table => new
+                {
+                    ClassId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ClassName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    TeacherId = table.Column<int>(type: "int", nullable: false),
+                    CenterCourseId = table.Column<int>(type: "int", nullable: false),
+                    CuriculumId = table.Column<int>(type: "int", nullable: false),
+                    StartDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    EndDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ClassTime = table.Column<TimeOnly>(type: "time", nullable: false),
+                    MaxStudents = table.Column<int>(type: "int", nullable: false),
+                    totalDays = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Classes", x => x.ClassId);
+                    table.ForeignKey(
+                        name: "FK_Classes_Center_Courses_CenterCourseId",
+                        column: x => x.CenterCourseId,
+                        principalTable: "Center_Courses",
+                        principalColumn: "CenterCourseId",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Classes_Curriculums_CuriculumId",
+                        column: x => x.CuriculumId,
+                        principalTable: "Curriculums",
+                        principalColumn: "CurriculumId",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Classes_Teachers_TeacherId",
+                        column: x => x.TeacherId,
+                        principalTable: "Teachers",
+                        principalColumn: "TeacherId",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -308,6 +452,112 @@ namespace InstruLearn_Application.Model.Migrations
                         column: x => x.WalletId,
                         principalTable: "Wallets",
                         principalColumn: "WalletId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "OneOnOneRequestDays",
+                columns: table => new
+                {
+                    RequestDayId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    RequestId = table.Column<int>(type: "int", nullable: false),
+                    DayOfWeeks = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OneOnOneRequestDays", x => x.RequestDayId);
+                    table.ForeignKey(
+                        name: "FK_OneOnOneRequestDays_OneOnOneRequests_RequestId",
+                        column: x => x.RequestId,
+                        principalTable: "OneOnOneRequests",
+                        principalColumn: "RequestId",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "OneOnOneRequestTests",
+                columns: table => new
+                {
+                    TestSubmitionId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    RequestId = table.Column<int>(type: "int", nullable: false),
+                    TestId = table.Column<int>(type: "int", nullable: false),
+                    Video = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Score = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Feedback = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreateAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OneOnOneRequestTests", x => x.TestSubmitionId);
+                    table.ForeignKey(
+                        name: "FK_OneOnOneRequestTests_MajorTests_TestId",
+                        column: x => x.TestId,
+                        principalTable: "MajorTests",
+                        principalColumn: "MajorTestId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_OneOnOneRequestTests_OneOnOneRequests_RequestId",
+                        column: x => x.RequestId,
+                        principalTable: "OneOnOneRequests",
+                        principalColumn: "RequestId",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "OneOnOneSchedules",
+                columns: table => new
+                {
+                    SchedulesId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    RequestId = table.Column<int>(type: "int", nullable: false),
+                    LearnerId = table.Column<int>(type: "int", nullable: false),
+                    TeacherId = table.Column<int>(type: "int", nullable: false),
+                    TimeStart = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    TimeEnd = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OneOnOneSchedules", x => x.SchedulesId);
+                    table.ForeignKey(
+                        name: "FK_OneOnOneSchedules_Learners_LearnerId",
+                        column: x => x.LearnerId,
+                        principalTable: "Learners",
+                        principalColumn: "LearnerId",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_OneOnOneSchedules_OneOnOneRequests_RequestId",
+                        column: x => x.RequestId,
+                        principalTable: "OneOnOneRequests",
+                        principalColumn: "RequestId",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_OneOnOneSchedules_Teachers_TeacherId",
+                        column: x => x.TeacherId,
+                        principalTable: "Teachers",
+                        principalColumn: "TeacherId",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ClassDays",
+                columns: table => new
+                {
+                    ClassDayId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ClassId = table.Column<int>(type: "int", nullable: false),
+                    Day = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ClassDays", x => x.ClassDayId);
+                    table.ForeignKey(
+                        name: "FK_ClassDays_Classes_ClassId",
+                        column: x => x.ClassId,
+                        principalTable: "Classes",
+                        principalColumn: "ClassId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -431,6 +681,26 @@ namespace InstruLearn_Application.Model.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_ClassDays_ClassId",
+                table: "ClassDays",
+                column: "ClassId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Classes_CenterCourseId",
+                table: "Classes",
+                column: "CenterCourseId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Classes_CuriculumId",
+                table: "Classes",
+                column: "CuriculumId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Classes_TeacherId",
+                table: "Classes",
+                column: "TeacherId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Course_Content_Items_ContentId",
                 table: "Course_Content_Items",
                 column: "ContentId");
@@ -449,6 +719,11 @@ namespace InstruLearn_Application.Model.Migrations
                 name: "IX_Courses_TypeId",
                 table: "Courses",
                 column: "TypeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Curriculums_CenterCourseId",
+                table: "Curriculums",
+                column: "CenterCourseId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_FeedbackReplies_AccountId",
@@ -477,10 +752,60 @@ namespace InstruLearn_Application.Model.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_MajorTests_MajorId",
+                table: "MajorTests",
+                column: "MajorId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Managers_AccountId",
                 table: "Managers",
                 column: "AccountId",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OneOnOneRequestDays_RequestId",
+                table: "OneOnOneRequestDays",
+                column: "RequestId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OneOnOneRequests_LearnerId",
+                table: "OneOnOneRequests",
+                column: "LearnerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OneOnOneRequests_MajorId",
+                table: "OneOnOneRequests",
+                column: "MajorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OneOnOneRequests_TeacherId",
+                table: "OneOnOneRequests",
+                column: "TeacherId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OneOnOneRequestTests_RequestId",
+                table: "OneOnOneRequestTests",
+                column: "RequestId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OneOnOneRequestTests_TestId",
+                table: "OneOnOneRequestTests",
+                column: "TestId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OneOnOneSchedules_LearnerId",
+                table: "OneOnOneSchedules",
+                column: "LearnerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OneOnOneSchedules_RequestId",
+                table: "OneOnOneSchedules",
+                column: "RequestId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OneOnOneSchedules_TeacherId",
+                table: "OneOnOneSchedules",
+                column: "TeacherId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Payments_WalletId",
@@ -543,6 +868,9 @@ namespace InstruLearn_Application.Model.Migrations
                 name: "Admins");
 
             migrationBuilder.DropTable(
+                name: "ClassDays");
+
+            migrationBuilder.DropTable(
                 name: "Course_Content_Items");
 
             migrationBuilder.DropTable(
@@ -550,6 +878,15 @@ namespace InstruLearn_Application.Model.Migrations
 
             migrationBuilder.DropTable(
                 name: "Managers");
+
+            migrationBuilder.DropTable(
+                name: "OneOnOneRequestDays");
+
+            migrationBuilder.DropTable(
+                name: "OneOnOneRequestTests");
+
+            migrationBuilder.DropTable(
+                name: "OneOnOneSchedules");
 
             migrationBuilder.DropTable(
                 name: "Payments");
@@ -561,7 +898,7 @@ namespace InstruLearn_Application.Model.Migrations
                 name: "Staffs");
 
             migrationBuilder.DropTable(
-                name: "Teachers");
+                name: "Classes");
 
             migrationBuilder.DropTable(
                 name: "Course_Contents");
@@ -573,16 +910,34 @@ namespace InstruLearn_Application.Model.Migrations
                 name: "FeedBacks");
 
             migrationBuilder.DropTable(
+                name: "MajorTests");
+
+            migrationBuilder.DropTable(
+                name: "OneOnOneRequests");
+
+            migrationBuilder.DropTable(
                 name: "WalletTransactions");
 
             migrationBuilder.DropTable(
                 name: "QnA");
 
             migrationBuilder.DropTable(
+                name: "Curriculums");
+
+            migrationBuilder.DropTable(
+                name: "Majors");
+
+            migrationBuilder.DropTable(
+                name: "Teachers");
+
+            migrationBuilder.DropTable(
                 name: "Wallets");
 
             migrationBuilder.DropTable(
                 name: "Courses");
+
+            migrationBuilder.DropTable(
+                name: "Center_Courses");
 
             migrationBuilder.DropTable(
                 name: "Learners");

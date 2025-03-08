@@ -32,6 +32,12 @@ namespace InstruLearn_Application.Model.Data
         public DbSet<ClassDay> ClassDays { get; set; }
         public DbSet<Center_Course> Center_Courses { get; set; }
         public DbSet<Curriculum> Curriculums { get; set; }
+        public DbSet<OneOnOneRequest> OneOnOneRequests { get; set; }
+        public DbSet<OneOnOneRequestTests> OneOnOneRequestTests { get; set; }
+        public DbSet<OneOnOneRequestDays> OneOnOneRequestDays { get; set; }
+        public DbSet<OneOnOneSchedules> OneOnOneSchedules { get; set; }
+        public DbSet<Major> Majors { get; set; }
+        public DbSet<MajorTest> MajorTests { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -196,6 +202,68 @@ namespace InstruLearn_Application.Model.Data
             modelBuilder.Entity<Class>()
                 .Property(c => c.Price)
                 .HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<Major>()
+                .HasMany(m => m.MajorTests)
+                .WithOne(mt => mt.Major)
+                .HasForeignKey(mt => mt.MajorId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Major>()
+                .HasMany(m => m.OneOnOneRequests)
+                .WithOne(o => o.Major)
+                .HasForeignKey(o => o.MajorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Teacher>()
+                .HasMany(t => t.OneOnOneRequests)
+                .WithOne(o => o.Teacher)
+                .HasForeignKey(o => o.TeacherId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Learner>()
+                .HasMany(l => l.OneOnOneRequests)
+                .WithOne(o => o.Learner)
+                .HasForeignKey(o => o.LearnerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<OneOnOneRequest>()
+                .HasMany(o => o.OneOnOneRequestDays)
+                .WithOne(d => d.OneOnOneRequest)
+                .HasForeignKey(d => d.RequestId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<OneOnOneRequest>()
+                .HasMany(o => o.OneOnOneSchedules)
+                .WithOne(s => s.OneOnOneRequest)
+                .HasForeignKey(s => s.RequestId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<OneOnOneRequest>()
+                .HasMany(o => o.OneOnOneRequestTests)
+                .WithOne(rt => rt.OneOnOneRequest)
+                .HasForeignKey(rt => rt.RequestId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<MajorTest>()
+                .HasMany(mt => mt.OneOnOneRequestTests)
+                .WithOne(rt => rt.MajorTest)
+                .HasForeignKey(rt => rt.TestId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Teacher>()
+                .HasMany(t => t.OneOnOneSchedules)
+                .WithOne(s => s.Teacher)
+                .HasForeignKey(s => s.TeacherId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Learner>()
+                .HasMany(l => l.OneOnOneSchedules)
+                .WithOne(s => s.Learner)
+                .HasForeignKey(s => s.LearnerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+
         }
     }
 }

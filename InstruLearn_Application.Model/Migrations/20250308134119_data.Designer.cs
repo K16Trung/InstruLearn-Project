@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InstruLearn_Application.Model.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250301094315_db")]
-    partial class db
+    [Migration("20250308134119_data")]
+    partial class data
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -92,6 +92,97 @@ namespace InstruLearn_Application.Model.Migrations
                         .IsUnique();
 
                     b.ToTable("Admins");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.Center_Course", b =>
+                {
+                    b.Property<int>("CenterCourseId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CenterCourseId"));
+
+                    b.Property<string>("CenterCourseName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("CenterCourseId");
+
+                    b.ToTable("Center_Courses");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.Class", b =>
+                {
+                    b.Property<int>("ClassId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ClassId"));
+
+                    b.Property<int>("CenterCourseId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ClassName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<TimeOnly>("ClassTime")
+                        .HasColumnType("time");
+
+                    b.Property<int>("CuriculumId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("MaxStudents")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TeacherId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("totalDays")
+                        .HasColumnType("int");
+
+                    b.HasKey("ClassId");
+
+                    b.HasIndex("CenterCourseId");
+
+                    b.HasIndex("CuriculumId");
+
+                    b.HasIndex("TeacherId");
+
+                    b.ToTable("Classes");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.ClassDay", b =>
+                {
+                    b.Property<int>("ClassDayId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ClassDayId"));
+
+                    b.Property<int>("ClassId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Day")
+                        .HasColumnType("int");
+
+                    b.HasKey("ClassDayId");
+
+                    b.HasIndex("ClassId");
+
+                    b.ToTable("ClassDays");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Course", b =>
@@ -201,6 +292,32 @@ namespace InstruLearn_Application.Model.Migrations
                     b.HasIndex("ItemTypeId");
 
                     b.ToTable("Course_Content_Items");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.Curriculum", b =>
+                {
+                    b.Property<int>("CurriculumId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CurriculumId"));
+
+                    b.Property<int>("CenterCourseId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CurriculumName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("CurriculumId");
+
+                    b.HasIndex("CenterCourseId");
+
+                    b.ToTable("Curriculums");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.FeedBack", b =>
@@ -313,6 +430,45 @@ namespace InstruLearn_Application.Model.Migrations
                     b.ToTable("Learners");
                 });
 
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.Major", b =>
+                {
+                    b.Property<int>("MajorId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MajorId"));
+
+                    b.Property<string>("MajorName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("MajorId");
+
+                    b.ToTable("Majors");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.MajorTest", b =>
+                {
+                    b.Property<int>("MajorTestId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MajorTestId"));
+
+                    b.Property<int>("MajorId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("MajorTestName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("MajorTestId");
+
+                    b.HasIndex("MajorId");
+
+                    b.ToTable("MajorTests");
+                });
+
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Manager", b =>
                 {
                     b.Property<int>("ManagerId")
@@ -335,6 +491,137 @@ namespace InstruLearn_Application.Model.Migrations
                         .IsUnique();
 
                     b.ToTable("Managers");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.OneOnOneRequest", b =>
+                {
+                    b.Property<int>("RequestId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RequestId"));
+
+                    b.Property<int>("LearnerId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MajorId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("NumberOfSessions")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("TeacherId")
+                        .HasColumnType("int");
+
+                    b.Property<TimeOnly>("TimeStart")
+                        .HasColumnType("time");
+
+                    b.HasKey("RequestId");
+
+                    b.HasIndex("LearnerId");
+
+                    b.HasIndex("MajorId");
+
+                    b.HasIndex("TeacherId");
+
+                    b.ToTable("OneOnOneRequests");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.OneOnOneRequestDays", b =>
+                {
+                    b.Property<int>("RequestDayId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RequestDayId"));
+
+                    b.Property<int>("DayOfWeeks")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RequestId")
+                        .HasColumnType("int");
+
+                    b.HasKey("RequestDayId");
+
+                    b.HasIndex("RequestId");
+
+                    b.ToTable("OneOnOneRequestDays");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.OneOnOneRequestTests", b =>
+                {
+                    b.Property<int>("TestSubmitionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TestSubmitionId"));
+
+                    b.Property<DateTime>("CreateAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Feedback")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("RequestId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Score")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TestId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Video")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("TestSubmitionId");
+
+                    b.HasIndex("RequestId");
+
+                    b.HasIndex("TestId");
+
+                    b.ToTable("OneOnOneRequestTests");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.OneOnOneSchedules", b =>
+                {
+                    b.Property<int>("SchedulesId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SchedulesId"));
+
+                    b.Property<int>("LearnerId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RequestId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TeacherId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("TimeEnd")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("TimeStart")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("SchedulesId");
+
+                    b.HasIndex("LearnerId");
+
+                    b.HasIndex("RequestId");
+
+                    b.HasIndex("TeacherId");
+
+                    b.ToTable("OneOnOneSchedules");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Payment", b =>
@@ -565,6 +852,44 @@ namespace InstruLearn_Application.Model.Migrations
                     b.Navigation("Account");
                 });
 
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.Class", b =>
+                {
+                    b.HasOne("InstruLearn_Application.Model.Models.Center_Course", "CenterCourse")
+                        .WithMany("Classes")
+                        .HasForeignKey("CenterCourseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("InstruLearn_Application.Model.Models.Curriculum", "Curriculum")
+                        .WithMany("Classes")
+                        .HasForeignKey("CuriculumId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("InstruLearn_Application.Model.Models.Teacher", "Teacher")
+                        .WithMany("Classes")
+                        .HasForeignKey("TeacherId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CenterCourse");
+
+                    b.Navigation("Curriculum");
+
+                    b.Navigation("Teacher");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.ClassDay", b =>
+                {
+                    b.HasOne("InstruLearn_Application.Model.Models.Class", "Class")
+                        .WithMany("ClassDays")
+                        .HasForeignKey("ClassId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Class");
+                });
+
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Course", b =>
                 {
                     b.HasOne("InstruLearn_Application.Model.Models.CourseType", "Type")
@@ -604,6 +929,17 @@ namespace InstruLearn_Application.Model.Migrations
                     b.Navigation("CourseContent");
 
                     b.Navigation("ItemType");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.Curriculum", b =>
+                {
+                    b.HasOne("InstruLearn_Application.Model.Models.Center_Course", "CenterCourse")
+                        .WithMany("Curriculums")
+                        .HasForeignKey("CenterCourseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CenterCourse");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.FeedBack", b =>
@@ -655,6 +991,17 @@ namespace InstruLearn_Application.Model.Migrations
                     b.Navigation("Account");
                 });
 
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.MajorTest", b =>
+                {
+                    b.HasOne("InstruLearn_Application.Model.Models.Major", "Major")
+                        .WithMany("MajorTests")
+                        .HasForeignKey("MajorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Major");
+                });
+
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Manager", b =>
                 {
                     b.HasOne("InstruLearn_Application.Model.Models.Account", "Account")
@@ -664,6 +1011,89 @@ namespace InstruLearn_Application.Model.Migrations
                         .IsRequired();
 
                     b.Navigation("Account");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.OneOnOneRequest", b =>
+                {
+                    b.HasOne("InstruLearn_Application.Model.Models.Learner", "Learner")
+                        .WithMany("OneOnOneRequests")
+                        .HasForeignKey("LearnerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("InstruLearn_Application.Model.Models.Major", "Major")
+                        .WithMany("OneOnOneRequests")
+                        .HasForeignKey("MajorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("InstruLearn_Application.Model.Models.Teacher", "Teacher")
+                        .WithMany("OneOnOneRequests")
+                        .HasForeignKey("TeacherId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Learner");
+
+                    b.Navigation("Major");
+
+                    b.Navigation("Teacher");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.OneOnOneRequestDays", b =>
+                {
+                    b.HasOne("InstruLearn_Application.Model.Models.OneOnOneRequest", "OneOnOneRequest")
+                        .WithMany("OneOnOneRequestDays")
+                        .HasForeignKey("RequestId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("OneOnOneRequest");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.OneOnOneRequestTests", b =>
+                {
+                    b.HasOne("InstruLearn_Application.Model.Models.OneOnOneRequest", "OneOnOneRequest")
+                        .WithMany("OneOnOneRequestTests")
+                        .HasForeignKey("RequestId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("InstruLearn_Application.Model.Models.MajorTest", "MajorTest")
+                        .WithMany("OneOnOneRequestTests")
+                        .HasForeignKey("TestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("MajorTest");
+
+                    b.Navigation("OneOnOneRequest");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.OneOnOneSchedules", b =>
+                {
+                    b.HasOne("InstruLearn_Application.Model.Models.Learner", "Learner")
+                        .WithMany("OneOnOneSchedules")
+                        .HasForeignKey("LearnerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("InstruLearn_Application.Model.Models.OneOnOneRequest", "OneOnOneRequest")
+                        .WithMany("OneOnOneSchedules")
+                        .HasForeignKey("RequestId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("InstruLearn_Application.Model.Models.Teacher", "Teacher")
+                        .WithMany("OneOnOneSchedules")
+                        .HasForeignKey("TeacherId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Learner");
+
+                    b.Navigation("OneOnOneRequest");
+
+                    b.Navigation("Teacher");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Payment", b =>
@@ -787,6 +1217,18 @@ namespace InstruLearn_Application.Model.Migrations
                     b.Navigation("Teacher");
                 });
 
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.Center_Course", b =>
+                {
+                    b.Navigation("Classes");
+
+                    b.Navigation("Curriculums");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.Class", b =>
+                {
+                    b.Navigation("ClassDays");
+                });
+
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Course", b =>
                 {
                     b.Navigation("CourseContents");
@@ -806,6 +1248,11 @@ namespace InstruLearn_Application.Model.Migrations
                     b.Navigation("CourseContentItems");
                 });
 
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.Curriculum", b =>
+                {
+                    b.Navigation("Classes");
+                });
+
             modelBuilder.Entity("InstruLearn_Application.Model.Models.FeedBack", b =>
                 {
                     b.Navigation("FeedbackReplies");
@@ -818,13 +1265,47 @@ namespace InstruLearn_Application.Model.Migrations
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Learner", b =>
                 {
+                    b.Navigation("OneOnOneRequests");
+
+                    b.Navigation("OneOnOneSchedules");
+
                     b.Navigation("Wallet")
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.Major", b =>
+                {
+                    b.Navigation("MajorTests");
+
+                    b.Navigation("OneOnOneRequests");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.MajorTest", b =>
+                {
+                    b.Navigation("OneOnOneRequestTests");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.OneOnOneRequest", b =>
+                {
+                    b.Navigation("OneOnOneRequestDays");
+
+                    b.Navigation("OneOnOneRequestTests");
+
+                    b.Navigation("OneOnOneSchedules");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.QnA", b =>
                 {
                     b.Navigation("QnAReplies");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.Teacher", b =>
+                {
+                    b.Navigation("Classes");
+
+                    b.Navigation("OneOnOneRequests");
+
+                    b.Navigation("OneOnOneSchedules");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Wallet", b =>

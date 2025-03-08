@@ -18,5 +18,7 @@ namespace InstruLearn_Application.Model.Models
         public string? Details { get; set; }
         public string? Links { get; set; }
         public ICollection<Class> Classes { get; set; }
+        public ICollection<OneOnOneRequest> OneOnOneRequests { get; set; }
+        public ICollection<OneOnOneSchedules> OneOnOneSchedules { get; set; }
     }
 }
