@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace InstruLearn_Application.DAL.Repository
 {
-    public class CourseRepository : GenericRepository<Course>, ICourseRepository
+    public class CourseRepository : GenericRepository<Course_Package>, ICourseRepository
     {
         private readonly ApplicationDbContext _appDbContext;
 
@@ -19,16 +19,16 @@ namespace InstruLearn_Application.DAL.Repository
             _appDbContext = appDbContext;
         }
 
-        public async Task<IEnumerable<Course>> GetAllAsync()
+        public async Task<IEnumerable<Course_Package>> GetAllAsync()
         {
-            return await _appDbContext.Courses
+            return await _appDbContext.CoursePackages
                 .Include(c => c.Type)
                 .ToListAsync();
         }
 
-        public async Task<Course> GetByIdAsync(int courseId)
+        public async Task<Course_Package> GetByIdAsync(int courseId)
         {
-            return await _appDbContext.Courses
+            return await _appDbContext.CoursePackages
                 .Include(c => c.Type)
                 .Include(c => c.CourseContents)
                     .ThenInclude(cc => cc.CourseContentItems)
@@ -42,7 +42,7 @@ namespace InstruLearn_Application.DAL.Repository
                 .Include(c => c.QnAs)
                     .ThenInclude(q => q.QnAReplies)
                         .ThenInclude(qr => qr.Account)
-                .FirstOrDefaultAsync(c => c.CourseId == courseId);
+                .FirstOrDefaultAsync(c => c.CoursePackageId == courseId);
         }
     }
 }

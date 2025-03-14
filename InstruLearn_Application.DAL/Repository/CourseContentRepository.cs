@@ -21,7 +21,7 @@ namespace InstruLearn_Application.DAL.Repository
         public async Task<IEnumerable<Course_Content>> GetAllAsync()
         {
             return await _appDbContext.Course_Contents
-                .Include(c => c.Course)
+                .Include(c => c.CoursePackage)
                 .Include(c => c.CourseContentItems)
                 .ToListAsync();
         }
@@ -29,7 +29,7 @@ namespace InstruLearn_Application.DAL.Repository
         public async Task<Course_Content> GetByIdAsync(int contentId)
         {
             return await _appDbContext.Course_Contents
-                .Include(c => c.Course)
+                .Include(c => c.CoursePackage)
                 .Include(c => c.CourseContentItems)
                     .ThenInclude(ci => ci.ItemType)
                 .FirstOrDefaultAsync(c => c.ContentId == contentId);

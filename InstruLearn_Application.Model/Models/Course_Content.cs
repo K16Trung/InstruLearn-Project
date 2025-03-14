@@ -12,7 +12,7 @@ namespace InstruLearn_Application.Model.Models
         [Key]
         public int ContentId { get; set; }
         public int CourseId { get; set; }
-        public Course Course { get; set; }
+        public Course_Package CoursePackage { get; set; }
         public string Heading { get; set; }
         public ICollection<Course_Content_Item> CourseContentItems { get; set; }
     }

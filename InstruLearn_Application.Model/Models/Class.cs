@@ -12,21 +12,21 @@ namespace InstruLearn_Application.Model.Models
     {
         [Key]
         public int ClassId { get; set; }
-        public string ClassName { get; set; }
         public int TeacherId { get; set; }
-        public int CenterCourseId { get; set; }
-        public int CuriculumId { get; set; }
+        public int CoursePackageId { get; set; }
+        public string ClassName { get; set; }
+        public string TeacherName { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public TimeOnly ClassTime { get; set; }
         public int MaxStudents { get; set; }
-        public int totalDays { get; set; }
         public ClassStatus Status { get; set; }
         public decimal Price { get; set; }
-        // Add these properties
-        public Center_Course CenterCourse { get; set; }
-        public Curriculum Curriculum { get; set; }
+
+        //Navigation property
         public Teacher Teacher { get; set; }
-        public virtual ICollection<ClassDay> ClassDays { get; set; }
+        public Learning_Registration Learning_Registration { get; set; }
+        public Course_Package CoursePackage { get; set; }
+        public ICollection<ClassDay> ClassDays { get; set; }
     }
 }

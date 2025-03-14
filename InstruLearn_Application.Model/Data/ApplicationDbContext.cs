@@ -14,11 +14,11 @@ namespace InstruLearn_Application.Model.Data
 
         public DbSet<Account> Accounts { get; set; }
         public DbSet<Learner> Learners { get; set; }
+        public DbSet<Teacher> Teachers { get; set; }
+        public DbSet<Manager> Managers { get; set; }
         public DbSet<Admin> Admins { get; set; }
         public DbSet<Staff> Staffs { get; set; }
-        public DbSet<Manager> Managers { get; set; }
-        public DbSet<Teacher> Teachers { get; set; }
-        public DbSet<Course> Courses { get; set; }
+        public DbSet<Course_Package> CoursePackages { get; set; }
         public DbSet<Course_Content> Course_Contents { get; set; }
         public DbSet<Course_Content_Item> Course_Content_Items { get; set; }
         public DbSet<FeedBack> FeedBacks { get; set; }
@@ -30,23 +30,16 @@ namespace InstruLearn_Application.Model.Data
         public DbSet<WalletTransaction> WalletTransactions { get; set; }
         public DbSet<Class> Classes { get; set; }
         public DbSet<ClassDay> ClassDays { get; set; }
-        public DbSet<Center_Course> Center_Courses { get; set; }
-        public DbSet<Curriculum> Curriculums { get; set; }
-        public DbSet<OneOnOneRequest> OneOnOneRequests { get; set; }
-        public DbSet<OneOnOneRequestTests> OneOnOneRequestTests { get; set; }
-        public DbSet<OneOnOneRequestDays> OneOnOneRequestDays { get; set; }
-        public DbSet<OneOnOneSchedules> OneOnOneSchedules { get; set; }
         public DbSet<Major> Majors { get; set; }
         public DbSet<MajorTest> MajorTests { get; set; }
+        public DbSet<Learning_Registration> Learning_Registrations { get; set; }
+        public DbSet<Learning_Registration_Type> Learning_Registration_Types { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Entity<Account>()
-                .HasOne(a => a.Admin)
-                .WithOne(a => a.Account)
-                .HasForeignKey<Admin>(a => a.AccountId);
 
             modelBuilder.Entity<Account>()
                 .HasOne(a => a.Learner)
@@ -54,33 +47,24 @@ namespace InstruLearn_Application.Model.Data
                 .HasForeignKey<Learner>(a => a.AccountId);
 
             modelBuilder.Entity<Account>()
-                .HasOne(a => a.Staff)
-                .WithOne(a => a.Account)
-                .HasForeignKey<Staff>(a => a.AccountId);
-
-            modelBuilder.Entity<Account>()
                 .HasOne(a => a.Teacher)
                 .WithOne(a => a.Account)
                 .HasForeignKey<Teacher>(a => a.AccountId);
 
-            modelBuilder.Entity<Account>()
-                .HasOne(a => a.Manager)
-                .WithOne(a => a.Account)
-                .HasForeignKey<Manager>(a => a.AccountId);
 
-            modelBuilder.Entity<Course>()
+            modelBuilder.Entity<Course_Package>()
                 .Property(c => c.Price)
                 .HasColumnType("decimal(18,2)");
 
-            modelBuilder.Entity<Course>()
+            modelBuilder.Entity<Course_Package>()
                 .HasOne(c => c.Type)
-                .WithMany(ct => ct.Courses)
+                .WithMany(ct => ct.CoursePackages)
                 .HasForeignKey(c => c.TypeId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<Course>()
+            modelBuilder.Entity<Course_Package>()
                 .HasMany(c => c.CourseContents)
-                .WithOne(cc => cc.Course)
+                .WithOne(cc => cc.CoursePackage)
                 .HasForeignKey(cc => cc.CourseId)
                 .OnDelete(DeleteBehavior.Cascade);
 
@@ -97,7 +81,7 @@ namespace InstruLearn_Application.Model.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<FeedBack>()
-                .HasOne(f => f.Course)
+                .HasOne(f => f.CoursePackage)
                 .WithMany(c => c.FeedBacks)
                 .HasForeignKey(f => f.CourseId)
                 .OnDelete(DeleteBehavior.Cascade);
@@ -127,7 +111,7 @@ namespace InstruLearn_Application.Model.Data
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<QnA>()
-                .HasOne(q => q.Course)
+                .HasOne(q => q.CoursePackage)
                 .WithMany(c => c.QnAs)
                 .HasForeignKey(q => q.CourseId)
                 .OnDelete(DeleteBehavior.Cascade);
@@ -170,27 +154,9 @@ namespace InstruLearn_Application.Model.Data
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Class>()
-                .HasOne(c => c.CenterCourse)    
-                .WithMany(cc => cc.Classes)
-                .HasForeignKey(c => c.CenterCourseId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<Class>()
-                .HasOne(c => c.Curriculum)
-                .WithMany(cu => cu.Classes)
-                .HasForeignKey(c => c.CuriculumId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<Class>()
                 .HasOne(c => c.Teacher)
                 .WithMany(t => t.Classes)
                 .HasForeignKey(c => c.TeacherId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<Curriculum>()
-                .HasOne(cu => cu.CenterCourse)
-                .WithMany(cc => cc.Curriculums)
-                .HasForeignKey(cu => cu.CenterCourseId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<ClassDay>()
@@ -209,60 +175,23 @@ namespace InstruLearn_Application.Model.Data
                 .HasForeignKey(mt => mt.MajorId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<Major>()
-                .HasMany(m => m.OneOnOneRequests)
-                .WithOne(o => o.Major)
-                .HasForeignKey(o => o.MajorId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<Teacher>()
-                .HasMany(t => t.OneOnOneRequests)
-                .WithOne(o => o.Teacher)
-                .HasForeignKey(o => o.TeacherId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<Learner>()
-                .HasMany(l => l.OneOnOneRequests)
-                .WithOne(o => o.Learner)
-                .HasForeignKey(o => o.LearnerId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<OneOnOneRequest>()
-                .HasMany(o => o.OneOnOneRequestDays)
-                .WithOne(d => d.OneOnOneRequest)
-                .HasForeignKey(d => d.RequestId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<OneOnOneRequest>()
-                .HasMany(o => o.OneOnOneSchedules)
-                .WithOne(s => s.OneOnOneRequest)
-                .HasForeignKey(s => s.RequestId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<OneOnOneRequest>()
-                .HasMany(o => o.OneOnOneRequestTests)
-                .WithOne(rt => rt.OneOnOneRequest)
-                .HasForeignKey(rt => rt.RequestId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<MajorTest>()
-                .HasMany(mt => mt.OneOnOneRequestTests)
-                .WithOne(rt => rt.MajorTest)
-                .HasForeignKey(rt => rt.TestId)
+            modelBuilder.Entity<Learning_Registration>()
+                .HasOne(l => l.Learner)
+                .WithMany(lr => lr.Learning_Registrations)
+                .HasForeignKey(l => l.LearnerId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<Teacher>()
-                .HasMany(t => t.OneOnOneSchedules)
-                .WithOne(s => s.Teacher)
-                .HasForeignKey(s => s.TeacherId)
-                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Learning_Registration_Type>()
+                .HasMany(l => l.Learning_Registrations)
+                .WithOne(lrt => lrt.Learning_Registration_Type)
+                .HasForeignKey(lrt => lrt.TypeId)
+                .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<Learner>()
-                .HasMany(l => l.OneOnOneSchedules)
-                .WithOne(s => s.Learner)
-                .HasForeignKey(s => s.LearnerId)
-                .OnDelete(DeleteBehavior.Restrict);
-
+            modelBuilder.Entity<Class>()
+                .HasOne(l => l.Learning_Registration)
+                .WithMany(lr => lr.classes)
+                .HasForeignKey(l => l.ClassId)
+                .OnDelete(DeleteBehavior.Cascade);
 
         }
     }

@@ -12,6 +12,6 @@ namespace InstruLearn_Application.Model.Models
         [Key]
         public int TypeId { get; set; }
         public string TypeName { get; set; }
-        public ICollection<Course> Courses { get; set; }
+        public ICollection<Course_Package> CoursePackages { get; set; }
     }
 }

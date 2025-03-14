@@ -13,6 +13,5 @@ namespace InstruLearn_Application.Model.Models
         public int MajorId { get; set; }
         public string MajorName { get; set; }
         public ICollection<MajorTest> MajorTests { get; set; }
-        public ICollection<OneOnOneRequest> OneOnOneRequests { get; set; }
     }
 }

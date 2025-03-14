@@ -9,10 +9,10 @@ using System.Threading.Tasks;
 
 namespace InstruLearn_Application.Model.Models
 {
-    public class Course
+    public class Course_Package
     {
         [Key]
-        public int CourseId { get; set; }
+        public int CoursePackageId { get; set; }
         public int TypeId { get; set; }
         public CourseType Type { get; set; }
         public string CourseName { get; set; }

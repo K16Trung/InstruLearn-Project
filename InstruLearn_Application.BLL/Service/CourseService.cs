@@ -31,10 +31,10 @@ namespace InstruLearn_Application.BLL.Service
             var CourseMapper = _mapper.Map<List<GetAllCourseDTO>>(CourseGetAll);
             foreach (var course in CourseGetAll)
             {
-                var courseDTO = CourseMapper.FirstOrDefault(c => c.CourseId == course.CourseId);
+                var courseDTO = CourseMapper.FirstOrDefault(c => c.CourseId == course.CoursePackageId);
                 if (courseDTO != null)
                 {
-                    var feedbacks = await _unitOfWork.FeedbackRepository.GetFeedbacksByCourseIdAsync(course.CourseId);
+                    var feedbacks = await _unitOfWork.FeedbackRepository.GetFeedbacksByCourseIdAsync(course.CoursePackageId);
                     courseDTO.Rating = (int)CalculateAverageRating(feedbacks.ToList());
                 }
             }
@@ -54,7 +54,7 @@ namespace InstruLearn_Application.BLL.Service
 
         public async Task<ResponseDTO> AddCourseAsync(CreateCourseDTO createDto)
         {
-            var course = _mapper.Map<Course>(createDto);
+            var course = _mapper.Map<Course_Package>(createDto);
             await _unitOfWork.CourseRepository.AddAsync(course);
             return new ResponseDTO
             {

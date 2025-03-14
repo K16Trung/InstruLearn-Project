@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace InstruLearn_Application.DAL.Repository.IRepository
 {
-    public interface ICourseRepository : IGenericRepository<Course>
+    public interface ICourseRepository : IGenericRepository<Course_Package>
     {
     }
 }

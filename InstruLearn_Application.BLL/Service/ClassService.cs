@@ -49,29 +49,9 @@ namespace InstruLearn_Application.BLL.Service
                     Message = "Teacher not found",
                 };
             }
-            var centerCourse = await _unitOfWork.CenterCourseRepository.GetByIdAsync(createClassDTO.CenterCourseId);
-            if (centerCourse == null)
-            {
-                return new ResponseDTO
-                {
-                    IsSucceed = false,
-                    Message = "CenterCourse not found",
-                };
-            }
-            var curriculum = await _unitOfWork.CurriculumRepository.GetByIdAsync(createClassDTO.CuriculumId);
-            if (curriculum == null)
-            {
-                return new ResponseDTO
-                {
-                    IsSucceed = false,
-                    Message = "Curriculum not found",
-                };
-            }
 
             var classObj = _mapper.Map<Class>(createClassDTO);
             classObj.Teacher = teacher;
-            classObj.CenterCourse = centerCourse;
-            classObj.Curriculum = curriculum;
 
             await _unitOfWork.ClassRepository.AddAsync(classObj);
             await _unitOfWork.SaveChangeAsync();

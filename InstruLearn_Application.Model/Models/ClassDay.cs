@@ -17,5 +17,4 @@ namespace InstruLearn_Application.Model.Models
         // Navigation property
         public Class Class { get; set; }
     }
-
 }
