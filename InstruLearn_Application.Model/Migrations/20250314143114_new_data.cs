@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace InstruLearn_Application.Model.Migrations
 {
     /// <inheritdoc />
-    public partial class update_new_data : Migration
+    public partial class new_data : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
