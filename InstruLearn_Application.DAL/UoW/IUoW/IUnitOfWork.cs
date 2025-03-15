@@ -31,6 +31,8 @@ namespace InstruLearn_Application.DAL.UoW.IUoW
         IClassRepository ClassRepository { get; }
         IClassDayRepository ClassDayRepository { get; }
         IMajorRepository MajorRepository { get; }
+        ILearningRegisRepository LearningRegisRepository { get; }
+        ILearningRegisTypeRepository LearningRegisTypeRepository { get; }
         ApplicationDbContext dbContext { get; }
         public Task<int> SaveChangeAsync();
     }

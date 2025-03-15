@@ -13,6 +13,8 @@ using InstruLearn_Application.Model.Models.DTO.Feedback;
 using InstruLearn_Application.Model.Models.DTO.FeedbackReplies;
 using InstruLearn_Application.Model.Models.DTO.ItemTypes;
 using InstruLearn_Application.Model.Models.DTO.Learner;
+using InstruLearn_Application.Model.Models.DTO.LearningRegistration;
+using InstruLearn_Application.Model.Models.DTO.LearningRegistrationType;
 using InstruLearn_Application.Model.Models.DTO.Major;
 using InstruLearn_Application.Model.Models.DTO.Manager;
 using InstruLearn_Application.Model.Models.DTO.QnA;
@@ -219,6 +221,18 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<Major, MajorDTO>().ReverseMap();
             CreateMap<CreateMajorDTO, Major>().ReverseMap();
             CreateMap<UpdateMajorDTO, Major>().ReverseMap();
+
+            //🔹 Learning_Registration Mappings
+            CreateMap<Learning_Registration, LearningRegisDTO>()
+                .ForMember(dest => dest.LearnerId, opt => opt.MapFrom(src => src.LearnerId))
+                .ForMember(dest => dest.ClassId, opt => opt.MapFrom(src => src.ClassId))
+                .ForMember(dest => dest.TypeId, opt => opt.MapFrom(src => src.TypeId));
+            CreateMap<CreateLearningRegisDTO, Learning_Registration>().ReverseMap();
+
+            //🔹 Learning_Registration_Type Mappings
+            CreateMap<Learning_Registration_Type, TypeDTO>().ReverseMap();
+            CreateMap<CreateTypeDTO, Learning_Registration_Type>().ReverseMap();
+
         }
     }
 }

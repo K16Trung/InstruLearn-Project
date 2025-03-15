@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace InstruLearn_Application.Model.Enum
 {
-    public enum LearningRegistration
+    public enum LearningRegis
     {
         Pending,
         Accepted,
