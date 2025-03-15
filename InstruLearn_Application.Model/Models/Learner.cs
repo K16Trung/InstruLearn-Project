@@ -18,5 +18,6 @@ namespace InstruLearn_Application.Model.Models
         public string PhoneNumber { get; set; }
         public Wallet Wallet { get; set; }
         public ICollection<Learning_Registration> Learning_Registrations { get; set; }
+        public ICollection<Purchase> Purchases { get; set; }
     }
 }
