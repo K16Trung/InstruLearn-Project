@@ -58,7 +58,7 @@ namespace InstruLearn_Application.BLL.Service
 
             var qnaObj = _mapper.Map<QnA>(createQnADTO);
             qnaObj.Account = account;
-            qnaObj.Course = course;
+            qnaObj.CoursePackage = course;
             qnaObj.CreateAt = DateTime.Now;
 
             await _unitOfWork.QnARepository.AddAsync(qnaObj);

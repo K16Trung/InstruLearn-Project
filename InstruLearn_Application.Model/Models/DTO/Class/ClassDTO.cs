@@ -11,10 +11,9 @@ namespace InstruLearn_Application.Model.Models.DTO.Class
     public class ClassDTO
     {
         public int ClassId { get; set; }
-        public string ClassName { get; set; }
         public int TeacherId { get; set; }
-        public int CenterCourseId { get; set; }
-        public int CuriculumId { get; set; }
+        public int CoursePackageId { get; set; }
+        public string ClassName { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public TimeOnly ClassTime { get; set; }

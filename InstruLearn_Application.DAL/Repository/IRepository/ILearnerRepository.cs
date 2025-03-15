@@ -9,6 +9,5 @@ namespace InstruLearn_Application.DAL.Repository.IRepository
 {
     public interface ILearnerRepository : IGenericRepository<Learner>
     {
-        Task<Learner?> GetById(int learnerId);
     }
 }

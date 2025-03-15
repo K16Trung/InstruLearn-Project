@@ -57,7 +57,7 @@ namespace InstruLearn_Application.BLL.Service
 
             var feedbackObj = _mapper.Map<FeedBack>(createfeedbackDTO);
             feedbackObj.Account = account;
-            feedbackObj.Course = course;
+            feedbackObj.CoursePackage = course;
             feedbackObj.CreateAt = DateTime.Now;
 
             await _unitOfWork.FeedbackRepository.AddAsync(feedbackObj);

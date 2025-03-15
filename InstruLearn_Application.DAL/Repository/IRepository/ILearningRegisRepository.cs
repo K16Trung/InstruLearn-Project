@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace InstruLearn_Application.DAL.Repository.IRepository
 {
-    public interface ICenterCourseRepository : IGenericRepository<Center_Course>
+    public interface ILearningRegisRepository : IGenericRepository<Learning_Registration>
     {
     }
 }

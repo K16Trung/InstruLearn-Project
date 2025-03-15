@@ -9,10 +9,10 @@ using System.Threading.Tasks;
 
 namespace InstruLearn_Application.DAL.Repository
 {
-    public class CenterCourseRepository : GenericRepository<Center_Course>, ICenterCourseRepository
+    public class MajorRepository : GenericRepository<Major>, IMajorRepository
     {
         private readonly ApplicationDbContext _appDbContext;
-        public CenterCourseRepository(ApplicationDbContext appDbContext) : base(appDbContext)
+        public MajorRepository(ApplicationDbContext appDbContext) : base(appDbContext)
         {
             _appDbContext = appDbContext;
         }

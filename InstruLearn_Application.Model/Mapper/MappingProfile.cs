@@ -3,18 +3,19 @@ using InstruLearn_Application.Model.Models;
 using InstruLearn_Application.Model.Models.DTO.Account;
 using InstruLearn_Application.Model.Models.DTO.Admin;
 using InstruLearn_Application.Model.Models.DTO.Auth;
-using InstruLearn_Application.Model.Models.DTO.CenterCourse;
 using InstruLearn_Application.Model.Models.DTO.Class;
 using InstruLearn_Application.Model.Models.DTO.ClassDay;
 using InstruLearn_Application.Model.Models.DTO.Course;
 using InstruLearn_Application.Model.Models.DTO.Course_Content;
 using InstruLearn_Application.Model.Models.DTO.Course_Content_Item;
 using InstruLearn_Application.Model.Models.DTO.CourseType;
-using InstruLearn_Application.Model.Models.DTO.Curriculum;
 using InstruLearn_Application.Model.Models.DTO.Feedback;
 using InstruLearn_Application.Model.Models.DTO.FeedbackReplies;
 using InstruLearn_Application.Model.Models.DTO.ItemTypes;
 using InstruLearn_Application.Model.Models.DTO.Learner;
+using InstruLearn_Application.Model.Models.DTO.LearningRegistration;
+using InstruLearn_Application.Model.Models.DTO.LearningRegistrationType;
+using InstruLearn_Application.Model.Models.DTO.Major;
 using InstruLearn_Application.Model.Models.DTO.Manager;
 using InstruLearn_Application.Model.Models.DTO.QnA;
 using InstruLearn_Application.Model.Models.DTO.QnAReplies;
@@ -57,7 +58,11 @@ namespace InstruLearn_Application.Model.Mapper
             .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Account.Role));
 
             // Manager mapping
-            CreateMap<Manager, ManagerDTO>().ReverseMap();
+            CreateMap<Manager, ManagerDTO>()
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Account.Email))
+                .ForMember(dest => dest.Username, opt => opt.MapFrom(src => src.Account.Username))
+                .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.Account.IsActive))
+                .ReverseMap();
             CreateMap<CreateManagerDTO, Manager>().ReverseMap();
             CreateMap<UpdateManagerDTO, Manager>().ReverseMap();
 
@@ -68,7 +73,11 @@ namespace InstruLearn_Application.Model.Mapper
             .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Account.Role));
 
             // Staff mapping
-            CreateMap<Staff, StaffDTO>().ReverseMap();
+            CreateMap<Staff, StaffDTO>()
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Account.Email))
+                .ForMember(dest => dest.Username, opt => opt.MapFrom(src => src.Account.Username))
+                .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.Account.IsActive))
+                .ReverseMap();
             CreateMap<CreateStaffDTO, Staff>().ReverseMap();
             CreateMap<UpdateStaffDTO, Staff>().ReverseMap();
 
@@ -79,7 +88,11 @@ namespace InstruLearn_Application.Model.Mapper
             .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Account.Role));
 
             // Learner mapping
-            CreateMap<Learner, LearnerDTO>().ReverseMap();
+            CreateMap<Learner, LearnerDTO>()
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Account.Email))
+                .ForMember(dest => dest.Username, opt => opt.MapFrom(src => src.Account.Username))
+                .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.Account.IsActive))
+                .ReverseMap();
             CreateMap<Learner, RegisterDTO>()
             .ForMember(dest => dest.Username, opt => opt.MapFrom(src => src.Account.Username))
             .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Account.Email))
@@ -102,18 +115,18 @@ namespace InstruLearn_Application.Model.Mapper
             .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
 
             // Course mapping
-            CreateMap<Course, CourseDTO>()
+            CreateMap<Course_Package, CourseDTO>()
             .ForMember(dest => dest.TypeName, opt => opt.MapFrom(src => src.Type.TypeName))
             .ForMember(dest => dest.CourseContents, opt => opt.MapFrom(src => src.CourseContents))
             .ForMember(dest => dest.FeedBacks, opt => opt.MapFrom(src => src.FeedBacks))
             .ForMember(dest => dest.QnAs, opt => opt.MapFrom(src => src.QnAs));
-            CreateMap<Course, GetAllCourseDTO>()
+            CreateMap<Course_Package, GetAllCourseDTO>()
              .ForMember(dest => dest.TypeName, opt => opt.MapFrom(src => src.Type.TypeName))
              .ReverseMap();
-            CreateMap<CreateCourseDTO, Course>().ReverseMap();
-            CreateMap<UpdateCourseDTO, Course>().ReverseMap();
+            CreateMap<CreateCourseDTO, Course_Package>().ReverseMap();
+            CreateMap<UpdateCourseDTO, Course_Package>().ReverseMap();
 
-            CreateMap<Course, CourseDTO>()
+            CreateMap<Course_Package, CourseDTO>()
             .ForMember(dest => dest.TypeName, opt => opt.MapFrom(src => src.Type.TypeName));
 
             // Course Type mapping
@@ -191,8 +204,6 @@ namespace InstruLearn_Application.Model.Mapper
             // 🔹 Class Mappings
             CreateMap<Class, ClassDTO>()
                 .ForMember(dest => dest.TeacherId, opt => opt.MapFrom(src => src.Teacher.TeacherId))
-                .ForMember(dest => dest.CenterCourseId, opt => opt.MapFrom(src => src.CenterCourse.CenterCourseId))
-                .ForMember(dest => dest.CenterCourseId, opt => opt.MapFrom(src => src.CenterCourse.CenterCourseName))
                 .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => src.StartDate))
                 .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.EndDate))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
@@ -206,19 +217,22 @@ namespace InstruLearn_Application.Model.Mapper
                 .ReverseMap();
             CreateMap<CreateClassDayDTO, ClassDay>();
 
-            // 🔹 CenterCourse Mappings
-            CreateMap<Center_Course, CenterCourseDTO>()
-                .ForMember(dest => dest.CenterCourseId, opt => opt.MapFrom(src => src.CenterCourseId))
-                .ForMember(dest => dest.CenterCourseName, opt => opt.MapFrom(src => src.CenterCourseName))
-                .ReverseMap();
-            CreateMap<CreateCenterCourseDTO, Center_Course>();
+            //🔹 Major Mappings
+            CreateMap<Major, MajorDTO>().ReverseMap();
+            CreateMap<CreateMajorDTO, Major>().ReverseMap();
+            CreateMap<UpdateMajorDTO, Major>().ReverseMap();
 
-            // 🔹 Curriculum Mappings
-            CreateMap<Curriculum, CurriculumDTO>()
-                .ForMember(dest => dest.CurriculumId, opt => opt.MapFrom(src => src.CurriculumId))
-                .ForMember(dest => dest.CurriculumName, opt => opt.MapFrom(src => src.CurriculumName))
-                .ReverseMap();
-            CreateMap<CreateCurriculumDTO, Curriculum>();
+            //🔹 Learning_Registration Mappings
+            CreateMap<Learning_Registration, LearningRegisDTO>()
+                .ForMember(dest => dest.LearnerId, opt => opt.MapFrom(src => src.LearnerId))
+                .ForMember(dest => dest.ClassId, opt => opt.MapFrom(src => src.ClassId))
+                .ForMember(dest => dest.TypeId, opt => opt.MapFrom(src => src.TypeId));
+            CreateMap<CreateLearningRegisDTO, Learning_Registration>().ReverseMap();
+
+            //🔹 Learning_Registration_Type Mappings
+            CreateMap<Learning_Registration_Type, TypeDTO>().ReverseMap();
+            CreateMap<CreateTypeDTO, Learning_Registration_Type>().ReverseMap();
+
         }
     }
 }

@@ -1,17 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace InstruLearn_Application.Model.Models
+namespace InstruLearn_Application.Model.Models.DTO.LearningRegistrationType
 {
-    public class CourseType
+    public class TypeDTO
     {
-        [Key]
         public int TypeId { get; set; }
         public string TypeName { get; set; }
-        public ICollection<Course_Package> CoursePackages { get; set; }
     }
 }

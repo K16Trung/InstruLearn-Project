@@ -7,11 +7,11 @@ using System.Threading.Tasks;
 
 namespace InstruLearn_Application.Model.Models
 {
-    public class CourseType
+    public class Major
     {
         [Key]
-        public int TypeId { get; set; }
-        public string TypeName { get; set; }
-        public ICollection<Course_Package> CoursePackages { get; set; }
+        public int MajorId { get; set; }
+        public string MajorName { get; set; }
+        public ICollection<MajorTest> MajorTests { get; set; }
     }
 }

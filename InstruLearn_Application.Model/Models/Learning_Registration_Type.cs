@@ -7,11 +7,11 @@ using System.Threading.Tasks;
 
 namespace InstruLearn_Application.Model.Models
 {
-    public class CourseType
+    public class Learning_Registration_Type
     {
         [Key]
         public int TypeId { get; set; }
         public string TypeName { get; set; }
-        public ICollection<Course_Package> CoursePackages { get; set; }
+        public ICollection<Learning_Registration> Learning_Registrations { get; set; }
     }
 }
