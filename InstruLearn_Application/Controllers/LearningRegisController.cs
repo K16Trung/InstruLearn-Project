@@ -24,9 +24,9 @@ namespace InstruLearn_Application.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetLearningRegisById(int learningRegisId)
+        public async Task<IActionResult> GetLearningRegisById(int id)
         {
-            var response = await _learningRegisService.GetLearningRegisByIdAsync(learningRegisId);
+            var response = await _learningRegisService.GetLearningRegisByIdAsync(id);
             return Ok(response);
         }
 
@@ -38,9 +38,9 @@ namespace InstruLearn_Application.Controllers
         }
 
         [HttpDelete("delete/{id}")]
-        public async Task<IActionResult> DeleteLearningRegis(int learningRegisId)
+        public async Task<IActionResult> DeleteLearningRegis(int id)
         {
-            var response = await _learningRegisService.DeleteLearningRegisAsync(learningRegisId);
+            var response = await _learningRegisService.DeleteLearningRegisAsync(id);
             return Ok(response);
         }
     }

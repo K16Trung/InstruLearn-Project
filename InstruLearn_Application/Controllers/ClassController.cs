@@ -21,9 +21,9 @@ namespace InstruLearn_Application.Controllers
             return Ok(result);
         }
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetClassByIdAsync(int classId)
+        public async Task<IActionResult> GetClassByIdAsync(int id)
         {
-            var result = await _classService.GetClassByIdAsync(classId);
+            var result = await _classService.GetClassByIdAsync(id);
             return Ok(result);
         }
         [HttpPost("create")]
@@ -33,15 +33,15 @@ namespace InstruLearn_Application.Controllers
             return Ok(result);
         }
         [HttpPut("update/{id}")]
-        public async Task<IActionResult> UpdateClassAsync(int classId, [FromBody] UpdateClassDTO updateClassDTO)
+        public async Task<IActionResult> UpdateClassAsync(int id, [FromBody] UpdateClassDTO updateClassDTO)
         {
-            var result = await _classService.UpdateClassAsync(classId, updateClassDTO);
+            var result = await _classService.UpdateClassAsync(id, updateClassDTO);
             return Ok(result);
         }
         [HttpDelete("delete/{id}")]
-        public async Task<IActionResult> DeleteClassAsync(int classId)
+        public async Task<IActionResult> DeleteClassAsync(int id)
         {
-            var result = await _classService.DeleteClassAsync(classId);
+            var result = await _classService.DeleteClassAsync(id);
             return Ok(result);
         }
     }
