@@ -115,7 +115,7 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<IQnARepliesService, QnARepliesService>();
             builder.Services.AddScoped<IWalletService, WalletService>();
             builder.Services.AddScoped<IPayOSWebhookService, PayOSWebhookService>();
-            builder.Services.AddScoped<IClassDayService, ClassDayService>();
+            builder.Services.AddScoped<IClassService, ClassService>();
             builder.Services.AddScoped<IClassDayService, ClassDayService>();
             builder.Services.AddScoped<IMajorService, MajorService>();
             builder.Services.AddScoped<ILearningRegisService, LearningRegisService>();

@@ -31,9 +31,9 @@ namespace InstruLearn_Application.BLL.Service
             return ClassMapper;
         }
 
-        public async Task<ClassDTO> GetClassByIdAsync(int classid)
+        public async Task<ClassDTO> GetClassByIdAsync(int classId)
         {
-            var ClassGetById = await _unitOfWork.ClassRepository.GetByIdAsync(classid);
+            var ClassGetById = await _unitOfWork.ClassRepository.GetByIdAsync(classId);
             var ClassMapper = _mapper.Map<ClassDTO>(ClassGetById);
             return ClassMapper;
         }

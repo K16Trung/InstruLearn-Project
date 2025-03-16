@@ -8,6 +8,7 @@ namespace InstruLearn_Application.Model.Models.DTO.Teacher
 {
     public class CreateTeacherDTO
     {
+        public int MajorId { get; set; }
         public string Email { get; set; }
         public string Username { get; set; }
         public string Fullname { get; set; }
