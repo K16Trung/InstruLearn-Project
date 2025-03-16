@@ -34,6 +34,8 @@ namespace InstruLearn_Application.DAL.UoW
         private readonly IMajorRepository _majorRepository;
         private readonly ILearningRegisRepository _learningRegisRepository;
         private readonly ILearningRegisTypeRepository _learningRegisTypeRepository;
+        private readonly ISyllabusRepository _syllabusRepository;
+        private readonly ITestResultRepository _testResultRepository;
         private readonly ApplicationDbContext _dbContext;
         private bool disposed = false;
 
@@ -60,12 +62,15 @@ namespace InstruLearn_Application.DAL.UoW
         public IMajorRepository MajorRepository { get { return _majorRepository; } }
         public ILearningRegisRepository LearningRegisRepository { get { return _learningRegisRepository; } }
         public ILearningRegisTypeRepository LearningRegisTypeRepository { get { return _learningRegisTypeRepository; } }
+        public ISyllabusRepository SyllabusRepository { get { return _syllabusRepository; } }
+        public ITestResultRepository TestResultRepository { get { return _testResultRepository; } }
 
         public ApplicationDbContext dbContext { get { return _dbContext; } }
 
 
 
-        public UnitOfWork(ApplicationDbContext dbContext, IAccountRepository accountRepository, IAdminRepository adminRepository, IManagerRepository managerRepository, IStaffRepository staffRepository, ILearnerRepository learnerRepository, ITeacherRepository teacherRepository, ICourseRepository courseRepository, ICourseTypeRepository courseTypeRepository, ICourseContentRepository courseContentRepository, IItemTypeRepository itemTypeRepository, ICourseContentItemRepository courseContentItemRepository, IFeedbackRepository feedbackRepository, IFeedbackRepliesRepository feedbackRepliesRepository, IQnARepository qnARepository, IQnARepliesRepository qnARepliesRepository, IWalletRepository walletRepository, IPaymentRepository paymentRepository, IWalletTransactionRepository walletTransactionRepository, IClassRepository classRepository, IClassDayRepository classDayRepository, IMajorRepository majorRepository, ILearningRegisRepository learningRegisRepository, ILearningRegisTypeRepository learningRegisTypeRepository)
+        public UnitOfWork(ApplicationDbContext dbContext, IAccountRepository accountRepository, IAdminRepository adminRepository, IManagerRepository managerRepository, IStaffRepository staffRepository, ILearnerRepository learnerRepository, ITeacherRepository teacherRepository, ICourseRepository courseRepository, ICourseTypeRepository courseTypeRepository, ICourseContentRepository courseContentRepository, IItemTypeRepository itemTypeRepository, ICourseContentItemRepository courseContentItemRepository, IFeedbackRepository feedbackRepository, 
+            IFeedbackRepliesRepository feedbackRepliesRepository, IQnARepository qnARepository, IQnARepliesRepository qnARepliesRepository, IWalletRepository walletRepository, IPaymentRepository paymentRepository, IWalletTransactionRepository walletTransactionRepository, IClassRepository classRepository, IClassDayRepository classDayRepository, IMajorRepository majorRepository, ILearningRegisRepository learningRegisRepository, ILearningRegisTypeRepository learningRegisTypeRepository, ISyllabusRepository syllabusRepository, ITestResultRepository testResultRepository)
         {
             _dbContext = dbContext;
             _adminRepository = adminRepository;
@@ -91,6 +96,8 @@ namespace InstruLearn_Application.DAL.UoW
             _majorRepository = majorRepository;
             _learningRegisRepository = learningRegisRepository;
             _learningRegisTypeRepository = learningRegisTypeRepository;
+            _syllabusRepository = syllabusRepository;
+            _testResultRepository = testResultRepository;
         }
 
         protected virtual void Dispose(bool disposing)

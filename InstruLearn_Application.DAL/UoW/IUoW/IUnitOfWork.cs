@@ -33,6 +33,8 @@ namespace InstruLearn_Application.DAL.UoW.IUoW
         IMajorRepository MajorRepository { get; }
         ILearningRegisRepository LearningRegisRepository { get; }
         ILearningRegisTypeRepository LearningRegisTypeRepository { get; }
+        ISyllabusRepository SyllabusRepository { get; }
+        ITestResultRepository TestResultRepository { get; }
         ApplicationDbContext dbContext { get; }
         public Task<int> SaveChangeAsync();
     }
