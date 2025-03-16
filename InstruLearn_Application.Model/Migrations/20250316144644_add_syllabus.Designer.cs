@@ -4,6 +4,7 @@ using InstruLearn_Application.Model.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InstruLearn_Application.Model.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250316144644_add_syllabus")]
+    partial class add_syllabus
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -773,50 +776,6 @@ namespace InstruLearn_Application.Model.Migrations
                     b.ToTable("Teachers");
                 });
 
-            modelBuilder.Entity("InstruLearn_Application.Model.Models.Test_Result", b =>
-                {
-                    b.Property<int>("TestResultId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TestResultId"));
-
-                    b.Property<string>("Feedback")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("LearnerId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("LearningRegisId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("LevelAssigned")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("MajorTestId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Score")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TeacherId")
-                        .HasColumnType("int");
-
-                    b.HasKey("TestResultId");
-
-                    b.HasIndex("LearnerId");
-
-                    b.HasIndex("LearningRegisId");
-
-                    b.HasIndex("MajorTestId");
-
-                    b.HasIndex("TeacherId");
-
-                    b.ToTable("Test_Results");
-                });
-
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Wallet", b =>
                 {
                     b.Property<int>("WalletId")
@@ -1191,41 +1150,6 @@ namespace InstruLearn_Application.Model.Migrations
                     b.Navigation("Major");
                 });
 
-            modelBuilder.Entity("InstruLearn_Application.Model.Models.Test_Result", b =>
-                {
-                    b.HasOne("InstruLearn_Application.Model.Models.Learner", "Learner")
-                        .WithMany("Test_Results")
-                        .HasForeignKey("LearnerId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("InstruLearn_Application.Model.Models.Learning_Registration", "LearningRegistration")
-                        .WithMany("Test_Results")
-                        .HasForeignKey("LearningRegisId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("InstruLearn_Application.Model.Models.MajorTest", "MajorTest")
-                        .WithMany("TestResults")
-                        .HasForeignKey("MajorTestId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("InstruLearn_Application.Model.Models.Teacher", "Teacher")
-                        .WithMany("TestResults")
-                        .HasForeignKey("TeacherId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Learner");
-
-                    b.Navigation("LearningRegistration");
-
-                    b.Navigation("MajorTest");
-
-                    b.Navigation("Teacher");
-                });
-
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Wallet", b =>
                 {
                     b.HasOne("InstruLearn_Application.Model.Models.Learner", "Learner")
@@ -1315,8 +1239,6 @@ namespace InstruLearn_Application.Model.Migrations
 
                     b.Navigation("Purchases");
 
-                    b.Navigation("Test_Results");
-
                     b.Navigation("Wallet")
                         .IsRequired();
                 });
@@ -1324,8 +1246,6 @@ namespace InstruLearn_Application.Model.Migrations
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Learning_Registration", b =>
                 {
                     b.Navigation("LearningRegistrationDay");
-
-                    b.Navigation("Test_Results");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Learning_Registration_Type", b =>
@@ -1338,11 +1258,6 @@ namespace InstruLearn_Application.Model.Migrations
                     b.Navigation("MajorTests");
 
                     b.Navigation("Teachers");
-                });
-
-            modelBuilder.Entity("InstruLearn_Application.Model.Models.MajorTest", b =>
-                {
-                    b.Navigation("TestResults");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Purchase", b =>
@@ -1363,8 +1278,6 @@ namespace InstruLearn_Application.Model.Migrations
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Teacher", b =>
                 {
                     b.Navigation("Classes");
-
-                    b.Navigation("TestResults");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Wallet", b =>

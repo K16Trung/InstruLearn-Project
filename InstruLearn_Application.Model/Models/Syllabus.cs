@@ -7,15 +7,14 @@ using System.Threading.Tasks;
 
 namespace InstruLearn_Application.Model.Models
 {
-    public class MajorTest
+    public class Syllabus
     {
         [Key]
-        public int MajorTestId { get; set; }
-        public int MajorId { get; set; }
-        public Major Major { get; set; }
-        public string MajorTestName { get; set; }
+        public int SyllabusId { get; set; }
+        public string SyllabusName { get; set; }
+        public string SyllabusDescription { get; set; }
 
         // Navigation properties
-        public ICollection<Test_Result> TestResults { get; set; }
+        public ICollection<Class> Classes { get; set; }
     }
 }

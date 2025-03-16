@@ -20,7 +20,9 @@ namespace InstruLearn_Application.Model.Data
         public DbSet<Staff> Staffs { get; set; }
         public DbSet<Course_Package> CoursePackages { get; set; }
         public DbSet<Course_Content> Course_Contents { get; set; }
+        public DbSet<CourseType> CourseTypes { get; set; }
         public DbSet<Course_Content_Item> Course_Content_Items { get; set; }
+        public DbSet<ItemTypes> ItemTypes { get; set; }
         public DbSet<FeedBack> FeedBacks { get; set; }
         public DbSet<FeedbackReplies> FeedbackReplies { get; set; }
         public DbSet<QnA> QnA { get; set; }
@@ -35,7 +37,10 @@ namespace InstruLearn_Application.Model.Data
         public DbSet<Learning_Registration> Learning_Registrations { get; set; }
         public DbSet<Learning_Registration_Type> Learning_Registration_Types { get; set; }
         public DbSet<Purchase> Purchases { get; set; }
-
+        public DbSet<LearningRegistrationDay> LearningRegistrationDays { get; set; }
+        public DbSet<Syllabus> Syllabus { get; set; }
+        public DbSet<Purchase_Items> Purchase_Items { get; set; }
+        public DbSet<Test_Result> Test_Results { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -235,6 +240,42 @@ namespace InstruLearn_Application.Model.Data
                 .HasOne(t => t.Major)
                 .WithMany(m => m.Teachers)
                 .HasForeignKey(t => t.MajorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<LearningRegistrationDay>()
+                .HasOne(r => r.Learning_Registration)
+                .WithMany(l => l.LearningRegistrationDay)
+                .HasForeignKey(l => l.LearningRegisId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Class>()
+                .HasOne(c => c.Syllabus)
+                .WithMany(s => s.Classes)
+                .HasForeignKey(c => c.SyllabusId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Test_Result>()
+                .HasOne(tr => tr.MajorTest)
+                .WithMany(mt => mt.TestResults)
+                .HasForeignKey(tr => tr.MajorTestId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Test_Result>()
+                .HasOne(tr => tr.Learner)
+                .WithMany(l => l.Test_Results)
+                .HasForeignKey(tr => tr.LearnerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Test_Result>()
+                .HasOne(tr => tr.Teacher)
+                .WithMany(t => t.TestResults)
+                .HasForeignKey(tr => tr.TeacherId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Test_Result>()
+                .HasOne(tr => tr.LearningRegistration)
+                .WithMany(lr => lr.Test_Results)
+                .HasForeignKey(tr => tr.LearningRegisId)
                 .OnDelete(DeleteBehavior.Restrict);
 
         }

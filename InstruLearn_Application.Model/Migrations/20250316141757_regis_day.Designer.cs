@@ -4,6 +4,7 @@ using InstruLearn_Application.Model.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InstruLearn_Application.Model.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250316141757_regis_day")]
+    partial class regis_day
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -124,9 +127,6 @@ namespace InstruLearn_Application.Model.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
-                    b.Property<int>("SyllabusId")
-                        .HasColumnType("int");
-
                     b.Property<int>("TeacherId")
                         .HasColumnType("int");
 
@@ -140,8 +140,6 @@ namespace InstruLearn_Application.Model.Migrations
                     b.HasKey("ClassId");
 
                     b.HasIndex("CoursePackageId");
-
-                    b.HasIndex("SyllabusId");
 
                     b.HasIndex("TeacherId");
 
@@ -183,7 +181,7 @@ namespace InstruLearn_Application.Model.Migrations
 
                     b.HasKey("CourseTypeId");
 
-                    b.ToTable("CourseTypes");
+                    b.ToTable("CourseType");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Course_Content", b =>
@@ -714,27 +712,6 @@ namespace InstruLearn_Application.Model.Migrations
                     b.ToTable("Staffs");
                 });
 
-            modelBuilder.Entity("InstruLearn_Application.Model.Models.Syllabus", b =>
-                {
-                    b.Property<int>("SyllabusId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SyllabusId"));
-
-                    b.Property<string>("SyllabusDescription")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("SyllabusName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("SyllabusId");
-
-                    b.ToTable("Syllabus");
-                });
-
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Teacher", b =>
                 {
                     b.Property<int>("TeacherId")
@@ -771,50 +748,6 @@ namespace InstruLearn_Application.Model.Migrations
                     b.HasIndex("MajorId");
 
                     b.ToTable("Teachers");
-                });
-
-            modelBuilder.Entity("InstruLearn_Application.Model.Models.Test_Result", b =>
-                {
-                    b.Property<int>("TestResultId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TestResultId"));
-
-                    b.Property<string>("Feedback")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("LearnerId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("LearningRegisId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("LevelAssigned")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("MajorTestId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Score")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TeacherId")
-                        .HasColumnType("int");
-
-                    b.HasKey("TestResultId");
-
-                    b.HasIndex("LearnerId");
-
-                    b.HasIndex("LearningRegisId");
-
-                    b.HasIndex("MajorTestId");
-
-                    b.HasIndex("TeacherId");
-
-                    b.ToTable("Test_Results");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Wallet", b =>
@@ -895,12 +828,6 @@ namespace InstruLearn_Application.Model.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("InstruLearn_Application.Model.Models.Syllabus", "Syllabus")
-                        .WithMany("Classes")
-                        .HasForeignKey("SyllabusId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("InstruLearn_Application.Model.Models.Teacher", "Teacher")
                         .WithMany("Classes")
                         .HasForeignKey("TeacherId")
@@ -908,8 +835,6 @@ namespace InstruLearn_Application.Model.Migrations
                         .IsRequired();
 
                     b.Navigation("CoursePackage");
-
-                    b.Navigation("Syllabus");
 
                     b.Navigation("Teacher");
                 });
@@ -1191,41 +1116,6 @@ namespace InstruLearn_Application.Model.Migrations
                     b.Navigation("Major");
                 });
 
-            modelBuilder.Entity("InstruLearn_Application.Model.Models.Test_Result", b =>
-                {
-                    b.HasOne("InstruLearn_Application.Model.Models.Learner", "Learner")
-                        .WithMany("Test_Results")
-                        .HasForeignKey("LearnerId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("InstruLearn_Application.Model.Models.Learning_Registration", "LearningRegistration")
-                        .WithMany("Test_Results")
-                        .HasForeignKey("LearningRegisId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("InstruLearn_Application.Model.Models.MajorTest", "MajorTest")
-                        .WithMany("TestResults")
-                        .HasForeignKey("MajorTestId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("InstruLearn_Application.Model.Models.Teacher", "Teacher")
-                        .WithMany("TestResults")
-                        .HasForeignKey("TeacherId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Learner");
-
-                    b.Navigation("LearningRegistration");
-
-                    b.Navigation("MajorTest");
-
-                    b.Navigation("Teacher");
-                });
-
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Wallet", b =>
                 {
                     b.HasOne("InstruLearn_Application.Model.Models.Learner", "Learner")
@@ -1315,8 +1205,6 @@ namespace InstruLearn_Application.Model.Migrations
 
                     b.Navigation("Purchases");
 
-                    b.Navigation("Test_Results");
-
                     b.Navigation("Wallet")
                         .IsRequired();
                 });
@@ -1324,8 +1212,6 @@ namespace InstruLearn_Application.Model.Migrations
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Learning_Registration", b =>
                 {
                     b.Navigation("LearningRegistrationDay");
-
-                    b.Navigation("Test_Results");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Learning_Registration_Type", b =>
@@ -1340,11 +1226,6 @@ namespace InstruLearn_Application.Model.Migrations
                     b.Navigation("Teachers");
                 });
 
-            modelBuilder.Entity("InstruLearn_Application.Model.Models.MajorTest", b =>
-                {
-                    b.Navigation("TestResults");
-                });
-
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Purchase", b =>
                 {
                     b.Navigation("PurchaseItems");
@@ -1355,16 +1236,9 @@ namespace InstruLearn_Application.Model.Migrations
                     b.Navigation("QnAReplies");
                 });
 
-            modelBuilder.Entity("InstruLearn_Application.Model.Models.Syllabus", b =>
-                {
-                    b.Navigation("Classes");
-                });
-
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Teacher", b =>
                 {
                     b.Navigation("Classes");
-
-                    b.Navigation("TestResults");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Wallet", b =>
