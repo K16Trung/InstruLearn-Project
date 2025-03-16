@@ -13,11 +13,13 @@ namespace InstruLearn_Application.Model.Models
         [Key]
         public int PurchaseItemId { get; set; }
         public int PurchaseId { get; set; }
-        public Purchase Purchase { get; set; }
         public int CoursePackageId { get; set; }
-        public Course_Package CoursePackage { get; set; }
         public int Quantity { get; set; }
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalAmount { get; set; }
+
+        // Navigation properties
+        public Purchase Purchase { get; set; }
+        public Course_Package CoursePackage { get; set; }
     }
 }

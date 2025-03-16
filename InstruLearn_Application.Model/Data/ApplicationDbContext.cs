@@ -20,7 +20,9 @@ namespace InstruLearn_Application.Model.Data
         public DbSet<Staff> Staffs { get; set; }
         public DbSet<Course_Package> CoursePackages { get; set; }
         public DbSet<Course_Content> Course_Contents { get; set; }
+        public DbSet<CourseType> CourseTypes { get; set; }
         public DbSet<Course_Content_Item> Course_Content_Items { get; set; }
+        public DbSet<ItemTypes> ItemTypes { get; set; }
         public DbSet<FeedBack> FeedBacks { get; set; }
         public DbSet<FeedbackReplies> FeedbackReplies { get; set; }
         public DbSet<QnA> QnA { get; set; }
@@ -35,6 +37,7 @@ namespace InstruLearn_Application.Model.Data
         public DbSet<Learning_Registration> Learning_Registrations { get; set; }
         public DbSet<Learning_Registration_Type> Learning_Registration_Types { get; set; }
         public DbSet<Purchase> Purchases { get; set; }
+        public DbSet<Purchase_Items> Purchase_Items { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -235,6 +238,12 @@ namespace InstruLearn_Application.Model.Data
                 .HasOne(t => t.Major)
                 .WithMany(m => m.Teachers)
                 .HasForeignKey(t => t.MajorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Class>()
+                .HasOne(c => c.Syllabus)
+                .WithMany(s => s.Classes)
+                .HasForeignKey(c => c.SyllabusId)
                 .OnDelete(DeleteBehavior.Restrict);
 
         }
