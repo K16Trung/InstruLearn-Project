@@ -8,7 +8,7 @@ namespace InstruLearn_Application.Model.Models.DTO.CourseType
 {
     public class CourseTypeDTO
     {
-        public int TypeId { get; set; }
-        public string TypeName { get; set; }
+        public int CourseTypeId { get; set; }
+        public string CourseTypeName { get; set; }
     }
 }

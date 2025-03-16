@@ -8,6 +8,6 @@ namespace InstruLearn_Application.Model.Models.DTO.CourseType
 {
     public class UpdateCourseTypeDTO
     {
-        public string TypeName { get; set; }
+        public string CourseTypeName { get; set; }
     }
 }

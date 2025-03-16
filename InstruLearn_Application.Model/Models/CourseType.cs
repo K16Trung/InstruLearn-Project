@@ -10,8 +10,8 @@ namespace InstruLearn_Application.Model.Models
     public class CourseType
     {
         [Key]
-        public int TypeId { get; set; }
-        public string TypeName { get; set; }
+        public int CourseTypeId { get; set; }
+        public string CourseTypeName { get; set; }
         public ICollection<Course_Package> CoursePackages { get; set; }
     }
 }

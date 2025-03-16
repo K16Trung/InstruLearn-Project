@@ -13,7 +13,7 @@ namespace InstruLearn_Application.Model.Models
     {
         [Key]
         public int CoursePackageId { get; set; }
-        public int TypeId { get; set; }
+        public int CourseTypeId { get; set; }
         public CourseType Type { get; set; }
         public string CourseName { get; set; }
         public string CourseDescription { get; set; }
@@ -25,11 +25,11 @@ namespace InstruLearn_Application.Model.Models
         public string ImageUrl { get; set; }
 
         //Navigation property
-        public Purchase Purchases { get; set; }
         public ICollection<Course_Content> CourseContents { get; set; }
         public ICollection<FeedBack> FeedBacks { get; set; }
         public ICollection<QnA> QnAs { get; set; }
         public ICollection<Class> Classes { get; set; }
+        public ICollection<Purchase_Items> PurchaseItems { get; set; }
 
     }
 }
