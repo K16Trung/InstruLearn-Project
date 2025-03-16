@@ -25,6 +25,7 @@ namespace InstruLearn_Application.Model.Models
         public string VideoUrl {  get; set; }
 
         // Navigation properties
+        public ICollection<Test_Result> Test_Results { get; set; }
         public ICollection<LearningRegistrationDay> LearningRegistrationDay { get; set; }
     }
 }

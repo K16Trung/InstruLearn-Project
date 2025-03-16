@@ -14,5 +14,8 @@ namespace InstruLearn_Application.Model.Models
         public int MajorId { get; set; }
         public Major Major { get; set; }
         public string MajorTestName { get; set; }
+
+        // Navigation properties
+        public ICollection<Test_Result> TestResults { get; set; }
     }
 }

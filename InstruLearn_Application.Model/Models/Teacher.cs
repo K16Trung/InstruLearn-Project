@@ -21,6 +21,7 @@ namespace InstruLearn_Application.Model.Models
 
         //Navigation property
         public Major Major { get; set; }
+        public ICollection<Test_Result> TestResults { get; set; }
         public ICollection<Class> Classes { get; set; }
     }
 }
