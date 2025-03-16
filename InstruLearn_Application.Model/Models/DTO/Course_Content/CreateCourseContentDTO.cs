@@ -8,7 +8,7 @@ namespace InstruLearn_Application.Model.Models.DTO.Course_Content
 {
     public class CreateCourseContentDTO
     {
-        public int CourseId { get; set; }
+        public int CoursePackageId { get; set; }
         public string Heading { get; set; }
     }
 }

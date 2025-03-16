@@ -10,7 +10,7 @@ namespace InstruLearn_Application.Model.Models.DTO.QnA
     public class QnADTO
     {
         public int QuestionId { get; set; }
-        public int CourseId { get; set; }
+        public int CoursePackageId { get; set; }
         public string AccountId { get; set; }
         public string Email { get; set; }
         public string Role { get; set; }

@@ -46,7 +46,7 @@ namespace InstruLearn_Application.BLL.Service
                     Message = "Account not found",
                 };
             }
-            var course = await _unitOfWork.CourseRepository.GetByIdAsync(createQnADTO.CourseId);
+            var course = await _unitOfWork.CourseRepository.GetByIdAsync(createQnADTO.CoursePackageId);
             if (course == null)
             {
                 return new ResponseDTO

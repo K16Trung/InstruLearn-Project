@@ -85,7 +85,7 @@ namespace InstruLearn_Application.Model.Data
             modelBuilder.Entity<Course_Package>()
                 .HasMany(c => c.CourseContents)
                 .WithOne(cc => cc.CoursePackage)
-                .HasForeignKey(cc => cc.CourseId)
+                .HasForeignKey(cc => cc.CoursePackageId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Course_Content>()
@@ -109,7 +109,7 @@ namespace InstruLearn_Application.Model.Data
             modelBuilder.Entity<FeedBack>()
                 .HasOne(f => f.CoursePackage)
                 .WithMany(c => c.FeedBacks)
-                .HasForeignKey(f => f.CourseId)
+                .HasForeignKey(f => f.CoursePackageId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<FeedBack>()
@@ -139,7 +139,7 @@ namespace InstruLearn_Application.Model.Data
             modelBuilder.Entity<QnA>()
                 .HasOne(q => q.CoursePackage)
                 .WithMany(c => c.QnAs)
-                .HasForeignKey(q => q.CourseId)
+                .HasForeignKey(q => q.CoursePackageId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<QnAReplies>()

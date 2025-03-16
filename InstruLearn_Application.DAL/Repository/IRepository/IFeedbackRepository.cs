@@ -9,6 +9,6 @@ namespace InstruLearn_Application.DAL.Repository.IRepository
 {
     public interface IFeedbackRepository : IGenericRepository<FeedBack>
     {
-        Task<IEnumerable<FeedBack>> GetFeedbacksByCourseIdAsync(int courseId);
+        Task<IEnumerable<FeedBack>> GetFeedbacksByCoursePackageIdAsync(int courseId);
     }
 }

@@ -8,7 +8,7 @@ namespace InstruLearn_Application.Model.Models.DTO.Feedback
 {
     public class CreateFeedbackDTO
     {
-        public int CourseId { get; set; }
+        public int CoursePackageId { get; set; }
         public string AccountId { get; set; }
         public string FeedbackContent { get; set; }
         public int Rating { get; set; }
