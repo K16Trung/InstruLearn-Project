@@ -8,14 +8,12 @@ using System.Threading.Tasks;
 
 namespace InstruLearn_Application.Model.Models
 {
-    public class ClassDay
+    public class LearningRegistrationDay
     {
         [Key]
-        public int ClassDayId { get; set; }
-        public int ClassId { get; set; }
-        public DayOfWeeks Day { get; set; }
-
-        // Navigation property
-        public Class Class { get; set; }
+        public int LearnRegisDayId { get; set; }
+        public int LearningRegisId { get; set; }
+        public Learning_Registration Learning_Registration { get; set; }
+        public DayOfWeeks DayOfWeek { get; set; }
     }
 }
