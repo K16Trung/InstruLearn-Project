@@ -23,10 +23,10 @@ namespace InstruLearn_Application.Model.Models
         public ClassStatus Status { get; set; }
         public decimal Price { get; set; }
 
-        //Navigation property
+        // Navigation properties
         public Teacher Teacher { get; set; }
-        public Learning_Registration Learning_Registration { get; set; }
         public Course_Package CoursePackage { get; set; }
         public ICollection<ClassDay> ClassDays { get; set; }
+        public ICollection<Learning_Registration> Learning_Registration { get; set; }
     }
 }

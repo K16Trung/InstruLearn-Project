@@ -19,9 +19,10 @@ namespace InstruLearn_Application.Model.Models
         public DateTime RequestDate { get; set; }
         public LearningRegis Status { get; set; }
         public int NumberOfSession { get; set; }
-        //Navigation property
+
+        // Navigation properties
         public Learning_Registration_Type Learning_Registration_Type { get; set; }
         public Learner Learner { get; set; }
-        public ICollection<Class> classes { get; set; }
+        public Class Classes { get; set; }
     }
 }

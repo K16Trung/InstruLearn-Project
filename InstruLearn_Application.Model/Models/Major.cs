@@ -12,6 +12,9 @@ namespace InstruLearn_Application.Model.Models
         [Key]
         public int MajorId { get; set; }
         public string MajorName { get; set; }
+
+        //Navigation property
+        public ICollection<Teacher> Teachers { get; set; }
         public ICollection<MajorTest> MajorTests { get; set; }
     }
 }

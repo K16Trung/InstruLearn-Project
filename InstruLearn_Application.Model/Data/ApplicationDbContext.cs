@@ -94,6 +94,12 @@ namespace InstruLearn_Application.Model.Data
                 .HasForeignKey(ci => ci.ContentId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<Course_Package>()
+                .HasOne(c => c.Purchases)
+                .WithMany(p => p.Course_Packages)
+                .HasForeignKey(c => c.CoursePackageId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             modelBuilder.Entity<Course_Content_Item>()
                 .HasOne(c => c.ItemType)
                 .WithMany(ct => ct.CourseContentItems)
@@ -201,16 +207,16 @@ namespace InstruLearn_Application.Model.Data
                 .HasForeignKey(l => l.LearnerId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<Learning_Registration>()
+                .HasOne(lr => lr.Classes)
+                .WithMany(c => c.Learning_Registration)
+                .HasForeignKey(lr => lr.ClassId)
+                .OnDelete(DeleteBehavior.NoAction);
+
             modelBuilder.Entity<Learning_Registration_Type>()
                 .HasMany(l => l.Learning_Registrations)
                 .WithOne(lrt => lrt.Learning_Registration_Type)
                 .HasForeignKey(lrt => lrt.TypeId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<Class>()
-                .HasOne(l => l.Learning_Registration)
-                .WithMany(lr => lr.classes)
-                .HasForeignKey(l => l.ClassId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Purchase>()
@@ -219,11 +225,11 @@ namespace InstruLearn_Application.Model.Data
                 .HasForeignKey(l => l.LearnerId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<Purchase>()
-                .HasMany(p => p.Course_Packages)
-                .WithOne(cp => cp.Purchases)
-                .HasForeignKey(p => p.CoursePackageId)
-                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<Teacher>()
+                .HasOne(t => t.Major)
+                .WithMany(m => m.Teachers)
+                .HasForeignKey(t => t.MajorId)
+                .OnDelete(DeleteBehavior.Restrict);
 
         }
     }
