@@ -33,7 +33,7 @@ namespace InstruLearn_Application.Controllers
         }
 
         [HttpPost("create")]
-        public async Task<IActionResult> AddLearningRegis([FromBody] CreateTypeDTO createTypeDTO)
+        public async Task<IActionResult> AddLearningRegis([FromBody] CreateRegisTypeDTO createTypeDTO)
         {
             var response = await _learningRegisTypeService.CreateLearningRegisTypeAsync(createTypeDTO);
             return Ok(response);

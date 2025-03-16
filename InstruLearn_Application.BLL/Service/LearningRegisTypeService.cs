@@ -29,7 +29,7 @@ namespace InstruLearn_Application.BLL.Service
         public async Task<ResponseDTO> GetAllLearningRegisTypeAsync()
         {
             var type = await _unitOfWork.LearningRegisTypeRepository.GetAllAsync();
-            var typeDtos = _mapper.Map<IEnumerable<TypeDTO>>(type);
+            var typeDtos = _mapper.Map<IEnumerable<RegisTypeDTO>>(type);
             return new ResponseDTO
             {
                 IsSucceed = true,
@@ -48,7 +48,7 @@ namespace InstruLearn_Application.BLL.Service
                     Message = "Learning type Type not found."
                 };
             }
-            var typeDtos = _mapper.Map<TypeDTO>(type);
+            var typeDtos = _mapper.Map<RegisTypeDTO>(type);
             return new ResponseDTO
             {
                 IsSucceed = true,
@@ -56,7 +56,7 @@ namespace InstruLearn_Application.BLL.Service
                 Data = typeDtos
             };
         }
-        public async Task<ResponseDTO> CreateLearningRegisTypeAsync(CreateTypeDTO createTypeDTO)
+        public async Task<ResponseDTO> CreateLearningRegisTypeAsync(CreateRegisTypeDTO createTypeDTO)
         {
             var type = _mapper.Map<Learning_Registration_Type>(createTypeDTO);
             await _unitOfWork.LearningRegisTypeRepository.AddAsync(type);
