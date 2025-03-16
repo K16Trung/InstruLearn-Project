@@ -49,12 +49,21 @@ namespace InstruLearn_Application.BLL.Service
                     Message = "Teacher not found",
                 };
             }
+            var coursePackage = await _unitOfWork.CourseRepository.GetByIdAsync(createClassDTO.CoursePackageId);
+            if (teacher == null)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Course package not found",
+                };
+            }
 
             var classObj = _mapper.Map<Class>(createClassDTO);
             classObj.Teacher = teacher;
+            classObj.CoursePackage = coursePackage;
 
             await _unitOfWork.ClassRepository.AddAsync(classObj);
-            await _unitOfWork.SaveChangeAsync();
 
             var response = new ResponseDTO
             {
