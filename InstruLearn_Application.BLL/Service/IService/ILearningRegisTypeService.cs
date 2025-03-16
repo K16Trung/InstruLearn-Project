@@ -12,7 +12,7 @@ namespace InstruLearn_Application.BLL.Service.IService
     {
         Task<ResponseDTO> GetAllLearningRegisTypeAsync();
         Task<ResponseDTO> GetLearningRegisTypeByIdAsync(int learningRegisTypeId);
-        Task<ResponseDTO> CreateLearningRegisTypeAsync(CreateTypeDTO createTypeDTO);
+        Task<ResponseDTO> CreateLearningRegisTypeAsync(CreateRegisTypeDTO createTypeDTO);
         Task<ResponseDTO> DeleteLearningRegisTypeAsync(int learningRegisTypeId);
     }
 }

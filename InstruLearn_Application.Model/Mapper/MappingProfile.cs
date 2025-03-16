@@ -230,8 +230,8 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<CreateLearningRegisDTO, Learning_Registration>().ReverseMap();
 
             //🔹 Learning_Registration_Type Mappings
-            CreateMap<Learning_Registration_Type, TypeDTO>().ReverseMap();
-            CreateMap<CreateTypeDTO, Learning_Registration_Type>().ReverseMap();
+            CreateMap<Learning_Registration_Type, RegisTypeDTO>().ReverseMap();
+            CreateMap<CreateRegisTypeDTO, Learning_Registration_Type>().ReverseMap();
 
         }
     }
