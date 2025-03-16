@@ -13,7 +13,9 @@ namespace InstruLearn_Application.Model.Models
         [Key]
         public int ClassId { get; set; }
         public int TeacherId { get; set; }
+        public Teacher Teacher { get; set; }
         public int CoursePackageId { get; set; }
+        public Course_Package CoursePackage { get; set; }
         public string ClassName { get; set; }
         public string TeacherName { get; set; }
         public DateTime StartDate { get; set; }
@@ -25,8 +27,6 @@ namespace InstruLearn_Application.Model.Models
         public decimal Price { get; set; }
 
         // Navigation properties
-        public Teacher Teacher { get; set; }
-        public Course_Package CoursePackage { get; set; }
         public ICollection<ClassDay> ClassDays { get; set; }
         public ICollection<Learning_Registration> Learning_Registration { get; set; }
     }

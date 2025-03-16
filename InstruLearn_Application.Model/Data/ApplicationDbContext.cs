@@ -35,7 +35,7 @@ namespace InstruLearn_Application.Model.Data
         public DbSet<Learning_Registration> Learning_Registrations { get; set; }
         public DbSet<Learning_Registration_Type> Learning_Registration_Types { get; set; }
         public DbSet<Purchase> Purchases { get; set; }
-
+        public DbSet<LearningRegistrationDay> LearningRegistrationDays { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -237,6 +237,11 @@ namespace InstruLearn_Application.Model.Data
                 .HasForeignKey(t => t.MajorId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<LearningRegistrationDay>()
+                .HasOne(r => r.Learning_Registration)
+                .WithMany(l => l.LearningRegistrationDay)
+                .HasForeignKey(l => l.LearningRegisId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }
