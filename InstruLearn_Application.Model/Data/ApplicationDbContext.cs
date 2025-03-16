@@ -34,12 +34,17 @@ namespace InstruLearn_Application.Model.Data
         public DbSet<MajorTest> MajorTests { get; set; }
         public DbSet<Learning_Registration> Learning_Registrations { get; set; }
         public DbSet<Learning_Registration_Type> Learning_Registration_Types { get; set; }
+        public DbSet<Purchase> Purchases { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
+            modelBuilder.Entity<Account>()
+                .HasOne(a => a.Admin)
+                .WithOne(a => a.Account)
+                .HasForeignKey<Admin>(a => a.AccountId);
 
             modelBuilder.Entity<Account>()
                 .HasOne(a => a.Learner)
@@ -51,6 +56,15 @@ namespace InstruLearn_Application.Model.Data
                 .WithOne(a => a.Account)
                 .HasForeignKey<Teacher>(a => a.AccountId);
 
+            modelBuilder.Entity<Account>()
+                .HasOne(a => a.Staff)
+                .WithOne(a => a.Account)
+                .HasForeignKey<Staff>(a => a.AccountId);
+
+            modelBuilder.Entity<Account>()
+                .HasOne(a => a.Manager)
+                .WithOne(a => a.Account)
+                .HasForeignKey<Manager>(a => a.AccountId);
 
             modelBuilder.Entity<Course_Package>()
                 .Property(c => c.Price)
@@ -63,6 +77,12 @@ namespace InstruLearn_Application.Model.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Course_Package>()
+                .HasMany(c => c.Classes)
+                .WithOne(c => c.CoursePackage)
+                .HasForeignKey(c => c.CoursePackageId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Course_Package>()
                 .HasMany(c => c.CourseContents)
                 .WithOne(cc => cc.CoursePackage)
                 .HasForeignKey(cc => cc.CourseId)
@@ -72,6 +92,12 @@ namespace InstruLearn_Application.Model.Data
                 .HasMany(cc => cc.CourseContentItems)
                 .WithOne(ci => ci.CourseContent)
                 .HasForeignKey(ci => ci.ContentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Course_Package>()
+                .HasOne(c => c.Purchases)
+                .WithMany(p => p.Course_Packages)
+                .HasForeignKey(c => c.CoursePackageId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Course_Content_Item>()
@@ -181,17 +207,29 @@ namespace InstruLearn_Application.Model.Data
                 .HasForeignKey(l => l.LearnerId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<Learning_Registration>()
+                .HasOne(lr => lr.Classes)
+                .WithMany(c => c.Learning_Registration)
+                .HasForeignKey(lr => lr.ClassId)
+                .OnDelete(DeleteBehavior.NoAction);
+
             modelBuilder.Entity<Learning_Registration_Type>()
                 .HasMany(l => l.Learning_Registrations)
                 .WithOne(lrt => lrt.Learning_Registration_Type)
                 .HasForeignKey(lrt => lrt.TypeId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<Class>()
-                .HasOne(l => l.Learning_Registration)
-                .WithMany(lr => lr.classes)
-                .HasForeignKey(l => l.ClassId)
+            modelBuilder.Entity<Purchase>()
+                .HasOne(l => l.Learner)
+                .WithMany(lr => lr.Purchases)
+                .HasForeignKey(l => l.LearnerId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Teacher>()
+                .HasOne(t => t.Major)
+                .WithMany(m => m.Teachers)
+                .HasForeignKey(t => t.MajorId)
+                .OnDelete(DeleteBehavior.Restrict);
 
         }
     }
