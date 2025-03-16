@@ -54,6 +54,16 @@ namespace InstruLearn_Application.BLL.Service
 
         public async Task<ResponseDTO> AddCourseAsync(CreateCourseDTO createDto)
         {
+            var type = await _unitOfWork.CourseTypeRepository.GetByIdAsync(createDto.TypeId);
+            if (type == null)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Course  not found",
+                };
+            }
+
             var course = _mapper.Map<Course_Package>(createDto);
             await _unitOfWork.CourseRepository.AddAsync(course);
             return new ResponseDTO

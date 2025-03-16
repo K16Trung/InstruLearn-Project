@@ -6,6 +6,7 @@ using InstruLearn_Application.Model.Enum;
 using InstruLearn_Application.Model.Helper;
 using InstruLearn_Application.Model.Models;
 using InstruLearn_Application.Model.Models.DTO;
+using InstruLearn_Application.Model.Models.DTO.Feedback;
 using InstruLearn_Application.Model.Models.DTO.Teacher;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -54,46 +55,73 @@ namespace InstruLearn_Application.BLL.Service
         {
             var response = new ResponseDTO();
 
-            // Check if email is already used
-            var accounts = _unitOfWork.AccountRepository.GetFilter(x => x.Email == createTeacherDTO.Email);
-            var existingAccount = accounts.Items.FirstOrDefault();
-            if (existingAccount != null)
+            using (var transaction = await _unitOfWork.dbContext.Database.BeginTransactionAsync())
             {
-                response.Message = "Email already exists.";
-                return response;
+                try
+                {
+                    // Check Major
+                    var major = await _unitOfWork.MajorRepository.GetByIdAsync(createTeacherDTO.MajorId);
+                    if (major == null)
+                    {
+                        return new ResponseDTO
+                        {
+                            IsSucceed = false,
+                            Message = "Major not found",
+                        };
+                    }
+
+                    // Check if email is already used
+                    var accounts = _unitOfWork.AccountRepository.GetFilter(x => x.Email == createTeacherDTO.Email);
+                    var existingAccount = accounts.Items.FirstOrDefault();
+                    if (existingAccount != null)
+                    {
+                        response.Message = "Email already exists.";
+                        return response;
+                    }
+
+                    // Create Account
+                    var account = new Account
+                    {
+                        AccountId = Guid.NewGuid().ToString(),
+                        Username = createTeacherDTO.Username,
+                        Email = createTeacherDTO.Email,
+                        PasswordHash = HashPassword(createTeacherDTO.Password),
+                        Role = AccountRoles.Teacher,
+                        IsActive = AccountStatus.Active,
+                        RefreshToken = _jwtHelper.GenerateRefreshToken(),
+                        RefreshTokenExpires = DateTime.Now.AddDays(7)
+                    };
+
+                    account.Token = _jwtHelper.GenerateJwtToken(account);
+                    account.TokenExpires = DateTime.Now.AddHours(1);
+
+                    await _unitOfWork.AccountRepository.AddAsync(account);
+
+                    // Create Teacher
+                    var teacher = new Teacher
+                    {
+                        AccountId = account.AccountId,
+                        Fullname = createTeacherDTO.Fullname,
+                        MajorId = createTeacherDTO.MajorId
+                    };
+
+                    await _unitOfWork.TeacherRepository.AddAsync(teacher);
+
+                    await _unitOfWork.dbContext.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    response.IsSucceed = true;
+                    response.Message = "Teacher created successfully!";
+                    return response;
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    response.IsSucceed = false;
+                    response.Message = $"Error: {ex.Message}";
+                    return response;
+                }
             }
-
-            // Create Account
-            var account = new Account
-            {
-                AccountId = Guid.NewGuid().ToString(),
-                Username = createTeacherDTO.Username,
-                Email = createTeacherDTO.Email,
-                PasswordHash = HashPassword(createTeacherDTO.Password),
-                Role = AccountRoles.Teacher,
-                IsActive = AccountStatus.Active,
-                
-                RefreshToken = _jwtHelper.GenerateRefreshToken(),
-                RefreshTokenExpires = DateTime.Now.AddDays(7)
-            };
-
-            account.Token = _jwtHelper.GenerateJwtToken(account);
-            account.TokenExpires = DateTime.Now.AddHours(1);
-
-            await _unitOfWork.AccountRepository.AddAsync(account);
-
-            // Create Teacher
-            var teacher = new Teacher
-            {
-                AccountId = account.AccountId,
-                Fullname = createTeacherDTO.Fullname
-            };
-
-            await _unitOfWork.TeacherRepository.AddAsync(teacher);
-
-            response.IsSucceed = true;
-            response.Message = "Teacher created successfully!";
-            return response;
         }
 
         // Ban Teacher

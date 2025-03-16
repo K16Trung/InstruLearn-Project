@@ -16,6 +16,5 @@ namespace InstruLearn_Application.Model.Models.DTO.Class
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public TimeOnly ClassTime { get; set; }
-        public ICollection<List<ClassDayOfWeekDTO>> Days { get; set; }
     }
 }
