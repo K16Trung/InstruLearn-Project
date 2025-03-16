@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace InstruLearn_Application.Model.Models.DTO.LearningRegistrationType
 {
-    public class CreateTypeDTO
+    public class CreateRegisTypeDTO
     {
         public string RegisTypeName { get; set; }
     }
