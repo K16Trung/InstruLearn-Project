@@ -73,7 +73,7 @@ namespace InstruLearn_Application.Model.Data
             modelBuilder.Entity<Course_Package>()
                 .HasOne(c => c.Type)
                 .WithMany(ct => ct.CoursePackages)
-                .HasForeignKey(c => c.TypeId)
+                .HasForeignKey(c => c.CourseTypeId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Course_Package>()
@@ -92,12 +92,6 @@ namespace InstruLearn_Application.Model.Data
                 .HasMany(cc => cc.CourseContentItems)
                 .WithOne(ci => ci.CourseContent)
                 .HasForeignKey(ci => ci.ContentId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<Course_Package>()
-                .HasOne(c => c.Purchases)
-                .WithMany(p => p.Course_Packages)
-                .HasForeignKey(c => c.CoursePackageId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Course_Content_Item>()
@@ -216,13 +210,25 @@ namespace InstruLearn_Application.Model.Data
             modelBuilder.Entity<Learning_Registration_Type>()
                 .HasMany(l => l.Learning_Registrations)
                 .WithOne(lrt => lrt.Learning_Registration_Type)
-                .HasForeignKey(lrt => lrt.TypeId)
+                .HasForeignKey(lrt => lrt.RegisTypeId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Purchase>()
                 .HasOne(l => l.Learner)
                 .WithMany(lr => lr.Purchases)
                 .HasForeignKey(l => l.LearnerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Purchase_Items>()
+                .HasOne(pi => pi.Purchase)
+                .WithMany(p => p.PurchaseItems)
+                .HasForeignKey(pi => pi.PurchaseId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Purchase_Items>()
+                .HasOne(pi => pi.CoursePackage)
+                .WithMany(cp => cp.PurchaseItems)
+                .HasForeignKey(pi => pi.CoursePackageId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Teacher>()

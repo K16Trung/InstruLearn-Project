@@ -116,18 +116,18 @@ namespace InstruLearn_Application.Model.Mapper
 
             // Course mapping
             CreateMap<Course_Package, CourseDTO>()
-            .ForMember(dest => dest.TypeName, opt => opt.MapFrom(src => src.Type.TypeName))
+            .ForMember(dest => dest.TypeName, opt => opt.MapFrom(src => src.Type.CourseTypeName))
             .ForMember(dest => dest.CourseContents, opt => opt.MapFrom(src => src.CourseContents))
             .ForMember(dest => dest.FeedBacks, opt => opt.MapFrom(src => src.FeedBacks))
             .ForMember(dest => dest.QnAs, opt => opt.MapFrom(src => src.QnAs));
             CreateMap<Course_Package, GetAllCourseDTO>()
-             .ForMember(dest => dest.TypeName, opt => opt.MapFrom(src => src.Type.TypeName))
+             .ForMember(dest => dest.TypeName, opt => opt.MapFrom(src => src.Type.CourseTypeName))
              .ReverseMap();
             CreateMap<CreateCourseDTO, Course_Package>().ReverseMap();
             CreateMap<UpdateCourseDTO, Course_Package>().ReverseMap();
 
             CreateMap<Course_Package, CourseDTO>()
-            .ForMember(dest => dest.TypeName, opt => opt.MapFrom(src => src.Type.TypeName));
+            .ForMember(dest => dest.TypeName, opt => opt.MapFrom(src => src.Type.CourseTypeName));
 
             // Course Type mapping
             CreateMap<CourseType, CourseTypeDTO>().ReverseMap();
@@ -226,7 +226,7 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<Learning_Registration, LearningRegisDTO>()
                 .ForMember(dest => dest.LearnerId, opt => opt.MapFrom(src => src.LearnerId))
                 .ForMember(dest => dest.ClassId, opt => opt.MapFrom(src => src.ClassId))
-                .ForMember(dest => dest.TypeId, opt => opt.MapFrom(src => src.TypeId));
+                .ForMember(dest => dest.TypeId, opt => opt.MapFrom(src => src.RegisTypeId));
             CreateMap<CreateLearningRegisDTO, Learning_Registration>().ReverseMap();
 
             //🔹 Learning_Registration_Type Mappings

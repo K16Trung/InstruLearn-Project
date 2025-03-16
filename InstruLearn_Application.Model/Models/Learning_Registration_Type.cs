@@ -10,8 +10,8 @@ namespace InstruLearn_Application.Model.Models
     public class Learning_Registration_Type
     {
         [Key]
-        public int TypeId { get; set; }
-        public string TypeName { get; set; }
+        public int RegisTypeId { get; set; }
+        public string RegisTypeName { get; set; }
         public ICollection<Learning_Registration> Learning_Registrations { get; set; }
     }
 }

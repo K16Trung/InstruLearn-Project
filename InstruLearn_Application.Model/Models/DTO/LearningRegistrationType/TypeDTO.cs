@@ -8,7 +8,7 @@ namespace InstruLearn_Application.Model.Models.DTO.LearningRegistrationType
 {
     public class TypeDTO
     {
-        public int TypeId { get; set; }
-        public string TypeName { get; set; }
+        public int RegisTypeId { get; set; }
+        public string RegisTypeName { get; set; }
     }
 }

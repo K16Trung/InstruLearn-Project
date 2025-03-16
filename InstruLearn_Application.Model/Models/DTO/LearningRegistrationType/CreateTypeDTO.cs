@@ -8,6 +8,6 @@ namespace InstruLearn_Application.Model.Models.DTO.LearningRegistrationType
 {
     public class CreateTypeDTO
     {
-        public string TypeName { get; set; }
+        public string RegisTypeName { get; set; }
     }
 }
