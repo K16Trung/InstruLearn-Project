@@ -65,6 +65,7 @@ namespace InstruLearn_Application.BLL.Service
             }
 
             var course = _mapper.Map<Course_Package>(createDto);
+            course.Type = type;
             await _unitOfWork.CourseRepository.AddAsync(course);
             return new ResponseDTO
             {
