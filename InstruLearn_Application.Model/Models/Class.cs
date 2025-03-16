@@ -13,7 +13,6 @@ namespace InstruLearn_Application.Model.Models
         [Key]
         public int ClassId { get; set; }
         public int TeacherId { get; set; }
-        public Teacher Teacher { get; set; }
         public int CoursePackageId { get; set; }
         public int SyllabusId { get; set; }
         public string ClassName { get; set; }
