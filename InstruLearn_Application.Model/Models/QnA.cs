@@ -13,7 +13,7 @@ namespace InstruLearn_Application.Model.Models
         public int QuestionId { get; set; }
         public string AccountId { get; set; }
         public Account Account { get; set; }
-        public int CourseId { get; set; }
+        public int CoursePackageId { get; set; }
         public Course_Package CoursePackage { get; set; }
         public string Title { get; set; }
         public string QuestionContent { get; set; }

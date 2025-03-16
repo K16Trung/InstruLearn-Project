@@ -34,7 +34,7 @@ namespace InstruLearn_Application.BLL.Service
                 var courseDTO = CourseMapper.FirstOrDefault(c => c.CoursePackageId == course.CoursePackageId);
                 if (courseDTO != null)
                 {
-                    var feedbacks = await _unitOfWork.FeedbackRepository.GetFeedbacksByCourseIdAsync(course.CoursePackageId);
+                    var feedbacks = await _unitOfWork.FeedbackRepository.GetFeedbacksByCoursePackageIdAsync(course.CoursePackageId);
                     courseDTO.Rating = (int)CalculateAverageRating(feedbacks.ToList());
                 }
             }

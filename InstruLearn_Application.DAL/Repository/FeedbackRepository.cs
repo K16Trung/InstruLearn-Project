@@ -33,10 +33,10 @@ namespace InstruLearn_Application.DAL.Repository
                     .ThenInclude(r => r.Account)
                 .FirstOrDefaultAsync(f => f.FeedbackId == id);
         }
-        public async Task<IEnumerable<FeedBack>> GetFeedbacksByCourseIdAsync(int courseId)
+        public async Task<IEnumerable<FeedBack>> GetFeedbacksByCoursePackageIdAsync(int courseId)
         {
             return await _appDbContext.FeedBacks
-                .Where(f => f.CourseId == courseId)
+                .Where(f => f.CoursePackageId == courseId)
                 .ToListAsync();
         }
     }

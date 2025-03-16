@@ -13,7 +13,7 @@ namespace InstruLearn_Application.Model.Models
         public int FeedbackId { get; set; }
         public string AccountId { get; set; }
         public Account Account { get; set; }
-        public int CourseId { get; set; }
+        public int CoursePackageId { get; set; }
         public Course_Package CoursePackage { get; set; }
         public string FeedbackContent { get; set; }
         public DateTime CreateAt { get; set; }
