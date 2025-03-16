@@ -26,7 +26,7 @@ namespace InstruLearn_Application.DAL.Repository
                 .ToListAsync();
         }
 
-        public async Task<Course_Package> GetByIdAsync(int courseId)
+        public async Task<Course_Package> GetByIdAsync(int coursePackageId)
         {
             return await _appDbContext.CoursePackages
                 .Include(c => c.Type)
@@ -42,7 +42,7 @@ namespace InstruLearn_Application.DAL.Repository
                 .Include(c => c.QnAs)
                     .ThenInclude(q => q.QnAReplies)
                         .ThenInclude(qr => qr.Account)
-                .FirstOrDefaultAsync(c => c.CoursePackageId == courseId);
+                .FirstOrDefaultAsync(c => c.CoursePackageId == coursePackageId);
         }
     }
 }

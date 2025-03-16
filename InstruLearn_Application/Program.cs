@@ -16,6 +16,8 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using InstruLearn_Application.Model.Configuration;
 using Microsoft.Extensions.Options;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace InstruLearn_Application
 {
@@ -96,6 +98,8 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<IMajorRepository, MajorRepository>();
             builder.Services.AddScoped<ILearningRegisRepository, LearningRegisRepository>();
             builder.Services.AddScoped<ILearningRegisTypeRepository, LearningRegisTypeRepository>();
+            builder.Services.AddScoped<ISyllabusRepository, SyllabusRepository>();
+            builder.Services.AddScoped<ITestResultRepository, TestResultRepository>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             builder.Services.AddScoped<IAuthService, AuthService>();
@@ -120,6 +124,7 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<IMajorService, MajorService>();
             builder.Services.AddScoped<ILearningRegisService, LearningRegisService>();
             builder.Services.AddScoped<ILearningRegisTypeService, LearningRegisTypeService>();
+            builder.Services.AddScoped<ISyllabusService, SyllabusService>();
 
             builder.Services.AddAutoMapper(typeof(MappingProfile));
 
@@ -189,6 +194,20 @@ namespace InstruLearn_Application
             app.MapControllers();
 
             app.Run();
+        }
+    }
+    public class JsonTimeOnlyConverter : JsonConverter<TimeOnly>
+    {
+        private const string TimeFormat = "HH:mm:ss";
+
+        public override TimeOnly Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            return TimeOnly.ParseExact(reader.GetString(), TimeFormat);
+        }
+
+        public override void Write(Utf8JsonWriter writer, TimeOnly value, JsonSerializerOptions options)
+        {
+            writer.WriteStringValue(value.ToString(TimeFormat));
         }
     }
 }
