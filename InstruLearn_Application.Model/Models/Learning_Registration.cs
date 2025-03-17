@@ -14,18 +14,22 @@ namespace InstruLearn_Application.Model.Models
         public int LearningRegisId { get; set; }
         public int LearnerId { get; set; }
         public Learner Learner { get; set; }
-        public int ClassId { get; set; }
+        public int? TeacherId { get; set; }
+        public Teacher Teacher { get; set; }
+        public int? ClassId { get; set; }
         public Class Classes { get; set; }
         public int RegisTypeId { get; set; }
         public Learning_Registration_Type Learning_Registration_Type { get; set; }
+        public int MajorId { get; set; }
+        public Major Major {  get; set; }
         public DateTime TimeStart { get; set; }
         public DateTime RequestDate { get; set; }
         public LearningRegis Status { get; set; }
         public int NumberOfSession { get; set; }
-        public string VideoUrl {  get; set; }
 
         // Navigation properties
         public ICollection<Test_Result> Test_Results { get; set; }
         public ICollection<LearningRegistrationDay> LearningRegistrationDay { get; set; }
+        public ICollection<Schedules> Schedules { get; set; }
     }
 }

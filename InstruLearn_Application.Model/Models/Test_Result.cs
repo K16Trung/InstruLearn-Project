@@ -15,9 +15,10 @@ namespace InstruLearn_Application.Model.Models
         public int TeacherId { get; set; }
         public int MajorTestId { get; set; }
         public int LearningRegisId { get; set; }
-        public int Score { get; set; }
+        public string VideoUrl { get; set; }
+        public int? Score { get; set; }
         public string LevelAssigned { get; set; }
-        public string Feedback { get; set; }
+        public string? Feedback { get; set; }
 
         // Navigation properties
         public Learner Learner { get; set; }
