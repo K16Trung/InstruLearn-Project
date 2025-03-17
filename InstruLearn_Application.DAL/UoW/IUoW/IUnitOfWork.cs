@@ -31,6 +31,7 @@ namespace InstruLearn_Application.DAL.UoW.IUoW
         IClassRepository ClassRepository { get; }
         IClassDayRepository ClassDayRepository { get; }
         IMajorRepository MajorRepository { get; }
+        IMajorTestRepository MajorTestRepository { get; }
         ILearningRegisRepository LearningRegisRepository { get; }
         ILearningRegisTypeRepository LearningRegisTypeRepository { get; }
         ISyllabusRepository SyllabusRepository { get; }
