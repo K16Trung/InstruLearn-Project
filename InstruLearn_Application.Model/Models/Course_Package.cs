@@ -25,6 +25,7 @@ namespace InstruLearn_Application.Model.Models
         public string ImageUrl { get; set; }
 
         //Navigation property
+        public virtual Certification Certifications { get; set; }
         public ICollection<Course_Content> CourseContents { get; set; }
         public ICollection<FeedBack> FeedBacks { get; set; }
         public ICollection<QnA> QnAs { get; set; }

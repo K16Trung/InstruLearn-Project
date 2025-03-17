@@ -43,6 +43,7 @@ namespace InstruLearn_Application.Model.Data
         public DbSet<Test_Result> Test_Results { get; set; }
         public DbSet<Schedules> Schedules { get; set; }
         public DbSet<ScheduleDays> ScheduleDays { get; set; }
+        public DbSet<Certification> Certifications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -369,7 +370,18 @@ namespace InstruLearn_Application.Model.Data
             modelBuilder.Entity<ScheduleDays>()
                 .Property(sd => sd.DayOfWeeks)
                 .HasConversion<string>();
+            //
+            modelBuilder.Entity<Certification>()
+                .HasOne(c => c.Learner)
+                .WithMany(l => l.Certifications)
+                .HasForeignKey(c => c.LearnerId)
+                .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<Certification>()
+               .HasOne(c => c.CoursePackages)
+               .WithOne(cp => cp.Certifications)
+               .HasForeignKey<Certification>(c => c.CoursePackageId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
