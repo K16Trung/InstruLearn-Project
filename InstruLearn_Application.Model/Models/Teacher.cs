@@ -11,7 +11,7 @@ namespace InstruLearn_Application.Model.Models
     {
         [Key]
         public int TeacherId { get; set; }
-        public int MajorId { get; set; }
+        public int? MajorId { get; set; }
         public string AccountId { get; set; }
         public Account Account { get; set; }
         public string Fullname { get; set; }
@@ -23,5 +23,7 @@ namespace InstruLearn_Application.Model.Models
         public Major Major { get; set; }
         public ICollection<Test_Result> TestResults { get; set; }
         public ICollection<Class> Classes { get; set; }
+        public ICollection<Learning_Registration> Learning_Registrations { get; set; }
+        public ICollection<Schedules> Schedules { get; set; }
     }
 }

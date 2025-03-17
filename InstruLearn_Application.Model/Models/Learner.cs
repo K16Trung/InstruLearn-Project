@@ -22,5 +22,6 @@ namespace InstruLearn_Application.Model.Models
         public ICollection<Test_Result> Test_Results { get; set; }
         public ICollection<Learning_Registration> Learning_Registrations { get; set; }
         public ICollection<Purchase> Purchases { get; set; }
+        public ICollection<Schedules> Schedules { get; set; }
     }
 }

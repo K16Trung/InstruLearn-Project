@@ -4,6 +4,7 @@ using InstruLearn_Application.Model.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InstruLearn_Application.Model.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250317081359_schedules_db")]
+    partial class schedules_db
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -423,9 +426,6 @@ namespace InstruLearn_Application.Model.Migrations
                     b.Property<int>("LearnerId")
                         .HasColumnType("int");
 
-                    b.Property<int>("MajorId")
-                        .HasColumnType("int");
-
                     b.Property<int>("NumberOfSession")
                         .HasColumnType("int");
 
@@ -449,8 +449,6 @@ namespace InstruLearn_Application.Model.Migrations
                     b.HasIndex("ClassId");
 
                     b.HasIndex("LearnerId");
-
-                    b.HasIndex("MajorId");
 
                     b.HasIndex("RegisTypeId");
 
@@ -1108,12 +1106,6 @@ namespace InstruLearn_Application.Model.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("InstruLearn_Application.Model.Models.Major", "Major")
-                        .WithMany("learning_Registrations")
-                        .HasForeignKey("MajorId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("InstruLearn_Application.Model.Models.Learning_Registration_Type", "Learning_Registration_Type")
                         .WithMany("Learning_Registrations")
                         .HasForeignKey("RegisTypeId")
@@ -1130,8 +1122,6 @@ namespace InstruLearn_Application.Model.Migrations
                     b.Navigation("Learner");
 
                     b.Navigation("Learning_Registration_Type");
-
-                    b.Navigation("Major");
 
                     b.Navigation("Teacher");
                 });
@@ -1460,8 +1450,6 @@ namespace InstruLearn_Application.Model.Migrations
                     b.Navigation("MajorTests");
 
                     b.Navigation("Teachers");
-
-                    b.Navigation("learning_Registrations");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.MajorTest", b =>
