@@ -30,6 +30,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static InstruLearn_Application.Model.Models.DTO.PurchaseItem.CreatePurchaseItemDTO;
 
 namespace InstruLearn_Application.Model.Mapper
 {
@@ -258,15 +259,13 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.PurchaseItemId, opt => opt.MapFrom(src => src.PurchaseItemId))
                 .ForMember(dest => dest.PurchaseId, opt => opt.MapFrom(src => src.PurchaseId))
                 .ForMember(dest => dest.CoursePackageId, opt => opt.MapFrom(src => src.CoursePackageId))
-                .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.Quantity))
                 .ForMember(dest => dest.TotalAmount, opt => opt.MapFrom(src => src.TotalAmount))
                 .ReverseMap();
 
-            CreateMap<CreatePurchaseItemDTO, Purchase_Items>()
-                .ForMember(dest => dest.PurchaseId, opt => opt.MapFrom(src => src.PurchaseId))
+            CreateMap<CoursePackageItem, Purchase_Items>()
                 .ForMember(dest => dest.CoursePackageId, opt => opt.MapFrom(src => src.CoursePackageId))
-                .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.Quantity))
-                .ForMember(dest => dest.TotalAmount, opt => opt.MapFrom(src => src.TotalAmount));
+                .ForMember(dest => dest.PurchaseId, opt => opt.Ignore()) // Will be set manually in service
+                .ForMember(dest => dest.TotalAmount, opt => opt.Ignore()); // Will be calculated in service
 
             //🔹 Purchase mapping
             CreateMap<Purchase, PurchaseDTO>()

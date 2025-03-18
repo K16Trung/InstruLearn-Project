@@ -65,13 +65,12 @@ namespace InstruLearn_Application.BLL.Service
             };
         }
 
-        public async Task<ResponseDTO> CreatePurchaseItemAsync(CreatePurchaseItemDTO createPurchaseItemDTO)
+        public async Task<ResponseDTO> CreatePurchaseItemAsync(CreatePurchaseItemDTO createPurchaseItemsDTO)
         {
             await _unitOfWork.BeginTransactionAsync();
-
             try
             {
-                var purchase = await _unitOfWork.PurchaseRepository.GetByIdAsync(createPurchaseItemDTO.PurchaseId);
+                var purchase = await _unitOfWork.PurchaseRepository.GetByIdAsync(createPurchaseItemsDTO.PurchaseId);
                 if (purchase == null)
                 {
                     return new ResponseDTO
@@ -80,21 +79,8 @@ namespace InstruLearn_Application.BLL.Service
                         Message = "Purchase not found",
                     };
                 }
-
-                // Validate course package exists
-                var coursePackage = await _unitOfWork.CourseRepository.GetByIdAsync(createPurchaseItemDTO.CoursePackageId);
-                if (coursePackage == null)
-                {
-                    return new ResponseDTO
-                    {
-                        IsSucceed = false,
-                        Message = "Course package not found",
-                    };
-                }
-
                 // Get the learner ID directly from the purchase
                 int learnerId = purchase.LearnerId;
-
                 // Get the wallet directly from repository
                 var wallet = await _unitOfWork.WalletRepository.FirstOrDefaultAsync(w => w.LearnerId == learnerId);
                 if (wallet == null)
@@ -105,12 +91,37 @@ namespace InstruLearn_Application.BLL.Service
                         Message = "Wallet not found",
                     };
                 }
-
-                // Calculate the amount to deduct
-                decimal amountToDeduct = createPurchaseItemDTO.TotalAmount;
-
+                decimal totalAmountToDeduct = 0;
+                List<Purchase_Items> purchaseItems = new List<Purchase_Items>();
+                // Process each course package in the request
+                foreach (var item in createPurchaseItemsDTO.CoursePackages)
+                {
+                    // Validate course package exists
+                    var coursePackage = await _unitOfWork.CourseRepository.GetByIdAsync(item.CoursePackageId);
+                    if (coursePackage == null)
+                    {
+                        return new ResponseDTO
+                        {
+                            IsSucceed = false,
+                            Message = $"Course package with ID {item.CoursePackageId} not found",
+                        };
+                    }
+                    // Add course price to total
+                    decimal itemAmount = coursePackage.Price;
+                    totalAmountToDeduct += itemAmount;
+                    // Create purchase item
+                    var purchaseItem = new Purchase_Items
+                    {
+                        PurchaseId = createPurchaseItemsDTO.PurchaseId,
+                        CoursePackageId = item.CoursePackageId,
+                        TotalAmount = itemAmount,
+                        Purchase = purchase,
+                        CoursePackage = coursePackage
+                    };
+                    purchaseItems.Add(purchaseItem);
+                }
                 // Check if wallet has sufficient funds
-                if (wallet.Balance < amountToDeduct)
+                if (wallet.Balance < totalAmountToDeduct)
                 {
                     return new ResponseDTO
                     {
@@ -118,31 +129,35 @@ namespace InstruLearn_Application.BLL.Service
                         Message = "Insufficient funds in wallet",
                     };
                 }
-
-                // Create the purchase item
-                var purchaseItemObj = _mapper.Map<Purchase_Items>(createPurchaseItemDTO);
-                purchaseItemObj.Purchase = purchase;
-                purchaseItemObj.CoursePackage = coursePackage;
-
-                await _unitOfWork.PurchaseItemRepository.AddAsync(purchaseItemObj);
-
-                wallet.Balance -= amountToDeduct;
+                // Add all purchase items
+                foreach (var item in purchaseItems)
+                {
+                    await _unitOfWork.PurchaseItemRepository.AddAsync(item);
+                }
+                // Update wallet balance
+                wallet.Balance -= totalAmountToDeduct;
                 wallet.UpdateAt = DateTime.Now;
-
                 await _unitOfWork.SaveChangeAsync();
                 await _unitOfWork.CommitTransactionAsync();
-
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Purchase item added successfully and wallet updated",
+                    Message = $"Successfully purchased {purchaseItems.Count} course packages for total amount {totalAmountToDeduct}",
+                    Data = new
+                    {
+                        TotalAmount = totalAmountToDeduct,
+                        PurchaseId = purchase.PurchaseId,
+                        CoursePackages = purchaseItems.Select(pi => new {
+                            CoursePackageId = pi.CoursePackageId,
+                            Amount = pi.TotalAmount
+                        }).ToList()
+                    }
                 };
             }
             catch (Exception ex)
             {
                 // Rollback in case of any error
                 await _unitOfWork.RollbackTransactionAsync();
-
                 return new ResponseDTO
                 {
                     IsSucceed = false,

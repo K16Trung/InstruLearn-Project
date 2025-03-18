@@ -12,7 +12,6 @@ namespace InstruLearn_Application.Model.Models.DTO.PurchaseItem
         public int PurchaseItemId { get; set; }
         public int PurchaseId { get; set; }
         public int CoursePackageId { get; set; }
-        public int Quantity { get; set; }
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalAmount { get; set; }
     }
