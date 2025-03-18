@@ -18,6 +18,8 @@ using InstruLearn_Application.Model.Models.DTO.LearningRegistrationType;
 using InstruLearn_Application.Model.Models.DTO.Major;
 using InstruLearn_Application.Model.Models.DTO.MajorTest;
 using InstruLearn_Application.Model.Models.DTO.Manager;
+using InstruLearn_Application.Model.Models.DTO.Purchase;
+using InstruLearn_Application.Model.Models.DTO.PurchaseItem;
 using InstruLearn_Application.Model.Models.DTO.QnA;
 using InstruLearn_Application.Model.Models.DTO.QnAReplies;
 using InstruLearn_Application.Model.Models.DTO.Staff;
@@ -28,6 +30,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static InstruLearn_Application.Model.Models.DTO.PurchaseItem.CreatePurchaseItemDTO;
 
 namespace InstruLearn_Application.Model.Mapper
 {
@@ -251,6 +254,28 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<Learning_Registration_Type, RegisTypeDTO>().ReverseMap();
             CreateMap<CreateRegisTypeDTO, Learning_Registration_Type>().ReverseMap();
 
+            //🔹 Purchase_Items mapping
+            CreateMap<Purchase_Items, PurchaseItemDTO>()
+                .ForMember(dest => dest.PurchaseItemId, opt => opt.MapFrom(src => src.PurchaseItemId))
+                .ForMember(dest => dest.PurchaseId, opt => opt.MapFrom(src => src.PurchaseId))
+                .ForMember(dest => dest.CoursePackageId, opt => opt.MapFrom(src => src.CoursePackageId))
+                .ForMember(dest => dest.TotalAmount, opt => opt.MapFrom(src => src.TotalAmount))
+                .ReverseMap();
+
+            CreateMap<CoursePackageItem, Purchase_Items>()
+                .ForMember(dest => dest.CoursePackageId, opt => opt.MapFrom(src => src.CoursePackageId))
+                .ForMember(dest => dest.PurchaseId, opt => opt.Ignore())
+                .ForMember(dest => dest.TotalAmount, opt => opt.Ignore());
+
+            //🔹 Purchase mapping
+            CreateMap<Purchase, PurchaseDTO>()
+                .ForMember(dest => dest.PurchaseId, opt => opt.MapFrom(src => src.PurchaseId))
+                .ForMember(dest => dest.LearnerId, opt => opt.MapFrom(src => src.LearnerId))
+                .ForMember(dest => dest.PurchaseDate, opt => opt.MapFrom(src => src.PurchaseDate))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
+                .ForMember(dest => dest.PurchaseItems, opt => opt.MapFrom(src => src.PurchaseItems))
+                .ReverseMap();
+            CreateMap<CreatePurchaseDTO, Purchase>().ReverseMap();
         }
         private string GetDayName(int dayOfWeek)
         {
