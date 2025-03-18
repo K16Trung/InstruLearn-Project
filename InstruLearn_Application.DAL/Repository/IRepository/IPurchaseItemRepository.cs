@@ -9,5 +9,8 @@ namespace InstruLearn_Application.DAL.Repository.IRepository
 {
     public interface IPurchaseItemRepository : IGenericRepository<Purchase_Items>
     {
+        Task<IEnumerable<Purchase_Items>> GetPurchaseItemWithFullCourseDetailsAsync();
+
+        Task<Purchase_Items> GetPurchaseItemsWithFullCourseDetailsByPurchaseIdAsync(int purchaseId);
     }
 }

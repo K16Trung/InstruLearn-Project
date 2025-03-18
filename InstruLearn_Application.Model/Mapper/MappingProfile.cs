@@ -262,12 +262,21 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.PurchaseId, opt => opt.MapFrom(src => src.PurchaseId))
                 .ForMember(dest => dest.CoursePackageId, opt => opt.MapFrom(src => src.CoursePackageId))
                 .ForMember(dest => dest.TotalAmount, opt => opt.MapFrom(src => src.TotalAmount))
+                .ForMember(dest => dest.CoursePackage, opt => opt.MapFrom(src => src.CoursePackage))
                 .ReverseMap();
 
             CreateMap<CoursePackageItem, Purchase_Items>()
                 .ForMember(dest => dest.CoursePackageId, opt => opt.MapFrom(src => src.CoursePackageId))
                 .ForMember(dest => dest.PurchaseId, opt => opt.Ignore())
                 .ForMember(dest => dest.TotalAmount, opt => opt.Ignore());
+
+            CreateMap<Course_Package, CourseDetailPurchaseDTO>()
+                .ForMember(dest => dest.CourseName, opt => opt.MapFrom(src => src.CourseName))
+                .ForMember(dest => dest.TypeName, opt => opt.MapFrom(src => src.Type.CourseTypeName))
+                .ForMember(dest => dest.CourseDescription, opt => opt.MapFrom(src => src.CourseDescription))
+                .ForMember(dest => dest.Headline, opt => opt.MapFrom(src => src.Headline))
+                .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.ImageUrl))
+                .ReverseMap();
 
             //🔹 Purchase mapping
             CreateMap<Purchase, PurchaseDTO>()
