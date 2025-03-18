@@ -8,7 +8,7 @@ namespace InstruLearn_Application.Model.Enum
 {
     public enum TransactionType
     {
-        AddFuns,
-        Payment
+        AddFuns = 1,
+        Payment = 2
     }
 }

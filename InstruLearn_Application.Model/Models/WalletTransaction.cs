@@ -12,7 +12,6 @@ namespace InstruLearn_Application.Model.Models
     public class WalletTransaction
     {
         [Key]
-        public int WalletTransactionId { get; set; }
         public string TransactionId { get; set; }
         public int WalletId { get; set; }
         public Wallet Wallet { get; set; }
@@ -22,5 +21,7 @@ namespace InstruLearn_Application.Model.Models
         public TransactionStatus Status { get; set; }
         public DateTime TransactionDate { get; set; }
         public ICollection<Payment> Payments { get; set; }
+        [NotMapped]
+        public decimal SignedAmount => TransactionType == TransactionType.Payment ? -Amount : Amount;
     }
 }

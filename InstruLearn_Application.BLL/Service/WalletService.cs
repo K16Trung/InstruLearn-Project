@@ -33,11 +33,18 @@ namespace InstruLearn_Application.BLL.Service
 
         public async Task<ResponseDTO> AddFundsToWallet(int learnerId, decimal amount)
         {
+            if (amount <= 0)
+            {
+                return new ResponseDTO { IsSucceed = false, Message = "Amount must be greater than zero." };
+            }
+
             var wallet = await _unitOfWork.WalletRepository.FirstOrDefaultAsync(w => w.LearnerId == learnerId);
             if (wallet == null)
             {
                 return new ResponseDTO { IsSucceed = false, Message = "Wallet not found" };
             }
+
+            long orderCode = new Random().Next(100000, 999999);
 
             // Create a wallet transaction
             var transaction = new WalletTransaction
@@ -61,7 +68,7 @@ namespace InstruLearn_Application.BLL.Service
             };
 
                 PaymentData paymentData = new PaymentData(
-                orderCode: long.TryParse(transaction.TransactionId, out long orderCode) ? orderCode : new Random().Next(100000, 999999),
+                orderCode: orderCode,
                 amount: (int)amount,
                 description: "Add Funds to Wallet",
                 items: items,
@@ -73,6 +80,8 @@ namespace InstruLearn_Application.BLL.Service
 
             if (createPayment == null || string.IsNullOrEmpty(createPayment.checkoutUrl))
             {
+                transaction.Status = TransactionStatus.Failed;
+                await _unitOfWork.SaveChangeAsync();
                 return new ResponseDTO { IsSucceed = false, Message = "Failed to generate payment link" };
             }
 
