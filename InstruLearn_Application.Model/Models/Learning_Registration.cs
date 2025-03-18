@@ -16,9 +16,9 @@ namespace InstruLearn_Application.Model.Models
         public int LearnerId { get; set; }
         public Learner Learner { get; set; }
         public int? TeacherId { get; set; }
-        public Teacher Teacher { get; set; }
+        public Teacher? Teacher { get; set; }
         public int? ClassId { get; set; }
-        public Class Classes { get; set; }
+        public Class? Classes { get; set; }
         public int RegisTypeId { get; set; }
         public Learning_Registration_Type Learning_Registration_Type { get; set; }
         public int MajorId { get; set; }
