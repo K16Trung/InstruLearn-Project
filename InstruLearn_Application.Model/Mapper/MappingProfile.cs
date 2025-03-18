@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using InstruLearn_Application.Model.Helper;
 using InstruLearn_Application.Model.Models;
 using InstruLearn_Application.Model.Models.DTO.Account;
 using InstruLearn_Application.Model.Models.DTO.Admin;
@@ -243,7 +244,10 @@ namespace InstruLearn_Application.Model.Mapper
             .ForMember(dest => dest.RegisTypeName, opt => opt.MapFrom(src => src.Learning_Registration_Type.RegisTypeName))
             .ForMember(dest => dest.MajorName, opt => opt.MapFrom(src => src.Major.MajorName))
             .ForMember(dest => dest.LearningDays, opt => opt.MapFrom(src =>
-                src.LearningRegistrationDay.Select(ld => GetDayName((int)ld.DayOfWeek)).ToList()));
+                src.LearningRegistrationDay.Select(ld => DateTimeHelper.GetDayName((int)ld.DayOfWeek)).ToList()))
+            .ForMember(dest => dest.TimeEnd, opt => opt.MapFrom(src =>
+                DateTimeHelper.CalculateTimeEnd(src.TimeStart, src.NumberOfSession, src.LearningRegistrationDay
+                    .Select(ld => DateTimeHelper.GetDayName((int)ld.DayOfWeek)).ToList())));
 
 
 
@@ -251,19 +255,6 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<Learning_Registration_Type, RegisTypeDTO>().ReverseMap();
             CreateMap<CreateRegisTypeDTO, Learning_Registration_Type>().ReverseMap();
 
-        }
-        private string GetDayName(int dayOfWeek)
-        {
-            return dayOfWeek switch
-            {
-                2 => "Monday",
-                3 => "Tuesday",
-                4 => "Wednesday",
-                5 => "Thursday",
-                6 => "Friday",
-                7 => "Saturday",
-                _ => "Unknown"
-            };
         }
     }
 }
