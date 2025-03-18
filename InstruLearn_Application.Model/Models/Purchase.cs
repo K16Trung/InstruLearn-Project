@@ -17,8 +17,6 @@ namespace InstruLearn_Application.Model.Models
         public Learner Learner { get; set; }
         public DateTime PurchaseDate { get; set; }
         public PurchaseStatus Status { get; set; }
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal TotalPrice { get; set; }
 
         //Navigation property
         public ICollection<Purchase_Items> PurchaseItems { get; set; }
