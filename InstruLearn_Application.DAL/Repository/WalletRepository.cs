@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -25,5 +26,11 @@ namespace InstruLearn_Application.DAL.Repository
                     .ThenInclude(l => l.Account)
                 .FirstOrDefaultAsync(w => w.LearnerId == learnerId);
         }
+
+        public async Task<Wallet> GetFirstOrDefaultAsync(Expression<Func<Wallet, bool>> predicate)
+        {
+            return await _appDbContext.Wallets.FirstOrDefaultAsync(predicate);
+        }
+
     }
 }
