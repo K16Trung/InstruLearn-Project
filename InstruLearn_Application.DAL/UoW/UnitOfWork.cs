@@ -81,7 +81,7 @@ namespace InstruLearn_Application.DAL.UoW
 
 
         public UnitOfWork(ApplicationDbContext dbContext, IAccountRepository accountRepository, IAdminRepository adminRepository, IManagerRepository managerRepository, IStaffRepository staffRepository, ILearnerRepository learnerRepository, ITeacherRepository teacherRepository, ICourseRepository courseRepository, ICourseTypeRepository courseTypeRepository, ICourseContentRepository courseContentRepository, IItemTypeRepository itemTypeRepository, ICourseContentItemRepository courseContentItemRepository, IFeedbackRepository feedbackRepository, 
-            IFeedbackRepliesRepository feedbackRepliesRepository, IQnARepository qnARepository, IQnARepliesRepository qnARepliesRepository, IWalletRepository walletRepository, IPaymentRepository paymentRepository, IWalletTransactionRepository walletTransactionRepository, IClassRepository classRepository, IClassDayRepository classDayRepository, IMajorRepository majorRepository, ILearningRegisRepository learningRegisRepository, ILearningRegisTypeRepository learningRegisTypeRepository, ISyllabusRepository syllabusRepository, ITestResultRepository testResultRepository, IMajorTestRepository majorTestRepository)
+            IFeedbackRepliesRepository feedbackRepliesRepository, IQnARepository qnARepository, IQnARepliesRepository qnARepliesRepository, IWalletRepository walletRepository, IPaymentRepository paymentRepository, IWalletTransactionRepository walletTransactionRepository, IClassRepository classRepository, IClassDayRepository classDayRepository, IMajorRepository majorRepository, ILearningRegisRepository learningRegisRepository, ILearningRegisTypeRepository learningRegisTypeRepository, ISyllabusRepository syllabusRepository, ITestResultRepository testResultRepository, IMajorTestRepository majorTestRepository, IPurchaseRepository purchaseRepository, IPurchaseItemRepository purchaseItemRepository, ILearningRegisDayRepository learningRegisDayRepository)
         {
             _dbContext = dbContext;
             _adminRepository = adminRepository;
@@ -110,6 +110,9 @@ namespace InstruLearn_Application.DAL.UoW
             _learningRegisTypeRepository = learningRegisTypeRepository;
             _syllabusRepository = syllabusRepository;
             _testResultRepository = testResultRepository;
+            _purchaseRepository = purchaseRepository;
+            _purchaseItemRepository = purchaseItemRepository;
+            _learningRegisDayRepository = learningRegisDayRepository;
         }
 
         protected virtual void Dispose(bool disposing)
