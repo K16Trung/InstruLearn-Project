@@ -10,20 +10,17 @@ using System.Threading.Tasks;
 
 namespace InstruLearn_Application.DAL.Repository
 {
-    public class MajorTestRepository : GenericRepository<MajorTest>, IMajorTestRepository
+    public class LearningRegisDayRepository  :GenericRepository<LearningRegistrationDay>, ILearningRegisDayRepository
     {
         private readonly ApplicationDbContext _appDbContext;
-        public MajorTestRepository(ApplicationDbContext appDbContext) : base(appDbContext)
+
+        public LearningRegisDayRepository(ApplicationDbContext appDbContext) : base(appDbContext)
         {
             _appDbContext = appDbContext;
         }
-
-        public async Task<IEnumerable<MajorTest>> GetMajorTestsByMajorIdAsync(int majorId)
+        public async Task AddRangeAsync(IEnumerable<LearningRegistrationDay> entities)
         {
-            return await _appDbContext.MajorTests
-                .Where(mt => mt.MajorId == majorId)
-                .ToListAsync();
+            await _appDbContext.Set<LearningRegistrationDay>().AddRangeAsync(entities);
         }
-
     }
 }

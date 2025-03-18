@@ -99,6 +99,7 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<IMajorTestRepository, MajorTestRepository>();
             builder.Services.AddScoped<ILearningRegisRepository, LearningRegisRepository>();
             builder.Services.AddScoped<ILearningRegisTypeRepository, LearningRegisTypeRepository>();
+            builder.Services.AddScoped<ILearningRegisDayRepository, LearningRegisDayRepository>();
             builder.Services.AddScoped<ISyllabusRepository, SyllabusRepository>();
             builder.Services.AddScoped<ITestResultRepository, TestResultRepository>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();

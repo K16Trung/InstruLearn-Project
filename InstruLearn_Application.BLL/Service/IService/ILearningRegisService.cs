@@ -14,5 +14,7 @@ namespace InstruLearn_Application.BLL.Service.IService
         Task<ResponseDTO> GetLearningRegisByIdAsync(int learningRegisId);
         Task<ResponseDTO> CreateLearningRegisAsync(CreateLearningRegisDTO createLearningRegisDTO);
         Task<ResponseDTO> DeleteLearningRegisAsync(int learningRegisId);
+        Task<ResponseDTO> GetAllPendingRegistrationsAsync();
+        Task<ResponseDTO> GetPendingRegistrationsByLearnerIdAsync(int learnerId);
     }
 }
