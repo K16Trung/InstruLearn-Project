@@ -1,4 +1,5 @@
-﻿using System;
+﻿using InstruLearn_Application.Model.Enum;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -17,5 +18,6 @@ namespace InstruLearn_Application.Model.Models.DTO.LearningRegistration
         public DateTime TimeStart { get; set; }
         public DateTime RequestDate { get; set; }
         public int NumberOfSession { get; set; }
+        public List<DayOfWeeks> LearningDays { get; set; }
     }
 }

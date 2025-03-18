@@ -92,6 +92,20 @@ namespace InstruLearn_Application.BLL.Service
 
             await _unitOfWork.SaveChangeAsync();
 
+            // Add LearningRegistrationDay records
+            if (createLearningRegisDTO.LearningDays != null && createLearningRegisDTO.LearningDays.Any())
+            {
+                var learningDays = createLearningRegisDTO.LearningDays.Select(day => new LearningRegistrationDay
+                {
+                    LearningRegisId = learningRegis.LearningRegisId,  // Ensure FK is set
+                    DayOfWeek = day
+                }).ToList();
+
+                await _unitOfWork.LearningRegisDayRepository.AddRangeAsync(learningDays);
+            }
+
+            await _unitOfWork.SaveChangeAsync();
+
             return new ResponseDTO
             {
                 IsSucceed = true,
