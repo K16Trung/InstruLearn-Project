@@ -241,16 +241,14 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<CreateLearningRegisDTO, Learning_Registration>().ReverseMap();
 
             CreateMap<Learning_Registration, OneOnOneRegisDTO>()
-            .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Teacher.Fullname))
-            .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.Learner.FullName))
-            .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.Learner.PhoneNumber))
-            .ForMember(dest => dest.RegisTypeName, opt => opt.MapFrom(src => src.Learning_Registration_Type.RegisTypeName))
-            .ForMember(dest => dest.MajorName, opt => opt.MapFrom(src => src.Major.MajorName))
-            .ForMember(dest => dest.LearningDays, opt => opt.MapFrom(src =>
-                src.LearningRegistrationDay.Select(ld => DateTimeHelper.GetDayName((int)ld.DayOfWeek)).ToList()))
-            .ForMember(dest => dest.TimeEnd, opt => opt.MapFrom(src =>
-                DateTimeHelper.CalculateTimeEnd(src.TimeStart, src.NumberOfSession, src.LearningRegistrationDay
-                    .Select(ld => DateTimeHelper.GetDayName((int)ld.DayOfWeek)).ToList())));
+                .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Teacher.Fullname))
+                .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.Learner.FullName))
+                .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.Learner.PhoneNumber))
+                .ForMember(dest => dest.RegisTypeName, opt => opt.MapFrom(src => src.Learning_Registration_Type.RegisTypeName))
+                .ForMember(dest => dest.MajorName, opt => opt.MapFrom(src => src.Major.MajorName))
+                .ForMember(dest => dest.LearningDays, opt => opt.MapFrom(src =>
+                    src.LearningRegistrationDay.Select(ld => DateTimeHelper.GetDayName((int)ld.DayOfWeek)).ToList()))
+                .ForMember(dest => dest.TimeEnd, opt => opt.MapFrom(src => src.TimeStart.AddHours(2))); // Ensure 2-hour session
 
 
 
