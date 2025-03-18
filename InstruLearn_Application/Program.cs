@@ -101,6 +101,8 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<ILearningRegisTypeRepository, LearningRegisTypeRepository>();
             builder.Services.AddScoped<ISyllabusRepository, SyllabusRepository>();
             builder.Services.AddScoped<ITestResultRepository, TestResultRepository>();
+            builder.Services.AddScoped<IPurchaseRepository, PurchaseRepository>();
+            builder.Services.AddScoped<IPurchaseItemRepository, PurchaseItemRepository>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             builder.Services.AddScoped<IAuthService, AuthService>();
@@ -128,6 +130,8 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<ILearningRegisTypeService, LearningRegisTypeService>();
             builder.Services.AddScoped<ISyllabusService, SyllabusService>();
             builder.Services.AddScoped<ITestResultService, TestResultService>();
+            builder.Services.AddScoped<IPurchaseService, PurchaseService>();
+            builder.Services.AddScoped<IPurchaseItemService, PurchaseItemService>();
 
             builder.Services.AddAutoMapper(typeof(MappingProfile));
 

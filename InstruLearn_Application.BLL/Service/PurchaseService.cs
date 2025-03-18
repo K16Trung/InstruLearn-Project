@@ -2,7 +2,6 @@
 using InstruLearn_Application.BLL.Service.IService;
 using InstruLearn_Application.DAL.Repository.IRepository;
 using InstruLearn_Application.DAL.UoW.IUoW;
-using InstruLearn_Application.Model.Models.DTO.Syllabus;
 using InstruLearn_Application.Model.Models.DTO;
 using System;
 using System.Collections.Generic;
@@ -29,7 +28,7 @@ namespace InstruLearn_Application.BLL.Service
         public async Task<List<ResponseDTO>> GetAllPurchaseAsync()
         {
             var purchaseList = await _unitOfWork.PurchaseRepository.GetAllAsync();
-            var puchaseDtos = _mapper.Map<IEnumerable<SyllabusDTO>>(purchaseList);
+            var puchaseDtos = _mapper.Map<IEnumerable<PurchaseDTO>>(purchaseList);
 
             var responseList = new List<ResponseDTO>();
 
@@ -63,14 +62,54 @@ namespace InstruLearn_Application.BLL.Service
                 Data = puchaseDto
             };
         }
-        public Task<ResponseDTO> CreatePurchaseAsync(CreatePurchaseDTO purchaseDTO)
+        public async Task<ResponseDTO> CreatePurchaseAsync(CreatePurchaseDTO createPurchaseDTO)
         {
-            throw new NotImplementedException();
+            var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(createPurchaseDTO.LearnerId);
+            if (learner == null)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Learner not found",
+                };
+            }
+            var purchaseObj = _mapper.Map<Purchase>(createPurchaseDTO);
+            purchaseObj.Learner = learner;
+            purchaseObj.PurchaseDate = DateTime.Now;
+
+            await _unitOfWork.PurchaseRepository.AddAsync(purchaseObj);
+            await _unitOfWork.SaveChangeAsync();
+
+            var response = new ResponseDTO
+            {
+                IsSucceed = true,
+                Message = "Purchase added successfully",
+            };
+            return response;
         }
 
-        public Task<ResponseDTO> DeletePurchaseAsync(int purchaseId)
+        public async Task<ResponseDTO> DeletePurchaseAsync(int purchaseId)
         {
-            throw new NotImplementedException();
+            var deletePurchase = await _unitOfWork.PurchaseRepository.GetByIdAsync(purchaseId);
+            if (deletePurchase != null)
+            {
+                await _unitOfWork.PurchaseRepository.DeleteAsync(purchaseId);
+                await _unitOfWork.SaveChangeAsync();
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = "Purchase deleted successfully"
+                };
+            }
+            else
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Purchase with ID {purchaseId} not found"
+                };
+            }
         }
     }
 }

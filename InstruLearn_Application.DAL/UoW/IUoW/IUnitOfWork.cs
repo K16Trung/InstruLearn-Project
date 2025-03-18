@@ -40,5 +40,8 @@ namespace InstruLearn_Application.DAL.UoW.IUoW
         IPurchaseItemRepository PurchaseItemRepository { get; }
         ApplicationDbContext dbContext { get; }
         public Task<int> SaveChangeAsync();
+        Task BeginTransactionAsync();
+        Task CommitTransactionAsync();
+        Task RollbackTransactionAsync();
     }
 }

@@ -1,6 +1,7 @@
 ﻿using InstruLearn_Application.DAL.Repository.IRepository;
 using InstruLearn_Application.DAL.UoW.IUoW;
 using InstruLearn_Application.Model.Data;
+using Microsoft.EntityFrameworkCore.Storage;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -40,6 +41,7 @@ namespace InstruLearn_Application.DAL.UoW
         private readonly IPurchaseRepository _purchaseRepository;
         private readonly IPurchaseItemRepository _purchaseItemRepository;
         private readonly ApplicationDbContext _dbContext;
+        private IDbContextTransaction _transaction;
         private bool disposed = false;
 
         public IAccountRepository AccountRepository { get { return _accountRepository; } }
@@ -129,6 +131,37 @@ namespace InstruLearn_Application.DAL.UoW
         public async Task<int> SaveChangeAsync()
         {
             return await _dbContext.SaveChangesAsync();
+        }
+
+        public async Task BeginTransactionAsync()
+        {
+            _transaction = await _dbContext.Database.BeginTransactionAsync();
+        }
+
+        public async Task CommitTransactionAsync()
+        {
+            try
+            {
+                await _transaction.CommitAsync();
+            }
+            finally
+            {
+                await _transaction.DisposeAsync();
+                _transaction = null;
+            }
+        }
+
+        public async Task RollbackTransactionAsync()
+        {
+            try
+            {
+                await _transaction.RollbackAsync();
+            }
+            finally
+            {
+                await _transaction.DisposeAsync();
+                _transaction = null;
+            }
         }
     }
 }

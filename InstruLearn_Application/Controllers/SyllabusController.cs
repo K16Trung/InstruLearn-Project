@@ -16,7 +16,7 @@ namespace InstruLearn_Application.Controllers
             _syllabusService = syllabusService;
         }
 
-        [HttpGet]
+        [HttpGet("get-all")]
         public async Task<IActionResult> GetAllSyllabus()
         {
             var result = await _syllabusService.GetAllSyllabusAsync();
