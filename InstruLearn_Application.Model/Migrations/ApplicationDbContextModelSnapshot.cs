@@ -448,8 +448,14 @@ namespace InstruLearn_Application.Model.Migrations
                     b.Property<int?>("ClassId")
                         .HasColumnType("int");
 
+                    b.Property<string>("Feedback")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("LearnerId")
                         .HasColumnType("int");
+
+                    b.Property<string>("LevelAssigned")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("MajorId")
                         .HasColumnType("int");
@@ -457,11 +463,17 @@ namespace InstruLearn_Application.Model.Migrations
                     b.Property<int>("NumberOfSession")
                         .HasColumnType("int");
 
+                    b.Property<decimal?>("Price")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<int>("RegisTypeId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("RequestDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<int?>("Score")
+                        .HasColumnType("int");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -471,6 +483,10 @@ namespace InstruLearn_Application.Model.Migrations
 
                     b.Property<DateTime>("TimeStart")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("VideoUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("LearningRegisId");
 
@@ -875,31 +891,20 @@ namespace InstruLearn_Application.Model.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TestResultId"));
 
-                    b.Property<string>("Feedback")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<int>("LearnerId")
                         .HasColumnType("int");
 
                     b.Property<int>("LearningRegisId")
                         .HasColumnType("int");
 
-                    b.Property<string>("LevelAssigned")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<int>("MajorTestId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("Score")
+                    b.Property<int>("Status")
                         .HasColumnType("int");
 
                     b.Property<int>("TeacherId")
                         .HasColumnType("int");
-
-                    b.Property<string>("VideoUrl")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("TestResultId");
 

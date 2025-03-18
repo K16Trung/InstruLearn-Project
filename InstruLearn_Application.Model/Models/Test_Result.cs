@@ -1,4 +1,5 @@
-﻿using System;
+﻿using InstruLearn_Application.Model.Enum;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -15,10 +16,8 @@ namespace InstruLearn_Application.Model.Models
         public int TeacherId { get; set; }
         public int MajorTestId { get; set; }
         public int LearningRegisId { get; set; }
-        public string VideoUrl { get; set; }
-        public int? Score { get; set; }
-        public string LevelAssigned { get; set; }
-        public string? Feedback { get; set; }
+        public TestResultStatus Status { get; set; }
+        
 
         // Navigation properties
         public Learner Learner { get; set; }
