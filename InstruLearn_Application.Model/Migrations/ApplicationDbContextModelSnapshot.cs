@@ -64,7 +64,7 @@ namespace InstruLearn_Application.Model.Migrations
 
                     b.HasKey("AccountId");
 
-                    b.ToTable("Accounts", (string)null);
+                    b.ToTable("Accounts");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Admin", b =>
@@ -88,7 +88,7 @@ namespace InstruLearn_Application.Model.Migrations
                     b.HasIndex("AccountId")
                         .IsUnique();
 
-                    b.ToTable("Admins", (string)null);
+                    b.ToTable("Admins");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Certification", b =>
@@ -116,7 +116,7 @@ namespace InstruLearn_Application.Model.Migrations
 
                     b.HasIndex("LearnerId");
 
-                    b.ToTable("Certifications", (string)null);
+                    b.ToTable("Certifications");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Class", b =>
@@ -173,7 +173,7 @@ namespace InstruLearn_Application.Model.Migrations
 
                     b.HasIndex("TeacherId");
 
-                    b.ToTable("Classes", (string)null);
+                    b.ToTable("Classes");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.ClassDay", b =>
@@ -194,7 +194,7 @@ namespace InstruLearn_Application.Model.Migrations
 
                     b.HasIndex("ClassId");
 
-                    b.ToTable("ClassDays", (string)null);
+                    b.ToTable("ClassDays");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.CourseType", b =>
@@ -211,7 +211,7 @@ namespace InstruLearn_Application.Model.Migrations
 
                     b.HasKey("CourseTypeId");
 
-                    b.ToTable("CourseTypes", (string)null);
+                    b.ToTable("CourseTypes");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Course_Content", b =>
@@ -233,7 +233,7 @@ namespace InstruLearn_Application.Model.Migrations
 
                     b.HasIndex("CoursePackageId");
 
-                    b.ToTable("Course_Contents", (string)null);
+                    b.ToTable("Course_Contents");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Course_Content_Item", b =>
@@ -260,7 +260,7 @@ namespace InstruLearn_Application.Model.Migrations
 
                     b.HasIndex("ItemTypeId");
 
-                    b.ToTable("Course_Content_Items", (string)null);
+                    b.ToTable("Course_Content_Items");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Course_Package", b =>
@@ -303,7 +303,7 @@ namespace InstruLearn_Application.Model.Migrations
 
                     b.HasIndex("CourseTypeId");
 
-                    b.ToTable("CoursePackages", (string)null);
+                    b.ToTable("CoursePackages");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.FeedBack", b =>
@@ -337,7 +337,7 @@ namespace InstruLearn_Application.Model.Migrations
 
                     b.HasIndex("CoursePackageId");
 
-                    b.ToTable("FeedBacks", (string)null);
+                    b.ToTable("FeedBacks");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.FeedbackReplies", b =>
@@ -368,7 +368,7 @@ namespace InstruLearn_Application.Model.Migrations
 
                     b.HasIndex("FeedbackId");
 
-                    b.ToTable("FeedbackReplies", (string)null);
+                    b.ToTable("FeedbackReplies");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.ItemTypes", b =>
@@ -385,7 +385,7 @@ namespace InstruLearn_Application.Model.Migrations
 
                     b.HasKey("ItemTypeId");
 
-                    b.ToTable("ItemTypes", (string)null);
+                    b.ToTable("ItemTypes");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Learner", b =>
@@ -413,7 +413,7 @@ namespace InstruLearn_Application.Model.Migrations
                     b.HasIndex("AccountId")
                         .IsUnique();
 
-                    b.ToTable("Learners", (string)null);
+                    b.ToTable("Learners");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.LearningRegistrationDay", b =>
@@ -434,7 +434,7 @@ namespace InstruLearn_Application.Model.Migrations
 
                     b.HasIndex("LearningRegisId");
 
-                    b.ToTable("LearningRegistrationDays", (string)null);
+                    b.ToTable("LearningRegistrationDays");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Learning_Registration", b =>
@@ -500,7 +500,7 @@ namespace InstruLearn_Application.Model.Migrations
 
                     b.HasIndex("TeacherId");
 
-                    b.ToTable("Learning_Registrations", (string)null);
+                    b.ToTable("Learning_Registrations");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Learning_Registration_Type", b =>
@@ -520,7 +520,7 @@ namespace InstruLearn_Application.Model.Migrations
 
                     b.HasKey("RegisTypeId");
 
-                    b.ToTable("Learning_Registration_Types", (string)null);
+                    b.ToTable("Learning_Registration_Types");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Major", b =>
@@ -537,7 +537,7 @@ namespace InstruLearn_Application.Model.Migrations
 
                     b.HasKey("MajorId");
 
-                    b.ToTable("Majors", (string)null);
+                    b.ToTable("Majors");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.MajorTest", b =>
@@ -559,7 +559,7 @@ namespace InstruLearn_Application.Model.Migrations
 
                     b.HasIndex("MajorId");
 
-                    b.ToTable("MajorTests", (string)null);
+                    b.ToTable("MajorTests");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Manager", b =>
@@ -583,7 +583,7 @@ namespace InstruLearn_Application.Model.Migrations
                     b.HasIndex("AccountId")
                         .IsUnique();
 
-                    b.ToTable("Managers", (string)null);
+                    b.ToTable("Managers");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Payment", b =>
@@ -618,7 +618,7 @@ namespace InstruLearn_Application.Model.Migrations
 
                     b.HasIndex("WalletTransactionId");
 
-                    b.ToTable("Payments", (string)null);
+                    b.ToTable("Payments");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Purchase", b =>
@@ -642,7 +642,7 @@ namespace InstruLearn_Application.Model.Migrations
 
                     b.HasIndex("LearnerId");
 
-                    b.ToTable("Purchases", (string)null);
+                    b.ToTable("Purchases");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Purchase_Items", b =>
@@ -671,7 +671,7 @@ namespace InstruLearn_Application.Model.Migrations
 
                     b.HasIndex("PurchaseId");
 
-                    b.ToTable("Purchase_Items", (string)null);
+                    b.ToTable("Purchase_Items");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.QnA", b =>
@@ -706,7 +706,7 @@ namespace InstruLearn_Application.Model.Migrations
 
                     b.HasIndex("CoursePackageId");
 
-                    b.ToTable("QnA", (string)null);
+                    b.ToTable("QnA");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.QnAReplies", b =>
@@ -737,7 +737,7 @@ namespace InstruLearn_Application.Model.Migrations
 
                     b.HasIndex("QuestionId");
 
-                    b.ToTable("QnAReplies", (string)null);
+                    b.ToTable("QnAReplies");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.ScheduleDays", b =>
@@ -759,7 +759,7 @@ namespace InstruLearn_Application.Model.Migrations
 
                     b.HasIndex("ScheduleId");
 
-                    b.ToTable("ScheduleDays", (string)null);
+                    b.ToTable("ScheduleDays");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Schedules", b =>
@@ -797,7 +797,7 @@ namespace InstruLearn_Application.Model.Migrations
 
                     b.HasIndex("TeacherId");
 
-                    b.ToTable("Schedules", (string)null);
+                    b.ToTable("Schedules");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Staff", b =>
@@ -821,7 +821,7 @@ namespace InstruLearn_Application.Model.Migrations
                     b.HasIndex("AccountId")
                         .IsUnique();
 
-                    b.ToTable("Staffs", (string)null);
+                    b.ToTable("Staffs");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Syllabus", b =>
@@ -842,7 +842,7 @@ namespace InstruLearn_Application.Model.Migrations
 
                     b.HasKey("SyllabusId");
 
-                    b.ToTable("Syllabus", (string)null);
+                    b.ToTable("Syllabus");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Teacher", b =>
@@ -880,7 +880,7 @@ namespace InstruLearn_Application.Model.Migrations
 
                     b.HasIndex("MajorId");
 
-                    b.ToTable("Teachers", (string)null);
+                    b.ToTable("Teachers");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Test_Result", b =>
@@ -916,7 +916,7 @@ namespace InstruLearn_Application.Model.Migrations
 
                     b.HasIndex("TeacherId");
 
-                    b.ToTable("Test_Results", (string)null);
+                    b.ToTable("Test_Results");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Wallet", b =>
@@ -941,7 +941,7 @@ namespace InstruLearn_Application.Model.Migrations
                     b.HasIndex("LearnerId")
                         .IsUnique();
 
-                    b.ToTable("Wallets", (string)null);
+                    b.ToTable("Wallets");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.WalletTransaction", b =>
@@ -975,7 +975,7 @@ namespace InstruLearn_Application.Model.Migrations
 
                     b.HasIndex("WalletId");
 
-                    b.ToTable("WalletTransactions", (string)null);
+                    b.ToTable("WalletTransactions");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Admin", b =>
