@@ -104,6 +104,19 @@ namespace InstruLearn_Application.BLL.Service
                 await _unitOfWork.LearningRegisDayRepository.AddRangeAsync(learningDays);
             }
 
+            // Create a wallet transaction for this deduction
+            var walletTransaction = new WalletTransaction
+            {
+                TransactionId = Guid.NewGuid().ToString(), // Generate unique transaction ID
+                WalletId = wallet.WalletId,
+                Amount = 50000,
+                TransactionType = TransactionType.Payment,
+                Status = TransactionStatus.Complete,
+                TransactionDate = DateTime.UtcNow
+            };
+
+            await _unitOfWork.WalletTransactionRepository.AddAsync(walletTransaction);
+
             await _unitOfWork.SaveChangeAsync();
 
             return new ResponseDTO
