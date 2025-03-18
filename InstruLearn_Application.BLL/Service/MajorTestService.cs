@@ -67,6 +67,30 @@ namespace InstruLearn_Application.BLL.Service
             };
         }
 
+        public async Task<ResponseDTO> GetMajorTestsByMajorIdAsync(int majorId)
+        {
+            var majorTests = await _unitOfWork.MajorTestRepository.GetMajorTestsByMajorIdAsync(majorId);
+
+            if (majorTests == null || !majorTests.Any())
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "No Major Tests found for this MajorId."
+                };
+            }
+
+            var majorTestDtos = _mapper.Map<List<MajorTestDTO>>(majorTests);
+
+            return new ResponseDTO
+            {
+                IsSucceed = true,
+                Message = "Major Tests retrieved successfully.",
+                Data = majorTestDtos
+            };
+        }
+
+
         public async Task<ResponseDTO> CreateMajorTestAsync(CreateMajorTestDTO createMajorTestDTO)
         {
             var majorObj = await _unitOfWork.MajorRepository.GetByIdAsync(createMajorTestDTO.MajorId);

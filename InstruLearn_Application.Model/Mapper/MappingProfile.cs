@@ -16,6 +16,7 @@ using InstruLearn_Application.Model.Models.DTO.Learner;
 using InstruLearn_Application.Model.Models.DTO.LearningRegistration;
 using InstruLearn_Application.Model.Models.DTO.LearningRegistrationType;
 using InstruLearn_Application.Model.Models.DTO.Major;
+using InstruLearn_Application.Model.Models.DTO.MajorTest;
 using InstruLearn_Application.Model.Models.DTO.Manager;
 using InstruLearn_Application.Model.Models.DTO.QnA;
 using InstruLearn_Application.Model.Models.DTO.QnAReplies;
@@ -221,6 +222,12 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<Major, MajorDTO>().ReverseMap();
             CreateMap<CreateMajorDTO, Major>().ReverseMap();
             CreateMap<UpdateMajorDTO, Major>().ReverseMap();
+
+            //
+
+            CreateMap<MajorTest, MajorTestDTO>().ReverseMap();
+            CreateMap<CreateMajorTestDTO, MajorTest>().ReverseMap();
+            CreateMap<UpdateMajorTestDTO, MajorTest>().ReverseMap();
 
             //🔹 Learning_Registration Mappings
             CreateMap<Learning_Registration, LearningRegisDTO>()

@@ -9,5 +9,7 @@ namespace InstruLearn_Application.DAL.Repository.IRepository
 {
     public interface IMajorTestRepository : IGenericRepository<MajorTest>
     {
+        Task<IEnumerable<MajorTest>> GetMajorTestsByMajorIdAsync(int majorId);
+
     }
 }
