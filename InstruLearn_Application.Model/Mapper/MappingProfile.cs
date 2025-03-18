@@ -233,13 +233,37 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<Learning_Registration, LearningRegisDTO>()
                 .ForMember(dest => dest.LearnerId, opt => opt.MapFrom(src => src.LearnerId))
                 .ForMember(dest => dest.ClassId, opt => opt.MapFrom(src => src.ClassId))
-                .ForMember(dest => dest.TypeId, opt => opt.MapFrom(src => src.RegisTypeId));
+                .ForMember(dest => dest.RegisTypeId, opt => opt.MapFrom(src => src.RegisTypeId));
             CreateMap<CreateLearningRegisDTO, Learning_Registration>().ReverseMap();
+
+            CreateMap<Learning_Registration, OneOnOneRegisDTO>()
+            .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Teacher.Fullname))
+            .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.Learner.FullName))
+            .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.Learner.PhoneNumber))
+            .ForMember(dest => dest.RegisTypeName, opt => opt.MapFrom(src => src.Learning_Registration_Type.RegisTypeName))
+            .ForMember(dest => dest.MajorName, opt => opt.MapFrom(src => src.Major.MajorName))
+            .ForMember(dest => dest.LearningDays, opt => opt.MapFrom(src =>
+                src.LearningRegistrationDay.Select(ld => GetDayName((int)ld.DayOfWeek)).ToList()));
+
+
 
             //🔹 Learning_Registration_Type Mappings
             CreateMap<Learning_Registration_Type, RegisTypeDTO>().ReverseMap();
             CreateMap<CreateRegisTypeDTO, Learning_Registration_Type>().ReverseMap();
 
+        }
+        private string GetDayName(int dayOfWeek)
+        {
+            return dayOfWeek switch
+            {
+                2 => "Monday",
+                3 => "Tuesday",
+                4 => "Wednesday",
+                5 => "Thursday",
+                6 => "Friday",
+                7 => "Saturday",
+                _ => "Unknown"
+            };
         }
     }
 }

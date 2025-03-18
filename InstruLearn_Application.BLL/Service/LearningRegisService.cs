@@ -131,5 +131,29 @@ namespace InstruLearn_Application.BLL.Service
                 Message = "Learning Registration deleted successfully."
             };
         }
+
+        public async Task<ResponseDTO> GetAllPendingRegistrationsAsync()
+        {
+            var pendingRegistrations = await _learningRegisRepository.GetPendingRegistrationsAsync();
+            var pendingDtos = _mapper.Map<IEnumerable<OneOnOneRegisDTO>>(pendingRegistrations);
+            return new ResponseDTO
+            {
+                IsSucceed = true,
+                Message = "Pending learning registrations retrieved successfully.",
+                Data = pendingDtos
+            };
+        }
+
+        public async Task<ResponseDTO> GetPendingRegistrationsByLearnerIdAsync(int learnerId)
+        {
+            var pendingRegistrations = await _learningRegisRepository.GetPendingRegistrationsByLearnerIdAsync(learnerId);
+            var pendingDtos = _mapper.Map<IEnumerable<OneOnOneRegisDTO>>(pendingRegistrations);
+            return new ResponseDTO
+            {
+                IsSucceed = true,
+                Message = $"Pending registrations for Learner ID {learnerId} retrieved successfully.",
+                Data = pendingDtos
+            };
+        }
     }
 }

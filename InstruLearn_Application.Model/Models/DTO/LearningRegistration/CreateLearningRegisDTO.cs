@@ -11,8 +11,7 @@ namespace InstruLearn_Application.Model.Models.DTO.LearningRegistration
     {
         public int LearnerId { get; set; }
         public int? TeacherId { get; set; }
-        public int? ClassId { get; set; }
-        public int TypeId { get; set; }
+        public int RegisTypeId { get; set; }
         public int MajorId { get; set; }
         public string VideoUrl { get; set; }
         public DateTime TimeStart { get; set; }

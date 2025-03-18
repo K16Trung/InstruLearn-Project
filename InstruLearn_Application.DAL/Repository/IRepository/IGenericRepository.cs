@@ -19,6 +19,8 @@ namespace InstruLearn_Application.DAL.Repository.IRepository
         Task DeleteAsync(int id);
         Task DeleteAsync(string id);
         Task<T> GetByIdAsync(string id);
+        Task<bool> AnyAsync(Expression<Func<T, bool>> predicate);
+
         Pagination<T> GetFilter(
             Expression<Func<T, bool>>? filter = null,
             Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null,
