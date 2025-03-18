@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace InstruLearn_Application.Model.Migrations
 {
     /// <inheritdoc />
-    public partial class db : Migration
+    public partial class data : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -223,7 +223,7 @@ namespace InstruLearn_Application.Model.Migrations
                         column: x => x.MajorId,
                         principalTable: "Majors",
                         principalColumn: "MajorId",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -232,7 +232,7 @@ namespace InstruLearn_Application.Model.Migrations
                 {
                     TeacherId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    MajorId = table.Column<int>(type: "int", nullable: false),
+                    MajorId = table.Column<int>(type: "int", nullable: true),
                     AccountId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Fullname = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Heading = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -292,6 +292,33 @@ namespace InstruLearn_Application.Model.Migrations
                     table.PrimaryKey("PK_Wallets", x => x.WalletId);
                     table.ForeignKey(
                         name: "FK_Wallets_Learners_LearnerId",
+                        column: x => x.LearnerId,
+                        principalTable: "Learners",
+                        principalColumn: "LearnerId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Certifications",
+                columns: table => new
+                {
+                    CertificationId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    LearnerId = table.Column<int>(type: "int", nullable: false),
+                    CoursePackageId = table.Column<int>(type: "int", nullable: false),
+                    CertificationName = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Certifications", x => x.CertificationId);
+                    table.ForeignKey(
+                        name: "FK_Certifications_CoursePackages_CoursePackageId",
+                        column: x => x.CoursePackageId,
+                        principalTable: "CoursePackages",
+                        principalColumn: "CoursePackageId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Certifications_Learners_LearnerId",
                         column: x => x.LearnerId,
                         principalTable: "Learners",
                         principalColumn: "LearnerId",
@@ -580,13 +607,19 @@ namespace InstruLearn_Application.Model.Migrations
                     LearningRegisId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     LearnerId = table.Column<int>(type: "int", nullable: false),
-                    ClassId = table.Column<int>(type: "int", nullable: false),
+                    TeacherId = table.Column<int>(type: "int", nullable: true),
+                    ClassId = table.Column<int>(type: "int", nullable: true),
                     RegisTypeId = table.Column<int>(type: "int", nullable: false),
+                    MajorId = table.Column<int>(type: "int", nullable: false),
                     TimeStart = table.Column<DateTime>(type: "datetime2", nullable: false),
                     RequestDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
                     NumberOfSession = table.Column<int>(type: "int", nullable: false),
-                    VideoUrl = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    VideoUrl = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Score = table.Column<int>(type: "int", nullable: true),
+                    LevelAssigned = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Feedback = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -608,6 +641,18 @@ namespace InstruLearn_Application.Model.Migrations
                         principalTable: "Learning_Registration_Types",
                         principalColumn: "RegisTypeId",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Learning_Registrations_Majors_MajorId",
+                        column: x => x.MajorId,
+                        principalTable: "Majors",
+                        principalColumn: "MajorId",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Learning_Registrations_Teachers_TeacherId",
+                        column: x => x.TeacherId,
+                        principalTable: "Teachers",
+                        principalColumn: "TeacherId",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -661,6 +706,42 @@ namespace InstruLearn_Application.Model.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Schedules",
+                columns: table => new
+                {
+                    ScheduleId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    TeacherId = table.Column<int>(type: "int", nullable: true),
+                    LearnerId = table.Column<int>(type: "int", nullable: true),
+                    LearningRegisId = table.Column<int>(type: "int", nullable: false),
+                    TimeStart = table.Column<TimeOnly>(type: "time", nullable: false),
+                    TimeEnd = table.Column<TimeOnly>(type: "time", nullable: false),
+                    Mode = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Schedules", x => x.ScheduleId);
+                    table.ForeignKey(
+                        name: "FK_Schedules_Learners_LearnerId",
+                        column: x => x.LearnerId,
+                        principalTable: "Learners",
+                        principalColumn: "LearnerId",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Schedules_Learning_Registrations_LearningRegisId",
+                        column: x => x.LearningRegisId,
+                        principalTable: "Learning_Registrations",
+                        principalColumn: "LearningRegisId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Schedules_Teachers_TeacherId",
+                        column: x => x.TeacherId,
+                        principalTable: "Teachers",
+                        principalColumn: "TeacherId",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Test_Results",
                 columns: table => new
                 {
@@ -670,9 +751,7 @@ namespace InstruLearn_Application.Model.Migrations
                     TeacherId = table.Column<int>(type: "int", nullable: false),
                     MajorTestId = table.Column<int>(type: "int", nullable: false),
                     LearningRegisId = table.Column<int>(type: "int", nullable: false),
-                    Score = table.Column<int>(type: "int", nullable: false),
-                    LevelAssigned = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Feedback = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    Status = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -703,11 +782,42 @@ namespace InstruLearn_Application.Model.Migrations
                         onDelete: ReferentialAction.Restrict);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "ScheduleDays",
+                columns: table => new
+                {
+                    ScheduleDayId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ScheduleId = table.Column<int>(type: "int", nullable: false),
+                    DayOfWeeks = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ScheduleDays", x => x.ScheduleDayId);
+                    table.ForeignKey(
+                        name: "FK_ScheduleDays_Schedules_ScheduleId",
+                        column: x => x.ScheduleId,
+                        principalTable: "Schedules",
+                        principalColumn: "ScheduleId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_Admins_AccountId",
                 table: "Admins",
                 column: "AccountId",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Certifications_CoursePackageId",
+                table: "Certifications",
+                column: "CoursePackageId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Certifications_LearnerId",
+                table: "Certifications",
+                column: "LearnerId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ClassDays_ClassId",
@@ -786,9 +896,19 @@ namespace InstruLearn_Application.Model.Migrations
                 column: "LearnerId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Learning_Registrations_MajorId",
+                table: "Learning_Registrations",
+                column: "MajorId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Learning_Registrations_RegisTypeId",
                 table: "Learning_Registrations",
                 column: "RegisTypeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Learning_Registrations_TeacherId",
+                table: "Learning_Registrations",
+                column: "TeacherId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_LearningRegistrationDays_LearningRegisId",
@@ -852,6 +972,26 @@ namespace InstruLearn_Application.Model.Migrations
                 column: "QuestionId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ScheduleDays_ScheduleId",
+                table: "ScheduleDays",
+                column: "ScheduleId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Schedules_LearnerId",
+                table: "Schedules",
+                column: "LearnerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Schedules_LearningRegisId",
+                table: "Schedules",
+                column: "LearningRegisId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Schedules_TeacherId",
+                table: "Schedules",
+                column: "TeacherId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Staffs_AccountId",
                 table: "Staffs",
                 column: "AccountId",
@@ -907,6 +1047,9 @@ namespace InstruLearn_Application.Model.Migrations
                 name: "Admins");
 
             migrationBuilder.DropTable(
+                name: "Certifications");
+
+            migrationBuilder.DropTable(
                 name: "ClassDays");
 
             migrationBuilder.DropTable(
@@ -929,6 +1072,9 @@ namespace InstruLearn_Application.Model.Migrations
 
             migrationBuilder.DropTable(
                 name: "QnAReplies");
+
+            migrationBuilder.DropTable(
+                name: "ScheduleDays");
 
             migrationBuilder.DropTable(
                 name: "Staffs");
@@ -955,7 +1101,7 @@ namespace InstruLearn_Application.Model.Migrations
                 name: "QnA");
 
             migrationBuilder.DropTable(
-                name: "Learning_Registrations");
+                name: "Schedules");
 
             migrationBuilder.DropTable(
                 name: "MajorTests");
@@ -964,13 +1110,16 @@ namespace InstruLearn_Application.Model.Migrations
                 name: "Wallets");
 
             migrationBuilder.DropTable(
+                name: "Learning_Registrations");
+
+            migrationBuilder.DropTable(
                 name: "Classes");
 
             migrationBuilder.DropTable(
-                name: "Learning_Registration_Types");
+                name: "Learners");
 
             migrationBuilder.DropTable(
-                name: "Learners");
+                name: "Learning_Registration_Types");
 
             migrationBuilder.DropTable(
                 name: "CoursePackages");
