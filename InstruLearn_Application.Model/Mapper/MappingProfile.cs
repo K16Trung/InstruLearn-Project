@@ -264,8 +264,8 @@ namespace InstruLearn_Application.Model.Mapper
 
             CreateMap<CoursePackageItem, Purchase_Items>()
                 .ForMember(dest => dest.CoursePackageId, opt => opt.MapFrom(src => src.CoursePackageId))
-                .ForMember(dest => dest.PurchaseId, opt => opt.Ignore()) // Will be set manually in service
-                .ForMember(dest => dest.TotalAmount, opt => opt.Ignore()); // Will be calculated in service
+                .ForMember(dest => dest.PurchaseId, opt => opt.Ignore())
+                .ForMember(dest => dest.TotalAmount, opt => opt.Ignore());
 
             //🔹 Purchase mapping
             CreateMap<Purchase, PurchaseDTO>()
