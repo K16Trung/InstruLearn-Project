@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,6 +17,8 @@ namespace InstruLearn_Application.Model.Models
         public Learner Learner { get; set; }
         public DateTime PurchaseDate { get; set; }
         public PurchaseStatus Status { get; set; }
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal TotalPrice { get; set; }
 
         //Navigation property
         public ICollection<Purchase_Items> PurchaseItems { get; set; }

@@ -8,7 +8,6 @@ namespace InstruLearn_Application.Model.Models.DTO.MajorTest
 {
     public class CreateMajorTestDTO
     {
-        public int MajorTestId { get; set; }
         public int MajorId { get; set; }
         public string MajorTestName { get; set; }
     }

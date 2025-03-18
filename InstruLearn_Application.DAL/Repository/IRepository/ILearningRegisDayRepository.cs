@@ -7,9 +7,8 @@ using System.Threading.Tasks;
 
 namespace InstruLearn_Application.DAL.Repository.IRepository
 {
-    public interface IMajorTestRepository : IGenericRepository<MajorTest>
+    public interface ILearningRegisDayRepository : IGenericRepository<LearningRegistrationDay>
     {
-        Task<IEnumerable<MajorTest>> GetMajorTestsByMajorIdAsync(int majorId);
-
+        Task AddRangeAsync(IEnumerable<LearningRegistrationDay> entities);
     }
 }

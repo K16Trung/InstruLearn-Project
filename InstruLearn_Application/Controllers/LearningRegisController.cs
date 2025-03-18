@@ -43,5 +43,19 @@ namespace InstruLearn_Application.Controllers
             var response = await _learningRegisService.DeleteLearningRegisAsync(id);
             return Ok(response);
         }
+
+        [HttpGet("pending")]
+        public async Task<IActionResult> GetAllPendingRegistrations()
+        {
+            var result = await _learningRegisService.GetAllPendingRegistrationsAsync();
+            return Ok(result);
+        }
+
+        [HttpGet("pending/{learnerId}")]
+        public async Task<IActionResult> GetPendingRegistrationsByLearnerId(int learnerId)
+        {
+            var result = await _learningRegisService.GetPendingRegistrationsByLearnerIdAsync(learnerId);
+            return Ok(result);
+        }
     }
 }

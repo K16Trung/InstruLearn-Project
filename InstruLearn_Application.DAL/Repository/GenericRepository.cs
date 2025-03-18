@@ -96,6 +96,11 @@ namespace InstruLearn_Application.DAL.Repository
             }
         }
 
+        public async Task<bool> AnyAsync(Expression<Func<T, bool>> predicate)
+        {
+            return await _dbSet.AnyAsync(predicate);
+        }
+
 
         // PAGINATION
         public virtual Pagination<T> GetFilter(

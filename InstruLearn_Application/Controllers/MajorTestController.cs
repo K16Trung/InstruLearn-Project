@@ -34,6 +34,17 @@ namespace InstruLearn_Application.Controllers
             return Ok(result);
         }
 
+        [HttpGet("by-major/{majorId}")]
+        public async Task<IActionResult> GetMajorTestsByMajorId(int majorId)
+        {
+            var result = await _majorTestService.GetMajorTestsByMajorIdAsync(majorId);
+            if (!result.IsSucceed)
+            {
+                return NotFound(result);
+            }
+            return Ok(result);
+        }
+
         [HttpPost]
         public async Task<IActionResult> CreateMajorTest([FromBody] CreateMajorTestDTO createMajorTestDTO)
         {
