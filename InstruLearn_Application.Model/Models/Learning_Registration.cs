@@ -23,7 +23,8 @@ namespace InstruLearn_Application.Model.Models
         public Learning_Registration_Type Learning_Registration_Type { get; set; }
         public int MajorId { get; set; }
         public Major Major {  get; set; }
-        public DateTime TimeStart { get; set; }
+        public DateOnly? StartDay { get; set; }
+        public TimeOnly TimeStart { get; set; }
         public DateTime RequestDate { get; set; }
         public LearningRegis Status { get; set; }
         public int NumberOfSession { get; set; }

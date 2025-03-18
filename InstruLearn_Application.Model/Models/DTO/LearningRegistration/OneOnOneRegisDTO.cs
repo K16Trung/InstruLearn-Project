@@ -18,7 +18,8 @@ namespace InstruLearn_Application.Model.Models.DTO.LearningRegistration
         public string RegisTypeName { get; set; }
         public int MajorId { get; set; }
         public string MajorName { get; set; }
-        public DateTime TimeStart { get; set; }
+        public DateOnly StartDay { get; set; }
+        public TimeOnly TimeStart { get; set; }
         public DateTime RequestDate { get; set; }
         public int NumberOfSession { get; set; }
         public string VideoUrl { get; set; }
