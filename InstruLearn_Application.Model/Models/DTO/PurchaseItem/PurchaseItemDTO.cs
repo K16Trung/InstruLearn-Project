@@ -1,4 +1,5 @@
-﻿using System;
+﻿using InstruLearn_Application.Model.Models.DTO.Course;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
@@ -14,5 +15,6 @@ namespace InstruLearn_Application.Model.Models.DTO.PurchaseItem
         public int CoursePackageId { get; set; }
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalAmount { get; set; }
+        public CourseDetailPurchaseDTO CoursePackage { get; set; }
     }
 }

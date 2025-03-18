@@ -2,6 +2,7 @@
 using InstruLearn_Application.BLL.Service.IService;
 using InstruLearn_Application.DAL.Repository.IRepository;
 using InstruLearn_Application.DAL.UoW.IUoW;
+using InstruLearn_Application.Model.Enum;
 using InstruLearn_Application.Model.Models;
 using InstruLearn_Application.Model.Models.DTO;
 using InstruLearn_Application.Model.Models.DTO.Purchase;
@@ -28,12 +29,11 @@ namespace InstruLearn_Application.BLL.Service
         }
         public async Task<List<ResponseDTO>> GetAllPurchaseItemAsync()
         {
-            var purchaseItemList = await _unitOfWork.PurchaseItemRepository.GetAllAsync();
-            var puchaseItemDtos = _mapper.Map<IEnumerable<PurchaseItemDTO>>(purchaseItemList);
-
+            var purchaseItemList = await _unitOfWork.PurchaseItemRepository.GetPurchaseItemWithFullCourseDetailsAsync();
+            var purchaseItemDtos = _mapper.Map<IEnumerable<PurchaseItemDTO>>(purchaseItemList);
             var responseList = new List<ResponseDTO>();
 
-            foreach (var purchaseItemDto in puchaseItemDtos)
+            foreach (var purchaseItemDto in purchaseItemDtos)
             {
                 responseList.Add(new ResponseDTO
                 {
@@ -42,12 +42,14 @@ namespace InstruLearn_Application.BLL.Service
                     Data = purchaseItemDto
                 });
             }
+
             return responseList;
         }
 
         public async Task<ResponseDTO> GetPurchaseItemByIdAsync(int purchaseItemId)
         {
-            var purchaseItem = await _unitOfWork.PurchaseItemRepository.GetByIdAsync(purchaseItemId);
+            var purchaseItem = await _unitOfWork.PurchaseItemRepository.GetPurchaseItemsWithFullCourseDetailsByPurchaseIdAsync(purchaseItemId);
+
             if (purchaseItem == null)
             {
                 return new ResponseDTO
@@ -56,12 +58,14 @@ namespace InstruLearn_Application.BLL.Service
                     Message = "Purchase item not found.",
                 };
             }
-            var puchaseDto = _mapper.Map<PurchaseItemDTO>(purchaseItem);
+
+            var purchaseItemDto = _mapper.Map<PurchaseItemDTO>(purchaseItem);
+
             return new ResponseDTO
             {
                 IsSucceed = true,
                 Message = "Purchase item retrieved successfully.",
-                Data = puchaseDto
+                Data = purchaseItemDto
             };
         }
 
@@ -134,11 +138,44 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     await _unitOfWork.PurchaseItemRepository.AddAsync(item);
                 }
+
+                // Create a new wallet transaction record
+                string transactionId = Guid.NewGuid().ToString();
+                var walletTransaction = new WalletTransaction
+                {
+                    TransactionId = transactionId,
+                    WalletId = wallet.WalletId,
+                    Amount = totalAmountToDeduct,
+                    TransactionType = TransactionType.Payment,
+                    Status = TransactionStatus.Complete,
+                    TransactionDate = DateTime.Now,
+                    Wallet = wallet
+                };
+
+                await _unitOfWork.WalletTransactionRepository.AddAsync(walletTransaction);
+
+                // Create a payment record linked to the transaction
+                var payment = new Payment
+                {
+                    WalletId = wallet.WalletId,
+                    TransactionId = transactionId,
+                    WalletTransaction = walletTransaction,
+                    AmountPaid = totalAmountToDeduct,
+                    PaymentMethod = PaymentMethod.Wallet, // Assuming wallet is the payment method
+                    PaymentFor = PaymentFor.Online_Course, // Assuming this is for course purchase
+                    Status = PaymentStatus.Completed,
+                    Wallet = wallet
+                };
+
+                await _unitOfWork.PaymentsRepository.AddAsync(payment);
+
                 // Update wallet balance
                 wallet.Balance -= totalAmountToDeduct;
                 wallet.UpdateAt = DateTime.Now;
+
                 await _unitOfWork.SaveChangeAsync();
                 await _unitOfWork.CommitTransactionAsync();
+
                 return new ResponseDTO
                 {
                     IsSucceed = true,
@@ -147,6 +184,7 @@ namespace InstruLearn_Application.BLL.Service
                     {
                         TotalAmount = totalAmountToDeduct,
                         PurchaseId = purchase.PurchaseId,
+                        TransactionId = transactionId,
                         CoursePackages = purchaseItems.Select(pi => new {
                             CoursePackageId = pi.CoursePackageId,
                             Amount = pi.TotalAmount
