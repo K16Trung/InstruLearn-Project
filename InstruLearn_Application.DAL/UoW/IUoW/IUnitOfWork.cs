@@ -1,5 +1,6 @@
 ﻿using InstruLearn_Application.DAL.Repository.IRepository;
 using InstruLearn_Application.Model.Data;
+using Microsoft.EntityFrameworkCore.Storage;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -41,7 +42,7 @@ namespace InstruLearn_Application.DAL.UoW.IUoW
         IPurchaseItemRepository PurchaseItemRepository { get; }
         ApplicationDbContext dbContext { get; }
         public Task<int> SaveChangeAsync();
-        Task BeginTransactionAsync();
+        Task<IDbContextTransaction> BeginTransactionAsync();
         Task CommitTransactionAsync();
         Task RollbackTransactionAsync();
     }

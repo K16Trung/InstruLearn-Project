@@ -66,13 +66,11 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                // Start a new transaction scope
-                using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
-                {
-                    // Log the start of the process
-                    _logger.LogInformation("Starting learning registration process.");
+                _logger.LogInformation("Starting learning registration process.");
 
-                    // Check if the learner has a wallet
+                // Start EF Core transaction instead of TransactionScope
+                using (var transaction = await _unitOfWork.BeginTransactionAsync())
+                {
                     var wallet = await _unitOfWork.WalletRepository.GetFirstOrDefaultAsync(w => w.LearnerId == createLearningRegisDTO.LearnerId);
 
                     if (wallet == null)
@@ -85,10 +83,8 @@ namespace InstruLearn_Application.BLL.Service
                         };
                     }
 
-                    // Log wallet information
                     _logger.LogInformation($"Wallet found for learnerId: {createLearningRegisDTO.LearnerId}, balance: {wallet.Balance}");
 
-                    // Check if the balance is sufficient
                     if (wallet.Balance < 50000)
                     {
                         _logger.LogWarning($"Insufficient balance for learnerId: {createLearningRegisDTO.LearnerId}. Current balance: {wallet.Balance}");
@@ -101,14 +97,15 @@ namespace InstruLearn_Application.BLL.Service
 
                     // Deduct the balance
                     wallet.Balance -= 50000;
-                    _unitOfWork.WalletRepository.UpdateAsync(wallet);
+                    await _unitOfWork.WalletRepository.UpdateAsync(wallet);
 
-                    // Map DTO to Learning_Registration entity
+                    // Map DTO to entity
                     var learningRegis = _mapper.Map<Learning_Registration>(createLearningRegisDTO);
                     learningRegis.Status = LearningRegis.Pending;
 
                     // Add learning registration
                     await _unitOfWork.LearningRegisRepository.AddAsync(learningRegis);
+                    await _unitOfWork.SaveChangeAsync();
 
                     // Add learning registration days
                     if (createLearningRegisDTO.LearningDays != null && createLearningRegisDTO.LearningDays.Any())
@@ -120,6 +117,7 @@ namespace InstruLearn_Application.BLL.Service
                         }).ToList();
 
                         await _unitOfWork.LearningRegisDayRepository.AddRangeAsync(learningDays);
+                        await _unitOfWork.SaveChangeAsync();
                     }
 
                     // Create a wallet transaction
@@ -133,19 +131,14 @@ namespace InstruLearn_Application.BLL.Service
                         TransactionDate = DateTime.UtcNow
                     };
 
-                    // Add wallet transaction to repository
                     await _unitOfWork.WalletTransactionRepository.AddAsync(walletTransaction);
-
-                    // Save all changes in one call
                     await _unitOfWork.SaveChangeAsync();
 
                     // Commit the transaction
-                    transaction.Complete();
+                    await transaction.CommitAsync();
 
-                    // Log successful registration
                     _logger.LogInformation("Learning registration added successfully. Wallet balance updated.");
 
-                    // Return success response
                     return new ResponseDTO
                     {
                         IsSucceed = true,
@@ -155,10 +148,7 @@ namespace InstruLearn_Application.BLL.Service
             }
             catch (Exception ex)
             {
-                // Log the exception
                 _logger.LogError(ex, "An error occurred while processing learning registration.");
-
-                // Return failure response
                 return new ResponseDTO
                 {
                     IsSucceed = false,
@@ -166,6 +156,7 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
         }
+
 
         public async Task<ResponseDTO> DeleteLearningRegisAsync(int learningRegisId)
         {
