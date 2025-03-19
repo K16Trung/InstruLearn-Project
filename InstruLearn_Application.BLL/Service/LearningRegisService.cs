@@ -32,33 +32,35 @@ namespace InstruLearn_Application.BLL.Service
         }
         public async Task<ResponseDTO> GetAllLearningRegisAsync()
         {
-            var learningRegis = await _unitOfWork.LearningRegisRepository.GetAllAsync();
-            var learningRegisDtos = _mapper.Map<IEnumerable<LearningRegisDTO>>(learningRegis);
+            var allRegistrations = await _learningRegisRepository.GetAllAsync();
+            var allDtos = _mapper.Map<IEnumerable<OneOnOneRegisDTO>>(allRegistrations);
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Learning Registration retrieved successfully.",
-                Data = learningRegisDtos
+                Message = "All learning registrations retrieved successfully.",
+                Data = allDtos
             };
         }
 
         public async Task<ResponseDTO> GetLearningRegisByIdAsync(int learningRegisId)
         {
-            var learningRegis = await _unitOfWork.LearningRegisRepository.GetByIdAsync(learningRegisId);
-            if (learningRegis == null)
+            var registration = await _learningRegisRepository.GetByIdAsync(learningRegisId);
+            if (registration == null)
             {
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Learning Registration not found."
+                    Message = "Learning registration not found.",
+                    Data = null
                 };
             }
-            var learningRegisDtos = _mapper.Map<LearningRegisDTO>(learningRegisId);
+
+            var dto = _mapper.Map<OneOnOneRegisDTO>(registration);
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Learning Registration retrieved successfully.",
-                Data = learningRegisDtos
+                Message = "Learning registration retrieved successfully.",
+                Data = dto
             };
         }
 
