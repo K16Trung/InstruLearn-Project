@@ -51,10 +51,10 @@ namespace InstruLearn_Application.Controllers
             return Ok(result);
         }
 
-        [HttpGet("pending/{learnerId}")]
-        public async Task<IActionResult> GetPendingRegistrationsByLearnerId(int learnerId)
+        [HttpGet("status/{learnerId}")]
+        public async Task<IActionResult> GetRegistrationsByLearnerId(int learnerId)
         {
-            var result = await _learningRegisService.GetPendingRegistrationsByLearnerIdAsync(learnerId);
+            var result = await _learningRegisService.GetRegistrationsByLearnerIdAsync(learnerId);
             return Ok(result);
         }
 

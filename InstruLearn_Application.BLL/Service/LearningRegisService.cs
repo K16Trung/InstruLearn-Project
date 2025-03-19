@@ -189,15 +189,15 @@ namespace InstruLearn_Application.BLL.Service
             };
         }
 
-        public async Task<ResponseDTO> GetPendingRegistrationsByLearnerIdAsync(int learnerId)
+        public async Task<ResponseDTO> GetRegistrationsByLearnerIdAsync(int learnerId)
         {
-            var pendingRegistrations = await _learningRegisRepository.GetPendingRegistrationsByLearnerIdAsync(learnerId);
-            var pendingDtos = _mapper.Map<IEnumerable<OneOnOneRegisDTO>>(pendingRegistrations);
+            var registrations = await _learningRegisRepository.GetRegistrationsByLearnerIdAsync(learnerId);
+            var registrationDtos = _mapper.Map<IEnumerable<OneOnOneRegisDTO>>(registrations);
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = $"Pending registrations for Learner ID {learnerId} retrieved successfully.",
-                Data = pendingDtos
+                Message = $"All registrations for Learner ID {learnerId} retrieved successfully.",
+                Data = registrationDtos
             };
         }
 
