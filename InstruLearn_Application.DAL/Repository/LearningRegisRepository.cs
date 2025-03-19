@@ -32,10 +32,10 @@ namespace InstruLearn_Application.DAL.Repository
         }
 
         // ✅ Get pending registrations by LearnerId
-        public async Task<IEnumerable<Learning_Registration>> GetPendingRegistrationsByLearnerIdAsync(int learnerId)
+        public async Task<IEnumerable<Learning_Registration>> GetRegistrationsByLearnerIdAsync(int learnerId)
         {
             return await _appDbContext.Learning_Registrations
-                .Where(x => x.LearnerId == learnerId && x.Status == LearningRegis.Pending)
+                .Where(x => x.LearnerId == learnerId)
                 .Include(x => x.Learner)
                 .Include(x => x.Teacher)
                 .Include(x => x.Learning_Registration_Type)

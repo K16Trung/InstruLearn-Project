@@ -12,6 +12,7 @@ namespace InstruLearn_Application.Model.Models.DTO.LearningRegistration
         public DateOnly? StartDay { get; set; }
         public int? Score { get; set; }
         public string? LevelAssigned { get; set; }
+        public decimal? Price { get; set; }
         public string? Feedback { get; set; }
     }
 }
