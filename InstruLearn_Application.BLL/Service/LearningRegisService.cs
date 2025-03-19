@@ -11,20 +11,24 @@ using System.Text;
 using System.Threading.Tasks;
 using InstruLearn_Application.Model.Models.DTO.LearningRegistration;
 using InstruLearn_Application.Model.Enum;
+using System.Transactions;
+using Microsoft.Extensions.Logging;
 
 namespace InstruLearn_Application.BLL.Service
 {
     public class LearningRegisService : ILearningRegisService
     {
         private readonly ILearningRegisRepository _learningRegisRepository;
+        private readonly ILogger<LearningRegisService> _logger;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public LearningRegisService(ILearningRegisRepository learningRegisRepository, IUnitOfWork unitOfWork, IMapper mapper)
+        public LearningRegisService(ILearningRegisRepository learningRegisRepository, IUnitOfWork unitOfWork, IMapper mapper, ILogger<LearningRegisService> logger)
         {
             _learningRegisRepository = learningRegisRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _logger = logger;
         }
         public async Task<ResponseDTO> GetAllLearningRegisAsync()
         {
@@ -60,70 +64,107 @@ namespace InstruLearn_Application.BLL.Service
 
         public async Task<ResponseDTO> CreateLearningRegisAsync(CreateLearningRegisDTO createLearningRegisDTO)
         {
-            // Check if the learner has a wallet
-            var wallet = await _unitOfWork.WalletRepository.GetFirstOrDefaultAsync(w => w.LearnerId == createLearningRegisDTO.LearnerId);
-
-            if (wallet == null)
+            try
             {
+                // Start a new transaction scope
+                using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+                {
+                    // Log the start of the process
+                    _logger.LogInformation("Starting learning registration process.");
+
+                    // Check if the learner has a wallet
+                    var wallet = await _unitOfWork.WalletRepository.GetFirstOrDefaultAsync(w => w.LearnerId == createLearningRegisDTO.LearnerId);
+
+                    if (wallet == null)
+                    {
+                        _logger.LogWarning($"Wallet not found for learnerId: {createLearningRegisDTO.LearnerId}");
+                        return new ResponseDTO
+                        {
+                            IsSucceed = false,
+                            Message = "Wallet not found for the learner."
+                        };
+                    }
+
+                    // Log wallet information
+                    _logger.LogInformation($"Wallet found for learnerId: {createLearningRegisDTO.LearnerId}, balance: {wallet.Balance}");
+
+                    // Check if the balance is sufficient
+                    if (wallet.Balance < 50000)
+                    {
+                        _logger.LogWarning($"Insufficient balance for learnerId: {createLearningRegisDTO.LearnerId}. Current balance: {wallet.Balance}");
+                        return new ResponseDTO
+                        {
+                            IsSucceed = false,
+                            Message = "Insufficient balance in the wallet."
+                        };
+                    }
+
+                    // Deduct the balance
+                    wallet.Balance -= 50000;
+                    _unitOfWork.WalletRepository.UpdateAsync(wallet);
+
+                    // Map DTO to Learning_Registration entity
+                    var learningRegis = _mapper.Map<Learning_Registration>(createLearningRegisDTO);
+                    learningRegis.Status = LearningRegis.Pending;
+
+                    // Add learning registration
+                    await _unitOfWork.LearningRegisRepository.AddAsync(learningRegis);
+
+                    // Add learning registration days
+                    if (createLearningRegisDTO.LearningDays != null && createLearningRegisDTO.LearningDays.Any())
+                    {
+                        var learningDays = createLearningRegisDTO.LearningDays.Select(day => new LearningRegistrationDay
+                        {
+                            LearningRegisId = learningRegis.LearningRegisId,
+                            DayOfWeek = day
+                        }).ToList();
+
+                        await _unitOfWork.LearningRegisDayRepository.AddRangeAsync(learningDays);
+                    }
+
+                    // Create a wallet transaction
+                    var walletTransaction = new WalletTransaction
+                    {
+                        TransactionId = Guid.NewGuid().ToString(),
+                        WalletId = wallet.WalletId,
+                        Amount = 50000,
+                        TransactionType = TransactionType.Payment,
+                        Status = Model.Enum.TransactionStatus.Complete,
+                        TransactionDate = DateTime.UtcNow
+                    };
+
+                    // Add wallet transaction to repository
+                    await _unitOfWork.WalletTransactionRepository.AddAsync(walletTransaction);
+
+                    // Save all changes in one call
+                    await _unitOfWork.SaveChangeAsync();
+
+                    // Commit the transaction
+                    transaction.Complete();
+
+                    // Log successful registration
+                    _logger.LogInformation("Learning registration added successfully. Wallet balance updated.");
+
+                    // Return success response
+                    return new ResponseDTO
+                    {
+                        IsSucceed = true,
+                        Message = "Learning Registration added successfully. Wallet balance updated. Status set to Pending."
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log the exception
+                _logger.LogError(ex, "An error occurred while processing learning registration.");
+
+                // Return failure response
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Wallet not found for the learner.",
+                    Message = $"An error occurred: {ex.Message}"
                 };
             }
-
-            // Check if the balance is sufficient
-            if (wallet.Balance < 50000)
-            {
-                return new ResponseDTO
-                {
-                    IsSucceed = false,
-                    Message = "Insufficient balance in the wallet.",
-                };
-            }
-
-            wallet.Balance -= 50000;
-            _unitOfWork.WalletRepository.UpdateAsync(wallet);
-
-            var learningRegis = _mapper.Map<Learning_Registration>(createLearningRegisDTO);
-            learningRegis.Status = LearningRegis.Pending; 
-
-            await _unitOfWork.LearningRegisRepository.AddAsync(learningRegis);
-
-            await _unitOfWork.SaveChangeAsync();
-
-            // Add LearningRegistrationDay records
-            if (createLearningRegisDTO.LearningDays != null && createLearningRegisDTO.LearningDays.Any())
-            {
-                var learningDays = createLearningRegisDTO.LearningDays.Select(day => new LearningRegistrationDay
-                {
-                    LearningRegisId = learningRegis.LearningRegisId,  // Ensure FK is set
-                    DayOfWeek = day
-                }).ToList();
-
-                await _unitOfWork.LearningRegisDayRepository.AddRangeAsync(learningDays);
-            }
-
-            // Create a wallet transaction for this deduction
-            var walletTransaction = new WalletTransaction
-            {
-                TransactionId = Guid.NewGuid().ToString(), // Generate unique transaction ID
-                WalletId = wallet.WalletId,
-                Amount = 50000,
-                TransactionType = TransactionType.Payment,
-                Status = TransactionStatus.Complete,
-                TransactionDate = DateTime.UtcNow
-            };
-
-            await _unitOfWork.WalletTransactionRepository.AddAsync(walletTransaction);
-
-            await _unitOfWork.SaveChangeAsync();
-
-            return new ResponseDTO
-            {
-                IsSucceed = true,
-                Message = "Learning Registration added successfully. Wallet balance updated. Status set to Pending.",
-            };
         }
 
         public async Task<ResponseDTO> DeleteLearningRegisAsync(int learningRegisId)
