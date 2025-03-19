@@ -6,6 +6,10 @@
       "resourceId": "/subscriptions/[parameters('subscriptionId')]/resourcegroups/[parameters('resourceGroupName')]/providers/Microsoft.Sql/servers/instrulearn-applicationdbserver/databases/InstruLearn_Application_db",
       "type": "mssql.azure",
       "connectionId": "ConnectionStrings:DatabaseConnection"
+    },
+    "apis1": {
+      "resourceId": "/subscriptions/[parameters('subscriptionId')]/resourceGroups/[parameters('resourceGroupName')]/providers/Microsoft.ApiManagement/service/MilkWebApi/apis/MilkApplication",
+      "type": "apis.azure"
     }
   }
 }
