@@ -203,29 +203,45 @@ namespace InstruLearn_Application.BLL.Service
 
         public async Task<ResponseDTO> UpdateLearningRegisStatusAsync(UpdateLearningRegisDTO updateDTO)
         {
-            var learningRegis = await _unitOfWork.LearningRegisRepository.GetByIdAsync(updateDTO.LearningRegisId);
 
-            if (learningRegis == null)
+            try
             {
+                var learningRegis = await _unitOfWork.LearningRegisRepository.GetByIdAsync(updateDTO.LearningRegisId);
+                if (learningRegis == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Learning Registration not found."
+                    };
+                }
+
+                using var transaction = await _unitOfWork.BeginTransactionAsync();
+
+                _mapper.Map(updateDTO, learningRegis);
+                learningRegis.Status = LearningRegis.Accepted;
+
+                await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
+                await _unitOfWork.SaveChangeAsync();
+
+                await _unitOfWork.CommitTransactionAsync();
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = "Learning Registration updated successfully."
+                };
+            }
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Learning Registration not found."
+                    Message = "Failed to update Learning Registration. " + ex.Message
                 };
             }
-
-            _mapper.Map(updateDTO, learningRegis);
-
-            learningRegis.Status = LearningRegis.Accepted;
-
-            _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
-            await _unitOfWork.SaveChangeAsync();
-
-            return new ResponseDTO
-            {
-                IsSucceed = true,
-                Message = "Learning Registration updated successfully. Status changed to Accepted."
-            };
         }
+
     }
 }
