@@ -107,7 +107,10 @@ namespace InstruLearn_Application.Model.Mapper
 
 
             // Teacher mapping
-            CreateMap<Teacher, TeacherDTO>().ReverseMap();
+            CreateMap<Teacher, TeacherDTO>()
+            .ForMember(dest => dest.Major, opt => opt.MapFrom(src => src.Major))
+            .ReverseMap();
+
             CreateMap<CreateTeacherDTO, Teacher>().ReverseMap();
             CreateMap<UpdateTeacherDTO, Teacher>().ReverseMap();
 
@@ -216,8 +219,6 @@ namespace InstruLearn_Application.Model.Mapper
                 .ReverseMap();
             CreateMap<CreateClassDTO, Class>();
 
-            // 🔹 ClassDay Mappings
-
             //🔹 Major Mappings
             CreateMap<Major, MajorDTO>().ReverseMap();
             CreateMap<CreateMajorDTO, Major>().ReverseMap();
@@ -256,7 +257,6 @@ namespace InstruLearn_Application.Model.Mapper
             //🔹 Purchase_Items mapping
             CreateMap<Purchase_Items, PurchaseItemDTO>()
                 .ForMember(dest => dest.PurchaseItemId, opt => opt.MapFrom(src => src.PurchaseItemId))
-                .ForMember(dest => dest.PurchaseId, opt => opt.MapFrom(src => src.PurchaseId))
                 .ForMember(dest => dest.CoursePackageId, opt => opt.MapFrom(src => src.CoursePackageId))
                 .ForMember(dest => dest.TotalAmount, opt => opt.MapFrom(src => src.TotalAmount))
                 .ForMember(dest => dest.CoursePackage, opt => opt.MapFrom(src => src.CoursePackage))
@@ -278,10 +278,13 @@ namespace InstruLearn_Application.Model.Mapper
             //🔹 Purchase mapping
             CreateMap<Purchase, PurchaseDTO>()
                 .ForMember(dest => dest.PurchaseId, opt => opt.MapFrom(src => src.PurchaseId))
-                .ForMember(dest => dest.LearnerId, opt => opt.MapFrom(src => src.LearnerId))
+                .ForMember(dest => dest.Learner, opt => opt.MapFrom(src => src.Learner))
                 .ForMember(dest => dest.PurchaseDate, opt => opt.MapFrom(src => src.PurchaseDate))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
                 .ForMember(dest => dest.PurchaseItems, opt => opt.MapFrom(src => src.PurchaseItems))
+                .ReverseMap();
+            CreateMap<Learner, LearnerInfoDTO>()
+                .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName))
                 .ReverseMap();
             CreateMap<CreatePurchaseDTO, Purchase>().ReverseMap();
         }

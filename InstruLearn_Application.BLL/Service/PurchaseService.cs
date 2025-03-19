@@ -62,32 +62,6 @@ namespace InstruLearn_Application.BLL.Service
                 Data = puchaseDto
             };
         }
-        public async Task<ResponseDTO> CreatePurchaseAsync(CreatePurchaseDTO createPurchaseDTO)
-        {
-            var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(createPurchaseDTO.LearnerId);
-            if (learner == null)
-            {
-                return new ResponseDTO
-                {
-                    IsSucceed = false,
-                    Message = "Learner not found",
-                };
-            }
-            var purchaseObj = _mapper.Map<Purchase>(createPurchaseDTO);
-            purchaseObj.Learner = learner;
-            purchaseObj.PurchaseDate = DateTime.Now;
-
-            await _unitOfWork.PurchaseRepository.AddAsync(purchaseObj);
-            await _unitOfWork.SaveChangeAsync();
-
-            var response = new ResponseDTO
-            {
-                IsSucceed = true,
-                Message = "Purchase added successfully",
-            };
-            return response;
-        }
-
         public async Task<ResponseDTO> DeletePurchaseAsync(int purchaseId)
         {
             var deletePurchase = await _unitOfWork.PurchaseRepository.GetByIdAsync(purchaseId);

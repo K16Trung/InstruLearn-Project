@@ -1,4 +1,5 @@
-﻿using System;
+﻿using InstruLearn_Application.Model.Models.DTO.Major;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,6 +9,7 @@ namespace InstruLearn_Application.Model.Models.DTO.Teacher
 {
     public class TeacherDTO
     {
+        public MajorDTO Major { get; set; }
         public int TeacherId { get; set; }
         public string AccountId { get; set; }
         public string Fullname { get; set; }

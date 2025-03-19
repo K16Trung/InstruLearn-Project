@@ -74,19 +74,19 @@ namespace InstruLearn_Application.BLL.Service
             await _unitOfWork.BeginTransactionAsync();
             try
             {
-                var purchase = await _unitOfWork.PurchaseRepository.GetByIdAsync(createPurchaseItemsDTO.PurchaseId);
-                if (purchase == null)
+                // Validate learner exists
+                var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(createPurchaseItemsDTO.LearnerId);
+                if (learner == null)
                 {
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Purchase not found",
+                        Message = "Learner not found",
                     };
                 }
-                // Get the learner ID directly from the purchase
-                int learnerId = purchase.LearnerId;
-                // Get the wallet directly from repository
-                var wallet = await _unitOfWork.WalletRepository.FirstOrDefaultAsync(w => w.LearnerId == learnerId);
+
+                // Get the wallet
+                var wallet = await _unitOfWork.WalletRepository.FirstOrDefaultAsync(w => w.LearnerId == createPurchaseItemsDTO.LearnerId);
                 if (wallet == null)
                 {
                     return new ResponseDTO
@@ -95,8 +95,23 @@ namespace InstruLearn_Application.BLL.Service
                         Message = "Wallet not found",
                     };
                 }
+
+                // Create new purchase
+                var purchase = new Purchase
+                {
+                    LearnerId = createPurchaseItemsDTO.LearnerId,
+                    PurchaseDate = DateTime.Now,
+                    Learner = learner
+                };
+
+                // Add purchase to repository
+                await _unitOfWork.PurchaseRepository.AddAsync(purchase);
+                await _unitOfWork.SaveChangeAsync(); // Save to get generated PurchaseId
+
                 decimal totalAmountToDeduct = 0;
                 List<Purchase_Items> purchaseItems = new List<Purchase_Items>();
+                List<string> courseNames = new List<string>();
+
                 // Process each course package in the request
                 foreach (var item in createPurchaseItemsDTO.CoursePackages)
                 {
@@ -110,13 +125,18 @@ namespace InstruLearn_Application.BLL.Service
                             Message = $"Course package with ID {item.CoursePackageId} not found",
                         };
                     }
+
+                    // Store course name for success message
+                    courseNames.Add(coursePackage.CourseName);
+
                     // Add course price to total
                     decimal itemAmount = coursePackage.Price;
                     totalAmountToDeduct += itemAmount;
+
                     // Create purchase item
                     var purchaseItem = new Purchase_Items
                     {
-                        PurchaseId = createPurchaseItemsDTO.PurchaseId,
+                        PurchaseId = purchase.PurchaseId, // Use the new purchase ID
                         CoursePackageId = item.CoursePackageId,
                         TotalAmount = itemAmount,
                         Purchase = purchase,
@@ -124,6 +144,7 @@ namespace InstruLearn_Application.BLL.Service
                     };
                     purchaseItems.Add(purchaseItem);
                 }
+
                 // Check if wallet has sufficient funds
                 if (wallet.Balance < totalAmountToDeduct)
                 {
@@ -133,6 +154,7 @@ namespace InstruLearn_Application.BLL.Service
                         Message = "Insufficient funds in wallet",
                     };
                 }
+
                 // Add all purchase items
                 foreach (var item in purchaseItems)
                 {
@@ -161,8 +183,8 @@ namespace InstruLearn_Application.BLL.Service
                     TransactionId = transactionId,
                     WalletTransaction = walletTransaction,
                     AmountPaid = totalAmountToDeduct,
-                    PaymentMethod = PaymentMethod.Wallet, // Assuming wallet is the payment method
-                    PaymentFor = PaymentFor.Online_Course, // Assuming this is for course purchase
+                    PaymentMethod = PaymentMethod.Wallet,
+                    PaymentFor = PaymentFor.Online_Course,
                     Status = PaymentStatus.Completed,
                     Wallet = wallet
                 };
@@ -176,17 +198,27 @@ namespace InstruLearn_Application.BLL.Service
                 await _unitOfWork.SaveChangeAsync();
                 await _unitOfWork.CommitTransactionAsync();
 
+                // Create detailed success message including learner information
+                string courseListString = string.Join(", ", courseNames);
+                string successMessage = $"Learner {learner.FullName} has successfully purchased {purchaseItems.Count} course package(s): {courseListString} for total amount {totalAmountToDeduct:C}";
+
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = $"Successfully purchased {purchaseItems.Count} course packages for total amount {totalAmountToDeduct}",
+                    Message = successMessage,
                     Data = new
                     {
+                        Learner = new
+                        {
+                            LearnerId = learner.LearnerId,
+                            FullName = learner.FullName
+                        },
                         TotalAmount = totalAmountToDeduct,
                         PurchaseId = purchase.PurchaseId,
                         TransactionId = transactionId,
                         CoursePackages = purchaseItems.Select(pi => new {
                             CoursePackageId = pi.CoursePackageId,
+                            CoursePackageName = pi.CoursePackage.CourseName,
                             Amount = pi.TotalAmount
                         }).ToList()
                     }
