@@ -57,5 +57,19 @@ namespace InstruLearn_Application.Controllers
             var result = await _learningRegisService.GetPendingRegistrationsByLearnerIdAsync(learnerId);
             return Ok(result);
         }
+
+        [HttpPut("update-status")]
+        public async Task<IActionResult> UpdateLearningRegisStatus([FromBody] UpdateLearningRegisDTO updateDTO)
+        {
+            var result = await _learningRegisService.UpdateLearningRegisStatusAsync(updateDTO);
+
+            if (!result.IsSucceed)
+            {
+                return BadRequest(result);
+            }
+
+            return Ok(result);
+        }
+
     }
 }

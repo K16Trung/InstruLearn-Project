@@ -168,5 +168,32 @@ namespace InstruLearn_Application.BLL.Service
                 Data = pendingDtos
             };
         }
+
+        public async Task<ResponseDTO> UpdateLearningRegisStatusAsync(UpdateLearningRegisDTO updateDTO)
+        {
+            var learningRegis = await _unitOfWork.LearningRegisRepository.GetByIdAsync(updateDTO.LearningRegisId);
+
+            if (learningRegis == null)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Learning Registration not found."
+                };
+            }
+
+            _mapper.Map(updateDTO, learningRegis);
+
+            learningRegis.Status = LearningRegis.Accepted;
+
+            _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
+            await _unitOfWork.SaveChangeAsync();
+
+            return new ResponseDTO
+            {
+                IsSucceed = true,
+                Message = "Learning Registration updated successfully. Status changed to Accepted."
+            };
+        }
     }
 }

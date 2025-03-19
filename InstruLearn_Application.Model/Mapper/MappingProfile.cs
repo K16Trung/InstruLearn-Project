@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using InstruLearn_Application.Model.Enum;
 using InstruLearn_Application.Model.Helper;
 using InstruLearn_Application.Model.Models;
 using InstruLearn_Application.Model.Models.DTO.Account;
@@ -216,11 +217,6 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<CreateClassDTO, Class>();
 
             // 🔹 ClassDay Mappings
-            CreateMap<ClassDay, ClassDayDTO>()
-                .ForMember(dest => dest.ClassId, opt => opt.MapFrom(src => src.Class.ClassId))
-                .ForMember(dest => dest.Day, opt => opt.MapFrom(src => src.Day))
-                .ReverseMap();
-            CreateMap<CreateClassDayDTO, ClassDay>();
 
             //🔹 Major Mappings
             CreateMap<Major, MajorDTO>().ReverseMap();
@@ -250,7 +246,8 @@ namespace InstruLearn_Application.Model.Mapper
                     src.LearningRegistrationDay.Select(ld => DateTimeHelper.GetDayName((int)ld.DayOfWeek)).ToList()))
                 .ForMember(dest => dest.TimeEnd, opt => opt.MapFrom(src => src.TimeStart.AddHours(2))); // Ensure 2-hour session
 
-
+            CreateMap<UpdateLearningRegisDTO, Learning_Registration>()
+                .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
 
             //🔹 Learning_Registration_Type Mappings
             CreateMap<Learning_Registration_Type, RegisTypeDTO>().ReverseMap();
