@@ -22,6 +22,7 @@ namespace InstruLearn_Application.DAL.Repository
         public async Task<IEnumerable<Purchase>> GetAllAsync()
         {
             return await _appDbContext.Purchases
+                .Include(p => p.Learner)
                 .Include(p => p.PurchaseItems)
                     .ThenInclude(pi => pi.CoursePackage)
                     .ThenInclude(cp => cp.Type)
@@ -31,6 +32,7 @@ namespace InstruLearn_Application.DAL.Repository
         public async Task<Purchase> GetByIdAsync(int id)
         {
             return await _appDbContext.Purchases
+                .Include(p => p.Learner)
                 .Include(p => p.PurchaseItems)
                     .ThenInclude(pi => pi.CoursePackage)
                     .ThenInclude(cp => cp.Type)

@@ -36,13 +36,6 @@ namespace InstruLearn_Application.Controllers
             return Ok(result);
         }
 
-        [HttpPost("create")]
-        public async Task<IActionResult> CreatePurchase([FromBody] CreatePurchaseDTO createDto)
-        {
-            var response = await _purchaseService.CreatePurchaseAsync(createDto);
-            return Ok(response);
-        }
-
         [HttpDelete("delete/{id}")]
         public async Task<IActionResult> DeletePurchase(int id)
         {
