@@ -10,7 +10,7 @@ namespace InstruLearn_Application.BLL.Service.IService
 {
     public interface ILearningRegisService
     {
-        Task<ResponseDTO> GetAllLearningRegisAsync();
+        Task<List<ResponseDTO>> GetAllLearningRegisAsync();
         Task<ResponseDTO> GetLearningRegisByIdAsync(int learningRegisId);
         Task<ResponseDTO> CreateLearningRegisAsync(CreateLearningRegisDTO createLearningRegisDTO);
         Task<ResponseDTO> DeleteLearningRegisAsync(int learningRegisId);

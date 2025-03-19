@@ -13,6 +13,7 @@ using InstruLearn_Application.Model.Models.DTO.LearningRegistration;
 using InstruLearn_Application.Model.Enum;
 using System.Transactions;
 using Microsoft.Extensions.Logging;
+using InstruLearn_Application.Model.Models.DTO.Syllabus;
 
 namespace InstruLearn_Application.BLL.Service
 {
@@ -30,16 +31,23 @@ namespace InstruLearn_Application.BLL.Service
             _mapper = mapper;
             _logger = logger;
         }
-        public async Task<ResponseDTO> GetAllLearningRegisAsync()
+        public async Task<List<ResponseDTO>> GetAllLearningRegisAsync()
         {
-            var learningRegis = await _unitOfWork.LearningRegisRepository.GetAllAsync();
-            var learningRegisDtos = _mapper.Map<IEnumerable<LearningRegisDTO>>(learningRegis);
-            return new ResponseDTO
+            var learningRegisList = await _unitOfWork.LearningRegisRepository.GetAllAsync();
+            var learningRegisDtos = _mapper.Map<IEnumerable<SyllabusDTO>>(learningRegisList);
+
+            var responseList = new List<ResponseDTO>();
+
+            foreach (var learningRegisDto in learningRegisDtos)
             {
-                IsSucceed = true,
-                Message = "Learning Registration retrieved successfully.",
-                Data = learningRegisDtos
-            };
+                responseList.Add(new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = "Syllabus retrieved successfully.",
+                    Data = learningRegisDto
+                });
+            }
+            return responseList;
         }
 
         public async Task<ResponseDTO> GetLearningRegisByIdAsync(int learningRegisId)

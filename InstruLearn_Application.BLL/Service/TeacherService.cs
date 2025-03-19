@@ -7,6 +7,7 @@ using InstruLearn_Application.Model.Helper;
 using InstruLearn_Application.Model.Models;
 using InstruLearn_Application.Model.Models.DTO;
 using InstruLearn_Application.Model.Models.DTO.Feedback;
+using InstruLearn_Application.Model.Models.DTO.Syllabus;
 using InstruLearn_Application.Model.Models.DTO.Teacher;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -32,21 +33,23 @@ namespace InstruLearn_Application.BLL.Service
 
 
         // Get All Teachers
-        public async Task<ResponseDTO> GetAllTeachersAsync()
+        public async Task<List<ResponseDTO>> GetAllTeachersAsync()
         {
-            var response = new ResponseDTO();
+            var teacherList = await _unitOfWork.TeacherRepository.GetAllAsync();
+            var teacherDtos = _mapper.Map<IEnumerable<TeacherDTO>>(teacherList);
 
-            var teachers = await _unitOfWork.TeacherRepository
-                .GetQuery()
-                .Include(t => t.Account)
-                .ToListAsync();
+            var responseList = new List<ResponseDTO>();
 
-            var teacherDTOs = _mapper.Map<IEnumerable<TeacherDTO>>(teachers);
-
-            response.IsSucceed = true;
-            response.Message = "data retrieved successfully";
-            response.Data = teacherDTOs;
-            return response;
+            foreach (var teacherDto in teacherDtos)
+            {
+                responseList.Add(new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = "Teacher retrieved successfully.",
+                    Data = teacherDto
+                });
+            }
+            return responseList;
         }
 
 
