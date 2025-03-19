@@ -2,6 +2,7 @@
 using InstruLearn_Application.DAL.Repository.IRepository;
 using InstruLearn_Application.DAL.UoW.IUoW;
 using InstruLearn_Application.Model.Data;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using System;
 using System.Collections.Generic;
@@ -121,7 +122,6 @@ namespace InstruLearn_Application.DAL.UoW
             {
                 if (disposing)
                 {
-                    _dbContext.Dispose();
                 }
                 disposed = true;
             }
@@ -137,9 +137,10 @@ namespace InstruLearn_Application.DAL.UoW
             return await _dbContext.SaveChangesAsync();
         }
 
-        public async Task BeginTransactionAsync()
+        public async Task<IDbContextTransaction> BeginTransactionAsync()
         {
             _transaction = await _dbContext.Database.BeginTransactionAsync();
+            return _transaction;
         }
 
         public async Task CommitTransactionAsync()
