@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace InstruLearn_Application.Model.Enum
 {
-    public enum TestResultStatus
+    public enum TestResultType
     {
-        Pending,
-        Dotted
+        OneOnOne = 1,
+        Center = 2
     }
 }

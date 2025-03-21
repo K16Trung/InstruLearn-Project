@@ -16,6 +16,6 @@ namespace InstruLearn_Application.Model.Models
         public string MajorTestName { get; set; }
 
         // Navigation properties
-        public ICollection<Test_Result> TestResults { get; set; }
+        
     }
 }

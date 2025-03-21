@@ -84,8 +84,8 @@ namespace InstruLearn_Application.BLL.Service
                     Message = "Teacher not found",
                 };
             }
-            var majorTest = await _unitOfWork.MajorTestRepository.GetByIdAsync(createTestResultDTO.MajorTestId);
-            if (majorTest == null)
+            var major = await _unitOfWork.MajorRepository.GetByIdAsync(createTestResultDTO.MajorId ?? 0);
+            if (major == null)
             {
                 return new ResponseDTO
                 {
@@ -96,7 +96,7 @@ namespace InstruLearn_Application.BLL.Service
             var testResult = _mapper.Map<Test_Result>(createTestResultDTO);
             testResult.Learner = learner;
             testResult.Teacher = teacher;
-            testResult.MajorTest = majorTest;
+            testResult.Major = major;
 
             await _unitOfWork.TestResultRepository.AddAsync(testResult);
             return new ResponseDTO

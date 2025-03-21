@@ -14,15 +14,16 @@ namespace InstruLearn_Application.Model.Models
         public int TestResultId { get; set; }
         public int LearnerId { get; set; }
         public int TeacherId { get; set; }
-        public int? MajorTestId { get; set; }
+        public int? MajorId { get; set; }
         public int? LearningRegisId { get; set; }
+        public TestResultType ResultType { get; set; }
         public TestResultStatus Status { get; set; }
         
 
         // Navigation properties
         public Learner Learner { get; set; }
         public Teacher Teacher { get; set; }
-        public MajorTest? MajorTest { get; set; }
+        public Major? Major { get; set; }
         public Learning_Registration? LearningRegistration { get; set; }
     }
 }

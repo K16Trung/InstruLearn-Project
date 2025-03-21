@@ -307,9 +307,9 @@ namespace InstruLearn_Application.Model.Data
             //
 
             modelBuilder.Entity<Test_Result>()
-                .HasOne(tr => tr.MajorTest)
+                .HasOne(tr => tr.Major)
                 .WithMany(mt => mt.TestResults)
-                .HasForeignKey(tr => tr.MajorTestId)
+                .HasForeignKey(tr => tr.MajorId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Test_Result>()

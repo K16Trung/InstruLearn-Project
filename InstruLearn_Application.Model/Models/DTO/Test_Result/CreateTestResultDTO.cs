@@ -11,10 +11,7 @@ namespace InstruLearn_Application.Model.Models.DTO.Test_Result
         public int TestResultId { get; set; }
         public int LearnerId { get; set; }
         public int TeacherId { get; set; }
-        public int MajorTestId { get; set; }
-        public int LearningRegisId { get; set; }
-        public int Score { get; set; }
-        public string LevelAssigned { get; set; }
-        public string Feedback { get; set; }
+        public int? MajorId { get; set; }
+        public int? LearningRegisId { get; set; }
     }
 }
