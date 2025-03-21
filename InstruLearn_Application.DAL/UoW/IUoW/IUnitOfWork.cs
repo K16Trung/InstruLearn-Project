@@ -40,6 +40,7 @@ namespace InstruLearn_Application.DAL.UoW.IUoW
         ITestResultRepository TestResultRepository { get; }
         IPurchaseRepository PurchaseRepository { get; }
         IPurchaseItemRepository PurchaseItemRepository { get; }
+        ICertificationRepository CertificationRepository { get; }
         ApplicationDbContext dbContext { get; }
         public Task<int> SaveChangeAsync();
         Task<IDbContextTransaction> BeginTransactionAsync();

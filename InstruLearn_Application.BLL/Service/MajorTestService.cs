@@ -40,7 +40,7 @@ namespace InstruLearn_Application.BLL.Service
                 responseList.Add(new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Syllabus retrieved successfully.",
+                    Message = "Major test retrieved successfully.",
                     Data = majorTestDto
                 });
             }

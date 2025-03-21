@@ -5,6 +5,7 @@ using InstruLearn_Application.Model.Models;
 using InstruLearn_Application.Model.Models.DTO.Account;
 using InstruLearn_Application.Model.Models.DTO.Admin;
 using InstruLearn_Application.Model.Models.DTO.Auth;
+using InstruLearn_Application.Model.Models.DTO.Certification;
 using InstruLearn_Application.Model.Models.DTO.Class;
 using InstruLearn_Application.Model.Models.DTO.ClassDay;
 using InstruLearn_Application.Model.Models.DTO.Course;
@@ -287,6 +288,11 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName))
                 .ReverseMap();
             CreateMap<CreatePurchaseDTO, Purchase>().ReverseMap();
+
+            //🔹Certification mapping
+            CreateMap<Certification, CertificationDTO>().ReverseMap();
+            CreateMap<CreateCertificationDTO, Certification>().ReverseMap();
+            CreateMap<UpdateCertificationDTO, Certification>().ReverseMap();
         }
     }
 }

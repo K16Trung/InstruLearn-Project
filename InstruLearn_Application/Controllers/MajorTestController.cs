@@ -1,4 +1,5 @@
-﻿using InstruLearn_Application.BLL.Service.IService;
+﻿using InstruLearn_Application.BLL.Service;
+using InstruLearn_Application.BLL.Service.IService;
 using InstruLearn_Application.Model.Models.DTO.MajorTest;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
@@ -16,76 +17,41 @@ namespace InstruLearn_Application.Controllers
             _majorTestService = majorTestService;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetAllMajorTests()
+        [HttpGet("get-all")]
+        public async Task<IActionResult> GetAllMajorTest()
         {
-            var result = await _majorTestService.GetAllMajorTestsAsync();
-            return Ok(result);
+            var response = await _majorTestService.GetAllMajorTestsAsync();
+            return Ok(response);
         }
-
         [HttpGet("{id}")]
         public async Task<IActionResult> GetMajorTestById(int id)
         {
-            var result = await _majorTestService.GetMajorTestByIdAsync(id);
-            if (!result.IsSucceed)
-            {
-                return NotFound(result);
-            }
-            return Ok(result);
+            var response = await _majorTestService.GetMajorTestByIdAsync(id);
+            return Ok(response);
         }
-
-        [HttpGet("by-major/{majorId}")]
-        public async Task<IActionResult> GetMajorTestsByMajorId(int majorId)
+        [HttpGet("by-major/{id}")]
+        public async Task<IActionResult> GetMajorTestsByMajorId(int id)
         {
-            var result = await _majorTestService.GetMajorTestsByMajorIdAsync(majorId);
-            if (!result.IsSucceed)
-            {
-                return NotFound(result);
-            }
-            return Ok(result);
+            var response = await _majorTestService.GetMajorTestsByMajorIdAsync(id);
+            return Ok(response);
         }
-
-        [HttpPost]
-        public async Task<IActionResult> CreateMajorTest([FromBody] CreateMajorTestDTO createMajorTestDTO)
+        [HttpPost("create")]
+        public async Task<IActionResult> AddMajorTest([FromBody] CreateMajorTestDTO createDto)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var result = await _majorTestService.CreateMajorTestAsync(createMajorTestDTO);
-            if (!result.IsSucceed)
-            {
-                return BadRequest(result);
-            }
-            return CreatedAtAction(nameof(GetMajorTestById), new { id = ((MajorTestDTO)result.Data).MajorTestId }, result);
+            var response = await _majorTestService.CreateMajorTestAsync(createDto);
+            return Ok(response);
         }
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateMajorTest(int id, [FromBody] UpdateMajorTestDTO updateMajorTestDTO)
+        [HttpPut("update/{id}")]
+        public async Task<IActionResult> UpdateMajorTest(int id, [FromBody] UpdateMajorTestDTO updateDto)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var result = await _majorTestService.UpdateMajorTestAsync(id, updateMajorTestDTO);
-            if (!result.IsSucceed)
-            {
-                return BadRequest(result);
-            }
-            return Ok(result);
+            var response = await _majorTestService.UpdateMajorTestAsync(id, updateDto);
+            return Ok(response);
         }
-
-        [HttpDelete("{id}")]
+        [HttpDelete("delete/{id}")]
         public async Task<IActionResult> DeleteMajorTest(int id)
         {
-            var result = await _majorTestService.DeleteMajorTestAsync(id);
-            if (!result.IsSucceed)
-            {
-                return NotFound(result);
-            }
-            return Ok(result);
+            var response = await _majorTestService.DeleteMajorTestAsync(id);
+            return Ok(response);
         }
     }
 }
