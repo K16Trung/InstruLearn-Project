@@ -12,10 +12,10 @@ namespace InstruLearn_Application.BLL.Service.IService
     {
         Task<List<ResponseDTO>> GetAllMajorTestsAsync();
         Task<ResponseDTO> GetMajorTestByIdAsync(int majorTestId);
+        Task<ResponseDTO> GetMajorTestsByMajorIdAsync(int majorId);
         Task<ResponseDTO> CreateMajorTestAsync(CreateMajorTestDTO createMajorTestDTO);
         Task<ResponseDTO> UpdateMajorTestAsync(int majorTestId, UpdateMajorTestDTO updateMajorTestDTO);
         Task<ResponseDTO> DeleteMajorTestAsync(int majorTestId);
-        Task<ResponseDTO> GetMajorTestsByMajorIdAsync(int majorId);
 
     }
 }

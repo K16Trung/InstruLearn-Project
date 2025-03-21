@@ -104,6 +104,7 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<ITestResultRepository, TestResultRepository>();
             builder.Services.AddScoped<IPurchaseRepository, PurchaseRepository>();
             builder.Services.AddScoped<IPurchaseItemRepository, PurchaseItemRepository>();
+            builder.Services.AddScoped<ICertificationRepository, CertificationRepository>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             builder.Services.AddScoped<IAuthService, AuthService>();
@@ -133,7 +134,7 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<ITestResultService, TestResultService>();
             builder.Services.AddScoped<IPurchaseService, PurchaseService>();
             builder.Services.AddScoped<IPurchaseItemService, PurchaseItemService>();
-
+            builder.Services.AddScoped<ICertificationService, CertificationService>();
             builder.Services.AddAutoMapper(typeof(MappingProfile));
 
             // Add CORS
