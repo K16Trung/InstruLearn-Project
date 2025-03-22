@@ -16,6 +16,7 @@ namespace InstruLearn_Application.Model.Models
         public int TeacherId { get; set; }
         public int? MajorId { get; set; }
         public int? LearningRegisId { get; set; }
+        public int? Score { get; set; }
         public TestResultType ResultType { get; set; }
         public TestResultStatus Status { get; set; }
         
