@@ -242,8 +242,17 @@ namespace InstruLearn_Application.BLL.Service
                 _mapper.Map(updateDTO, learningRegis);
                 learningRegis.Status = LearningRegis.Accepted;
 
+                if (updateDTO.Score.HasValue)
+                {
+                    learningRegis.Score = updateDTO.Score;
+                }
+
+                if (!string.IsNullOrEmpty(updateDTO.Feedback))
+                {
+                    learningRegis.Feedback = updateDTO.Feedback;
+                }
+
                 await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
-                //await _unitOfWork.SaveChangeAsync();
 
                 // Fetch the associated Test_Result and update it
                 var testResult = await _unitOfWork.TestResultRepository.GetByLearningRegisIdAsync(updateDTO.LearningRegisId);
@@ -253,16 +262,10 @@ namespace InstruLearn_Application.BLL.Service
                     // Update Score and Feedback if available in DTO
                     if (updateDTO.Score.HasValue)
                     {
-                        learningRegis.Score = updateDTO.Score; // Track it in Learning_Registration
-                        testResult.Status = TestResultStatus.Dotted; // Example of status update
+                        learningRegis.Score = updateDTO.Score;
                     }
-                    if (!string.IsNullOrEmpty(updateDTO.Feedback))
-                    {
-                        learningRegis.Feedback = updateDTO.Feedback; // Update feedback in Learning_Registration
-                    }
+                    testResult.Status = TestResultStatus.Dotted;
 
-                    // Optionally sync Score to Test_Result if needed
-                    testResult.LearningRegistration = learningRegis;
                     await _unitOfWork.TestResultRepository.UpdateAsync(testResult);
                 }
 

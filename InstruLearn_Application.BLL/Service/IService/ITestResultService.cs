@@ -14,5 +14,7 @@ namespace InstruLearn_Application.BLL.Service.IService
         Task<ResponseDTO> GetTestResultByIdAsync(int testResultId);
         Task<ResponseDTO> CreateTestResultAsync(CreateTestResultDTO createTestResultDTO);
         Task<ResponseDTO> DeleteTestResultAsync(int testResultId);
+        Task<ResponseDTO> GetTestResultsByLearningRegisIdAsync(int learningRegisId);
+        Task<ResponseDTO> GetTestResultsByLearnerIdAsync(int learnerId);
     }
 }

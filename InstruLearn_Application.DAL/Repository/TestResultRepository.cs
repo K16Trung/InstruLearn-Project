@@ -23,5 +23,46 @@ namespace InstruLearn_Application.DAL.Repository
         {
             return await _appDbContext.Set<Test_Result>().FirstOrDefaultAsync(tr => tr.LearningRegisId == learningRegisId);
         }
+
+        public async Task<List<Test_Result>> GetTestResultsByLearningRegisIdAsync(int learningRegisId)
+        {
+            return await _appDbContext.Test_Results
+                .Include(tr => tr.LearningRegistration)       
+                .Include(tr => tr.Learner)                    
+                .Include(tr => tr.Teacher)                    
+                .Where(tr => tr.LearningRegisId == learningRegisId)
+                .ToListAsync();
+        }
+
+        public async Task<List<Test_Result>> GetTestResultsByLearnerIdAsync(int learnerId)
+        {
+            return await _appDbContext.Test_Results
+                .Include(tr => tr.LearningRegistration)  
+                .Include(tr => tr.Teacher)               
+                .Include(tr => tr.Major)                 
+                .Where(tr => tr.LearnerId == learnerId)
+                .ToListAsync();
+        }
+
+        public async Task<List<Test_Result>> GetAllWithDetailsAsync()
+        {
+            return await _appDbContext.Test_Results
+                .Include(tr => tr.LearningRegistration)  
+                .Include(tr => tr.Teacher)              
+                .Include(tr => tr.Major)
+                .ToListAsync();
+        }
+
+        public async Task<Test_Result> GetByIdWithDetailsAsync(int testResultId)
+        {
+            return await _appDbContext.Test_Results
+                .Include(tr => tr.LearningRegistration)  
+                .Include(tr => tr.Teacher)               
+                .Include(tr => tr.Major)
+                .FirstOrDefaultAsync(tr => tr.TestResultId == testResultId);
+        }
+
+
+
     }
 }
