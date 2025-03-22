@@ -34,6 +34,32 @@ namespace InstruLearn_Application.Controllers
             return Ok(result);
         }
 
+        [HttpGet("learningRegis/{learningRegisId}/test-results")]
+        public async Task<IActionResult> GetTestResultsByLearningRegisId(int learningRegisId)
+        {
+            var response = await _testResultService.GetTestResultsByLearningRegisIdAsync(learningRegisId);
+            if (!response.IsSucceed)
+            {
+                return NotFound(response.Message);
+            }
+
+            return Ok(response.Data);
+        }
+
+        [HttpGet("learner/{learnerId}/test-results")]
+        public async Task<IActionResult> GetTestResultsByLearnerId(int learnerId)
+        {
+            var response = await _testResultService.GetTestResultsByLearnerIdAsync(learnerId);
+            if (!response.IsSucceed)
+            {
+                return NotFound(response.Message);
+            }
+
+            return Ok(response.Data);
+        }
+
+
+
         [HttpPost]
         public async Task<IActionResult> CreateTestResult([FromBody] CreateTestResultDTO createTestResultDTO)
         {

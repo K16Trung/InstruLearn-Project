@@ -27,9 +27,11 @@ namespace InstruLearn_Application.BLL.Service
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
+
+        // getall
         public async Task<List<ResponseDTO>> GetAllTestResultsAsync()
         {
-            var testResultList = await _unitOfWork.TestResultRepository.GetAllAsync();
+            var testResultList = await _unitOfWork.TestResultRepository.GetAllWithDetailsAsync();
             var testResultDtos = _mapper.Map<IEnumerable<TestResultDTO>>(testResultList);
 
             var responseList = new List<ResponseDTO>();
@@ -45,9 +47,11 @@ namespace InstruLearn_Application.BLL.Service
             }
             return responseList;
         }
+
+        // get by id
         public async Task<ResponseDTO> GetTestResultByIdAsync(int testResultId)
         {
-            var testResult = await _unitOfWork.TestResultRepository.GetByIdAsync(testResultId);
+            var testResult = await _unitOfWork.TestResultRepository.GetByIdWithDetailsAsync(testResultId);
             if (testResult == null)
             {
                 return new ResponseDTO
@@ -64,6 +68,8 @@ namespace InstruLearn_Application.BLL.Service
                 Data = testResultDto
             };
         }
+
+        // create
         public async Task<ResponseDTO> CreateTestResultAsync(CreateTestResultDTO createTestResultDTO)
         {
             var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(createTestResultDTO.LearnerId);
@@ -106,6 +112,8 @@ namespace InstruLearn_Application.BLL.Service
                 Data = _mapper.Map<TestResultDTO>(testResult)
             };
         }
+
+        // delete
         public async Task<ResponseDTO> DeleteTestResultAsync(int testResultId)
         {
             var deleteTestResult = await _unitOfWork.TestResultRepository.GetByIdAsync(testResultId);
@@ -127,5 +135,56 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
         }
+
+        // get by learning regis id
+
+        public async Task<ResponseDTO> GetTestResultsByLearningRegisIdAsync(int learningRegisId)
+        {
+            var testResults = await _unitOfWork.TestResultRepository.GetTestResultsByLearningRegisIdAsync(learningRegisId);
+
+            if (testResults == null || !testResults.Any())
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "No test results found for the given Learning Registration ID."
+                };
+            }
+
+            // Optionally map to DTO (if avoiding returning full EF entities)
+            var testResultsDTO = _mapper.Map<List<TestResultDTO>>(testResults);
+
+            return new ResponseDTO
+            {
+                IsSucceed = true,
+                Data = testResultsDTO
+            };
+        }
+
+        // get by learner id
+
+        public async Task<ResponseDTO> GetTestResultsByLearnerIdAsync(int learnerId)
+        {
+            var testResults = await _unitOfWork.TestResultRepository.GetTestResultsByLearnerIdAsync(learnerId);
+
+            if (testResults == null || !testResults.Any())
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "No test results found for the given Learner ID."
+                };
+            }
+
+            // Optionally map to DTOs
+            var testResultsDTO = _mapper.Map<List<TestResultDTO>>(testResults);
+
+            return new ResponseDTO
+            {
+                IsSucceed = true,
+                Data = testResultsDTO
+            };
+        }
+
     }
 }

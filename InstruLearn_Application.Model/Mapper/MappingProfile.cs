@@ -27,6 +27,7 @@ using InstruLearn_Application.Model.Models.DTO.QnA;
 using InstruLearn_Application.Model.Models.DTO.QnAReplies;
 using InstruLearn_Application.Model.Models.DTO.Staff;
 using InstruLearn_Application.Model.Models.DTO.Teacher;
+using InstruLearn_Application.Model.Models.DTO.Test_Result;
 using InstruLearn_Application.Model.Models.DTO.Wallet;
 using System;
 using System.Collections.Generic;
@@ -232,10 +233,10 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<UpdateMajorTestDTO, MajorTest>().ReverseMap();
 
             //🔹 Learning_Registration Mappings
-            CreateMap<Learning_Registration, LearningRegisDTO>()
-                .ForMember(dest => dest.LearnerId, opt => opt.MapFrom(src => src.LearnerId))
+            CreateMap<Learning_Registration, LearningRegisDTO>().ReverseMap();
+                /*.ForMember(dest => dest.LearnerId, opt => opt.MapFrom(src => src.LearnerId))
                 .ForMember(dest => dest.ClassId, opt => opt.MapFrom(src => src.ClassId))
-                .ForMember(dest => dest.RegisTypeId, opt => opt.MapFrom(src => src.RegisTypeId));
+                .ForMember(dest => dest.RegisTypeId, opt => opt.MapFrom(src => src.RegisTypeId));*/
             CreateMap<CreateLearningRegisDTO, Learning_Registration>().ReverseMap();
 
             CreateMap<Learning_Registration, OneOnOneRegisDTO>()
@@ -309,6 +310,10 @@ namespace InstruLearn_Application.Model.Mapper
 
             CreateMap<CreateCertificationDTO, Certification>().ReverseMap();
             CreateMap<UpdateCertificationDTO, Certification>().ReverseMap();
-        }
+
+            // 🔹Test_result mapping
+            CreateMap<Test_Result, TestResultDTO>().ReverseMap();
+            CreateMap<CreateTestResultDTO, Test_Result>().ReverseMap();
+        }   
     }
 }
