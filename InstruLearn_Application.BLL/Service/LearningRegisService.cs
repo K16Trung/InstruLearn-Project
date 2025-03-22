@@ -123,6 +123,24 @@ namespace InstruLearn_Application.BLL.Service
                         await _unitOfWork.SaveChangeAsync();
                     }
 
+                    // Create Test_Result and associate it with the Learning_Registration
+                    var testResult = new Test_Result
+                    {
+                        LearnerId = createLearningRegisDTO.LearnerId,
+                        TeacherId = createLearningRegisDTO.TeacherId ?? 0,
+                        MajorId = createLearningRegisDTO.MajorId,
+                        LearningRegisId = learningRegis.LearningRegisId,
+                        ResultType = TestResultType.OneOnOne,
+                        Status = TestResultStatus.Pending,        
+                        LearningRegistration = learningRegis     
+                    };
+
+                    // Add the Video URL in Test_Result (stored indirectly)
+                    testResult.LearningRegistration.VideoUrl = createLearningRegisDTO.VideoUrl;
+
+                    await _unitOfWork.TestResultRepository.AddAsync(testResult);
+                    await _unitOfWork.SaveChangeAsync();
+
                     // Create a wallet transaction
                     var walletTransaction = new WalletTransaction
                     {
@@ -225,6 +243,29 @@ namespace InstruLearn_Application.BLL.Service
                 learningRegis.Status = LearningRegis.Accepted;
 
                 await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
+                //await _unitOfWork.SaveChangeAsync();
+
+                // Fetch the associated Test_Result and update it
+                var testResult = await _unitOfWork.TestResultRepository.GetByLearningRegisIdAsync(updateDTO.LearningRegisId);
+
+                if (testResult != null)
+                {
+                    // Update Score and Feedback if available in DTO
+                    if (updateDTO.Score.HasValue)
+                    {
+                        learningRegis.Score = updateDTO.Score; // Track it in Learning_Registration
+                        testResult.Status = TestResultStatus.Dotted; // Example of status update
+                    }
+                    if (!string.IsNullOrEmpty(updateDTO.Feedback))
+                    {
+                        learningRegis.Feedback = updateDTO.Feedback; // Update feedback in Learning_Registration
+                    }
+
+                    // Optionally sync Score to Test_Result if needed
+                    testResult.LearningRegistration = learningRegis;
+                    await _unitOfWork.TestResultRepository.UpdateAsync(testResult);
+                }
+
                 await _unitOfWork.SaveChangeAsync();
 
                 await _unitOfWork.CommitTransactionAsync();
