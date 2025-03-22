@@ -146,7 +146,7 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<UpdateCourseTypeDTO, CourseType>().ReverseMap();
 
             // Course_Content mapping
-            CreateMap<Course_Content, CourseContentDTO>().ReverseMap()
+            CreateMap<Course_Content, CourseContentDTO>()
             .ForMember(dest => dest.CourseContentItems, opt => opt.MapFrom(src => src.CourseContentItems))
             .ReverseMap();
             CreateMap<CreateCourseContentDTO, Course_Content>().ReverseMap();
@@ -275,6 +275,7 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.CourseDescription, opt => opt.MapFrom(src => src.CourseDescription))
                 .ForMember(dest => dest.Headline, opt => opt.MapFrom(src => src.Headline))
                 .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.ImageUrl))
+                .ForMember(dest => dest.CourseContents, opt => opt.MapFrom(src => src.CourseContents))
                 .ReverseMap();
 
             //🔹 Purchase mapping
