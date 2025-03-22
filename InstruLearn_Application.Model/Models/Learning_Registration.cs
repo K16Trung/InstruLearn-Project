@@ -25,6 +25,7 @@ namespace InstruLearn_Application.Model.Models
         public Major Major {  get; set; }
         public DateOnly? StartDay { get; set; }
         public TimeOnly TimeStart { get; set; }
+        public int TimeLearning { get; set; }
         public DateTime RequestDate { get; set; }
         public LearningRegis Status { get; set; }
         public int NumberOfSession { get; set; }

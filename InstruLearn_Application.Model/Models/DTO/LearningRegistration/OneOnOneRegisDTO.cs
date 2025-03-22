@@ -20,6 +20,7 @@ namespace InstruLearn_Application.Model.Models.DTO.LearningRegistration
         public string MajorName { get; set; }
         public DateOnly? StartDay { get; set; }
         public TimeOnly TimeStart { get; set; }
+        public int TimeLearning { get; set; }
         public TimeOnly? TimeEnd { get; set; }
 
         public DateTime RequestDate { get; set; }
