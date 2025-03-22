@@ -12,6 +12,7 @@ namespace InstruLearn_Application.BLL.Service.IService
     {
         Task<List<ResponseDTO>> GetAllPurchaseItemAsync();
         Task<ResponseDTO> GetPurchaseItemByIdAsync(int purchaseItemId);
+        Task<ResponseDTO> GetPurchaseItemByLearnerIdAsync(int learnerId);
         Task<ResponseDTO> CreatePurchaseItemAsync(CreatePurchaseItemDTO purchaseItemDTO);
         Task<ResponseDTO> DeletePurchaseItemAsync(int purchaseItemId);
     }

@@ -1,7 +1,5 @@
 ﻿using InstruLearn_Application.BLL.Service;
 using InstruLearn_Application.BLL.Service.IService;
-using InstruLearn_Application.Model.Models.DTO.Feedback;
-using InstruLearn_Application.Model.Models.DTO.Purchase;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 
@@ -33,6 +31,13 @@ namespace InstruLearn_Application.Controllers
             {
                 return NotFound(result);
             }
+            return Ok(result);
+        }
+
+        [HttpGet("by-learner/{id}")]
+        public async Task<IActionResult> GetPurchaseByLearnerId(int id)
+        {
+            var result = await _purchaseService.GetPurchaseByLearnerIdAsync(id);
             return Ok(result);
         }
 

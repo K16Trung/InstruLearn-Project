@@ -62,6 +62,32 @@ namespace InstruLearn_Application.BLL.Service
                 Data = puchaseDto
             };
         }
+        public async Task<ResponseDTO> GetPurchaseByLearnerIdAsync(int learnerId)
+        {
+            // Kiểm tra xem học viên có tồn tại không
+            var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(learnerId);
+            if (learner == null)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Learner not found.",
+                };
+            }
+
+            // Lấy danh sách các giao dịch mua của học viên
+            var purchases = await _unitOfWork.PurchaseRepository.GetByLearnerIdAsync(learnerId);
+
+            // Ánh xạ sang DTO
+            var purchaseDtos = _mapper.Map<IEnumerable<PurchaseDTO>>(purchases);
+
+            return new ResponseDTO
+            {
+                IsSucceed = true,
+                Message = "Purchases retrieved successfully.",
+                Data = purchaseDtos
+            };
+        }
         public async Task<ResponseDTO> DeletePurchaseAsync(int purchaseId)
         {
             var deletePurchase = await _unitOfWork.PurchaseRepository.GetByIdAsync(purchaseId);
