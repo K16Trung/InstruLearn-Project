@@ -36,6 +36,13 @@ namespace InstruLearn_Application.Controllers
             return Ok(result);
         }
 
+        [HttpGet("by-learner/{id}")]
+        public async Task<IActionResult> GetPurchaseItemsByLearnerId(int id)
+        {
+            var result = await _purchaseItemService.GetPurchaseItemByLearnerIdAsync(id);
+            return Ok(result);
+        }
+
         [HttpPost("create")]
         public async Task<IActionResult> CreatePurchaseItem([FromBody] CreatePurchaseItemDTO createDto)
         {

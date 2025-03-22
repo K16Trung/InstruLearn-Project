@@ -1,4 +1,6 @@
-﻿using System;
+﻿using InstruLearn_Application.Model.Models.DTO.Course;
+using InstruLearn_Application.Model.Models.DTO.Learner;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,8 +10,8 @@ namespace InstruLearn_Application.Model.Models.DTO.Certification
 {
     public class CertificationDTO
     {
-        public int LearnerId { get; set; }
-        public int CoursePackageId { get; set; }
+        public LearnerCertificationDTO learner  { get; set; }
+        public CourseCertificationDTO course { get; set; }
         public string CertificationName { get; set; }
     }
 }

@@ -290,7 +290,23 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<CreatePurchaseDTO, Purchase>().ReverseMap();
 
             //🔹Certification mapping
-            CreateMap<Certification, CertificationDTO>().ReverseMap();
+            CreateMap<Certification, CertificationDTO>()
+                .ForMember(dest => dest.learner, opt => opt.MapFrom(src => src.Learner))
+                .ForMember(dest => dest.course, opt => opt.MapFrom(src => src.CoursePackages))
+                .ReverseMap();
+
+            CreateMap<Learner, LearnerCertificationDTO>()
+                .ForMember(dest => dest.LearnerId, opt => opt.MapFrom(src => src.LearnerId))
+                .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName))
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Account.Email))
+                .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
+                .ReverseMap();
+
+            CreateMap<Course_Package, CourseCertificationDTO>()
+                .ForMember(dest => dest.CoursePackageId, opt => opt.MapFrom(src => src.CoursePackageId))
+                .ForMember(dest => dest.CourseName, opt => opt.MapFrom(src => src.CourseName))
+                .ReverseMap();
+
             CreateMap<CreateCertificationDTO, Certification>().ReverseMap();
             CreateMap<UpdateCertificationDTO, Certification>().ReverseMap();
         }

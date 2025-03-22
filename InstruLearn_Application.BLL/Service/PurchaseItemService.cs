@@ -69,6 +69,40 @@ namespace InstruLearn_Application.BLL.Service
             };
         }
 
+        public async Task<ResponseDTO> GetPurchaseItemByLearnerIdAsync(int learnerId)
+        {
+            var purchaseItemList = await _unitOfWork.PurchaseItemRepository.GetPurchaseItemWithFullCourseDetailsAsync();
+            if (purchaseItemList == null || !purchaseItemList.Any())
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "No purchase items found.",
+                    Data = null
+                };
+            }
+
+            var purchaseItems = purchaseItemList.Where(pi => pi.Purchase != null && pi.Purchase.LearnerId == learnerId).ToList();
+            if (!purchaseItems.Any())
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"No purchase items found for learner with ID {learnerId}.",
+                    Data = null
+                };
+            }
+
+            var purchaseItemDtos = _mapper.Map<IEnumerable<PurchaseItemDTO>>(purchaseItems);
+
+            return new ResponseDTO
+            {
+                IsSucceed = true,
+                Message = "Purchase items retrieved successfully.",
+                Data = purchaseItemDtos
+            };
+        }
+
         public async Task<ResponseDTO> CreatePurchaseItemAsync(CreatePurchaseItemDTO createPurchaseItemsDTO)
         {
             await _unitOfWork.BeginTransactionAsync();
