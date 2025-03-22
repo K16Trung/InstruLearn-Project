@@ -102,6 +102,16 @@ namespace InstruLearn_Application.BLL.Service
                     wallet.Balance -= 50000;
                     await _unitOfWork.WalletRepository.UpdateAsync(wallet);
 
+                    // Validate learning duration (30, 60, 90 or 120 minutes)
+                    if (createLearningRegisDTO.TimeLearning != 45 && createLearningRegisDTO.TimeLearning != 60 && createLearningRegisDTO.TimeLearning != 90 && createLearningRegisDTO.TimeLearning != 120)
+                    {
+                        return new ResponseDTO
+                        {
+                            IsSucceed = false,
+                            Message = "Invalid learning duration. Please select 30, 60, 90 or 120 minutes."
+                        };
+                    }
+
                     // Map DTO to entity
                     var learningRegis = _mapper.Map<Learning_Registration>(createLearningRegisDTO);
                     learningRegis.Status = LearningRegis.Pending;
@@ -159,6 +169,10 @@ namespace InstruLearn_Application.BLL.Service
                     await transaction.CommitAsync();
 
                     _logger.LogInformation("Learning registration added successfully. Wallet balance updated.");
+
+                    // Calculate TimeEnd dynamically (without saving it)
+                    var timeEnd = learningRegis.TimeStart.AddMinutes(createLearningRegisDTO.TimeLearning);
+                    var timeEndFormatted = timeEnd.ToString("HH:mm");
 
                     return new ResponseDTO
                     {

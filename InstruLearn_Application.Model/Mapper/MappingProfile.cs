@@ -247,7 +247,7 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.MajorName, opt => opt.MapFrom(src => src.Major.MajorName))
                 .ForMember(dest => dest.LearningDays, opt => opt.MapFrom(src =>
                     src.LearningRegistrationDay.Select(ld => DateTimeHelper.GetDayName((int)ld.DayOfWeek)).ToList()))
-                .ForMember(dest => dest.TimeEnd, opt => opt.MapFrom(src => src.TimeStart.AddHours(2))); // Ensure 2-hour session
+                .ForMember(dest => dest.TimeEnd, opt => opt.MapFrom(src => src.TimeStart.AddMinutes(src.TimeLearning)));
 
             CreateMap<UpdateLearningRegisDTO, Learning_Registration>()
                 .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
