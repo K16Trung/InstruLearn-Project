@@ -1,6 +1,7 @@
 ﻿using InstruLearn_Application.DAL.Repository.IRepository;
 using InstruLearn_Application.Model.Data;
 using InstruLearn_Application.Model.Models;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,6 +18,24 @@ namespace InstruLearn_Application.DAL.Repository
             {
                 _appDbContext = appDbContext;
             }
+        }
+
+        public async Task<IEnumerable<Certification>> GetAllAsync()
+        {
+            return await _appDbContext.Certifications
+                .Include(c => c.Learner)
+                    .ThenInclude(l => l.Account)
+                .Include(c => c.CoursePackages)
+                .ToListAsync();
+        }
+
+        public async Task<Certification> GetByIdAsync(int id)
+        {
+            return await _appDbContext.Certifications
+                .Include(c => c.Learner)
+                    .ThenInclude(l => l.Account)
+                .Include(c => c.CoursePackages)
+                .FirstOrDefaultAsync(c => c.CertificationId == id);
         }
     }
 }

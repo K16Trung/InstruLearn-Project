@@ -38,5 +38,20 @@ namespace InstruLearn_Application.DAL.Repository
                     .ThenInclude(cp => cp.Type)
                 .FirstOrDefaultAsync(p => p.PurchaseId == id);
         }
+        public async Task<IEnumerable<Purchase>> GetByLearnerIdAsync(int learnerId)
+        {
+            return await _appDbContext.Purchases
+                .Include(p => p.Learner)
+                    .ThenInclude(a => a.Account)
+                .Include(p => p.PurchaseItems)
+                    .ThenInclude(pi => pi.CoursePackage)
+                    .ThenInclude(cp => cp.Type)
+                .Include(p => p.PurchaseItems)
+                    .ThenInclude(pi => pi.CoursePackage)
+                    .ThenInclude(cp => cp.CourseContents)
+                    .ThenInclude(cl => cl.CourseContentItems)
+                .Where(p => p.LearnerId == learnerId)
+                .ToListAsync();
+        }
     }
 }

@@ -146,7 +146,7 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<UpdateCourseTypeDTO, CourseType>().ReverseMap();
 
             // Course_Content mapping
-            CreateMap<Course_Content, CourseContentDTO>().ReverseMap()
+            CreateMap<Course_Content, CourseContentDTO>()
             .ForMember(dest => dest.CourseContentItems, opt => opt.MapFrom(src => src.CourseContentItems))
             .ReverseMap();
             CreateMap<CreateCourseContentDTO, Course_Content>().ReverseMap();
@@ -275,6 +275,7 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.CourseDescription, opt => opt.MapFrom(src => src.CourseDescription))
                 .ForMember(dest => dest.Headline, opt => opt.MapFrom(src => src.Headline))
                 .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.ImageUrl))
+                .ForMember(dest => dest.CourseContents, opt => opt.MapFrom(src => src.CourseContents))
                 .ReverseMap();
 
             //🔹 Purchase mapping
@@ -286,12 +287,31 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.PurchaseItems, opt => opt.MapFrom(src => src.PurchaseItems))
                 .ReverseMap();
             CreateMap<Learner, LearnerInfoDTO>()
+                .ForMember(dest => dest.LearnerId, opt => opt.MapFrom(src => src.LearnerId))
                 .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName))
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Account.Email))
+                .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
                 .ReverseMap();
             CreateMap<CreatePurchaseDTO, Purchase>().ReverseMap();
 
             //🔹Certification mapping
-            CreateMap<Certification, CertificationDTO>().ReverseMap();
+            CreateMap<Certification, CertificationDTO>()
+                .ForMember(dest => dest.learner, opt => opt.MapFrom(src => src.Learner))
+                .ForMember(dest => dest.course, opt => opt.MapFrom(src => src.CoursePackages))
+                .ReverseMap();
+
+            CreateMap<Learner, LearnerCertificationDTO>()
+                .ForMember(dest => dest.LearnerId, opt => opt.MapFrom(src => src.LearnerId))
+                .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName))
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Account.Email))
+                .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
+                .ReverseMap();
+
+            CreateMap<Course_Package, CourseCertificationDTO>()
+                .ForMember(dest => dest.CoursePackageId, opt => opt.MapFrom(src => src.CoursePackageId))
+                .ForMember(dest => dest.CourseName, opt => opt.MapFrom(src => src.CourseName))
+                .ReverseMap();
+
             CreateMap<CreateCertificationDTO, Certification>().ReverseMap();
             CreateMap<UpdateCertificationDTO, Certification>().ReverseMap();
 
