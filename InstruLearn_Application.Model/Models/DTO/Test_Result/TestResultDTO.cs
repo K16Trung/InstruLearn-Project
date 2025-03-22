@@ -14,6 +14,7 @@ namespace InstruLearn_Application.Model.Models.DTO.Test_Result
         public int TeacherId { get; set; }
         public int? MajorTestId { get; set; }
         public int? LearningRegisId { get; set; }
+        public int? Score { get; set; }
         public string ResultType { get; set; }
         public string Status { get; set; }
 
