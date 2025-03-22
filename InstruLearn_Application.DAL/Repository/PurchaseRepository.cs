@@ -46,6 +46,10 @@ namespace InstruLearn_Application.DAL.Repository
                 .Include(p => p.PurchaseItems)
                     .ThenInclude(pi => pi.CoursePackage)
                     .ThenInclude(cp => cp.Type)
+                .Include(p => p.PurchaseItems)
+                    .ThenInclude(pi => pi.CoursePackage)
+                    .ThenInclude(cp => cp.CourseContents)
+                    .ThenInclude(cl => cl.CourseContentItems)
                 .Where(p => p.LearnerId == learnerId)
                 .ToListAsync();
         }
