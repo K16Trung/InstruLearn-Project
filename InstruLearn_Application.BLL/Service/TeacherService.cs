@@ -91,7 +91,7 @@ namespace InstruLearn_Application.BLL.Service
                         Username = createTeacherDTO.Username,
                         Email = createTeacherDTO.Email,
                         PasswordHash = HashPassword(createTeacherDTO.Password),
-                        Gender = createTeacherDTO.Gender ?? "Not Specified",
+                        Gender = createTeacherDTO.Gender,
                         PhoneNumber = createTeacherDTO.PhoneNumber,
                         Address = createTeacherDTO.Address,
                         Avatar = createTeacherDTO.Avatar,
