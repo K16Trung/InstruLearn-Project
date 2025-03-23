@@ -19,19 +19,19 @@ namespace InstruLearn_Application.DAL.Repository
             _appDbContext = appDbContext;
         }
 
-        // Lấy tất cả giáo viên bao gồm thông tin về Major
         public async Task<IEnumerable<Teacher>> GetAllAsync()
         {
             return await _appDbContext.Teachers
+                .Include(a => a.Account)
                 .Include(t => t.TeacherMajors)
                 .ThenInclude(tm => tm.Major)
                 .ToListAsync();
         }
 
-        // Lấy thông tin giáo viên theo ID bao gồm Major
         public async Task<Teacher> GetByIdAsync(int teacherId)
         {
             return await _appDbContext.Teachers
+                .Include(a => a.Account)
                 .Include(t => t.TeacherMajors)
                 .ThenInclude(tm => tm.Major)
                 .FirstOrDefaultAsync(t => t.TeacherId == teacherId);
