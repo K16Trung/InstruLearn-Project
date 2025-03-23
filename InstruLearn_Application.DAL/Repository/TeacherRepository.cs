@@ -23,7 +23,8 @@ namespace InstruLearn_Application.DAL.Repository
         public async Task<IEnumerable<Teacher>> GetAllAsync()
         {
             return await _appDbContext.Teachers
-                .Include(t => t.Major)
+                .Include(t => t.TeacherMajors)
+                .ThenInclude(tm => tm.Major)
                 .ToListAsync();
         }
 
@@ -31,7 +32,8 @@ namespace InstruLearn_Application.DAL.Repository
         public async Task<Teacher> GetByIdAsync(int teacherId)
         {
             return await _appDbContext.Teachers
-                .Include(t => t.Major)
+                .Include(t => t.TeacherMajors)
+                .ThenInclude(tm => tm.Major)
                 .FirstOrDefaultAsync(t => t.TeacherId == teacherId);
         }
     }

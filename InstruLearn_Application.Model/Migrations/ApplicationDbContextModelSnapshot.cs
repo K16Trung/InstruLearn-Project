@@ -28,19 +28,16 @@ namespace InstruLearn_Application.Model.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Address")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Avatar")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("DateOfEmployment")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<DateOnly>("DateOfEmployment")
+                        .HasColumnType("date");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -889,17 +886,33 @@ namespace InstruLearn_Application.Model.Migrations
                     b.Property<string>("Links")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("MajorId")
-                        .HasColumnType("int");
-
                     b.HasKey("TeacherId");
 
                     b.HasIndex("AccountId")
                         .IsUnique();
 
+                    b.ToTable("Teachers");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.TeacherMajor", b =>
+                {
+                    b.Property<int>("TeacherId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MajorId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TeacherMajorId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TeacherMajorId"));
+
+                    b.HasKey("TeacherId", "MajorId");
+
                     b.HasIndex("MajorId");
 
-                    b.ToTable("Teachers");
+                    b.ToTable("TeacherMajors");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Test_Result", b =>
@@ -1369,14 +1382,26 @@ namespace InstruLearn_Application.Model.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("InstruLearn_Application.Model.Models.Major", "Major")
-                        .WithMany("Teachers")
-                        .HasForeignKey("MajorId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.Navigation("Account");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.TeacherMajor", b =>
+                {
+                    b.HasOne("InstruLearn_Application.Model.Models.Major", "Major")
+                        .WithMany("TeacherMajors")
+                        .HasForeignKey("MajorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("InstruLearn_Application.Model.Models.Teacher", "Teacher")
+                        .WithMany("TeacherMajors")
+                        .HasForeignKey("TeacherId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Major");
+
+                    b.Navigation("Teacher");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Test_Result", b =>
@@ -1532,7 +1557,7 @@ namespace InstruLearn_Application.Model.Migrations
                 {
                     b.Navigation("MajorTests");
 
-                    b.Navigation("Teachers");
+                    b.Navigation("TeacherMajors");
 
                     b.Navigation("TestResults");
 
@@ -1566,6 +1591,8 @@ namespace InstruLearn_Application.Model.Migrations
                     b.Navigation("Learning_Registrations");
 
                     b.Navigation("Schedules");
+
+                    b.Navigation("TeacherMajors");
 
                     b.Navigation("TestResults");
                 });
