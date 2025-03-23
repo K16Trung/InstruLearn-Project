@@ -81,7 +81,7 @@ namespace InstruLearn_Application.Controllers
 
                 "Learner" => await _dbContext.Learners
                     .Where(l => l.AccountId == accountId)
-                    .Select(l => new { l.LearnerId, l.AccountId, l.FullName, l.PhoneNumber, l.Account.Email, l.Account.Username, Role = role })
+                    .Select(l => new { l.LearnerId, l.AccountId, l.FullName, l.Account.Email, l.Account.Username, Role = role })
                     .FirstOrDefaultAsync(),
 
                 _ => null

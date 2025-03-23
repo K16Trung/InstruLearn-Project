@@ -101,8 +101,7 @@ namespace InstruLearn_Application.BLL.Service
             var user = new Learner
             {
                 AccountId = account.AccountId,
-                FullName = registerDTO.FullName,
-                PhoneNumber = registerDTO.PhoneNumber,
+                FullName = registerDTO.FullName
             };
 
             // Add the customer to the database
