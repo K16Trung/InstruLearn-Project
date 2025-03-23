@@ -66,22 +66,22 @@ namespace InstruLearn_Application.Controllers
 
                 "Staff" => await _dbContext.Staffs
                     .Where(s => s.AccountId == accountId)
-                    .Select(s => new { s.StaffId, s.AccountId, s.Fullname, s.Account.Email, s.Account.Username, Role = role })
+                    .Select(s => new { s.StaffId, s.AccountId, s.Fullname, s.Account.Username, s.Account.Email, s.Account.PhoneNumber, s.Account.Gender, s.Account.Address, s.Account.Avatar, s.Account.DateOfEmployment, Role = role })
                     .FirstOrDefaultAsync(),
 
                 "Teacher" => await _dbContext.Teachers
                     .Where(t => t.AccountId == accountId)
-                    .Select(t => new { t.TeacherId, t.AccountId, t.Fullname, t.Heading, t.Details, t.Links, t.Account.Email, t.Account.Username, Role = role })
+                    .Select(t => new { t.TeacherId, t.AccountId, t.Fullname, t.Account.Username, t.Account.Email, t.Account.Gender, t.Account.Address, t.Account.Avatar, t.Account.PhoneNumber, t.Account.DateOfEmployment, t.Heading, t.Details, t.Links, Role = role })
                     .FirstOrDefaultAsync(),
 
                 "Manager" => await _dbContext.Managers
                     .Where(m => m.AccountId == accountId)
-                    .Select(m => new { m.ManagerId, m.AccountId, m.Fullname, m.Account.Email, m.Account.Username, Role = role })
+                    .Select(m => new { m.ManagerId, m.AccountId, m.Fullname, m.Account.Username, m.Account.Email, m.Account.Gender, m.Account.Address, m.Account.Avatar, m.Account.PhoneNumber, m.Account.DateOfEmployment, m.Account, Role = role })
                     .FirstOrDefaultAsync(),
 
                 "Learner" => await _dbContext.Learners
                     .Where(l => l.AccountId == accountId)
-                    .Select(l => new { l.LearnerId, l.AccountId, l.FullName, l.Account.Email, l.Account.Username, Role = role })
+                    .Select(l => new { l.LearnerId, l.AccountId, l.FullName, l.Account.Username, l.Account.Email, l.Account.Gender, l.Account.Address, l.Account.Avatar, l.Account.PhoneNumber, Role = role })
                     .FirstOrDefaultAsync(),
 
                 _ => null

@@ -46,6 +46,22 @@ namespace InstruLearn_Application.BLL.Service
             return response;
         }
 
+        public async Task<ResponseDTO> GetManagerByIdAsync(int managerId)
+        {
+            var response = new ResponseDTO();
+            var manager = await _unitOfWork.ManagerRepository.GetByIdAsync(managerId);
+            if (manager == null)
+            {
+                response.Message = "Manager not found.";
+                return response;
+            }
+            var managerDTO = _mapper.Map<ManagerDTO>(manager);
+            response.IsSucceed = true;
+            response.Message = "Manager retrieved successfully";
+            response.Data = managerDTO;
+            return response;
+        }
+
         public async Task<ResponseDTO> CreateManagerAsync(CreateManagerDTO createManagerDTO)
         {
             var response = new ResponseDTO();
@@ -87,6 +103,37 @@ namespace InstruLearn_Application.BLL.Service
             response.IsSucceed = true;
             response.Message = "Manager created successfully!";
             return response;
+        }
+
+        public async Task<ResponseDTO> UpdateManagerAsync(int managerId, UpdateManagerDTO updateManagerDTO)
+        {
+            var response = new ResponseDTO();
+
+            var manager = await _unitOfWork.ManagerRepository.GetByIdAsync(managerId);
+            if (manager == null)
+            {
+                response.Message = "Manager not found.";
+                return response;
+            }
+
+            _mapper.Map(updateManagerDTO, manager);
+
+            var updated = await _unitOfWork.ManagerRepository.UpdateAsync(manager);
+
+            if (!updated)
+            {
+                response.Message = "Failed to update manager.";
+                return response;
+            }
+
+            response.IsSucceed = true;
+            response.Message = "Manager updated successfully!";
+            return response;
+        }
+
+        private string HashPassword(string password)
+        {
+            return BCrypt.Net.BCrypt.HashPassword(password); // Explicit namespace
         }
 
         public async Task<ResponseDTO> DeleteManagerAsync(int managerId)
@@ -142,53 +189,6 @@ namespace InstruLearn_Application.BLL.Service
             response.IsSucceed = true;
             response.Message = "Manager unban successfully!";
             return response;
-        }
-
-        public async Task<ResponseDTO> GetManagerByIdAsync(int managerId)
-        {
-            var response = new ResponseDTO();
-            var manager = await _unitOfWork.ManagerRepository.GetByIdAsync(managerId);
-            if (manager == null)
-            {
-                response.Message = "Manager not found.";
-                return response;
-            }
-            var managerDTO = _mapper.Map<ManagerDTO>(manager);
-            response.IsSucceed = true;
-            response.Message = "Manager retrieved successfully";
-            response.Data = managerDTO;
-            return response;
-        }
-
-        public async Task<ResponseDTO> UpdateManagerAsync(int managerId, UpdateManagerDTO updateManagerDTO)
-        {
-            var response = new ResponseDTO();
-
-            var manager = await _unitOfWork.ManagerRepository.GetByIdAsync(managerId);
-            if (manager == null)
-            {
-                response.Message = "Manager not found.";
-                return response;
-            }
-
-            _mapper.Map(updateManagerDTO, manager);
-
-            var updated = await _unitOfWork.ManagerRepository.UpdateAsync(manager);
-
-            if (!updated)
-            {
-                response.Message = "Failed to update manager.";
-                return response;
-            }
-
-            response.IsSucceed = true;
-            response.Message = "Manager updated successfully!";
-            return response;
-        }
-
-        private string HashPassword(string password)
-        {
-            return BCrypt.Net.BCrypt.HashPassword(password); // Explicit namespace
         }
     }
 }

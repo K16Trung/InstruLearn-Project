@@ -104,7 +104,8 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<Learner, RegisterDTO>()
             .ForMember(dest => dest.Username, opt => opt.MapFrom(src => src.Account.Username))
             .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Account.Email))
-            .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName));
+            .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName))
+            .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.Account.PhoneNumber));
 
 
             // Teacher mapping
@@ -288,6 +289,7 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.LearnerId, opt => opt.MapFrom(src => src.LearnerId))
                 .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName))
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Account.Email))
+                .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.Account.PhoneNumber))
                 .ReverseMap();
             CreateMap<CreatePurchaseDTO, Purchase>().ReverseMap();
 
@@ -301,6 +303,7 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.LearnerId, opt => opt.MapFrom(src => src.LearnerId))
                 .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName))
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Account.Email))
+                .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.Account.PhoneNumber))
                 .ReverseMap();
 
             CreateMap<Course_Package, CourseCertificationDTO>()

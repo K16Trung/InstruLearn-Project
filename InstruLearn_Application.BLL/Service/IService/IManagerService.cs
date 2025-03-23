@@ -10,11 +10,11 @@ namespace InstruLearn_Application.BLL.Service.IService
 {
     public interface IManagerService
     {
-        Task<ResponseDTO> CreateManagerAsync(CreateManagerDTO createManagerDTO);
+        Task<ResponseDTO> GetAllManagerAsync();
         Task<ResponseDTO> GetManagerByIdAsync(int managerId);
+        Task<ResponseDTO> CreateManagerAsync(CreateManagerDTO createManagerDTO);
         Task<ResponseDTO> UpdateManagerAsync(int managerId, UpdateManagerDTO updateManagerDTO);
         Task<ResponseDTO> DeleteManagerAsync(int managerId);
         Task<ResponseDTO> UnbanManagerAsync(int managerId);
-        Task<ResponseDTO> GetAllManagerAsync();
     }
 }
