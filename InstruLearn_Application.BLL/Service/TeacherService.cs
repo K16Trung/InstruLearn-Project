@@ -62,14 +62,16 @@ namespace InstruLearn_Application.BLL.Service
             {
                 try
                 {
-                    // Check Major
-                    var major = await _unitOfWork.MajorRepository.GetByIdAsync(createTeacherDTO.MajorId);
-                    if (major == null)
+                    // Ensure all major IDs exist in the database
+                    var majors = await _unitOfWork.MajorRepository.GetAllAsync();
+                    var validMajorIds = majors.Select(m => m.MajorId).ToList();
+
+                    if (!createTeacherDTO.MajorIds.All(id => validMajorIds.Contains(id)))
                     {
                         return new ResponseDTO
                         {
                             IsSucceed = false,
-                            Message = "Major not found",
+                            Message = "One or more Majors not found",
                         };
                     }
 
@@ -89,6 +91,11 @@ namespace InstruLearn_Application.BLL.Service
                         Username = createTeacherDTO.Username,
                         Email = createTeacherDTO.Email,
                         PasswordHash = HashPassword(createTeacherDTO.Password),
+                        Gender = createTeacherDTO.Gender ?? "Not Specified",
+                        PhoneNumber = createTeacherDTO.PhoneNumber,
+                        Address = createTeacherDTO.Address,
+                        Avatar = createTeacherDTO.Avatar,
+                        DateOfEmployment = createTeacherDTO.DateOfEmployment,
                         Role = AccountRoles.Teacher,
                         IsActive = AccountStatus.Active,
                         RefreshToken = _jwtHelper.GenerateRefreshToken(),
@@ -99,16 +106,23 @@ namespace InstruLearn_Application.BLL.Service
                     account.TokenExpires = DateTime.Now.AddHours(1);
 
                     await _unitOfWork.AccountRepository.AddAsync(account);
+                    await _unitOfWork.dbContext.SaveChangesAsync();
 
-                    // Create Teacher
+                    // Create Teacher object
                     var teacher = new Teacher
                     {
                         AccountId = account.AccountId,
-                        Fullname = createTeacherDTO.Fullname,
-                        MajorId = createTeacherDTO.MajorId
+                        Fullname = createTeacherDTO.Fullname
                     };
 
                     await _unitOfWork.TeacherRepository.AddAsync(teacher);
+                    await _unitOfWork.dbContext.SaveChangesAsync();  // Save to generate TeacherId
+
+                    // Add TeacherMajors after TeacherId is generated
+                    var teacherMajors = createTeacherDTO.MajorIds
+                        .Select(id => new TeacherMajor { TeacherId = teacher.TeacherId, MajorId = id }).ToList();
+                    _unitOfWork.dbContext.TeacherMajors.AddRange(teacherMajors);  // Update Teacher with TeacherMajors
+
 
                     await _unitOfWork.dbContext.SaveChangesAsync();
                     await transaction.CommitAsync();
@@ -121,7 +135,7 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     await transaction.RollbackAsync();
                     response.IsSucceed = false;
-                    response.Message = $"Error: {ex.Message}";
+                    response.Message = $"Error: {ex.InnerException?.Message ?? ex.Message}";
                     return response;
                 }
             }

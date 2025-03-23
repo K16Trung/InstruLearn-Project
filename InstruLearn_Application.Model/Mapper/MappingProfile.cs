@@ -108,11 +108,11 @@ namespace InstruLearn_Application.Model.Mapper
 
 
             // Teacher mapping
-            CreateMap<Teacher, TeacherDTO>()
-            .ForMember(dest => dest.Major, opt => opt.MapFrom(src => src.Major))
-            .ReverseMap();
+            CreateMap<Teacher, TeacherDTO>().ReverseMap();
 
-            CreateMap<CreateTeacherDTO, Teacher>().ReverseMap();
+            CreateMap<CreateTeacherDTO, Teacher>()
+                .ForMember(dest => dest.TeacherMajors, opt =>
+                    opt.MapFrom(src => src.MajorIds.Select(id => new TeacherMajor { MajorId = id })));
             CreateMap<UpdateTeacherDTO, Teacher>().ReverseMap();
 
             CreateMap<Teacher, TeacherResponseDTO>()

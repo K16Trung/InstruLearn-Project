@@ -44,6 +44,7 @@ namespace InstruLearn_Application.Model.Data
         public DbSet<Schedules> Schedules { get; set; }
         public DbSet<ScheduleDays> ScheduleDays { get; set; }
         public DbSet<Certification> Certifications { get; set; }
+        public DbSet<TeacherMajor> TeacherMajors { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -290,11 +291,22 @@ namespace InstruLearn_Application.Model.Data
 
             //
 
-            modelBuilder.Entity<Teacher>()
-                .HasOne(t => t.Major)
-                .WithMany(m => m.Teachers)
-                .HasForeignKey(t => t.MajorId)
-                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<TeacherMajor>()
+                .Property(t => t.TeacherMajorId)
+                .ValueGeneratedOnAdd();
+
+            modelBuilder.Entity<TeacherMajor>()
+                .HasKey(tm => new { tm.TeacherId, tm.MajorId });
+
+            modelBuilder.Entity<TeacherMajor>()
+                .HasOne(tm => tm.Teacher)
+                .WithMany(t => t.TeacherMajors)
+                .HasForeignKey(tm => tm.TeacherId);
+
+            modelBuilder.Entity<TeacherMajor>()
+                .HasOne(tm => tm.Major)
+                .WithMany(m => m.TeacherMajors)
+                .HasForeignKey(tm => tm.MajorId);
 
             //
 
