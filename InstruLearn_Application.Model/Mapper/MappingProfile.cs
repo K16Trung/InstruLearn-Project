@@ -149,7 +149,10 @@ namespace InstruLearn_Application.Model.Mapper
             // Teacher mapping
             CreateMap<Teacher, TeacherDTO>()
                 .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.Account.IsActive))
+                .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.Account.PhoneNumber))
+                .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => src.Account.Gender))
                 .ForMember(dest => dest.Avatar, opt => opt.MapFrom(src => src.Account.Avatar))
+                .ForMember(dest => dest.DateOfEmployment, opt => opt.MapFrom(src => src.Account.DateOfEmployment))
                 .ForMember(dest => dest.Majors, opt => opt.MapFrom(src =>
                     src.TeacherMajors != null
                         ? src.TeacherMajors.Where(tm => tm.Major != null)
@@ -166,6 +169,8 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.Heading, opt => opt.MapFrom(src => src.Heading))
                 .ForMember(dest => dest.Details, opt => opt.MapFrom(src => src.Details))
                 .ForMember(dest => dest.Links, opt => opt.MapFrom(src => src.Links))
+                .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.Account.PhoneNumber))
+                .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => src.Account.Gender))
                 .ForMember(dest => dest.Avatar, opt => opt.MapFrom(src => src.Account.Avatar))
                 .ReverseMap();
 
