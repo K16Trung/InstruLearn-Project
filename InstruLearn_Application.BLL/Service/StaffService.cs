@@ -45,7 +45,21 @@ namespace InstruLearn_Application.BLL.Service
             response.Data = staffDTOs;
             return response;
         }
-
+        public async Task<ResponseDTO> GetStaffByIdAsync(int staffId)
+        {
+            var response = new ResponseDTO();
+            var staff = await _unitOfWork.StaffRepository.GetByIdAsync(staffId);
+            if (staff == null)
+            {
+                response.Message = "Staff not found.";
+                return response;
+            }
+            var staffDTO = _mapper.Map<StaffDTO>(staff);
+            response.IsSucceed = true;
+            response.Message = "Staff retrieved successfully";
+            response.Data = staffDTO;
+            return response;
+        }
         public async Task<ResponseDTO> CreateStaffAsync(CreateStaffDTO createStaffDTO)
         {
             var response = new ResponseDTO();
@@ -65,6 +79,8 @@ namespace InstruLearn_Application.BLL.Service
                 Email = createStaffDTO.Email,
                 PasswordHash = HashPassword(createStaffDTO.Password),
                 Role = AccountRoles.Staff,
+                PhoneNumber = createStaffDTO.PhoneNumber,
+                DateOfEmployment = DateOnly.FromDateTime(DateTime.Now),
                 IsActive = AccountStatus.Active,
 
                 RefreshToken = _jwtHelper.GenerateRefreshToken(),
@@ -88,7 +104,31 @@ namespace InstruLearn_Application.BLL.Service
             response.Message = "Staff created successfully!";
             return response;
         }
+        public async Task<ResponseDTO> UpdateStaffAsync(int staffId, UpdateStaffDTO updateStaffDTO)
+        {
+            var response = new ResponseDTO();
 
+            var staff = await _unitOfWork.StaffRepository.GetByIdAsync(staffId);
+            if (staff == null)
+            {
+                response.Message = "Staff not found.";
+                return response;
+            }
+
+            _mapper.Map(updateStaffDTO, staff);
+
+            var updated = await _unitOfWork.StaffRepository.UpdateAsync(staff);
+
+            if (!updated)
+            {
+                response.Message = "Failed to update staff.";
+                return response;
+            }
+
+            response.IsSucceed = true;
+            response.Message = "Staff updated successfully!";
+            return response;
+        }
         public async Task<ResponseDTO> DeleteStaffAsync(int staffId)
         {
             var response = new ResponseDTO();
@@ -115,7 +155,6 @@ namespace InstruLearn_Application.BLL.Service
             response.Message = "Staff delete successfully!";
             return response;
         }
-
         public async Task<ResponseDTO> UnbanStaffAsync(int staffId)
         {
             var response = new ResponseDTO();
@@ -141,48 +180,6 @@ namespace InstruLearn_Application.BLL.Service
 
             response.IsSucceed = true;
             response.Message = "Staff unban successfully!";
-            return response;
-        }
-
-        public async Task<ResponseDTO> GetStaffByIdAsync(int staffId)
-        {
-            var response = new ResponseDTO();
-            var staff = await _unitOfWork.StaffRepository.GetByIdAsync(staffId);
-            if (staff == null)
-            {
-                response.Message = "Staff not found.";
-                return response;
-            }
-            var staffDTO = _mapper.Map<StaffDTO>(staff);
-            response.IsSucceed = true;
-            response.Message = "Staff retrieved successfully";
-            response.Data = staffDTO;
-            return response;
-        }
-
-        public async Task<ResponseDTO> UpdateStaffAsync(int staffId, UpdateStaffDTO updateStaffDTO)
-        {
-            var response = new ResponseDTO();
-
-            var staff = await _unitOfWork.ManagerRepository.GetByIdAsync(staffId);
-            if (staff == null)
-            {
-                response.Message = "Staff not found.";
-                return response;
-            }
-
-            _mapper.Map(updateStaffDTO, staff);
-
-            var updated = await _unitOfWork.ManagerRepository.UpdateAsync(staff);
-
-            if (!updated)
-            {
-                response.Message = "Failed to update staff.";
-                return response;
-            }
-
-            response.IsSucceed = true;
-            response.Message = "Staff updated successfully!";
             return response;
         }
 

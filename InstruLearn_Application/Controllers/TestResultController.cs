@@ -16,7 +16,7 @@ namespace InstruLearn_Application.Controllers
             _testResultService = testResultService;
         }
 
-        [HttpGet]
+        [HttpGet("get-all")]
         public async Task<IActionResult> GetAllTestResults()
         {
             var result = await _testResultService.GetAllTestResultsAsync();
@@ -60,7 +60,7 @@ namespace InstruLearn_Application.Controllers
 
 
 
-        [HttpPost]
+        [HttpPost("create")]
         public async Task<IActionResult> CreateTestResult([FromBody] CreateTestResultDTO createTestResultDTO)
         {
             if (!ModelState.IsValid)
@@ -76,7 +76,7 @@ namespace InstruLearn_Application.Controllers
             return CreatedAtAction(nameof(GetTestResultById), new { id = ((TestResultDTO)result.Data).TestResultId }, result);
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("delete/{id}")]
         public async Task<IActionResult> DeleteTestResult(int id)
         {
             var result = await _testResultService.DeleteTestResultAsync(id);

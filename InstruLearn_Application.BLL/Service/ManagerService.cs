@@ -81,6 +81,8 @@ namespace InstruLearn_Application.BLL.Service
                 Email = createManagerDTO.Email,
                 PasswordHash = HashPassword(createManagerDTO.Password),
                 Role = AccountRoles.Manager,
+                PhoneNumber = createManagerDTO.PhoneNumber,
+                DateOfEmployment = DateOnly.FromDateTime(DateTime.Now),
                 IsActive = AccountStatus.Active,
 
                 RefreshToken = _jwtHelper.GenerateRefreshToken(),
