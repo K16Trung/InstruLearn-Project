@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using InstruLearn_Application.BLL.Service.IService;
 using InstruLearn_Application.DAL.UoW.IUoW;
+using InstruLearn_Application.Model.Enum;
 using InstruLearn_Application.Model.Models;
 using InstruLearn_Application.Model.Models.DTO;
 using InstruLearn_Application.Model.Models.DTO.CourseType;
@@ -58,6 +59,7 @@ namespace InstruLearn_Application.BLL.Service
         public async Task<ResponseDTO> AddMajorAsync(CreateMajorDTO createDto)
         {
             var major = _mapper.Map<Major>(createDto);
+            major.Status = MajorStatus.Available;
             await _unitOfWork.MajorRepository.AddAsync(major);
             return new ResponseDTO
             {

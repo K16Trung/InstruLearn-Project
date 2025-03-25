@@ -46,7 +46,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Teacher not found",
+                    Message = "Không tìm thấy giáo viên",
                 };
             }
             var coursePackage = await _unitOfWork.CourseRepository.GetByIdAsync(createClassDTO.CoursePackageId);
@@ -55,7 +55,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Course package not found",
+                    Message = "Không tìm thấy gói học",
                 };
             }
 
@@ -68,7 +68,7 @@ namespace InstruLearn_Application.BLL.Service
             var response = new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Class added successfully",
+                Message = "Đã thêm lớp thành công",
             };
 
             return response;
@@ -87,19 +87,19 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "Class update successfully!"
+                        Message = "Đã cập nhật lớp thành công!"
                     };
                 }
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Class update failed!"
+                    Message = "Cập nhật lớp thất bại!"
                 };
             }
             return new ResponseDTO
             {
                 IsSucceed = false,
-                Message = "Class not found!"
+                Message = "Không tìm thấy lớp!"
             };
         }
 
@@ -114,7 +114,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Class deleted successfully"
+                    Message = "Đã xóa lớp thành công"
                 };
             }
             else
@@ -122,7 +122,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Class with ID {classId} not found"
+                    Message = $"Không tìm thấy lớp có ID {classId}"
                 };
             }
         }

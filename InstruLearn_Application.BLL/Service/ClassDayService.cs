@@ -42,7 +42,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Class not found",
+                    Message = "Không tìm thấy lớp học",
                 };
             }
 
@@ -55,7 +55,7 @@ namespace InstruLearn_Application.BLL.Service
             var response = new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "ClassDay added successfully",
+                Message = "Thêm ngày học thành công",
             };
 
             return response;
@@ -73,19 +73,19 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "Class update successfully!"
+                        Message = "Đã cập nhật lớp thành công!"
                     };
                 }
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Class update failed!"
+                    Message = "Cập nhật lớp không thành công!"
                 };
             }
             return new ResponseDTO
             {
                 IsSucceed = false,
-                Message = "Class not found!"
+                Message = "Không tìm thấy lớp!"
             };
         }
         public async Task<ResponseDTO> DeleteClassDayAsync(int classDayId)
@@ -99,7 +99,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "ClassDay deleted successfully"
+                    Message = "Đã xóa ngày học thành công"
                 };
             }
             else
@@ -107,7 +107,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"ClassDay with ID {classDayId} not found"
+                    Message = $"Không tìm thấy ngày học có ID {classDayId}"
                 };
             }
         }

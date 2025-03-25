@@ -43,7 +43,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Feedback not found",
+                    Message = "Không tìm thấy nhận xét",
                 };
             }
             var account = await _unitOfWork.AccountRepository.GetByIdAsync(createfeedbackrepliesDTO.AccountId);
@@ -52,7 +52,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Account not found",
+                    Message = "Không tìm thấy tài khoản",
                 };
             }
             var feedbackreplyObj = _mapper.Map<FeedbackReplies>(createfeedbackrepliesDTO);
@@ -67,13 +67,13 @@ namespace InstruLearn_Application.BLL.Service
             var response = new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "FeedbackReplies added successfully",
+                Message = "Thêm phản hồi thành công!",
             };
             return response;
         }
-        public async Task<ResponseDTO> UpdateFeedbackRepliesAsync(int id, UpdateFeedbackRepliesDTO updatefeedbackrepliesDTO)
+        public async Task<ResponseDTO> UpdateFeedbackRepliesAsync(int replyId, UpdateFeedbackRepliesDTO updatefeedbackrepliesDTO)
         {
-            var feedbackrepliesUpdate = await _unitOfWork.FeedbackRepliesRepository.GetByIdAsync(id);
+            var feedbackrepliesUpdate = await _unitOfWork.FeedbackRepliesRepository.GetByIdAsync(replyId);
             if (feedbackrepliesUpdate != null)
             {
                 feedbackrepliesUpdate = _mapper.Map(updatefeedbackrepliesDTO, feedbackrepliesUpdate);
@@ -84,33 +84,33 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "Feedbackreplies update successfully!"
+                        Message = "Cập nhật phản hồi thành công!"
                     };
                 }
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Feedbackreplies update failed!"
+                    Message = "Cập nhật phản hồi thất bại!"
                 };
             }
             return new ResponseDTO
             {
                 IsSucceed = false,
-                Message = "Feedbackreplies not found!"
+                Message = "Không tìm thấy phản hồi!"
             };
         }
-        public async Task<ResponseDTO> DeleteFeedbackRepliesAsync(int id)
+        public async Task<ResponseDTO> DeleteFeedbackRepliesAsync(int replyId)
         {
-            var deleteFeedbackreplies = await _unitOfWork.FeedbackRepliesRepository.GetByIdAsync(id);
+            var deleteFeedbackreplies = await _unitOfWork.FeedbackRepliesRepository.GetByIdAsync(replyId);
             if (deleteFeedbackreplies != null)
             {
-                await _unitOfWork.FeedbackRepliesRepository.DeleteAsync(id);
+                await _unitOfWork.FeedbackRepliesRepository.DeleteAsync(replyId);
                 await _unitOfWork.SaveChangeAsync();
 
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Feedbackreplies deleted successfully"
+                    Message = "Xóa phản hồi thành công"
                 };
             }
             else
@@ -118,7 +118,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Feedbackreplies with ID {id} not found"
+                    Message = $"Không tìm thấy phản hồi với ID {replyId}"
                 };
             }
 

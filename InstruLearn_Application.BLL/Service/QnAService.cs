@@ -43,7 +43,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Account not found",
+                    Message = "Không tìm thấy tài khoản",
                 };
             }
             var course = await _unitOfWork.CourseRepository.GetByIdAsync(createQnADTO.CoursePackageId);
@@ -52,7 +52,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Course not found",
+                    Message = "Không tìm thấy gói học",
                 };
             }
 
@@ -67,14 +67,14 @@ namespace InstruLearn_Application.BLL.Service
             var response = new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Question added successfully",
+                Message = "Câu hỏi đã được thêm thành công",
             };
 
             return response;
         }
-        public async Task<ResponseDTO> UpdateQnAAsync(int id, UpdateQnADTO updateQnADTO)
+        public async Task<ResponseDTO> UpdateQnAAsync(int questionId, UpdateQnADTO updateQnADTO)
         {
-            var qnaUpdate = await _unitOfWork.QnARepository.GetByIdAsync(id);
+            var qnaUpdate = await _unitOfWork.QnARepository.GetByIdAsync(questionId);
             if (qnaUpdate != null)
             {
                 qnaUpdate = _mapper.Map(updateQnADTO, qnaUpdate);
@@ -85,33 +85,33 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "Question update successfully!"
+                        Message = "Đã cập nhật câu hỏi thành công!"
                     };
                 }
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Question update failed!"
+                    Message = "Đã cập nhật câu hỏi thất bại!"
                 };
             }
             return new ResponseDTO
             {
                 IsSucceed = false,
-                Message = "Question not found!"
+                Message = "Không tìm thấy câu hỏi!"
             };
         }
-        public async Task<ResponseDTO> DeleteQnAAsync(int id)
+        public async Task<ResponseDTO> DeleteQnAAsync(int questionId)
         {
-            var deleteQnA = await _unitOfWork.QnARepository.GetByIdAsync(id);
+            var deleteQnA = await _unitOfWork.QnARepository.GetByIdAsync(questionId);
             if (deleteQnA != null)
             {
-                await _unitOfWork.QnARepository.DeleteAsync(id);
+                await _unitOfWork.QnARepository.DeleteAsync(questionId);
                 await _unitOfWork.SaveChangeAsync();
 
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Question deleted successfully"
+                    Message = "Câu hỏi đã được xóa thành công"
                 };
             }
             else
@@ -119,7 +119,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Question with ID {id} not found"
+                    Message = $"Không tìm thấy câu hỏi có ID {questionId}"
                 };
             }
 

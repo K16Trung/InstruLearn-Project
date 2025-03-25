@@ -41,7 +41,7 @@ namespace InstruLearn_Application.BLL.Service
             var adminDTOs = _mapper.Map<IEnumerable<AdminDTO>>(admins);
 
             response.IsSucceed = true;
-            response.Message = "data retrieved successfully";
+            response.Message = "Lấy ra danh sách thành công";
             response.Data = adminDTOs;
             return response;
         }
@@ -55,7 +55,7 @@ namespace InstruLearn_Application.BLL.Service
             var existingAccount = accounts.Items.FirstOrDefault();
             if (existingAccount != null)
             {
-                response.Message = "Email already exists.";
+                response.Message = "Email đã tồn tại.";
                 return response;
             }
 
@@ -88,7 +88,7 @@ namespace InstruLearn_Application.BLL.Service
             await _unitOfWork.AdminRepository.AddAsync(admin);
 
             response.IsSucceed = true;
-            response.Message = "Admin created successfully!";
+            response.Message = "Quản trị viên đã tạo thành công!";
             return response;
         }
         public async Task<ResponseDTO> GetAdminByIdAsync(int adminId)
@@ -97,12 +97,12 @@ namespace InstruLearn_Application.BLL.Service
             var admin = await _unitOfWork.AdminRepository.GetByIdAsync(adminId);
             if (admin == null)
             {
-                response.Message = "Admin not found.";
+                response.Message = "Không tìm thấy quản trị viên.";
                 return response;
             }
             var adminDTO = _mapper.Map<AdminDTO>(admin);
             response.IsSucceed = true;
-            response.Message = "Admin retrieved successfully";
+            response.Message = "Lấy ra danh sách quản trị viên thành công";
             response.Data = adminDTO;
             return response;
         }
@@ -113,7 +113,7 @@ namespace InstruLearn_Application.BLL.Service
             var admin = await _unitOfWork.AdminRepository.GetByIdAsync(adminId);
             if (admin == null)
             {
-                response.Message = "Admin not found.";
+                response.Message = "Không tìm thấy quản trị viên.";
                 return response;
             }
 
@@ -123,12 +123,12 @@ namespace InstruLearn_Application.BLL.Service
 
             if (!updated)
             {
-                response.Message = "Failed to update admin.";
+                response.Message = "Cập nhật quản trị viên thất bại.";
                 return response;
             }
 
             response.IsSucceed = true;
-            response.Message = "Admin updated successfully!";
+            response.Message = "Cập nhật quản trị viên thành công!";
             return response;
         }
         private string HashPassword(string password)
