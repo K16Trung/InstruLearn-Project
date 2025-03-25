@@ -14,15 +14,17 @@ namespace InstruLearn_Application.Model.Models.DTO.Schedules
         public int ScheduleId { get; set; }
         public int? TeacherId { get; set; }
         public int? LearnerId { get; set; }
-        public TimeOnly TimeStart { get; set; }
-        public TimeOnly TimeEnd { get; set; }
+        public string TimeStart { get; set; }
+        public string TimeEnd { get; set; }
+        public string DayOfWeek { get; set; }
+        public string StartDate { get; set; }
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public ScheduleMode Mode { get; set; }
 
         // From Learning_Registration
         public DateOnly? RegistrationStartDay { get; set; }
         //public TimeOnly RegistrationTimeStart { get; set; }
-
+        public int LearningRegisId { get; set; }
         public List<ScheduleDaysDTO> ScheduleDays { get; set; }
     }
 }

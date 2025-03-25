@@ -25,6 +25,7 @@ namespace InstruLearn_Application.DAL.Repository
                 .Where(x => x.Status == LearningRegis.Pending)  // Ensure "Pending" matches your status naming convention
                 .Include(x => x.Learner)
                 .Include(x => x.Teacher)
+                .Include(l => l.Learner.Account)
                 .Include(x => x.Learning_Registration_Type)
                 .Include(x => x.Major)
                 .Include(x => x.LearningRegistrationDay)
@@ -38,6 +39,7 @@ namespace InstruLearn_Application.DAL.Repository
                 .Where(x => x.LearnerId == learnerId)
                 .Include(x => x.Learner)
                 .Include(x => x.Teacher)
+                .Include(l => l.Learner.Account)
                 .Include(x => x.Learning_Registration_Type)
                 .Include(x => x.Major)
                 .Include(x => x.LearningRegistrationDay)
@@ -49,6 +51,7 @@ namespace InstruLearn_Application.DAL.Repository
             return await _appDbContext.Learning_Registrations
                 .Include(l => l.Teacher)
                 .Include(l => l.Learner)
+                .Include(l => l.Learner.Account)
                 .Include(l => l.Learning_Registration_Type)
                 .Include(l => l.Major)
                 .Include(l => l.LearningRegistrationDay)
@@ -60,10 +63,12 @@ namespace InstruLearn_Application.DAL.Repository
             return await _appDbContext.Learning_Registrations
                 .Include(l => l.Teacher)
                 .Include(l => l.Learner)
+                .Include(l => l.Learner.Account)
                 .Include(l => l.Learning_Registration_Type)
                 .Include(l => l.Major)
                 .Include(l => l.LearningRegistrationDay)
                 .FirstOrDefaultAsync(l => l.LearningRegisId == id);
         }
+
     }
 }

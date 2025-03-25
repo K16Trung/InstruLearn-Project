@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -51,6 +52,21 @@ namespace InstruLearn_Application.DAL.Repository
                 .ThenInclude(sd => sd.DayOfWeeks)
                 .ToListAsync();
         }
+
+        public async Task<IEnumerable<Schedules>> GetAllWithIncludesAsync(
+            Expression<Func<Schedules, bool>> filter,
+             params string[] includes)
+        {
+            IQueryable<Schedules> query = _appDbContext.Schedules.Where(filter);
+
+            foreach (var include in includes)
+            {
+                query = query.Include(include);
+            }
+
+            return await query.ToListAsync();
+        }
+
 
     }
 }

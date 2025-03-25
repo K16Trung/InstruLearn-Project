@@ -306,6 +306,7 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<Learning_Registration, OneOnOneRegisDTO>()
                 .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Teacher.Fullname))
                 .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.Learner.FullName))
+                .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.Learner.Account.PhoneNumber))
                 .ForMember(dest => dest.RegisTypeName, opt => opt.MapFrom(src => src.Learning_Registration_Type.RegisTypeName))
                 .ForMember(dest => dest.MajorName, opt => opt.MapFrom(src => src.Major.MajorName))
                 .ForMember(dest => dest.LearningDays, opt => opt.MapFrom(src =>
@@ -389,9 +390,10 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.Mode, opt => opt.MapFrom(src => src.Mode));
 
             CreateMap<CreateScheduleDTO, Schedules>()
-                .ForMember(dest => dest.TimeEnd, opt => opt.MapFrom(src => src.TimeEnd));
+                .ForMember(dest => dest.TimeEnd, opt => opt.MapFrom(src => src.TimeEnd))
+                .ForMember(dest => dest.ScheduleDays, opt => opt.MapFrom(src => src.ScheduleDays));
             // 🔹ScheduleDays mapping
-            CreateMap<ScheduleDays, ScheduleDaysDTO>()
+            CreateMap<ScheduleDaysDTO, ScheduleDays>()
                 .ForMember(dest => dest.DayOfWeeks, opt => opt.MapFrom(src => src.DayOfWeeks));
         }
     }

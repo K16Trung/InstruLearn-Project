@@ -27,5 +27,26 @@ namespace InstruLearn_Application.Controllers
 
             return Ok(schedules);
         }
+        
+        [HttpGet("learningRegis/{learningRegisId}/schedules")]
+        public async Task<IActionResult> GetSchedulesAsync(int learningRegisId)
+        {
+            var result = await _scheduleService.GetSchedulesAsync(learningRegisId);
+            return Ok(result);
+        }
+        
+        [HttpGet("learner/{learnerId}/schedules")]
+        public async Task<IActionResult> GetSchedulesByLearnerAsync(int learnerId)
+        {
+            var result = await _scheduleService.GetSchedulesAsync(learnerId);
+            return Ok(result);
+        }
+        
+        [HttpGet("teacher/{teacherId}/schedules")]
+        public async Task<IActionResult> GetSchedulesByTeacherAsync(int teacherId)
+        {
+            var result = await _scheduleService.GetSchedulesAsync(teacherId);
+            return Ok(result);
+        }
     }
 }

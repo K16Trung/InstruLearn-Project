@@ -64,6 +64,29 @@ namespace InstruLearn_Application.DAL.Repository
             return _dbSet.AsQueryable();
         }
 
+        public async Task<T> GetWithIncludesAsync(Expression<Func<T, bool>> filter, string includeProperties = "")
+        {
+            IQueryable<T> query = _dbSet.Where(filter);
+
+            foreach (var includeProperty in includeProperties.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                query = query.Include(includeProperty);
+            }
+
+            return await query.FirstOrDefaultAsync();
+        }
+
+        public async Task<List<T>> GetAllWithIncludesAsync(Expression<Func<T, bool>> filter, string includeProperties = "")
+        {
+            IQueryable<T> query = _dbSet.Where(filter);
+
+            foreach (var includeProperty in includeProperties.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                query = query.Include(includeProperty);
+            }
+
+            return await query.ToListAsync();
+        }
 
 
         //GET By string ID

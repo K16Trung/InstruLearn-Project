@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -13,5 +14,8 @@ namespace InstruLearn_Application.DAL.Repository.IRepository
         Task<List<Schedules>> GetSchedulesByLearningRegisIdAsync(int learningRegisId);
         Task<List<Schedules>> GetSchedulesByLearnerAsync(int learnerId);
         Task<List<Schedules>> GetSchedulesByTeacherAsync(int teacherId);
+        Task<IEnumerable<Schedules>> GetAllWithIncludesAsync(
+            Expression<Func<Schedules, bool>> filter,
+             params string[] includes);
     }
 }
