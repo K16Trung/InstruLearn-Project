@@ -1,4 +1,5 @@
-﻿using System;
+﻿using InstruLearn_Application.Model.Enum;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -19,5 +20,6 @@ namespace InstruLearn_Application.Model.Models
         [ForeignKey("Major")]
         public int MajorId { get; set; }
         public Major Major { get; set; }
+        public TeacherMajorStatus Status { get; set; }  
     }
 }
