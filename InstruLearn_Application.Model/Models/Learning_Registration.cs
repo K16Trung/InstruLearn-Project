@@ -26,6 +26,7 @@ namespace InstruLearn_Application.Model.Models
         public DateOnly? StartDay { get; set; }
         public TimeOnly TimeStart { get; set; }
         public int TimeLearning { get; set; }
+        public string LearningRequest { get; set; }
         public DateTime RequestDate { get; set; }
         public LearningRegis Status { get; set; }
         public int NumberOfSession { get; set; }
