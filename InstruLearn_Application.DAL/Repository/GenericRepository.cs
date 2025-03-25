@@ -64,7 +64,7 @@ namespace InstruLearn_Application.DAL.Repository
             return _dbSet.AsQueryable();
         }
 
-        public async Task<T> GetWithIncludesAsync(Expression<Func<T, bool>> filter, string includeProperties = "")
+        public async Task<T> GettWithIncludesAsync(Expression<Func<T, bool>> filter, string includeProperties = "")
         {
             IQueryable<T> query = _dbSet.Where(filter);
 
@@ -76,6 +76,24 @@ namespace InstruLearn_Application.DAL.Repository
             return await query.FirstOrDefaultAsync();
         }
 
+        /*public async Task<List<T>> GetWithIncludesAsync(Expression<Func<T, bool>> filter, string includeProperties = "")
+        {
+            IQueryable<T> query = _dbSet.Where(filter);
+
+            // Handle includeProperties only if it's not empty or null
+            if (!string.IsNullOrWhiteSpace(includeProperties))
+            {
+                foreach (var includeProperty in includeProperties.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    query = query.Include(includeProperty.Trim());
+                }
+            }
+
+            // Return the full list of results instead of a single item
+            return await query.ToListAsync();
+        }
+
+
         public async Task<List<T>> GetAllWithIncludesAsync(Expression<Func<T, bool>> filter, string includeProperties = "")
         {
             IQueryable<T> query = _dbSet.Where(filter);
@@ -86,7 +104,7 @@ namespace InstruLearn_Application.DAL.Repository
             }
 
             return await query.ToListAsync();
-        }
+        }*/
 
 
         //GET By string ID
