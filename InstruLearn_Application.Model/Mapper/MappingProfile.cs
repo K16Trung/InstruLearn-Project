@@ -155,6 +155,7 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.Account.PhoneNumber))
                 .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => src.Account.Gender))
                 .ForMember(dest => dest.Avatar, opt => opt.MapFrom(src => src.Account.Avatar))
+                .ForMember(dest => dest.Address, opt => opt.MapFrom(src => src.Account.Address))
                 .ForMember(dest => dest.DateOfEmployment, opt => opt.MapFrom(src => src.Account.DateOfEmployment))
                 .ForMember(dest => dest.Majors, opt => opt.MapFrom(src =>
                     src.TeacherMajors != null
@@ -176,6 +177,7 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.Account.PhoneNumber))
                 .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => src.Account.Gender))
                 .ForMember(dest => dest.Avatar, opt => opt.MapFrom(src => src.Account.Avatar))
+                .ForMember(dest => dest.Address, opt => opt.MapFrom(src => src.Account.Address))
                 .ReverseMap();
 
             CreateMap<CreateTeacherDTO, Teacher>()
@@ -397,14 +399,15 @@ namespace InstruLearn_Application.Model.Mapper
             // 🔹ScheduleDays mapping
             CreateMap<ScheduleDaysDTO, ScheduleDays>()
                 .ForMember(dest => dest.DayOfWeeks, opt => opt.MapFrom(src => src.DayOfWeeks));
-        }
 
             //🔹TeacherMajor mapping
             CreateMap<TeacherMajor, TeacherMajorDTO>()
                 .ForMember(dest => dest.teacher, opt => opt.MapFrom(src => src.Teacher))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
                 .ReverseMap();
-            CreateMap<UpdateTeacherMajorDTO, TeacherMajor>().ReverseMap();
+            CreateMap<TeacherMajor, UpdateTeacherMajorDTO>()
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
+                .ReverseMap();
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using InstruLearn_Application.Model.Enum;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,7 +9,6 @@ namespace InstruLearn_Application.Model.Models.DTO.TeacherMajor
 {
     public class UpdateTeacherMajorDTO
     {
-        public int TeacherId { get; set; }
-        public int MajorId { get; set; }
+        public TeacherMajorStatus Status { get; set; }
     }
 }
