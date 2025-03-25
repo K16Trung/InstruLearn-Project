@@ -1,4 +1,5 @@
-﻿using System;
+﻿using InstruLearn_Application.Model.Enum;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -12,6 +13,7 @@ namespace InstruLearn_Application.Model.Models
         [Key]
         public int MajorId { get; set; }
         public string MajorName { get; set; }
+        public MajorStatus Status { get; set; }
 
         //Navigation property
         public ICollection<MajorTest> MajorTests { get; set; }
