@@ -30,9 +30,9 @@ namespace InstruLearn_Application.Controllers
         }
 
         [HttpPut("update/{id}")]
-        public async Task<IActionResult> UpdateTeacherMajorAsync(int id, UpdateTeacherMajorDTO updateTeacherMajorDTO)
+        public async Task<IActionResult> UpdateTeacherMajorAsync(int id)
         {
-            var response = await _teacherMajorService.UpdateTeacherMajorAsync(id, updateTeacherMajorDTO);
+            var response = await _teacherMajorService.UpdateStatusTeacherMajorAsync(id);
             return Ok(response);
         }
 

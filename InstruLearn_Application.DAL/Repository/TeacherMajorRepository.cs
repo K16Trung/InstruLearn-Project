@@ -25,13 +25,10 @@ namespace InstruLearn_Application.DAL.Repository
                 .Include(m => m.Major)
                 .ToListAsync();
         }
-
         public async Task<TeacherMajor> GetByIdAsync(int id)
         {
-            return await _appDbContext.TeacherMajors
-                .Include(t => t.Teacher)
-                .Include(m => m.Major)
-                .FirstOrDefaultAsync(tm => tm.TeacherMajorId == id);
+            return await _appDbContext.Set<TeacherMajor>()
+                .FirstOrDefaultAsync(x => x.TeacherMajorId == id);
         }
     }
 }

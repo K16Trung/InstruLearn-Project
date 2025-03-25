@@ -62,33 +62,30 @@ namespace InstruLearn_Application.BLL.Service
                 Data = teacherMajorDto
             };
         }
-        public async Task<ResponseDTO> UpdateTeacherMajorAsync(int teacherMajorId, UpdateTeacherMajorDTO updateTeacherMajorDTO)
+        public async Task<ResponseDTO> UpdateStatusTeacherMajorAsync(int teacherMajorId)
         {
-            var teacherMajorUpdate = await _unitOfWork.TeacherMajorRepository.GetByIdAsync(teacherMajorId);
-            if (teacherMajorId != null)
+            var response = new ResponseDTO();
+
+            var teacherMajor = await _unitOfWork.TeacherMajorRepository.GetByIdAsync(teacherMajorId);
+            if (teacherMajor == null)
             {
-                teacherMajorUpdate = _mapper.Map(updateTeacherMajorDTO, teacherMajorUpdate);
-                await _unitOfWork.TeacherMajorRepository.UpdateAsync(teacherMajorUpdate);
-                var result = await _unitOfWork.SaveChangeAsync();
-                if (result > 0)
-                {
-                    return new ResponseDTO
-                    {
-                        IsSucceed = true,
-                        Message = "Cập nhật giáo viên chuyên ngành thành công!"
-                    };
-                }
-                return new ResponseDTO
-                {
-                    IsSucceed = false,
-                    Message = "Cập nhật giáo viên chuyên ngành thất bại!"
-                };
+                response.Message = "Teacher major not found.";
+                return response;
             }
-            return new ResponseDTO
+
+            teacherMajor.Status = TeacherMajorStatus.Busy;
+
+            var updated = await _unitOfWork.TeacherMajorRepository.UpdateAsync(teacherMajor);
+
+            if (!updated)
             {
-                IsSucceed = false,
-                Message = "Không tìm thấy giáo viên chuyên ngành!"
-            };
+                response.Message = "Failed to change status.";
+                return response;
+            }
+
+            response.IsSucceed = true;
+            response.Message = "Change status teacher major successfully!";
+            return response;
         }
 
         public async Task<ResponseDTO> DeleteTeacherMajorAsync(int teacherMajorId)

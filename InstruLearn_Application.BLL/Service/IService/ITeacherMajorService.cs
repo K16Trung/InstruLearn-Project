@@ -12,7 +12,7 @@ namespace InstruLearn_Application.BLL.Service.IService
     {
         Task<List<ResponseDTO>> GetAllTeacherMajorAsync();
         Task<ResponseDTO> GetTeacherMajorByIdAsync(int teacherMajorId);
-        Task<ResponseDTO> UpdateTeacherMajorAsync(int teacherMajorId, UpdateTeacherMajorDTO updateTeacherMajorDTO);
+        Task<ResponseDTO> UpdateStatusTeacherMajorAsync(int teacherMajorId);
         Task<ResponseDTO> DeleteTeacherMajorAsync(int teacherMajorId);
     }
 }
