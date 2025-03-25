@@ -22,11 +22,14 @@ namespace InstruLearn_Application.DAL.Repository
 
         }
 
-        public async Task<Account?> GetByUserName(string Username)
+        public async Task<Account> GetByUserName(string Username)
         {
             return await _appDbContext.Accounts.SingleOrDefaultAsync(u => u.Username == Username);
         }
-
+        public async Task<Account> GetByPhoneNumber(string phoneNumber)
+        {
+            return await _appDbContext.Accounts.SingleOrDefaultAsync(u => u.PhoneNumber == phoneNumber);
+        }
         public async Task<Account> GetByEmail(string email)
         {
             return await _appDbContext.Accounts.FirstOrDefaultAsync(a => a.Email == email);

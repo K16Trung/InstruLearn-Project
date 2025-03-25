@@ -43,7 +43,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Question not found",
+                    Message = "Không tìm thấy câu hỏi",
                 };
             }
             var account = await _unitOfWork.AccountRepository.GetByIdAsync(createQnARepliesDTO.AccountId);
@@ -52,7 +52,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Account not found",
+                    Message = "Không tìm thấy tài khoản",
                 };
             }
 
@@ -67,7 +67,7 @@ namespace InstruLearn_Application.BLL.Service
             var response = new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Reply added successfully",
+                Message = "Đã thêm trả lời thành công",
             };
 
             return response;
@@ -85,19 +85,19 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "Reply update successfully!"
+                        Message = "Cập nhật trả lời thành công!"
                     };
                 }
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Reply update failed!"
+                    Message = "Cập nhật trả lời thất bại!"
                 };
             }
             return new ResponseDTO
             {
                 IsSucceed = false,
-                Message = "Reply not found!"
+                Message = "Không tìm thấy trả lời!"
             };
         }
         public async Task<ResponseDTO> DeleteQnARepliesAsync(int id)
@@ -111,7 +111,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Reply deleted successfully"
+                    Message = "Trả lời đã xóa thành công"
                 };
             }
             else
@@ -119,7 +119,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Reply with ID {id} not found"
+                    Message = $"Trả lời với ID {id} không tìm thấy"
                 };
             }
 

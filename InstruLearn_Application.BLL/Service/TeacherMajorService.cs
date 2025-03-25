@@ -1,0 +1,117 @@
+﻿using AutoMapper;
+using InstruLearn_Application.BLL.Service.IService;
+using InstruLearn_Application.DAL.Repository.IRepository;
+using InstruLearn_Application.DAL.UoW.IUoW;
+using InstruLearn_Application.Model.Enum;
+using InstruLearn_Application.Model.Models;
+using InstruLearn_Application.Model.Models.DTO;
+using InstruLearn_Application.Model.Models.DTO.Feedback;
+using InstruLearn_Application.Model.Models.DTO.Syllabus;
+using InstruLearn_Application.Model.Models.DTO.TeacherMajor;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace InstruLearn_Application.BLL.Service
+{
+    public class TeacherMajorService : ITeacherMajorService
+    {
+        private readonly ITeacherMajorRepository _teacherMajorRepository;
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
+        public TeacherMajorService(ITeacherMajorRepository teacherMajorRepository, IUnitOfWork unitOfWork, IMapper mapper)
+        {
+            _teacherMajorRepository = teacherMajorRepository;
+            _unitOfWork = unitOfWork;
+            _mapper = mapper;
+        }
+        public async Task<List<ResponseDTO>> GetAllTeacherMajorAsync()
+        {
+            var teacherMajorList = await _unitOfWork.TeacherMajorRepository.GetAllAsync();
+            var teacherMajorDtos = _mapper.Map<IEnumerable<TeacherMajorDTO>>(teacherMajorList);
+            var responseList = new List<ResponseDTO>();
+            foreach (var teacherMajorDto in teacherMajorDtos)
+            {
+                responseList.Add(new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = "Lấy ra danh sách chuyên ngành giáo viên thành công.",
+                    Data = teacherMajorDto
+                });
+            }
+            return responseList;
+        }
+        public async Task<ResponseDTO> GetTeacherMajorByIdAsync(int teacherMajorId)
+        {
+            var teacherMajor = await _unitOfWork.TeacherMajorRepository.GetByIdAsync(teacherMajorId);
+            if (teacherMajor == null)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Không tìm thấy chuyên ngành giáo viên.",
+                };
+            }
+            var teacherMajorDto = _mapper.Map<TeacherMajorDTO>(teacherMajor);
+            return new ResponseDTO
+            {
+                IsSucceed = true,
+                Message = "Lấy ra chuyên ngành giáo viên thành công.",
+                Data = teacherMajorDto
+            };
+        }
+        public async Task<ResponseDTO> UpdateTeacherMajorAsync(int teacherMajorId, UpdateTeacherMajorDTO updateTeacherMajorDTO)
+        {
+            var teacherMajorUpdate = await _unitOfWork.TeacherMajorRepository.GetByIdAsync(teacherMajorId);
+            if (teacherMajorId != null)
+            {
+                teacherMajorUpdate = _mapper.Map(updateTeacherMajorDTO, teacherMajorUpdate);
+                await _unitOfWork.TeacherMajorRepository.UpdateAsync(teacherMajorUpdate);
+                var result = await _unitOfWork.SaveChangeAsync();
+                if (result > 0)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = true,
+                        Message = "Cập nhật giáo viên chuyên ngành thành công!"
+                    };
+                }
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Cập nhật giáo viên chuyên ngành thất bại!"
+                };
+            }
+            return new ResponseDTO
+            {
+                IsSucceed = false,
+                Message = "Không tìm thấy giáo viên chuyên ngành!"
+            };
+        }
+
+        public async Task<ResponseDTO> DeleteTeacherMajorAsync(int teacherMajorId)
+        {
+            var deleteteacherMajor = await _unitOfWork.TeacherMajorRepository.GetByIdAsync(teacherMajorId);
+            if (deleteteacherMajor != null)
+            {
+                await _unitOfWork.TeacherMajorRepository.DeleteAsync(teacherMajorId);
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = "Đã xóa giáo viên chuyên ngành thành công"
+                };
+            }
+            else
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $" Không tìm thấy giáo viên chuyên ngành có ID {teacherMajorId}"
+                };
+            }
+        }
+    }
+}

@@ -42,7 +42,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Account not found",
+                    Message = "Không tìm thấy tài khoản",
                 };
             }
             var course = await _unitOfWork.CourseRepository.GetByIdAsync(createfeedbackDTO.CoursePackageId);
@@ -51,7 +51,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Course not found",
+                    Message = "Không tìm thấy gói học",
                 };
             }
 
@@ -66,7 +66,7 @@ namespace InstruLearn_Application.BLL.Service
             var response = new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Feedback added successfully",
+                Message = "Thêm nhận xét thành công",
             };
 
             return response;
@@ -84,19 +84,19 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "Feedback update successfully!"
+                        Message = "Cập nhật nhận xét thành công!"
                     };
                 }
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Feedback update failed!"
+                    Message = "Cập nhật nhận xét thất bại!"
                 };
             }
             return new ResponseDTO
             {
                 IsSucceed = false,
-                Message = "Feedback not found!"
+                Message = "Không tìm thấy nhận xét!"
             };
         }
         public async Task<ResponseDTO> DeleteFeedbackAsync(int feedbackId)
@@ -110,7 +110,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Feedback deleted successfully"
+                    Message = "Xóa nhận xét thành công"
                 };
             }
             else
@@ -118,7 +118,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Feedback with ID {feedbackId} not found"
+                    Message = $"không tìm thấy nhận xét với ID {feedbackId}"
                 };
             }
         }

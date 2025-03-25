@@ -52,8 +52,6 @@ namespace InstruLearn_Application.BLL.Service
             return responseList;
         }
 
-
-        // Assign teacher account
         public async Task<ResponseDTO> CreateTeacherAsync(CreateTeacherDTO createTeacherDTO)
         {
             var response = new ResponseDTO();
@@ -62,7 +60,6 @@ namespace InstruLearn_Application.BLL.Service
             {
                 try
                 {
-                    // Ensure all major IDs exist in the database
                     var majors = await _unitOfWork.MajorRepository.GetAllAsync();
                     var validMajorIds = majors.Select(m => m.MajorId).ToList();
 
@@ -75,7 +72,6 @@ namespace InstruLearn_Application.BLL.Service
                         };
                     }
 
-                    // Check if email is already used
                     var accounts = _unitOfWork.AccountRepository.GetFilter(x => x.Email == createTeacherDTO.Email);
                     var existingAccount = accounts.Items.FirstOrDefault();
                     if (existingAccount != null)
@@ -84,7 +80,6 @@ namespace InstruLearn_Application.BLL.Service
                         return response;
                     }
 
-                    // Create Account
                     var account = new Account
                     {
                         AccountId = Guid.NewGuid().ToString(),
@@ -105,7 +100,6 @@ namespace InstruLearn_Application.BLL.Service
                     await _unitOfWork.AccountRepository.AddAsync(account);
                     await _unitOfWork.dbContext.SaveChangesAsync();
 
-                    // Create Teacher object
                     var teacher = new Teacher
                     {
                         AccountId = account.AccountId,
@@ -113,14 +107,18 @@ namespace InstruLearn_Application.BLL.Service
                     };
 
                     await _unitOfWork.TeacherRepository.AddAsync(teacher);
-                    await _unitOfWork.dbContext.SaveChangesAsync();  // Save to generate TeacherId
+                    await _unitOfWork.dbContext.SaveChangesAsync();
 
-                    // Add TeacherMajors after TeacherId is generated
                     var teacherMajors = createTeacherDTO.MajorIds
-                        .Select(id => new TeacherMajor { TeacherId = teacher.TeacherId, MajorId = id }).ToList();
-                    _unitOfWork.dbContext.TeacherMajors.AddRange(teacherMajors);  // Update Teacher with TeacherMajors
+                        .Select(id => new TeacherMajor
+                        {
+                            TeacherId = teacher.TeacherId,
+                            MajorId = id,
+                            Status = TeacherMajorStatus.Free
+                        })
+                        .ToList();
 
-
+                    _unitOfWork.dbContext.TeacherMajors.AddRange(teacherMajors);
                     await _unitOfWork.dbContext.SaveChangesAsync();
                     await transaction.CommitAsync();
 
@@ -137,8 +135,6 @@ namespace InstruLearn_Application.BLL.Service
                 }
             }
         }
-
-        // Ban Teacher
 
         public async Task<ResponseDTO> DeleteTeacherAsync(int teacherId)
         {

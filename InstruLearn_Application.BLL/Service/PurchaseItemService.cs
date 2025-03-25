@@ -38,7 +38,7 @@ namespace InstruLearn_Application.BLL.Service
                 responseList.Add(new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Purchase item retrieved successfully.",
+                    Message = "Thành công lấy ra mục mua hàng.",
                     Data = purchaseItemDto
                 });
             }
@@ -55,7 +55,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Purchase item not found.",
+                    Message = "Không tìm thấy mục mua hàng.",
                 };
             }
 
@@ -64,7 +64,7 @@ namespace InstruLearn_Application.BLL.Service
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Purchase item retrieved successfully.",
+                Message = "Thành công lấy ra mục mua hàng.",
                 Data = purchaseItemDto
             };
         }
@@ -77,7 +77,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "No purchase items found.",
+                    Message = "Không tìm thấy mục mua hàng.",
                     Data = null
                 };
             }
@@ -88,7 +88,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"No purchase items found for learner with ID {learnerId}.",
+                    Message = $"Không tìm thấy mục mua hàng nào cho học viên có ID {learnerId}.",
                     Data = null
                 };
             }
@@ -98,7 +98,7 @@ namespace InstruLearn_Application.BLL.Service
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Purchase items retrieved successfully.",
+                Message = "Thành công lấy ra mục mua hàng.",
                 Data = purchaseItemDtos
             };
         }
@@ -115,7 +115,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Learner not found",
+                        Message = "Không tìm thấy học viên",
                     };
                 }
 
@@ -126,7 +126,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Wallet not found",
+                        Message = "Không tìm thấy ví",
                     };
                 }
 
@@ -156,7 +156,7 @@ namespace InstruLearn_Application.BLL.Service
                         return new ResponseDTO
                         {
                             IsSucceed = false,
-                            Message = $"Course package with ID {item.CoursePackageId} not found",
+                            Message = $"Không tìm thấy gói học có ID {item.CoursePackageId}",
                         };
                     }
 
@@ -185,7 +185,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Insufficient funds in wallet",
+                        Message = "Không đủ tiền trong ví",
                     };
                 }
 
@@ -234,7 +234,7 @@ namespace InstruLearn_Application.BLL.Service
 
                 // Create detailed success message including learner information
                 string courseListString = string.Join(", ", courseNames);
-                string successMessage = $"Learner {learner.FullName} has successfully purchased {purchaseItems.Count} course package(s): {courseListString} for total amount {totalAmountToDeduct:C}";
+                string successMessage = $"Học viên {learner.FullName} đã mua thành công {purchaseItems.Count} gói học: {courseListString} với tổng số tiền là {totalAmountToDeduct:C}";
 
                 return new ResponseDTO
                 {
@@ -265,7 +265,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"An error occurred: {ex.Message}",
+                    Message = $"Đã xảy ra lỗi: {ex.Message}",
                 };
             }
         }
@@ -281,7 +281,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Purchase item deleted successfully"
+                    Message = "Đã xóa thành công mục mua hàng"
                 };
             }
             else
@@ -289,7 +289,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Purchase item with ID {purchaseItemId} not found"
+                    Message = $"Không tìm thấy mục mua hàng có ID {purchaseItemId}"
                 };
             }
         }

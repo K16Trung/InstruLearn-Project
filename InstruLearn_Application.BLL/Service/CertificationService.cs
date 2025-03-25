@@ -38,7 +38,7 @@ namespace InstruLearn_Application.BLL.Service
                 responseList.Add(new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Certification retrieved successfully.",
+                    Message = "Lấy ra danh sách chứng nhận thành công.",
                     Data = certificationDto
                 });
             }
@@ -53,14 +53,14 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Certification not found.",
+                    Message = "Không tìm thấy chứng nhận.",
                 };
             }
             var certificationDto = _mapper.Map<CertificationDTO>(certification);
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Certification retrieved successfully.",
+                Message = "Đã lấy lại chứng nhận thành công.",
                 Data = certificationDto
             };
         }
@@ -73,7 +73,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Learner not found",
+                    Message = "Không tìm thấy học viên",
                 };
             }
             var course = await _unitOfWork.CourseRepository.GetByIdAsync(createCertificationDTO.CoursePackageId);
@@ -82,7 +82,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Course not found",
+                    Message = "Không tìm thấy gói học",
                 };
             }
             var certificationObj = _mapper.Map<Certification>(createCertificationDTO);
@@ -95,7 +95,7 @@ namespace InstruLearn_Application.BLL.Service
             var response = new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Certification added successfully",
+                Message = "Thêm chứng nhận thành công",
             };
 
             return response;
@@ -113,19 +113,19 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "Certification update successfully!"
+                        Message = "Cập nhật chứng nhận thành công!"
                     };
                 }
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Certification update failed!"
+                    Message = "Cập nhật chứng nhận thất bại!"
                 };
             }
             return new ResponseDTO
             {
                 IsSucceed = false,
-                Message = "Certification not found!"
+                Message = "Không tìm thấy chứng nhận!"
             };
         }
         public async Task<ResponseDTO> DeleteCertificationAsync(int certificationId)
@@ -139,7 +139,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Certification deleted successfully"
+                    Message = "Xóa chứng nhận thất bại"
                 };
             }
             else
@@ -147,7 +147,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Certification with ID {certificationId} not found"
+                    Message = $"Không tìm thấy chứng nhận có ID {certificationId}"
                 };
             }
         }

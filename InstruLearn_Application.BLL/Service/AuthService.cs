@@ -68,7 +68,7 @@ namespace InstruLearn_Application.BLL.Service
             await _authRepository.UpdateAsync(user);
 
             response.IsSucceed = true;
-            response.Message = "Login successful!";
+            response.Message = "Đăng nhập thành công!";
             response.Data = new { Token = token, RefreshToken = refreshToken };
 
             return response;
@@ -79,10 +79,16 @@ namespace InstruLearn_Application.BLL.Service
         {
             var response = new ResponseDTO();
 
-            var existingUser = await _authRepository.GetByUserName(registerDTO.Username);
-            if (existingUser != null)
+            var existingUserName = await _authRepository.GetByUserName(registerDTO.Username);
+            if (existingUserName != null)
             {
-                response.Message = "User already exists!";
+                response.Message = "Người dùng đã tồn tại!";
+                return response;
+            }
+            var existingPhoneNumber = await _authRepository.GetByPhoneNumber(registerDTO.PhoneNumber);
+            if (existingPhoneNumber != null)
+            {
+                response.Message = "Số điện thoại đã tồn tại!";
                 return response;
             }
 
