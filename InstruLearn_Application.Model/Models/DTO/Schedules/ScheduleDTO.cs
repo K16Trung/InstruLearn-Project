@@ -13,7 +13,9 @@ namespace InstruLearn_Application.Model.Models.DTO.Schedules
     {
         public int ScheduleId { get; set; }
         public int? TeacherId { get; set; }
+        public string TeacherName { get; set; }
         public int? LearnerId { get; set; }
+        public string LearnerName { get; set; }
         public string TimeStart { get; set; }
         public string TimeEnd { get; set; }
         public string DayOfWeek { get; set; }

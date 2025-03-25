@@ -392,6 +392,7 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<CreateScheduleDTO, Schedules>()
                 .ForMember(dest => dest.TimeEnd, opt => opt.MapFrom(src => src.TimeEnd))
                 .ForMember(dest => dest.ScheduleDays, opt => opt.MapFrom(src => src.ScheduleDays));
+
             // 🔹ScheduleDays mapping
             CreateMap<ScheduleDaysDTO, ScheduleDays>()
                 .ForMember(dest => dest.DayOfWeeks, opt => opt.MapFrom(src => src.DayOfWeeks));
