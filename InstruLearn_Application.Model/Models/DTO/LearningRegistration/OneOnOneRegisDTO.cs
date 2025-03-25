@@ -22,10 +22,10 @@ namespace InstruLearn_Application.Model.Models.DTO.LearningRegistration
         public TimeOnly TimeStart { get; set; }
         public int TimeLearning { get; set; }
         public TimeOnly? TimeEnd { get; set; }
-
         public DateTime RequestDate { get; set; }
         public int NumberOfSession { get; set; }
         public string VideoUrl { get; set; }
+        public string LearningRequest { get; set; }
         public int? Score { get; set; }
         public string? LevelAssigned { get; set; }
         public string? Feedback { get; set; }

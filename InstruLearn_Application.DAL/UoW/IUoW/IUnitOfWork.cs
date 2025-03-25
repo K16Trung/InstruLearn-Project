@@ -41,6 +41,7 @@ namespace InstruLearn_Application.DAL.UoW.IUoW
         IPurchaseRepository PurchaseRepository { get; }
         IPurchaseItemRepository PurchaseItemRepository { get; }
         ICertificationRepository CertificationRepository { get; }
+        IScheduleRepository ScheduleRepository { get; }
         ITeacherMajorRepository TeacherMajorRepository { get; }
         ApplicationDbContext dbContext { get; }
         public Task<int> SaveChangeAsync();

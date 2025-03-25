@@ -105,6 +105,7 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<IPurchaseRepository, PurchaseRepository>();
             builder.Services.AddScoped<IPurchaseItemRepository, PurchaseItemRepository>();
             builder.Services.AddScoped<ICertificationRepository, CertificationRepository>();
+            builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
             builder.Services.AddScoped<ITeacherMajorRepository, TeacherMajorRepository>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
@@ -136,6 +137,7 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<IPurchaseService, PurchaseService>();
             builder.Services.AddScoped<IPurchaseItemService, PurchaseItemService>();
             builder.Services.AddScoped<ICertificationService, CertificationService>();
+            builder.Services.AddScoped<IScheduleService, ScheduleService>();
             builder.Services.AddScoped<ITeacherMajorService, TeacherMajorService>();
             builder.Services.AddAutoMapper(typeof(MappingProfile));
 

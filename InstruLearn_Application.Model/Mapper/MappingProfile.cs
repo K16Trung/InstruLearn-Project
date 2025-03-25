@@ -25,6 +25,8 @@ using InstruLearn_Application.Model.Models.DTO.Purchase;
 using InstruLearn_Application.Model.Models.DTO.PurchaseItem;
 using InstruLearn_Application.Model.Models.DTO.QnA;
 using InstruLearn_Application.Model.Models.DTO.QnAReplies;
+using InstruLearn_Application.Model.Models.DTO.ScheduleDays;
+using InstruLearn_Application.Model.Models.DTO.Schedules;
 using InstruLearn_Application.Model.Models.DTO.Staff;
 using InstruLearn_Application.Model.Models.DTO.Teacher;
 using InstruLearn_Application.Model.Models.DTO.TeacherMajor;
@@ -306,6 +308,7 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<Learning_Registration, OneOnOneRegisDTO>()
                 .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Teacher.Fullname))
                 .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.Learner.FullName))
+                .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.Learner.Account.PhoneNumber))
                 .ForMember(dest => dest.RegisTypeName, opt => opt.MapFrom(src => src.Learning_Registration_Type.RegisTypeName))
                 .ForMember(dest => dest.MajorName, opt => opt.MapFrom(src => src.Major.MajorName))
                 .ForMember(dest => dest.LearningDays, opt => opt.MapFrom(src =>
@@ -381,6 +384,20 @@ namespace InstruLearn_Application.Model.Mapper
             //🔹Test_result mapping
             CreateMap<Test_Result, TestResultDTO>().ReverseMap();
             CreateMap<CreateTestResultDTO, Test_Result>().ReverseMap();
+
+            // 🔹Schedules mapping
+
+            CreateMap<Schedules, ScheduleDTO>()
+                .ForMember(dest => dest.ScheduleDays, opt => opt.MapFrom(src => src.ScheduleDays))
+                .ForMember(dest => dest.Mode, opt => opt.MapFrom(src => src.Mode));
+
+            CreateMap<CreateScheduleDTO, Schedules>()
+                .ForMember(dest => dest.TimeEnd, opt => opt.MapFrom(src => src.TimeEnd))
+                .ForMember(dest => dest.ScheduleDays, opt => opt.MapFrom(src => src.ScheduleDays));
+            // 🔹ScheduleDays mapping
+            CreateMap<ScheduleDaysDTO, ScheduleDays>()
+                .ForMember(dest => dest.DayOfWeeks, opt => opt.MapFrom(src => src.DayOfWeeks));
+        }
 
             //🔹TeacherMajor mapping
             CreateMap<TeacherMajor, TeacherMajorDTO>()

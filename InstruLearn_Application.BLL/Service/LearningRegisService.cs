@@ -14,6 +14,8 @@ using InstruLearn_Application.Model.Enum;
 using System.Transactions;
 using Microsoft.Extensions.Logging;
 using InstruLearn_Application.Model.Models.DTO.Syllabus;
+using InstruLearn_Application.Model.Models.DTO.ScheduleDays;
+using InstruLearn_Application.Model.Models.DTO.Schedules;
 
 namespace InstruLearn_Application.BLL.Service
 {
@@ -281,6 +283,54 @@ namespace InstruLearn_Application.BLL.Service
                     testResult.Status = TestResultStatus.Dotted;
 
                     await _unitOfWork.TestResultRepository.UpdateAsync(testResult);
+                }
+
+                // Create schedules based on NumberOfSessions and selected Learning Days
+                if (learningRegis.StartDay.HasValue && learningRegis.TimeStart != null && learningRegis.NumberOfSession > 0 && learningRegis.LearningRegistrationDay.Any())
+                {
+                    var schedules = new List<Schedules>();
+                    var startDate = learningRegis.StartDay.Value.ToDateTime(TimeOnly.MinValue);
+                    int sessionsCreated = 0;
+
+                    while (sessionsCreated < learningRegis.NumberOfSession)
+                    {
+                        // Create sessions on the selected learning days in a weekly pattern
+                        foreach (var learningDay in learningRegis.LearningRegistrationDay.Select(d => d?.DayOfWeek))
+                        {
+                            if (learningDay.HasValue)  // Check if DayOfWeek is not null
+                            {
+                                // Calculate the next session date
+                                DateTime nextSessionDate = startDate.AddDays((7 * (sessionsCreated / learningRegis.LearningRegistrationDay.Count)) +
+                                                             ((int)learningDay.Value - (int)startDate.DayOfWeek + 7) % 7);
+
+                                var scheduleDTO = new CreateScheduleDTO
+                                {
+                                    TeacherId = learningRegis.TeacherId ?? 0,
+                                    LearnerId = learningRegis.LearnerId,
+                                    LearningRegisId = learningRegis.LearningRegisId,
+                                    TimeStart = learningRegis.TimeStart,
+                                    TimeEnd = learningRegis.TimeStart.AddMinutes(learningRegis.TimeLearning),
+                                    Mode = ScheduleMode.OneOnOne,
+                                    ScheduleDays = new List<ScheduleDaysDTO>
+                            {
+                                new ScheduleDaysDTO
+                                {
+                                    DayOfWeeks = (DayOfWeeks)learningDay.Value  // Handle nullable DayOfWeeks
+                                }
+                            }
+                                };
+
+                                var schedule = _mapper.Map<Schedules>(scheduleDTO);
+                                schedules.Add(schedule);
+
+                                sessionsCreated++;
+                                if (sessionsCreated >= learningRegis.NumberOfSession)
+                                    break;  // Stop creating more sessions once the limit is reached
+                            }
+                        }
+                    }
+
+                    await _unitOfWork.ScheduleRepository.AddRangeAsync(schedules);
                 }
 
                 await _unitOfWork.SaveChangeAsync();
