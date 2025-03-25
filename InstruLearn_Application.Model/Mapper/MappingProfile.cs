@@ -25,6 +25,8 @@ using InstruLearn_Application.Model.Models.DTO.Purchase;
 using InstruLearn_Application.Model.Models.DTO.PurchaseItem;
 using InstruLearn_Application.Model.Models.DTO.QnA;
 using InstruLearn_Application.Model.Models.DTO.QnAReplies;
+using InstruLearn_Application.Model.Models.DTO.ScheduleDays;
+using InstruLearn_Application.Model.Models.DTO.Schedules;
 using InstruLearn_Application.Model.Models.DTO.Staff;
 using InstruLearn_Application.Model.Models.DTO.Teacher;
 using InstruLearn_Application.Model.Models.DTO.Test_Result;
@@ -367,6 +369,18 @@ namespace InstruLearn_Application.Model.Mapper
             // 🔹Test_result mapping
             CreateMap<Test_Result, TestResultDTO>().ReverseMap();
             CreateMap<CreateTestResultDTO, Test_Result>().ReverseMap();
-        }   
+
+            // 🔹Schedules mapping
+
+            CreateMap<Schedules, ScheduleDTO>()
+                .ForMember(dest => dest.ScheduleDays, opt => opt.MapFrom(src => src.ScheduleDays))
+                .ForMember(dest => dest.Mode, opt => opt.MapFrom(src => src.Mode));
+
+            CreateMap<CreateScheduleDTO, Schedules>()
+                .ForMember(dest => dest.TimeEnd, opt => opt.MapFrom(src => src.TimeEnd));
+            // 🔹ScheduleDays mapping
+            CreateMap<ScheduleDays, ScheduleDaysDTO>()
+                .ForMember(dest => dest.DayOfWeeks, opt => opt.MapFrom(src => src.DayOfWeeks));
+        }
     }
 }
