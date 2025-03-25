@@ -115,12 +115,16 @@ namespace InstruLearn_Application.BLL.Service
                     await _unitOfWork.TeacherRepository.AddAsync(teacher);
                     await _unitOfWork.dbContext.SaveChangesAsync();  // Save to generate TeacherId
 
-                    // Add TeacherMajors after TeacherId is generated
+                    // Add TeacherMajors after TeacherId is generated, setting Status = 1
                     var teacherMajors = createTeacherDTO.MajorIds
-                        .Select(id => new TeacherMajor { TeacherId = teacher.TeacherId, MajorId = id }).ToList();
-                    _unitOfWork.dbContext.TeacherMajors.AddRange(teacherMajors);  // Update Teacher with TeacherMajors
+                        .Select(id => new TeacherMajor
+                        {
+                            TeacherId = teacher.TeacherId,
+                            MajorId = id,
+                            Status = TeacherMajorStatus.Free
+                        }).ToList();
 
-
+                    _unitOfWork.dbContext.TeacherMajors.AddRange(teacherMajors);
                     await _unitOfWork.dbContext.SaveChangesAsync();
                     await transaction.CommitAsync();
 
@@ -137,6 +141,7 @@ namespace InstruLearn_Application.BLL.Service
                 }
             }
         }
+
 
         // Ban Teacher
 

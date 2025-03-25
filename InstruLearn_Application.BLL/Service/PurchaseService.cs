@@ -37,7 +37,7 @@ namespace InstruLearn_Application.BLL.Service
                 responseList.Add(new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Purchase retrieved successfully.",
+                    Message = "Lấy ra giao dịch mua thành công.",
                     Data = purchaseDto
                 });
             }
@@ -51,14 +51,14 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Purchase not found.",
+                    Message = "Không tìm thấy giao dịch mua.",
                 };
             }
             var puchaseDto = _mapper.Map<PurchaseDTO>(purchase);
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Purchase retrieved successfully.",
+                Message = "Lấy ra giao dịch mua thành công.",
                 Data = puchaseDto
             };
         }
@@ -71,7 +71,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Learner not found.",
+                    Message = "Không tìm thấy học viên.",
                 };
             }
 
@@ -84,7 +84,7 @@ namespace InstruLearn_Application.BLL.Service
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Purchases retrieved successfully.",
+                Message = "Lấy ra giao dịch mua thành công.",
                 Data = purchaseDtos
             };
         }
@@ -99,7 +99,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Purchase deleted successfully"
+                    Message = "Đã xóa giao dịch mua thành công  "
                 };
             }
             else
@@ -107,7 +107,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Purchase with ID {purchaseId} not found"
+                    Message = $"Không tìm thấy giao dịch mua với ID {purchaseId}"
                 };
             }
         }

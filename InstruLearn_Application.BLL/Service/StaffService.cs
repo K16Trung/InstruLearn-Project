@@ -41,7 +41,7 @@ namespace InstruLearn_Application.BLL.Service
             var staffDTOs = _mapper.Map<IEnumerable<StaffDTO>>(staffs);
 
             response.IsSucceed = true;
-            response.Message = "data retrieved successfully";
+            response.Message = "Đã lấy dữ liệu thành công";
             response.Data = staffDTOs;
             return response;
         }
@@ -51,12 +51,12 @@ namespace InstruLearn_Application.BLL.Service
             var staff = await _unitOfWork.StaffRepository.GetByIdAsync(staffId);
             if (staff == null)
             {
-                response.Message = "Staff not found.";
+                response.Message = "Không tìm thấy nhân viên.";
                 return response;
             }
             var staffDTO = _mapper.Map<StaffDTO>(staff);
             response.IsSucceed = true;
-            response.Message = "Staff retrieved successfully";
+            response.Message = "Đã lấy danh sách nhân viên thành công";
             response.Data = staffDTO;
             return response;
         }
@@ -68,7 +68,7 @@ namespace InstruLearn_Application.BLL.Service
             var existingAccount = accounts.Items.FirstOrDefault();
             if (existingAccount != null)
             {
-                response.Message = "Email already exists.";
+                response.Message = "Email đã tồn tại.";
                 return response;
             }
 
@@ -101,7 +101,7 @@ namespace InstruLearn_Application.BLL.Service
             await _unitOfWork.StaffRepository.AddAsync(staff);
 
             response.IsSucceed = true;
-            response.Message = "Staff created successfully!";
+            response.Message = "Nhân viên đã được tạo thành công!";
             return response;
         }
         public async Task<ResponseDTO> UpdateStaffAsync(int staffId, UpdateStaffDTO updateStaffDTO)
@@ -111,7 +111,7 @@ namespace InstruLearn_Application.BLL.Service
             var staff = await _unitOfWork.StaffRepository.GetByIdAsync(staffId);
             if (staff == null)
             {
-                response.Message = "Staff not found.";
+                response.Message = "Không tìm thấy nhân viên.";
                 return response;
             }
 
@@ -121,12 +121,12 @@ namespace InstruLearn_Application.BLL.Service
 
             if (!updated)
             {
-                response.Message = "Failed to update staff.";
+                response.Message = "Cập nhật nhân viên thất bại.";
                 return response;
             }
 
             response.IsSucceed = true;
-            response.Message = "Staff updated successfully!";
+            response.Message = "Cập nhật nhân viên thành công!";
             return response;
         }
         public async Task<ResponseDTO> DeleteStaffAsync(int staffId)
@@ -136,7 +136,7 @@ namespace InstruLearn_Application.BLL.Service
             var staff = await _unitOfWork.StaffRepository.GetByIdAsync(staffId);
             if (staff == null)
             {
-                response.Message = "Staff not found.";
+                response.Message = "Không tìm thấy nhân viên.";
                 return response;
             }
 
@@ -147,12 +147,12 @@ namespace InstruLearn_Application.BLL.Service
 
             if (!updated)
             {
-                response.Message = "Failed to delete staff.";
+                response.Message = "Xóa nhân viên thất bại.";
                 return response;
             }
 
             response.IsSucceed = true;
-            response.Message = "Staff delete successfully!";
+            response.Message = "Xóa nhân viên thành công!";
             return response;
         }
         public async Task<ResponseDTO> UnbanStaffAsync(int staffId)
@@ -162,7 +162,7 @@ namespace InstruLearn_Application.BLL.Service
             var staff = await _unitOfWork.StaffRepository.GetByIdAsync(staffId);
             if (staff == null)
             {
-                response.Message = "Staff not found.";
+                response.Message = "Không tìm thấy nhân viên.";
                 return response;
             }
 
@@ -174,18 +174,18 @@ namespace InstruLearn_Application.BLL.Service
 
             if (!updated)
             {
-                response.Message = "Failed to unban staff.";
+                response.Message = "Không thể gỡ lệnh cấm nhân viên.";
                 return response;
             }
 
             response.IsSucceed = true;
-            response.Message = "Staff unban successfully!";
+            response.Message = "Bỏ lệnh cấm nhân viên thành công!";
             return response;
         }
 
         private string HashPassword(string password)
         {
-            return BCrypt.Net.BCrypt.HashPassword(password); // Explicit namespace
+            return BCrypt.Net.BCrypt.HashPassword(password);
         }
     }
 }

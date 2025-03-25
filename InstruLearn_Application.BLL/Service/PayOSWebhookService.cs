@@ -30,15 +30,15 @@ namespace InstruLearn_Application.BLL.Service
             var payment = await _unitOfWork.PaymentsRepository.GetByTransactionIdAsync(webhookDto.TransactionId);
             if (payment == null)
             {
-                throw new Exception("Payment not found.");
+                throw new Exception("Không tìm thấy thanh toán.");
             }
 
             // Update payment status
-            payment.Status = webhookDto.Status == "COMPLETED" ? PaymentStatus.Completed : PaymentStatus.Failed;
+            payment.Status = webhookDto.Status == "THÀNH CÔNG" ? PaymentStatus.Completed : PaymentStatus.Failed;
             await _unitOfWork.PaymentsRepository.UpdatePaymentAsync(payment);
 
             // If payment is successful, add funds to wallet
-            if (webhookDto.Status == "COMPLETED")
+            if (webhookDto.Status == "THÀNH CÔNG")
             {
                 var wallet = await _unitOfWork.WalletRepository.GetByIdAsync(payment.WalletId);
                 if (wallet != null)
