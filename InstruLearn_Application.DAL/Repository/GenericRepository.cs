@@ -76,6 +76,20 @@ namespace InstruLearn_Application.DAL.Repository
             return await query.FirstOrDefaultAsync();
         }
 
+        public async Task<List<T>> GetWithIncludesAsync(Expression<Func<T, bool>> filter, string includeProperties = "")
+        {
+            IQueryable<T> query = _dbSet.Where(filter);
+
+            foreach (var includeProperty in includeProperties.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                query = query.Include(includeProperty);
+            }
+
+            // Now returning a list instead of a single item.
+            return await query.ToListAsync();  // Using ToListAsync to get multiple records
+        }
+
+
         /*public async Task<List<T>> GetWithIncludesAsync(Expression<Func<T, bool>> filter, string includeProperties = "")
         {
             IQueryable<T> query = _dbSet.Where(filter);
