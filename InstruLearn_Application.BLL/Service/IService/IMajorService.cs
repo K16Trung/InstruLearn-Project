@@ -15,7 +15,8 @@ namespace InstruLearn_Application.BLL.Service.IService
         Task<ResponseDTO> GetMajorByIdAsync(int majorId);
         Task<ResponseDTO> AddMajorAsync(CreateMajorDTO createDto);
         Task<ResponseDTO> UpdateMajorAsync(int majorId, UpdateMajorDTO updateDto);
-        Task<ResponseDTO> UpdateStatusMajorAsync(int majorId);
+        Task<ResponseDTO> UpdateStatusMajorUnavailableAsync(int majorId);
+        Task<ResponseDTO> UpdateStatusMajorAvailableAsync(int majorId);
         Task<ResponseDTO> DeleteMajorAsync(int majorId);
     }
 }

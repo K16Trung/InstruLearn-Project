@@ -87,8 +87,33 @@ namespace InstruLearn_Application.BLL.Service
                 Message = "Major updated successfully."
             };
         }
+        public async Task<ResponseDTO> UpdateStatusMajorAvailableAsync(int majorId)
+        {
+            var response = new ResponseDTO();
 
-        public async Task<ResponseDTO> UpdateStatusMajorAsync(int majorId)
+            var major = await _unitOfWork.MajorRepository.GetByIdAsync(majorId);
+            if (major == null)
+            {
+                response.Message = "Major not found.";
+                return response;
+            }
+
+            major.Status = MajorStatus.Available;
+
+            var updated = await _unitOfWork.MajorRepository.UpdateAsync(major);
+
+            if (!updated)
+            {
+                response.Message = "Failed to change status.";
+                return response;
+            }
+
+            response.IsSucceed = true;
+            response.Message = "Change status major successfully!";
+            return response;
+        }
+
+        public async Task<ResponseDTO> UpdateStatusMajorUnavailableAsync(int majorId)
         {
             var response = new ResponseDTO();
 

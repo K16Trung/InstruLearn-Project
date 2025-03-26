@@ -45,6 +45,20 @@ namespace InstruLearn_Application.Controllers
             return Ok(response);
         }
 
+        [HttpPut("update-status-available/{id}")]
+        public async Task<IActionResult> UpdateStatusMajorAvailable(int id)
+        {
+            var response = await _majorService.UpdateStatusMajorAvailableAsync(id);
+            return Ok(response);
+        }
+
+        [HttpPut("update-status-unavailable/{id}")]
+        public async Task<IActionResult> UpdateStatusMajorUnavailable(int id)
+        {
+            var response = await _majorService.UpdateStatusMajorUnavailableAsync(id);
+            return Ok(response);
+        }
+
         [HttpDelete("delete/{id}")]
         public async Task<IActionResult> DeleteMajor(int id)
         {
