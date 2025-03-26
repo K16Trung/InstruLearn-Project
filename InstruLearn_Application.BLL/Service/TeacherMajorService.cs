@@ -62,20 +62,12 @@ namespace InstruLearn_Application.BLL.Service
                 Data = teacherMajorDto
             };
         }
-        public async Task<ResponseDTO> UpdateStatusTeacherMajorAsync(int teacherMajorId)
+        public async Task<ResponseDTO> UpdateBusyStatusTeacherMajorAsync(int teacherMajorId)
         {
             var response = new ResponseDTO();
 
-            var teacherMajor = await _unitOfWork.TeacherMajorRepository.GetByIdAsync(teacherMajorId);
-            if (teacherMajor == null)
-            {
-                response.Message = "Teacher major not found.";
-                return response;
-            }
-
-            teacherMajor.Status = TeacherMajorStatus.Busy;
-
-            var updated = await _unitOfWork.TeacherMajorRepository.UpdateAsync(teacherMajor);
+            // Call the custom method in the repository to update the Status
+            var updated = await _unitOfWork.TeacherMajorRepository.UpdateStatusAsync(teacherMajorId, TeacherMajorStatus.Busy);
 
             if (!updated)
             {
@@ -87,6 +79,24 @@ namespace InstruLearn_Application.BLL.Service
             response.Message = "Change status teacher major successfully!";
             return response;
         }
+        public async Task<ResponseDTO> UpdateFreeStatusTeacherMajorAsync(int teacherMajorId)
+        {
+            var response = new ResponseDTO();
+
+            // Call the custom method in the repository to update the Status
+            var updated = await _unitOfWork.TeacherMajorRepository.UpdateStatusAsync(teacherMajorId, TeacherMajorStatus.Free);
+
+            if (!updated)
+            {
+                response.Message = "Failed to change status.";
+                return response;
+            }
+
+            response.IsSucceed = true;
+            response.Message = "Change status teacher major successfully!";
+            return response;
+        }
+
 
         public async Task<ResponseDTO> DeleteTeacherMajorAsync(int teacherMajorId)
         {

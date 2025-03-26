@@ -1,5 +1,6 @@
 ﻿using InstruLearn_Application.DAL.Repository.IRepository;
 using InstruLearn_Application.Model.Data;
+using InstruLearn_Application.Model.Enum;
 using InstruLearn_Application.Model.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -29,6 +30,22 @@ namespace InstruLearn_Application.DAL.Repository
         {
             return await _appDbContext.Set<TeacherMajor>()
                 .FirstOrDefaultAsync(x => x.TeacherMajorId == id);
+        }
+
+        public async Task<bool> UpdateStatusAsync(int teacherMajorId, TeacherMajorStatus newStatus)
+        {
+            var teacherMajor = await _appDbContext.TeacherMajors
+                .FirstOrDefaultAsync(tm => tm.TeacherMajorId == teacherMajorId);
+
+            if (teacherMajor == null)
+            {
+                return false;
+            }
+
+            teacherMajor.Status = newStatus;
+
+            await _appDbContext.SaveChangesAsync();
+            return true;
         }
     }
 }

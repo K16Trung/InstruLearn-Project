@@ -1,4 +1,5 @@
-﻿using InstruLearn_Application.Model.Models;
+﻿using InstruLearn_Application.Model.Enum;
+using InstruLearn_Application.Model.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;

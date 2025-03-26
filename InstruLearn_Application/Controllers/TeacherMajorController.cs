@@ -29,10 +29,16 @@ namespace InstruLearn_Application.Controllers
             return Ok(response);
         }
 
-        [HttpPut("update/{id}")]
-        public async Task<IActionResult> UpdateTeacherMajorAsync(int id)
+        [HttpPut("update/{id}/Busy")]
+        public async Task<IActionResult> UpdateBusyTeacherMajorAsync(int id)
         {
-            var response = await _teacherMajorService.UpdateStatusTeacherMajorAsync(id);
+            var response = await _teacherMajorService.UpdateBusyStatusTeacherMajorAsync(id);
+            return Ok(response);
+        }
+        [HttpPut("update/{id}/Free")]
+        public async Task<IActionResult> UpdateFreeTeacherMajorAsync(int id)
+        {
+            var response = await _teacherMajorService.UpdateFreeStatusTeacherMajorAsync(id);
             return Ok(response);
         }
 
