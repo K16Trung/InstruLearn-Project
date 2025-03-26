@@ -132,11 +132,9 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                // Fetch multiple Learning_Registration entries for the given learner ID
                 var learningRegs = await _unitOfWork.LearningRegisRepository
                     .GetWithIncludesAsync(x => x.LearnerId == learnerId, "Teacher,Learner,LearningRegistrationDay,Schedules");
 
-                // Check if no registrations were found
                 if (learningRegs == null || learningRegs.Count == 0)
                 {
                     return new ResponseDTO
@@ -150,10 +148,8 @@ namespace InstruLearn_Application.BLL.Service
 
                 foreach (var learningRegis in learningRegs)
                 {
-                    // Reset sessionCount for each learning registration
                     int sessionCount = 0;
 
-                    // Check if the learning registration has a start day
                     if (!learningRegis.StartDay.HasValue)
                     {
                         return new ResponseDTO
@@ -163,32 +159,27 @@ namespace InstruLearn_Application.BLL.Service
                         };
                     }
 
-                    var startDate = learningRegis.StartDay.Value.ToDateTime(TimeOnly.MinValue);
-                    var registrationStartDate = startDate;
-
-                    // Get the ordered learning days
+                    var registrationStartDate = learningRegis.StartDay.Value.ToDateTime(TimeOnly.MinValue);
                     var orderedLearningDays = learningRegis.LearningRegistrationDay.OrderBy(day => day.DayOfWeek).ToList();
 
-                    // Handle the scheduling logic as needed
+                    // Continue scheduling sessions until the required number is reached
                     while (sessionCount < learningRegis.NumberOfSession)
                     {
                         foreach (var learningDay in orderedLearningDays)
                         {
-                            var nextSessionDate = GetNextSessionDate(registrationStartDate, (DayOfWeek)learningDay.DayOfWeek);
-
-                            if (sessionCount < learningRegis.NumberOfSession)
+                            // Check if the registrationStartDate matches a valid learning day
+                            if (registrationStartDate.DayOfWeek == (DayOfWeek)learningDay.DayOfWeek && sessionCount < learningRegis.NumberOfSession)
                             {
                                 var existingSchedule = learningRegis.Schedules.ElementAtOrDefault(sessionCount);
 
-                                // Create a new schedule DTO
                                 var schedule = new ScheduleDTO
                                 {
                                     ScheduleId = existingSchedule?.ScheduleId ?? 0,
                                     Mode = existingSchedule?.Mode ?? 0,
                                     TimeStart = learningRegis.TimeStart.ToString("HH:mm"),
                                     TimeEnd = learningRegis.TimeStart.AddMinutes(learningRegis.TimeLearning).ToString("HH:mm"),
-                                    DayOfWeek = nextSessionDate.DayOfWeek.ToString(),
-                                    StartDate = nextSessionDate.ToString("yyyy-MM-dd"),
+                                    DayOfWeek = registrationStartDate.DayOfWeek.ToString(),
+                                    StartDate = registrationStartDate.ToString("yyyy-MM-dd"),
                                     TeacherId = learningRegis.TeacherId,
                                     TeacherName = learningRegis.Teacher.Fullname,
                                     LearnerId = learningRegis.LearnerId,
@@ -202,12 +193,15 @@ namespace InstruLearn_Application.BLL.Service
                                 };
 
                                 schedules.Add(schedule);
-                                sessionCount++;  // Increment session count after adding a schedule
+                                sessionCount++;
                             }
-
-                            registrationStartDate = nextSessionDate.AddDays(1);
                         }
+
+                        // Increment the date after checking all learning days
+                        registrationStartDate = registrationStartDate.AddDays(1);
                     }
+
+
                 }
 
                 return new ResponseDTO
@@ -231,12 +225,10 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                // Fetch all Learning Registrations for the given teacher and include necessary relationships
                 var learningRegs = await _unitOfWork.LearningRegisRepository
                     .GetWithIncludesAsync(x => x.TeacherId == teacherId, "Teacher,Learner,LearningRegistrationDay,Schedules");
 
-                // Check if no learning registrations were found
-                if (learningRegs == null || !learningRegs.Any())
+                if (learningRegs == null || learningRegs.Count == 0)
                 {
                     return new ResponseDTO
                     {
@@ -249,54 +241,38 @@ namespace InstruLearn_Application.BLL.Service
 
                 foreach (var learningRegis in learningRegs)
                 {
-                    // Reset session count for each learning registration
                     int sessionCount = 0;
 
-                    // Check if the learning registration has a start day
                     if (!learningRegis.StartDay.HasValue)
                     {
                         return new ResponseDTO
                         {
                             IsSucceed = false,
-                            Message = "Start day is missing for Learning Registration."
+                            Message = "Start day is missing."
                         };
                     }
 
-                    var startDate = learningRegis.StartDay.Value.ToDateTime(TimeOnly.MinValue);
-                    var registrationStartDate = startDate;
-
-                    // Get the ordered learning days and start from the registration day's day of the week
+                    var registrationStartDate = learningRegis.StartDay.Value.ToDateTime(TimeOnly.MinValue);
                     var orderedLearningDays = learningRegis.LearningRegistrationDay.OrderBy(day => day.DayOfWeek).ToList();
 
-                    // Find the first valid session day from the registrationStartDay's day of the week
-                    var currentDayOfWeek = registrationStartDate.DayOfWeek;
-                    var learningDaysStartingFromRegistration = orderedLearningDays
-                        .SkipWhile(day => (DayOfWeek)day.DayOfWeek < currentDayOfWeek) // Skip days before the registration day
-                        .Concat(orderedLearningDays) // Handle circular day-of-week loop
-                        .Take(orderedLearningDays.Count); // Avoid duplicate iterations
-
-                    // Loop until the required number of sessions is generated
+                    // Continue scheduling sessions until the required number is reached
                     while (sessionCount < learningRegis.NumberOfSession)
                     {
-                        foreach (var learningDay in learningDaysStartingFromRegistration)
+                        foreach (var learningDay in orderedLearningDays)
                         {
-                            // Calculate the next session date matching the learning day of the week
-                            var nextSessionDate = GetNextSessionDate(registrationStartDate, (DayOfWeek)learningDay.DayOfWeek);
-
-                            // Proceed only if the session count is within limit
-                            if (sessionCount < learningRegis.NumberOfSession)
+                            // Check if the registrationStartDate matches a valid learning day
+                            if (registrationStartDate.DayOfWeek == (DayOfWeek)learningDay.DayOfWeek && sessionCount < learningRegis.NumberOfSession)
                             {
                                 var existingSchedule = learningRegis.Schedules.ElementAtOrDefault(sessionCount);
 
-                                // Create a new schedule DTO
                                 var schedule = new ScheduleDTO
                                 {
                                     ScheduleId = existingSchedule?.ScheduleId ?? 0,
                                     Mode = existingSchedule?.Mode ?? 0,
                                     TimeStart = learningRegis.TimeStart.ToString("HH:mm"),
                                     TimeEnd = learningRegis.TimeStart.AddMinutes(learningRegis.TimeLearning).ToString("HH:mm"),
-                                    DayOfWeek = nextSessionDate.DayOfWeek.ToString(),
-                                    StartDate = nextSessionDate.ToString("yyyy-MM-dd"),
+                                    DayOfWeek = registrationStartDate.DayOfWeek.ToString(),
+                                    StartDate = registrationStartDate.ToString("yyyy-MM-dd"),
                                     TeacherId = learningRegis.TeacherId,
                                     TeacherName = learningRegis.Teacher.Fullname,
                                     LearnerId = learningRegis.LearnerId,
@@ -310,12 +286,12 @@ namespace InstruLearn_Application.BLL.Service
                                 };
 
                                 schedules.Add(schedule);
-                                sessionCount++;  // Increment session count after adding a schedule
+                                sessionCount++;
                             }
-
-                            // Move to the next day for the following iteration
-                            registrationStartDate = nextSessionDate.AddDays(1);
                         }
+
+                        // Increment the date after checking all learning days
+                        registrationStartDate = registrationStartDate.AddDays(1);
                     }
                 }
 
@@ -335,6 +311,5 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
         }
-
     }
 }
