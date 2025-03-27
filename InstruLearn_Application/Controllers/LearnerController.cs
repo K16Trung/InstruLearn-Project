@@ -37,14 +37,14 @@ namespace InstruLearn_Application.Controllers
             return Ok(result);
         }
 
-        [HttpDelete("ban/{id}")]
+        [HttpPut("ban/{id}")]
         public async Task<IActionResult> DeleteLearner(int id)
         {
             var result = await _learnerService.DeleteLearnerAsync(id);
             return Ok(result);
         }
 
-        [HttpDelete("unban/{id}")]
+        [HttpPut("unban/{id}")]
         public async Task<IActionResult> UnbanLearner(int id)
         {
             var result = await _learnerService.UnbanLearnerAsync(id);
