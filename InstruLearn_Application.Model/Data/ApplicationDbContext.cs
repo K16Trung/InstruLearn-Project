@@ -45,6 +45,9 @@ namespace InstruLearn_Application.Model.Data
         public DbSet<ScheduleDays> ScheduleDays { get; set; }
         public DbSet<Certification> Certifications { get; set; }
         public DbSet<TeacherMajor> TeacherMajors { get; set; }
+        public DbSet<LevelAssigned> LevelAssigneds { get; set; }
+        public DbSet<Response> Responses { get; set; }
+        public DbSet<ResponseType> ResponseTypes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -259,6 +262,12 @@ namespace InstruLearn_Application.Model.Data
                 .HasForeignKey(l => l.MajorId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<Learning_Registration>()
+                .HasOne(l => l.Response)
+                .WithMany(r => r.Learning_Registrations)
+                .HasForeignKey(l => l.ResponseId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // Configure Learning_Registration_Type Entity
 
             modelBuilder.Entity<Learning_Registration_Type>()
@@ -393,7 +402,20 @@ namespace InstruLearn_Application.Model.Data
                .HasOne(c => c.CoursePackages)
                .WithOne(cp => cp.Certifications)
                .HasForeignKey<Certification>(c => c.CoursePackageId)
-                .OnDelete(DeleteBehavior.Cascade);
+               .OnDelete(DeleteBehavior.Cascade);
+            //
+            modelBuilder.Entity<LevelAssigned>()
+               .HasOne(la => la.Major)
+               .WithMany(m => m.LevelAssigneds)
+               .HasForeignKey(la => la.MajorId)
+               .OnDelete(DeleteBehavior.Restrict);
+
+            // Configure Response Entity
+            modelBuilder.Entity<Response>()
+                .HasOne(r => r.ResponseType)
+                .WithMany(rt => rt.Responses)
+                .HasForeignKey(r => r.ResponseTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

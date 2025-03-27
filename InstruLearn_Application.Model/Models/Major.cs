@@ -20,5 +20,6 @@ namespace InstruLearn_Application.Model.Models
         public ICollection<Learning_Registration> learning_Registrations { get; set; }
         public ICollection<Test_Result> TestResults { get; set; }
         public ICollection<TeacherMajor> TeacherMajors { get; set; }
+        public ICollection<LevelAssigned> LevelAssigneds { get; set; }
     }
 }

@@ -258,32 +258,7 @@ namespace InstruLearn_Application.BLL.Service
                 _mapper.Map(updateDTO, learningRegis);
                 learningRegis.Status = LearningRegis.Accepted;
 
-                if (updateDTO.Score.HasValue)
-                {
-                    learningRegis.Score = updateDTO.Score;
-                }
-
-                if (!string.IsNullOrEmpty(updateDTO.Feedback))
-                {
-                    learningRegis.Feedback = updateDTO.Feedback;
-                }
-
                 await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
-
-                // Fetch the associated Test_Result and update it
-                var testResult = await _unitOfWork.TestResultRepository.GetByLearningRegisIdAsync(updateDTO.LearningRegisId);
-
-                if (testResult != null)
-                {
-                    // Update Score and Feedback if available in DTO
-                    if (updateDTO.Score.HasValue)
-                    {
-                        learningRegis.Score = updateDTO.Score;
-                    }
-                    testResult.Status = TestResultStatus.Dotted;
-
-                    await _unitOfWork.TestResultRepository.UpdateAsync(testResult);
-                }
 
                 // Create schedules based on NumberOfSessions and selected Learning Days
                 if (learningRegis.StartDay.HasValue && learningRegis.TimeStart != null && learningRegis.NumberOfSession > 0 && learningRegis.LearningRegistrationDay.Any())

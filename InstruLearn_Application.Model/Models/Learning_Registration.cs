@@ -22,7 +22,9 @@ namespace InstruLearn_Application.Model.Models
         public int RegisTypeId { get; set; }
         public Learning_Registration_Type Learning_Registration_Type { get; set; }
         public int MajorId { get; set; }
-        public Major Major {  get; set; }
+        public Major Major { get; set; }
+        public int ResponseId { get; set; }
+        public Response Response { get; set; }
         public DateOnly? StartDay { get; set; }
         public TimeOnly TimeStart { get; set; }
         public int TimeLearning { get; set; }
@@ -33,13 +35,11 @@ namespace InstruLearn_Application.Model.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal? Price { get; set; }
         public string VideoUrl { get; set; }
-        public int? Score { get; set; }
-        public string? LevelAssigned { get; set; }
-        public string? Feedback { get; set; }
 
         // Navigation properties
         public ICollection<Test_Result> Test_Results { get; set; }
         public ICollection<LearningRegistrationDay> LearningRegistrationDay { get; set; }
         public ICollection<Schedules> Schedules { get; set; }
+
     }
 }

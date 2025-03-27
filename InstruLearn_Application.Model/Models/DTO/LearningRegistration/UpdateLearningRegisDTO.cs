@@ -9,7 +9,6 @@ namespace InstruLearn_Application.Model.Models.DTO.LearningRegistration
     public class UpdateLearningRegisDTO
     {
         public int LearningRegisId { get; set; }
-        public int? Score { get; set; }
         public string? LevelAssigned { get; set; }
         public decimal? Price { get; set; }
         public string? Feedback { get; set; }
