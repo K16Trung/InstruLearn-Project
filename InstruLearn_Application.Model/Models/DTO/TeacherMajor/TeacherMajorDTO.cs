@@ -13,7 +13,7 @@ namespace InstruLearn_Application.Model.Models.DTO.TeacherMajor
     public class TeacherMajorDTO
     {
         public int TeacherMajorId { get; set; }
-        public TeacherDTO teacher { get; set; }
+        public TeacherMajorDetailDTO teacher { get; set; }
         public TeacherMajorStatus Status { get; set; }
     }
 }

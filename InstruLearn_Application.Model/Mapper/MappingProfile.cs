@@ -406,6 +406,15 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.teacher, opt => opt.MapFrom(src => src.Teacher))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
                 .ReverseMap();
+            CreateMap<Major, MajorjustNameDTO>()
+                .ForMember(dest => dest.MajorId, opt => opt.MapFrom(src => src.MajorId))
+                .ForMember(dest => dest.MajorName, opt => opt.MapFrom(src => src.MajorName))
+                .ReverseMap();
+            CreateMap<Teacher, TeacherMajorDetailDTO>()
+                .ForMember(dest => dest.Majors, opt => opt.MapFrom(src => src.TeacherMajors.Select(tm => tm.Major)))
+                .ForMember(dest => dest.TeacherId, opt => opt.MapFrom(src => src.TeacherId))
+                .ForMember(dest => dest.Fullname, opt => opt.MapFrom(src => src.Fullname))
+                .ReverseMap();
         }
     }
 }
