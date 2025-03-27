@@ -44,7 +44,7 @@ namespace InstruLearn_Application.Controllers
             return Ok(result);
         }
 
-        [HttpDelete("delete/{id}")]
+        [HttpDelete("ban/{id}")]
         public async Task<IActionResult> DeleteTeacher(int id)
         {
             var result = await _teacherService.DeleteTeacherAsync(id);
