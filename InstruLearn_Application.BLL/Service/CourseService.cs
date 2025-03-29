@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using InstruLearn_Application.DAL.UoW.IUoW;
 using InstruLearn_Application.Model.Models.DTO.Feedback;
+using InstruLearn_Application.Model.Enum;
 
 namespace InstruLearn_Application.BLL.Service
 {
@@ -64,8 +65,19 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
+            // Validate course package type
+            if (!Enum.IsDefined(typeof(CoursePackageType), createDto.CoursePackageType))
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Invalid course package type.",
+                };
+            }
+
             var course = _mapper.Map<Course_Package>(createDto);
             course.Type = type;
+            course.CoursePackageType = createDto.CoursePackageType;
             await _unitOfWork.CourseRepository.AddAsync(course);
             return new ResponseDTO
             {
