@@ -26,6 +26,18 @@ namespace InstruLearn_Application.Controllers
             var result = await _classService.GetClassByIdAsync(id);
             return Ok(result);
         }
+
+        [HttpGet("CoursePackageId/{coursePackageId}/class")]
+        public async Task<IActionResult> GetClassesByCoursePackageId(int coursePackageId)
+        {
+            var result = await _classService.GetClassesByCoursePackageIdAsync(coursePackageId);
+
+            if (!result.IsSucceed)
+                return NotFound(result);
+
+            return Ok(result);
+        }
+
         [HttpPost("create")]
         public async Task<IActionResult> AddClassAsync([FromBody] CreateClassDTO createClassDTO)
         {

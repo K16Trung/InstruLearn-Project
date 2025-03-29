@@ -72,25 +72,26 @@ public class DateTimeHelper
         return validTimeSlots.Contains(timeStart);
     }
 
-    public static DateOnly CalculateClassEndDate(DateOnly startDate, int totalDays, ICollection<int> classDays)
+    public static DateOnly CalculateClassEndDate(DateOnly startDate, int totalDays, List<int> classDays)
     {
-        int countedDays = 0;
+        int classDaysCount = 0;
         DateOnly currentDate = startDate;
 
-        while (countedDays < totalDays)
+        while (classDaysCount < totalDays)
         {
-            // Check if the current date's day is in the classDays collection
             if (classDays.Contains((int)currentDate.DayOfWeek))
-            {
-                countedDays++;
-            }
+                classDaysCount++;
 
-            // Increment the current date by 1 day
+            if (classDaysCount == totalDays)
+                break;
+
             currentDate = currentDate.AddDays(1);
         }
 
         return currentDate;
     }
+
+
     public static DateTime CalculateClassEndTime(TimeOnly classTime, int durationInHours = 2)
     {
         // Get the current date and combine it with the TimeOnly object

@@ -1,4 +1,6 @@
-﻿using InstruLearn_Application.BLL.Service.IService;
+﻿using InstruLearn_Application.BLL.Service;
+using InstruLearn_Application.BLL.Service.IService;
+using InstruLearn_Application.Model.Models.DTO.CourseType;
 using InstruLearn_Application.Model.Models.DTO.Syllabus;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
@@ -33,21 +35,23 @@ namespace InstruLearn_Application.Controllers
             }
             return Ok(result);
         }
-
-        [HttpPost]
-        public async Task<IActionResult> CreateSyllabus([FromBody] CreateSyllabusDTO createSyllabusDTO)
+        
+        [HttpGet("class/{classId}/syllabus")]
+        public async Task<IActionResult> GetSyllabusByClassId(int classId)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var result = await _syllabusService.CreateSyllabusAsync(createSyllabusDTO);
+            var result = await _syllabusService.GetSyllabusByClassIdAsync(classId);
             if (!result.IsSucceed)
             {
-                return BadRequest(result);
+                return NotFound(result);
             }
-            return CreatedAtAction(nameof(GetSyllabusById), new { id = ((SyllabusDTO)result.Data).SyllabusId }, result);
+            return Ok(result);
+        }
+
+        [HttpPost("create")]
+        public async Task<IActionResult> CreateSyllabus([FromBody] CreateSyllabusDTO createDto)
+        {
+            var response = await _syllabusService.CreateSyllabusAsync(createDto);
+            return Ok(response);
         }
 
         [HttpPut("{id}")]

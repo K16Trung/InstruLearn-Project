@@ -9,5 +9,8 @@ namespace InstruLearn_Application.DAL.Repository.IRepository
 {
     public interface IClassRepository : IGenericRepository<Class>
     {
+        Task<List<Class>> GetAllAsync();
+        Task<Class> GetByIdAsync(int classId);
+        Task<List<Class>> GetClassesByCoursePackageIdAsync(int coursePackageId);
     }
 }
