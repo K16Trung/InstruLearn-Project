@@ -9,5 +9,6 @@ namespace InstruLearn_Application.DAL.Repository.IRepository
 {
     public interface ISyllabusRepository : IGenericRepository<Syllabus>
     {
+        Task<Syllabus> GetSyllabusByClassIdAsync(int classId);
     }
 }

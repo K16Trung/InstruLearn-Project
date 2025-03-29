@@ -8,7 +8,8 @@ namespace InstruLearn_Application.Model.Enum
 {
     public enum ClassStatus
     {
-        Open,
-        Close
+        Scheduled,
+        Ongoing,
+        Completed
     }
 }

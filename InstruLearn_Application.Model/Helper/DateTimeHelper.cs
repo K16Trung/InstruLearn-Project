@@ -71,4 +71,36 @@ public class DateTimeHelper
 
         return validTimeSlots.Contains(timeStart);
     }
+
+    public static DateOnly CalculateClassEndDate(DateOnly startDate, int totalDays, List<int> classDays)
+    {
+        int classDaysCount = 0;
+        DateOnly currentDate = startDate;
+
+        while (classDaysCount < totalDays)
+        {
+            if (classDays.Contains((int)currentDate.DayOfWeek))
+                classDaysCount++;
+
+            if (classDaysCount == totalDays)
+                break;
+
+            currentDate = currentDate.AddDays(1);
+        }
+
+        return currentDate;
+    }
+
+
+    public static DateTime CalculateClassEndTime(TimeOnly classTime, int durationInHours = 2)
+    {
+        // Get the current date and combine it with the TimeOnly object
+        DateTime classStartDateTime = DateTime.Today.AddHours(classTime.Hour).AddMinutes(classTime.Minute);
+
+        // Add the duration to calculate the class end time
+        DateTime classEndDateTime = classStartDateTime.AddHours(durationInHours);
+
+        return classEndDateTime;
+    }
+
 }
