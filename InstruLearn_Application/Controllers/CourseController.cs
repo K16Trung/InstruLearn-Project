@@ -30,6 +30,21 @@ namespace InstruLearn_Application.Controllers
             return Ok(response);
         }
 
+        [HttpGet("status0")]
+        public async Task<IActionResult> GetCoursesWithStatusZero()
+        {
+            var courses = await _courseService.GetAllCoursesWithStatusZeroAsync();
+            return Ok(courses);
+        }
+
+        [HttpGet("status1")]
+        public async Task<IActionResult> GetCoursesWithStatusOne()
+        {
+            var courses = await _courseService.GetAllCoursesWithStatusOneAsync();
+            return Ok(courses);
+        }
+
+
         [HttpPost("create")]
         public async Task<IActionResult> AddCourse([FromBody] CreateCourseDTO createDto)
         {

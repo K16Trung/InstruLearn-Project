@@ -204,10 +204,17 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<Course_Package, GetAllCourseDTO>()
              .ForMember(dest => dest.TypeName, opt => opt.MapFrom(src => src.Type.CourseTypeName))
              .ReverseMap();
+            
+            CreateMap<Course_Package, CoursePackageTypeDTO>()
+             .ForMember(dest => dest.TypeName, opt => opt.MapFrom(src => src.Type.CourseTypeName))
+             .ReverseMap();
+
             CreateMap<CreateCourseDTO, Course_Package>()
                 .ForMember(dest => dest.CoursePackageType, opt => opt.MapFrom(src => src.CoursePackageType))
                 .ReverseMap();
-            CreateMap<UpdateCourseDTO, Course_Package>().ReverseMap();
+            CreateMap<UpdateCourseDTO, Course_Package>()
+                .ForMember(dest => dest.CoursePackageType, opt => opt.MapFrom(src => src.CoursePackageType))
+                .ReverseMap();
 
             CreateMap<Course_Package, CourseDTO>()
             .ForMember(dest => dest.TypeName, opt => opt.MapFrom(src => src.Type.CourseTypeName));

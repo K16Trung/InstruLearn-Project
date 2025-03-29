@@ -53,6 +53,26 @@ namespace InstruLearn_Application.BLL.Service
             return courseMapper;
         }
 
+        // Get courses with status = 0
+        public async Task<List<CoursePackageTypeDTO>> GetAllCoursesWithStatusZeroAsync()
+        {
+            var courses = await _unitOfWork.CourseRepository.GetAllAsync();
+
+            // Filter courses with status = 0 and map to DTO
+            var filteredCourses = courses.Where(c => (int)c.CoursePackageType == 0).ToList();
+            return _mapper.Map<List<CoursePackageTypeDTO>>(filteredCourses);
+        }
+
+        // Get courses with status = 1
+        public async Task<List<CoursePackageTypeDTO>> GetAllCoursesWithStatusOneAsync()
+        {
+            var courses = await _unitOfWork.CourseRepository.GetAllAsync();
+
+            // Filter courses with status = 1 and map to DTO
+            var filteredCourses = courses.Where(c => (int)c.CoursePackageType == 1).ToList();
+            return _mapper.Map<List<CoursePackageTypeDTO>>(filteredCourses);
+        }
+
         public async Task<ResponseDTO> AddCourseAsync(CreateCourseDTO createDto)
         {
             var type = await _unitOfWork.CourseTypeRepository.GetByIdAsync(createDto.TypeId);
