@@ -16,7 +16,6 @@ namespace InstruLearn_Application.Model.Models
         public int CoursePackageId { get; set; }
         public int SyllabusId { get; set; }
         public string ClassName { get; set; }
-        public string TeacherName { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public TimeOnly ClassTime { get; set; }
