@@ -60,16 +60,22 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
+            // Calculate the endDate based on startDate, totalDays, and classDays
+            createClassDTO.EndDate = DateTimeHelper.CalculateClassEndDate(createClassDTO.StartDate, createClassDTO.totalDays,
+                createClassDTO.ClassDays.Select(day => (int)day).ToList());  // Convert to int if enum
+
             var classObj = _mapper.Map<Class>(createClassDTO);
             classObj.Teacher = teacher;
             classObj.CoursePackage = coursePackage;
 
-            // Set initial status based on date logic or business rules
-            if (createClassDTO.StartDate > DateTime.Now)
+            // Determine class status based on dates
+            DateTime now = DateTime.Now;
+            if (createClassDTO.StartDate.ToDateTime(new TimeOnly(0, 0)) > now)  // Fixed ToDateTime with TimeOnly
             {
                 classObj.Status = ClassStatus.Scheduled;
             }
-            else if (createClassDTO.StartDate <= DateTime.Now && createClassDTO.EndDate >= DateTime.Now)
+            else if (createClassDTO.StartDate.ToDateTime(new TimeOnly(0, 0)) <= now &&
+                     createClassDTO.EndDate.ToDateTime(new TimeOnly(23, 59)) >= now)
             {
                 classObj.Status = ClassStatus.Ongoing;
             }
@@ -83,7 +89,7 @@ namespace InstruLearn_Application.BLL.Service
             {
                 classObj.ClassDays = createClassDTO.ClassDays.Select(day => new Model.Models.ClassDay
                 {
-                    Day = day,    // Enum value, e.g., Monday, Tuesday, etc.
+                    Day = day,  // Store as integer, assuming Day is int in ClassDay model
                 }).ToList();
             }
             else
