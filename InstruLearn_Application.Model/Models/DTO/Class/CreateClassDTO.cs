@@ -10,7 +10,6 @@ namespace InstruLearn_Application.Model.Models.DTO.Class
 {
     public class CreateClassDTO
     {
-        public int ClassId { get; set; }
         public int TeacherId { get; set; }
         public int CoursePackageId { get; set; }
         public string ClassName { get; set; }

@@ -9,7 +9,6 @@ namespace InstruLearn_Application.Model.Models.DTO.PurchaseItem
 {
     public class CreatePurchaseItemDTO
     {
-        public int PurchaseItemId { get; set; }
         public int LearnerId { get; set; }
         public List<CoursePackageItem> CoursePackages { get; set; } = new List<CoursePackageItem>();
         public class CoursePackageItem

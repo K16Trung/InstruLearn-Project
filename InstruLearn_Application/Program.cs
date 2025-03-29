@@ -107,6 +107,9 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<ICertificationRepository, CertificationRepository>();
             builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
             builder.Services.AddScoped<ITeacherMajorRepository, TeacherMajorRepository>();
+            builder.Services.AddScoped<ILevelAssignedRepository, LevelAssignedRepository>();
+            builder.Services.AddScoped<IResponseRepository, ResponseRepository>();
+            builder.Services.AddScoped<IResponseTypeRepository, ResponseTypeRepository>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             builder.Services.AddScoped<IAuthService, AuthService>();
@@ -139,6 +142,9 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<ICertificationService, CertificationService>();
             builder.Services.AddScoped<IScheduleService, ScheduleService>();
             builder.Services.AddScoped<ITeacherMajorService, TeacherMajorService>();
+            builder.Services.AddScoped<ILevelAssignedService, LevelAssignedService>();
+            builder.Services.AddScoped<IResponseService, ResponseService>();
+            builder.Services.AddScoped<IResponseTypeService, ResponseTypeService>();
             builder.Services.AddAutoMapper(typeof(MappingProfile));
 
             // Add CORS

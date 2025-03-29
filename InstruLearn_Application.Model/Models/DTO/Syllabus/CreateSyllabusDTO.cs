@@ -8,7 +8,6 @@ namespace InstruLearn_Application.Model.Models.DTO.Syllabus
 {
     public class CreateSyllabusDTO
     {
-        public int SyllabusId { get; set; }
         public string SyllabusName { get; set; }
         public string SyllabusDescription { get; set; }
     }
