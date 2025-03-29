@@ -17,7 +17,6 @@ namespace InstruLearn_Application.Model.Models
         public int SyllabusId { get; set; }
         public string ClassName { get; set; }
         public DateOnly StartDate { get; set; }
-        public DateOnly EndDate { get; set; }
         public TimeOnly ClassTime { get; set; }
         public int MaxStudents { get; set; }
         public int totalDays { get; set; }

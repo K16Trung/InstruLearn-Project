@@ -284,7 +284,6 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<Class, ClassDTO>()
                 .ForMember(dest => dest.TeacherId, opt => opt.MapFrom(src => src.Teacher.TeacherId))
                 .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => src.StartDate))
-                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.EndDate))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
                 .ReverseMap();
             CreateMap<CreateClassDTO, Class>();
