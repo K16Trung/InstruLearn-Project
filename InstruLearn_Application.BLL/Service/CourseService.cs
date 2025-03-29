@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using InstruLearn_Application.DAL.UoW.IUoW;
 using InstruLearn_Application.Model.Models.DTO.Feedback;
+using InstruLearn_Application.Model.Enum;
 
 namespace InstruLearn_Application.BLL.Service
 {
@@ -52,6 +53,26 @@ namespace InstruLearn_Application.BLL.Service
             return courseMapper;
         }
 
+        // Get courses with status = 0
+        public async Task<List<CoursePackageTypeDTO>> GetAllCoursesWithStatusZeroAsync()
+        {
+            var courses = await _unitOfWork.CourseRepository.GetAllAsync();
+
+            // Filter courses with status = 0 and map to DTO
+            var filteredCourses = courses.Where(c => (int)c.CoursePackageType == 0).ToList();
+            return _mapper.Map<List<CoursePackageTypeDTO>>(filteredCourses);
+        }
+
+        // Get courses with status = 1
+        public async Task<List<CoursePackageTypeDTO>> GetAllCoursesWithStatusOneAsync()
+        {
+            var courses = await _unitOfWork.CourseRepository.GetAllAsync();
+
+            // Filter courses with status = 1 and map to DTO
+            var filteredCourses = courses.Where(c => (int)c.CoursePackageType == 1).ToList();
+            return _mapper.Map<List<CoursePackageTypeDTO>>(filteredCourses);
+        }
+
         public async Task<ResponseDTO> AddCourseAsync(CreateCourseDTO createDto)
         {
             var type = await _unitOfWork.CourseTypeRepository.GetByIdAsync(createDto.TypeId);
@@ -64,8 +85,19 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
+            // Validate course package type
+            if (!Enum.IsDefined(typeof(CoursePackageType), createDto.CoursePackageType))
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Invalid course package type.",
+                };
+            }
+
             var course = _mapper.Map<Course_Package>(createDto);
             course.Type = type;
+            course.CoursePackageType = createDto.CoursePackageType;
             await _unitOfWork.CourseRepository.AddAsync(course);
             return new ResponseDTO
             {
