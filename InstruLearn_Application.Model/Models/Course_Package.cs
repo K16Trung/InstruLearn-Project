@@ -23,6 +23,7 @@ namespace InstruLearn_Application.Model.Models
         public decimal Price { get; set; }
         public int Discount { get; set; }
         public string ImageUrl { get; set; }
+        public CoursePackageType CoursePackageType { get; set; }
 
         //Navigation property
         public virtual Certification Certifications { get; set; }
