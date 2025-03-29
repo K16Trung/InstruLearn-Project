@@ -164,7 +164,7 @@ namespace InstruLearn_Application.BLL.Service
                     courseNames.Add(coursePackage.CourseName);
 
                     // Add course price to total
-                    decimal itemAmount = coursePackage.Price;
+                    decimal itemAmount = coursePackage.Price ?? 0m;
                     totalAmountToDeduct += itemAmount;
 
                     // Create purchase item
