@@ -21,5 +21,7 @@ namespace InstruLearn_Application.Model.Models.DTO.Class
         public int MaxStudents { get; set; }
         public int totalDays { get; set; }
         public decimal Price { get; set; }
+        public ClassStatus? Status { get; set; }
+        public ICollection<DayOfWeeks> ClassDays { get; set; }
     }
 }

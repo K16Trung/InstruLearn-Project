@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using InstruLearn_Application.BLL.Service.IService;
 using InstruLearn_Application.DAL.UoW.IUoW;
+using InstruLearn_Application.Model.Enum;
 using InstruLearn_Application.Model.Models;
 using InstruLearn_Application.Model.Models.DTO;
 using InstruLearn_Application.Model.Models.DTO.Class;
@@ -62,6 +63,37 @@ namespace InstruLearn_Application.BLL.Service
             var classObj = _mapper.Map<Class>(createClassDTO);
             classObj.Teacher = teacher;
             classObj.CoursePackage = coursePackage;
+
+            // Set initial status based on date logic or business rules
+            if (createClassDTO.StartDate > DateTime.Now)
+            {
+                classObj.Status = ClassStatus.Scheduled;
+            }
+            else if (createClassDTO.StartDate <= DateTime.Now && createClassDTO.EndDate >= DateTime.Now)
+            {
+                classObj.Status = ClassStatus.Ongoing;
+            }
+            else
+            {
+                classObj.Status = ClassStatus.Completed;
+            }
+
+            // Validate and add ClassDays if provided
+            if (createClassDTO.ClassDays != null && createClassDTO.ClassDays.Any())
+            {
+                classObj.ClassDays = createClassDTO.ClassDays.Select(day => new Model.Models.ClassDay
+                {
+                    Day = day,    // Enum value, e.g., Monday, Tuesday, etc.
+                }).ToList();
+            }
+            else
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Lớp học phải có ít nhất một ngày học.",
+                };
+            }
 
             await _unitOfWork.ClassRepository.AddAsync(classObj);
 
