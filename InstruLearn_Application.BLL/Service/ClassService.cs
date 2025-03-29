@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using InstruLearn_Application.BLL.Service.IService;
 using InstruLearn_Application.DAL.UoW.IUoW;
+using InstruLearn_Application.Model.Enum;
 using InstruLearn_Application.Model.Models;
 using InstruLearn_Application.Model.Models.DTO;
 using InstruLearn_Application.Model.Models.DTO.Class;
@@ -38,8 +39,34 @@ namespace InstruLearn_Application.BLL.Service
             return ClassMapper;
         }
 
+        public async Task<ResponseDTO> GetClassesByCoursePackageIdAsync(int coursePackageId)
+        {
+            var classes = await _unitOfWork.ClassRepository.GetClassesByCoursePackageIdAsync(coursePackageId);
+
+            if (classes == null || !classes.Any())
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "No classes found for the given course package.",
+                    Data = null
+                };
+            }
+
+            var classDtos = _mapper.Map<List<ClassDTO>>(classes);
+
+            return new ResponseDTO
+            {
+                IsSucceed = true,
+                Message = "Classes retrieved successfully.",
+                Data = classDtos
+            };
+        }
+
+
         public async Task<ResponseDTO> AddClassAsync(CreateClassDTO createClassDTO)
         {
+            // Check if Teacher exists
             var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(createClassDTO.TeacherId);
             if (teacher == null)
             {
@@ -49,8 +76,10 @@ namespace InstruLearn_Application.BLL.Service
                     Message = "Không tìm thấy giáo viên",
                 };
             }
+
+            // Check if CoursePackage exists
             var coursePackage = await _unitOfWork.CourseRepository.GetByIdAsync(createClassDTO.CoursePackageId);
-            if (teacher == null)
+            if (coursePackage == null)
             {
                 return new ResponseDTO
                 {
@@ -58,20 +87,62 @@ namespace InstruLearn_Application.BLL.Service
                     Message = "Không tìm thấy gói học",
                 };
             }
+            // Check if CoursePackage exists
+            var Syllabus = await _unitOfWork.SyllabusRepository.GetByIdAsync(createClassDTO.SyllabusId);
+            if (Syllabus == null)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Không tìm thấy giáo trình học",
+                };
+            }
 
+            // Validate and add ClassDays (at least one day required)
+            if (createClassDTO.ClassDays == null || !createClassDTO.ClassDays.Any())
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Lớp học phải có ít nhất một ngày học.",
+                };
+            }
+
+            // Map CreateClassDTO to Class entity
             var classObj = _mapper.Map<Class>(createClassDTO);
             classObj.Teacher = teacher;
             classObj.CoursePackage = coursePackage;
 
+            // Determine class status based on the current date
+            DateTime now = DateTime.Now;
+            if (createClassDTO.StartDate.ToDateTime(new TimeOnly(0, 0)) > now)
+            {
+                classObj.Status = ClassStatus.Scheduled;
+            }
+            else if (createClassDTO.StartDate.ToDateTime(new TimeOnly(0, 0)) <= now &&
+                     createClassDTO.StartDate.AddDays(createClassDTO.totalDays - 1).ToDateTime(new TimeOnly(23, 59)) >= now)
+            {
+                classObj.Status = ClassStatus.Ongoing;
+            }
+            else
+            {
+                classObj.Status = ClassStatus.Completed;
+            }
+
+            // Add ClassDays
+            classObj.ClassDays = createClassDTO.ClassDays.Select(day => new Model.Models.ClassDay
+            {
+                Day = day,  // Assuming Day is stored as an enum in your ClassDay model
+            }).ToList();
+
+            // Save the class in the database
             await _unitOfWork.ClassRepository.AddAsync(classObj);
 
-            var response = new ResponseDTO
+            return new ResponseDTO
             {
                 IsSucceed = true,
                 Message = "Đã thêm lớp thành công",
             };
-
-            return response;
         }
 
         public async Task<ResponseDTO> UpdateClassAsync(int classId, UpdateClassDTO updateClassDTO)

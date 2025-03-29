@@ -12,6 +12,7 @@ namespace InstruLearn_Application.BLL.Service.IService
     {
         Task<List<ResponseDTO>> GetAllSyllabusAsync();
         Task<ResponseDTO> GetSyllabusByIdAsync(int syllabusId);
+        Task<ResponseDTO> GetSyllabusByClassIdAsync(int classId);
         Task<ResponseDTO> CreateSyllabusAsync(CreateSyllabusDTO createSyllabusDTO);
         Task<ResponseDTO> UpdateSyllabusAsync(int syllabusId, UpdateSyllabusDTO updateSyllabusDTO);
         Task<ResponseDTO> DeleteSyllabusAsync(int syllabusId);

@@ -61,6 +61,30 @@ namespace InstruLearn_Application.BLL.Service
                 Data = syllabusDto
             };
         }
+
+        public async Task<ResponseDTO> GetSyllabusByClassIdAsync(int classId)
+        {
+            var syllabus = await _unitOfWork.SyllabusRepository.GetSyllabusByClassIdAsync(classId);
+
+            if (syllabus == null)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Syllabus not found for the given class.",
+                };
+            }
+
+            var syllabusDto = _mapper.Map<SyllabusDTO>(syllabus);
+
+            return new ResponseDTO
+            {
+                IsSucceed = true,
+                Message = "Syllabus retrieved successfully.",
+                Data = syllabusDto
+            };
+        }
+
         public async Task<ResponseDTO> CreateSyllabusAsync(CreateSyllabusDTO createSyllabusDTO)
         {
             var syllabus = _mapper.Map<Syllabus>(createSyllabusDTO);

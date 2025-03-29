@@ -31,6 +31,7 @@ using InstruLearn_Application.Model.Models.DTO.ResponseType;
 using InstruLearn_Application.Model.Models.DTO.ScheduleDays;
 using InstruLearn_Application.Model.Models.DTO.Schedules;
 using InstruLearn_Application.Model.Models.DTO.Staff;
+using InstruLearn_Application.Model.Models.DTO.Syllabus;
 using InstruLearn_Application.Model.Models.DTO.Teacher;
 using InstruLearn_Application.Model.Models.DTO.TeacherMajor;
 using InstruLearn_Application.Model.Models.DTO.Test_Result;
@@ -285,12 +286,23 @@ namespace InstruLearn_Application.Model.Mapper
 
             // 🔹 Class Mappings
             CreateMap<Class, ClassDTO>()
-                .ForMember(dest => dest.TeacherId, opt => opt.MapFrom(src => src.Teacher.TeacherId))
-                .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => src.StartDate))
-                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.EndDate))
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
-                .ReverseMap();
-            CreateMap<CreateClassDTO, Class>();
+            .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Teacher.Fullname))
+            .ForMember(dest => dest.CoursePackageName, opt => opt.MapFrom(src => src.CoursePackage.CourseName))
+            .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src =>
+                DateTimeHelper.CalculateClassEndDate(
+                    src.StartDate,
+                    src.totalDays,
+                    src.ClassDays.Select(cd => (int)cd.Day).ToList()
+                )
+            ))
+            .ForMember(dest => dest.ClassEndTime, opt => opt.MapFrom(src => src.ClassTime.AddHours(2)))
+            .ForMember(dest => dest.ClassDays, opt => opt.MapFrom(src => src.ClassDays));
+
+            CreateMap<CreateClassDTO, Class>()
+                .ForMember(dest => dest.SyllabusId, opt => opt.MapFrom(src => src.SyllabusId))
+                .ForMember(dest => dest.ClassDays, opt => opt.MapFrom(src => src.ClassDays.Select(day => new Models.ClassDay { Day = day })));
+
+            CreateMap<Models.ClassDay, ClassDayDTO>();
 
             //🔹 Major Mappings
             CreateMap<Major, MajorDTO>().ReverseMap();
@@ -418,6 +430,10 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.TeacherId, opt => opt.MapFrom(src => src.TeacherId))
                 .ForMember(dest => dest.Fullname, opt => opt.MapFrom(src => src.Fullname))
                 .ReverseMap();
+
+            // Syllabus mapping
+            CreateMap<Syllabus, SyllabusDTO>().ReverseMap();
+            CreateMap<CreateSyllabusDTO, Syllabus>().ReverseMap();
 
             //🔹LevelAssigned mappings
             CreateMap<LevelAssigned, LevelAssignedDTO>()
