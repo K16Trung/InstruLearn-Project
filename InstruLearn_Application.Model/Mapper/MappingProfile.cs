@@ -309,7 +309,8 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.SyllabusId, opt => opt.MapFrom(src => src.SyllabusId))
                 .ForMember(dest => dest.ClassDays, opt => opt.MapFrom(src => src.ClassDays.Select(day => new Models.ClassDay { Day = day })));
 
-            CreateMap<Models.ClassDay, ClassDayDTO>();
+            CreateMap<Models.ClassDay, ClassDayDTO>()
+                .ForMember(dest => dest.Day, opt => opt.MapFrom(src => src.Day));
 
             //🔹 Major Mappings
             CreateMap<Major, MajorDTO>().ReverseMap();
@@ -412,7 +413,10 @@ namespace InstruLearn_Application.Model.Mapper
             // 🔹Schedules mapping
 
             CreateMap<Schedules, ScheduleDTO>()
+                .ForMember(dest => dest.ClassName, opt => opt.MapFrom(src => src.Class != null ? src.Class.ClassName : null))
                 .ForMember(dest => dest.ScheduleDays, opt => opt.MapFrom(src => src.ScheduleDays))
+                .ForMember(dest => dest.classDayDTOs, opt => opt.MapFrom(src => src.ClassDays))
+
                 .ForMember(dest => dest.Mode, opt => opt.MapFrom(src => src.Mode));
 
             CreateMap<CreateScheduleDTO, Schedules>()
