@@ -4,6 +4,7 @@ using InstruLearn_Application.Model.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InstruLearn_Application.Model.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250329132824_package-type")]
+    partial class packagetype
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -281,6 +284,7 @@ namespace InstruLearn_Application.Model.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CoursePackageId"));
 
                     b.Property<string>("CourseDescription")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("CourseName")
@@ -293,19 +297,21 @@ namespace InstruLearn_Application.Model.Migrations
                     b.Property<int>("CourseTypeId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("Discount")
+                    b.Property<int>("Discount")
                         .HasColumnType("int");
 
                     b.Property<string>("Headline")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ImageUrl")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<decimal?>("Price")
+                    b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int?>("Rating")
+                    b.Property<int>("Rating")
                         .HasColumnType("int");
 
                     b.HasKey("CoursePackageId");
@@ -845,13 +851,10 @@ namespace InstruLearn_Application.Model.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ScheduleId"));
 
-                    b.Property<int?>("ClassId")
-                        .HasColumnType("int");
-
                     b.Property<int?>("LearnerId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("LearningRegisId")
+                    b.Property<int>("LearningRegisId")
                         .HasColumnType("int");
 
                     b.Property<string>("Mode")
@@ -868,8 +871,6 @@ namespace InstruLearn_Application.Model.Migrations
                         .HasColumnType("time");
 
                     b.HasKey("ScheduleId");
-
-                    b.HasIndex("ClassId");
 
                     b.HasIndex("LearnerId");
 
@@ -1437,11 +1438,6 @@ namespace InstruLearn_Application.Model.Migrations
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Schedules", b =>
                 {
-                    b.HasOne("InstruLearn_Application.Model.Models.Class", "Class")
-                        .WithMany("Schedules")
-                        .HasForeignKey("ClassId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
                     b.HasOne("InstruLearn_Application.Model.Models.Learner", "Learner")
                         .WithMany("Schedules")
                         .HasForeignKey("LearnerId")
@@ -1450,14 +1446,13 @@ namespace InstruLearn_Application.Model.Migrations
                     b.HasOne("InstruLearn_Application.Model.Models.Learning_Registration", "Registration")
                         .WithMany("Schedules")
                         .HasForeignKey("LearningRegisId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("InstruLearn_Application.Model.Models.Teacher", "Teacher")
                         .WithMany("Schedules")
                         .HasForeignKey("TeacherId")
                         .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Class");
 
                     b.Navigation("Learner");
 
@@ -1588,8 +1583,6 @@ namespace InstruLearn_Application.Model.Migrations
                     b.Navigation("ClassDays");
 
                     b.Navigation("Learning_Registration");
-
-                    b.Navigation("Schedules");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.CourseType", b =>

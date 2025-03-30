@@ -200,14 +200,24 @@ namespace InstruLearn_Application.Model.Mapper
             // Course mapping
             CreateMap<Course_Package, CourseDTO>()
             .ForMember(dest => dest.TypeName, opt => opt.MapFrom(src => src.Type.CourseTypeName))
+            .ForMember(dest => dest.CoursePackageType, opt => opt.MapFrom(src => src.CoursePackageType))
             .ForMember(dest => dest.CourseContents, opt => opt.MapFrom(src => src.CourseContents))
             .ForMember(dest => dest.FeedBacks, opt => opt.MapFrom(src => src.FeedBacks))
             .ForMember(dest => dest.QnAs, opt => opt.MapFrom(src => src.QnAs));
             CreateMap<Course_Package, GetAllCourseDTO>()
              .ForMember(dest => dest.TypeName, opt => opt.MapFrom(src => src.Type.CourseTypeName))
              .ReverseMap();
-            CreateMap<CreateCourseDTO, Course_Package>().ReverseMap();
-            CreateMap<UpdateCourseDTO, Course_Package>().ReverseMap();
+            
+            CreateMap<Course_Package, CoursePackageTypeDTO>()
+             .ForMember(dest => dest.TypeName, opt => opt.MapFrom(src => src.Type.CourseTypeName))
+             .ReverseMap();
+
+            CreateMap<CreateCourseDTO, Course_Package>()
+                .ForMember(dest => dest.CoursePackageType, opt => opt.MapFrom(src => src.CoursePackageType))
+                .ReverseMap();
+            CreateMap<UpdateCourseDTO, Course_Package>()
+                .ForMember(dest => dest.CoursePackageType, opt => opt.MapFrom(src => src.CoursePackageType))
+                .ReverseMap();
 
             CreateMap<Course_Package, CourseDTO>()
             .ForMember(dest => dest.TypeName, opt => opt.MapFrom(src => src.Type.CourseTypeName));

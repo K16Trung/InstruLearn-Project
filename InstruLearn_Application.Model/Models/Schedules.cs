@@ -16,8 +16,10 @@ namespace InstruLearn_Application.Model.Models
         public Teacher Teacher { get; set; }
         public int? LearnerId { get; set; }
         public Learner Learner { get; set; }
-        public int LearningRegisId { get; set; }
-        public Learning_Registration Registration { get; set; }
+        public int? LearningRegisId { get; set; }
+        public Learning_Registration? Registration { get; set; }
+        public int? ClassId { get; set; }
+        public Class? Class { get; set; }
         public TimeOnly TimeStart { get; set; }
         public TimeOnly TimeEnd { get; set; }
         public ScheduleMode Mode { get; set; }

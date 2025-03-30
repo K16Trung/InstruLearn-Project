@@ -29,5 +29,6 @@ namespace InstruLearn_Application.Model.Models
         public Syllabus Syllabus { get; set; }
         public ICollection<ClassDay> ClassDays { get; set; }
         public ICollection<Learning_Registration> Learning_Registration { get; set; }
+        public ICollection<Schedules> Schedules { get; set; }
     }
 }

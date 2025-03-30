@@ -12,6 +12,8 @@ namespace InstruLearn_Application.BLL.Service.IService
     {
         Task<List<GetAllCourseDTO>> GetAllCoursesAsync();
         Task<CourseDTO> GetCourseByIdAsync(int courseId);
+        Task<List<CoursePackageTypeDTO>> GetAllCoursesWithStatusZeroAsync();
+        Task<List<CoursePackageTypeDTO>> GetAllCoursesWithStatusOneAsync();
         Task<ResponseDTO> AddCourseAsync(CreateCourseDTO createDto);
         Task<ResponseDTO> UpdateCourseAsync(int courseId, UpdateCourseDTO updateDto);
         Task<ResponseDTO> DeleteCourseAsync(int courseId);

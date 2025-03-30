@@ -16,13 +16,14 @@ namespace InstruLearn_Application.Model.Models
         public int CourseTypeId { get; set; }
         public CourseType Type { get; set; }
         public string CourseName { get; set; }
-        public string CourseDescription { get; set; }
-        public string Headline { get; set; }
-        public int Rating { get; set; }
+        public string? CourseDescription { get; set; }
+        public string? Headline { get; set; }
+        public int? Rating { get; set; }
         [Column(TypeName = "decimal(18,2)")]
-        public decimal Price { get; set; }
-        public int Discount { get; set; }
-        public string ImageUrl { get; set; }
+        public decimal? Price { get; set; }
+        public int? Discount { get; set; }
+        public string? ImageUrl { get; set; }
+        public CoursePackageType CoursePackageType { get; set; }
 
         //Navigation property
         public virtual Certification Certifications { get; set; }
