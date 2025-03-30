@@ -85,7 +85,7 @@ namespace InstruLearn_Application.DAL.Repository
                 TimeStart = s.TimeStart.ToString("HH:mm"),
                 TimeEnd = s.TimeEnd.ToString("HH:mm"),
                 Mode = s.Mode,
-                LearningRegisId = s.LearningRegisId,
+                LearningRegisId = s.LearningRegisId ?? 0,
                 RegistrationStartDay = s.StartDay,  // Pass DateOnly?
                 ScheduleDays = s.ScheduleDays.Select(day => new ScheduleDaysDTO
                 {

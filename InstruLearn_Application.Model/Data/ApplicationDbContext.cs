@@ -373,6 +373,12 @@ namespace InstruLearn_Application.Model.Data
                 .HasForeignKey(s => s.LearningRegisId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<Schedules>()
+                .HasOne(c => c.Class)
+                .WithMany(s => s.Schedules)
+                .HasForeignKey(s => s.ClassId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             // Configure ScheduleDays Entity
             modelBuilder.Entity<ScheduleDays>()
                 .HasKey(sd => sd.ScheduleDayId);
