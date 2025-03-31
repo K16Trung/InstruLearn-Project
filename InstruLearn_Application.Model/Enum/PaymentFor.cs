@@ -9,6 +9,7 @@ namespace InstruLearn_Application.Model.Enum
     public enum PaymentFor
     {
         AddFuns,
-        Online_Course
+        Online_Course,
+        LearningRegistration
     }
 }
