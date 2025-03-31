@@ -176,6 +176,7 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.TeacherMajors, opt => opt.Ignore());
 
             CreateMap<Teacher, UpdateTeacherDTO>()
+                .ForMember(dest => dest.MajorIds, opt => opt.MapFrom(src => src.TeacherMajors.Select(tm => tm.MajorId)))
                 .ForMember(dest => dest.Heading, opt => opt.MapFrom(src => src.Heading))
                 .ForMember(dest => dest.Details, opt => opt.MapFrom(src => src.Details))
                 .ForMember(dest => dest.Links, opt => opt.MapFrom(src => src.Links))
