@@ -7,6 +7,7 @@ using InstruLearn_Application.Model.Models;
 using InstruLearn_Application.Model.Models.DTO;
 using InstruLearn_Application.Model.Models.DTO.ScheduleDays;
 using InstruLearn_Application.Model.Models.DTO.Schedules;
+using InstruLearn_Application.Model.Models.DTO.Teacher;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -335,5 +336,19 @@ namespace InstruLearn_Application.BLL.Service
             };
         }
 
+        public async Task<List<ValidTeacherDTO>> GetAvailableTeachersAsync(int majorId, TimeOnly timeStart, int timeLearning, DateOnly startDay)
+        {
+            var freeTeacherIds = await _unitOfWork.ScheduleRepository.GetFreeTeacherIdsAsync(majorId, timeStart, timeLearning, startDay);
+
+            if (!freeTeacherIds.Any())
+            {
+                return new List<ValidTeacherDTO>(); // No available teachers
+            }
+
+            var availableTeachers = await _unitOfWork.TeacherRepository
+                .GetSchedulesTeachersByIdsAsync(freeTeacherIds);
+
+            return _mapper.Map<List<ValidTeacherDTO>>(availableTeachers);
+        }
     }
 }

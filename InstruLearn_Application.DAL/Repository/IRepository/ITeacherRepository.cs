@@ -10,5 +10,6 @@ namespace InstruLearn_Application.DAL.Repository.IRepository
 {
     public interface ITeacherRepository : IGenericRepository<Teacher>
     {
+        Task<List<Teacher>> GetSchedulesTeachersByIdsAsync(List<int> teacherIds);
     }
 }

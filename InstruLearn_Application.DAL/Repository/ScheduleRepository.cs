@@ -1,5 +1,6 @@
 ﻿using InstruLearn_Application.DAL.Repository.IRepository;
 using InstruLearn_Application.Model.Data;
+using InstruLearn_Application.Model.Enum;
 using InstruLearn_Application.Model.Models;
 using InstruLearn_Application.Model.Models.DTO.ScheduleDays;
 using InstruLearn_Application.Model.Models.DTO.Schedules;
@@ -106,5 +107,34 @@ namespace InstruLearn_Application.DAL.Repository
                 .ToListAsync();
         }
 
+        public async Task<List<int>> GetFreeTeacherIdsAsync(int majorId, TimeOnly timeStart, int timeLearning, DateOnly startDay)
+        {
+            TimeOnly timeEnd = timeStart.AddMinutes(timeLearning);
+
+            var busyTeacherIds = await _appDbContext.Schedules
+                .Where(s => s.TeacherId.HasValue &&
+                            s.StartDay == startDay &&  // Direct date match
+                            (
+                                (s.TimeStart <= timeStart && s.TimeEnd > timeStart) ||  // Overlapping start
+                                (s.TimeStart < timeEnd && s.TimeEnd >= timeEnd) ||      // Overlapping end
+                                (s.TimeStart >= timeStart && s.TimeEnd <= timeEnd)      // Fully inside
+                            ))
+                .Select(s => s.TeacherId.Value)
+                .Distinct()
+                .ToListAsync();
+
+            Console.WriteLine($"Busy Teacher IDs: {string.Join(", ", busyTeacherIds)}");
+
+            // Exclude busy teachers and fetch only those matching the major
+            var freeTeacherIds = await _appDbContext.Teachers
+                .Where(t => t.TeacherMajors.Any(tm => tm.MajorId == majorId) &&
+                            !busyTeacherIds.Contains(t.TeacherId))
+                .Select(t => t.TeacherId)
+                .ToListAsync();
+
+            Console.WriteLine($"Available Teacher IDs: {string.Join(", ", freeTeacherIds)}");
+
+            return freeTeacherIds;
+        }
     }
 }

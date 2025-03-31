@@ -175,6 +175,17 @@ namespace InstruLearn_Application.Model.Mapper
                 .ReverseMap()
                 .ForMember(dest => dest.TeacherMajors, opt => opt.Ignore());
 
+            // New mapping for ValidTeacherDTO
+            CreateMap<Teacher, ValidTeacherDTO>()
+                .ForMember(dest => dest.TeacherId, opt => opt.MapFrom(src => src.TeacherId))
+                .ForMember(dest => dest.Fullname, opt => opt.MapFrom(src => src.Fullname))
+                .ForMember(dest => dest.Majors, opt => opt.MapFrom(src =>
+                    src.TeacherMajors.Select(tm => new MajorDTO
+                    {
+                        MajorId = tm.Major.MajorId,
+                        MajorName = tm.Major.MajorName
+                    }).ToList()));
+
             CreateMap<Teacher, UpdateTeacherDTO>()
                 .ForMember(dest => dest.MajorIds, opt => opt.MapFrom(src => src.TeacherMajors.Select(tm => tm.MajorId)))
                 .ForMember(dest => dest.Heading, opt => opt.MapFrom(src => src.Heading))

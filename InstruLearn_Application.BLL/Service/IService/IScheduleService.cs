@@ -1,5 +1,6 @@
 ﻿using InstruLearn_Application.Model.Models.DTO;
 using InstruLearn_Application.Model.Models.DTO.Schedules;
+using InstruLearn_Application.Model.Models.DTO.Teacher;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,5 +16,6 @@ namespace InstruLearn_Application.BLL.Service.IService
         Task<ResponseDTO> GetSchedulesByLearnerIdAsync(int learnerId);
         Task<ResponseDTO> GetSchedulesByTeacherIdAsync(int teacherId);
         Task<ResponseDTO> GetClassSchedulesByTeacherIdAsync(int teacherId);
+        Task<List<ValidTeacherDTO>> GetAvailableTeachersAsync(int majorId, TimeOnly timeStart, int timeLearning, DateOnly startDay);
     }
 }
