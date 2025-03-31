@@ -15,6 +15,7 @@ namespace InstruLearn_Application.DAL.Repository.IRepository
         Task<List<Schedules>> GetSchedulesByLearningRegisIdAsync(int learningRegisId);
         Task<List<Schedules>> GetSchedulesByLearnerAsync(int learnerId);
         Task<List<Schedules>> GetSchedulesByTeacherAsync(int teacherId);
+        Task<List<Schedules>> GetClassSchedulesByTeacherIdAsync(int teacherId);
         Task<List<ScheduleDTO>> GetSchedulesByLearnerIdAsync(int learnerId);
     }
 }

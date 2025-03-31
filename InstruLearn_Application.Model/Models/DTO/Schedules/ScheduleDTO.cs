@@ -1,4 +1,5 @@
 ﻿using InstruLearn_Application.Model.Enum;
+using InstruLearn_Application.Model.Models.DTO.ClassDay;
 using InstruLearn_Application.Model.Models.DTO.ScheduleDays;
 using System;
 using System.Collections.Generic;
@@ -16,6 +17,8 @@ namespace InstruLearn_Application.Model.Models.DTO.Schedules
         public string TeacherName { get; set; }
         public int? LearnerId { get; set; }
         public string LearnerName { get; set; }
+        public int? ClassId { get; set; }
+        public string ClassName { get; set; }
         public string TimeStart { get; set; }
         public string TimeEnd { get; set; }
         public string DayOfWeek { get; set; }
@@ -28,5 +31,6 @@ namespace InstruLearn_Application.Model.Models.DTO.Schedules
         //public TimeOnly RegistrationTimeStart { get; set; }
         public int LearningRegisId { get; set; }
         public List<ScheduleDaysDTO> ScheduleDays { get; set; }
+        public List<ClassDayDTO> classDayDTOs { get; set; }
     }
 }

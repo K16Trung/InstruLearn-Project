@@ -42,11 +42,25 @@ namespace InstruLearn_Application.Controllers
             return Ok(result);
         }
         
-        [HttpGet("teacher/{teacherId}/schedules")]
+        [HttpGet("teacher/{teacherId}/register")]
         public async Task<IActionResult> GetSchedulesByTeacherAsync(int teacherId)
         {
             var result = await _scheduleService.GetSchedulesByTeacherIdAsync(teacherId);
             return Ok(result);
         }
+
+        [HttpGet("teacher/{teacherId}/class")]
+        public async Task<IActionResult> GetClassSchedulesByTeacher(int teacherId)
+        {
+            var response = await _scheduleService.GetClassSchedulesByTeacherIdAsync(teacherId);
+
+            if (!response.IsSucceed)
+            {
+                return NotFound(response);
+            }
+
+            return Ok(response);
+        }
+
     }
 }

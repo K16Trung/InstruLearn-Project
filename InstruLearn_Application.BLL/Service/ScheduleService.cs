@@ -311,5 +311,29 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
         }
+
+        public async Task<ResponseDTO> GetClassSchedulesByTeacherIdAsync(int teacherId)
+        {
+            var schedules = await _unitOfWork.ScheduleRepository.GetClassSchedulesByTeacherIdAsync(teacherId);
+
+            if (schedules == null || !schedules.Any())
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Không tìm thấy lịch học của giáo viên.",
+                };
+            }
+
+            var scheduleDTOs = _mapper.Map<List<ScheduleDTO>>(schedules);
+
+            return new ResponseDTO
+            {
+                IsSucceed = true,
+                Message = "Lấy lịch học thành công.",
+                Data = scheduleDTOs
+            };
+        }
+
     }
 }
