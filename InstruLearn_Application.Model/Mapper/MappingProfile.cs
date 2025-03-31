@@ -346,6 +346,7 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<UpdateLearningRegisDTO, Learning_Registration>()
                 .ForMember(dest => dest.LearningRegisId, opt => opt.Ignore())
                 .ForMember(dest => dest.Price, opt => opt.Ignore())
+                .ForMember(dest => dest.NumberOfSession, opt => opt.Ignore())
                 .ForMember(dest => dest.Status, opt => opt.Ignore())
                 .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
                 

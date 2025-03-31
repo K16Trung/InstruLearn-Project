@@ -269,7 +269,7 @@ namespace InstruLearn_Application.BLL.Service
                 _mapper.Map(updateDTO, learningRegis);
 
                 // Update the Price based on LevelAssigned
-                learningRegis.Price = levelAssigned.LevelPrice;
+                learningRegis.Price = levelAssigned.LevelPrice * learningRegis.NumberOfSession;
 
                 // Manually update status
                 learningRegis.Status = LearningRegis.Accepted;
