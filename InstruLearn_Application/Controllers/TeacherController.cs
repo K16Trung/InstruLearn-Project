@@ -44,6 +44,13 @@ namespace InstruLearn_Application.Controllers
             return Ok(result);
         }
 
+        [HttpPut("update-major/{id}")]
+        public async Task<IActionResult> UpdateMajorTeacher(int id, UpdateMajorTeacherDTO updateMajorTeacherDTO)
+        {
+            var result = await _teacherService.UpdateMajorTeacherAsync(id, updateMajorTeacherDTO);
+            return Ok(result);
+        }
+
         [HttpPut("ban/{id}")]
         public async Task<IActionResult> DeleteTeacher(int id)
         {

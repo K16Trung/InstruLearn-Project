@@ -52,6 +52,24 @@ namespace InstruLearn_Application.BLL.Service
             return responseList;
         }
 
+        // Get Teacher by Id
+        public async Task<ResponseDTO> GetTeacherByIdAsync(int teacherId)
+        {
+            var response = new ResponseDTO();
+
+            var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(teacherId);
+            if (teacher == null)
+            {
+                response.Message = "Teacher not found.";
+                return response;
+            }
+
+            var teacherDTO = _mapper.Map<TeacherDTO>(teacher);
+            response.IsSucceed = true;
+            response.Data = teacherDTO;
+            return response;
+        }
+
         public async Task<ResponseDTO> CreateTeacherAsync(CreateTeacherDTO createTeacherDTO)
         {
             var response = new ResponseDTO();
@@ -136,10 +154,11 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
-        public async Task<ResponseDTO> DeleteTeacherAsync(int teacherId)
+        public async Task<ResponseDTO> UpdateTeacherAsync(int teacherId, UpdateTeacherDTO updateTeacherDTO)
         {
             var response = new ResponseDTO();
 
+            // Get the teacher by ID
             var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(teacherId);
             if (teacher == null)
             {
@@ -147,76 +166,25 @@ namespace InstruLearn_Application.BLL.Service
                 return response;
             }
 
-            // Change status to Banned
-            var account = await _unitOfWork.AccountRepository.GetByIdAsync(teacher.AccountId);
-            account.IsActive = AccountStatus.Banned;
+            // Map the changes from DTO to the entity
+            _mapper.Map(updateTeacherDTO, teacher);
 
-            var updated = await _unitOfWork.AccountRepository.UpdateAsync(account);
+            // Save changes
+            var updated = await _unitOfWork.TeacherRepository.UpdateAsync(teacher);
 
             if (!updated)
             {
-                response.Message = "Failed to delete teacher.";
+                response.Message = "Failed to update teacher.";
                 return response;
             }
 
             response.IsSucceed = true;
-            response.Message = "Teacher banned successfully!";
+            response.Message = "Teacher updated successfully!";
             return response;
         }
-
-        // Ban Teacher
-
-        public async Task<ResponseDTO> UnbanTeacherAsync(int teacherId)
-        {
-            var response = new ResponseDTO();
-
-            var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(teacherId);
-            if (teacher == null)
-            {
-                response.Message = "Teacher not found.";
-                return response;
-            }
-
-            // Change status to Banned
-            var account = await _unitOfWork.AccountRepository.GetByIdAsync(teacher.AccountId);
-            account.IsActive = AccountStatus.Active;
-
-            var updated = await _unitOfWork.AccountRepository.UpdateAsync(account);
-
-            if (!updated)
-            {
-                response.Message = "Failed to unban teacher.";
-                return response;
-            }
-
-            response.IsSucceed = true;
-            response.Message = "Teacher unban successfully!";
-            return response;
-        }
-
-
-        // Get Teacher by Id
-
-        public async Task<ResponseDTO> GetTeacherByIdAsync(int teacherId)
-        {
-            var response = new ResponseDTO();
-
-            var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(teacherId);
-            if (teacher == null)
-            {
-                response.Message = "Teacher not found.";
-                return response;
-            }
-
-            var teacherDTO = _mapper.Map<TeacherDTO>(teacher);
-            response.IsSucceed = true;
-            response.Data = teacherDTO;
-            return response;
-        }
-
 
         // Update Teacher
-        public async Task<ResponseDTO> UpdateTeacherAsync(int teacherId, UpdateTeacherDTO updateTeacherDTO)
+        public async Task<ResponseDTO> UpdateMajorTeacherAsync(int teacherId, UpdateMajorTeacherDTO updateMajorTeacherDTO)
         {
             var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(teacherId);
             if (teacher == null)
@@ -234,16 +202,16 @@ namespace InstruLearn_Application.BLL.Service
 
                 try
                 {
-                    _mapper.Map(updateTeacherDTO, teacher);
+                    _mapper.Map(updateMajorTeacherDTO, teacher);
                     await _unitOfWork.TeacherRepository.UpdateAsync(teacher);
 
-                    if (updateTeacherDTO.MajorIds != null && updateTeacherDTO.MajorIds.Any())
+                    if (updateMajorTeacherDTO.MajorIds != null && updateMajorTeacherDTO.MajorIds.Any())
                     {
                         var currentTeacherMajors = await _unitOfWork.TeacherMajorRepository
                             .GetWithIncludesAsync(tm => tm.TeacherId == teacherId, "Major");
 
                         var majorsToRemove = currentTeacherMajors
-                            .Where(tm => !updateTeacherDTO.MajorIds.Contains(tm.MajorId))
+                            .Where(tm => !updateMajorTeacherDTO.MajorIds.Contains(tm.MajorId))
                             .ToList();
 
                         foreach (var teacherMajor in majorsToRemove)
@@ -252,7 +220,7 @@ namespace InstruLearn_Application.BLL.Service
                         }
 
                         var existingMajorIds = currentTeacherMajors.Select(tm => tm.MajorId);
-                        var majorsToAdd = updateTeacherDTO.MajorIds
+                        var majorsToAdd = updateMajorTeacherDTO.MajorIds
                             .Where(id => !existingMajorIds.Contains(id))
                             .ToList();
 
@@ -293,6 +261,62 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
+        public async Task<ResponseDTO> DeleteTeacherAsync(int teacherId)
+        {
+            var response = new ResponseDTO();
+
+            var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(teacherId);
+            if (teacher == null)
+            {
+                response.Message = "Teacher not found.";
+                return response;
+            }
+
+            // Change status to Banned
+            var account = await _unitOfWork.AccountRepository.GetByIdAsync(teacher.AccountId);
+            account.IsActive = AccountStatus.Banned;
+
+            var updated = await _unitOfWork.AccountRepository.UpdateAsync(account);
+
+            if (!updated)
+            {
+                response.Message = "Failed to delete teacher.";
+                return response;
+            }
+
+            response.IsSucceed = true;
+            response.Message = "Teacher banned successfully!";
+            return response;
+        }
+
+        // Ban Teacher
+        public async Task<ResponseDTO> UnbanTeacherAsync(int teacherId)
+        {
+            var response = new ResponseDTO();
+
+            var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(teacherId);
+            if (teacher == null)
+            {
+                response.Message = "Teacher not found.";
+                return response;
+            }
+
+            // Change status to Banned
+            var account = await _unitOfWork.AccountRepository.GetByIdAsync(teacher.AccountId);
+            account.IsActive = AccountStatus.Active;
+
+            var updated = await _unitOfWork.AccountRepository.UpdateAsync(account);
+
+            if (!updated)
+            {
+                response.Message = "Failed to unban teacher.";
+                return response;
+            }
+
+            response.IsSucceed = true;
+            response.Message = "Teacher unban successfully!";
+            return response;
+        }
 
         private string HashPassword(string password)
         {
