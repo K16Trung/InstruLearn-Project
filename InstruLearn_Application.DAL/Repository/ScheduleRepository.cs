@@ -100,8 +100,8 @@ namespace InstruLearn_Application.DAL.Repository
         {
             return await _appDbContext.Schedules
                 .Where(s => s.TeacherId == teacherId)
+                .Include(s => s.Teacher)
                 .Include(s => s.Class)
-                .Include(s => s.Registration)
                 .Include(s => s.ScheduleDays)
                 .ToListAsync();
         }

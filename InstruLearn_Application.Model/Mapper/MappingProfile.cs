@@ -414,10 +414,21 @@ namespace InstruLearn_Application.Model.Mapper
 
             CreateMap<Schedules, ScheduleDTO>()
                 .ForMember(dest => dest.ClassName, opt => opt.MapFrom(src => src.Class != null ? src.Class.ClassName : null))
+                .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Teacher.Fullname))
                 .ForMember(dest => dest.ScheduleDays, opt => opt.MapFrom(src => src.ScheduleDays))
                 .ForMember(dest => dest.classDayDTOs, opt => opt.MapFrom(src => src.ClassDays))
 
                 .ForMember(dest => dest.Mode, opt => opt.MapFrom(src => src.Mode));
+
+            CreateMap<Schedules, ScheduleDTO>()
+                .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Teacher.Fullname))
+                .ForMember(dest => dest.ClassName, opt => opt.MapFrom(src => src.Class.ClassName))
+                .ForMember(dest => dest.TimeStart, opt => opt.MapFrom(src => src.TimeStart.ToString("HH:mm")))
+                .ForMember(dest => dest.TimeEnd, opt => opt.MapFrom(src => src.TimeEnd.ToString("HH:mm")))
+                .ForMember(dest => dest.DayOfWeek, opt => opt.MapFrom(src =>
+                    string.Join(", ", src.ScheduleDays.Select(sd => sd.DayOfWeeks.ToString()))))
+                .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => src.Class.StartDate.ToString("yyyy-MM-dd")));
+
 
             CreateMap<CreateScheduleDTO, Schedules>()
                 .ForMember(dest => dest.TimeEnd, opt => opt.MapFrom(src => src.TimeEnd))
@@ -426,6 +437,10 @@ namespace InstruLearn_Application.Model.Mapper
             // 🔹ScheduleDays mapping
             CreateMap<ScheduleDaysDTO, ScheduleDays>()
                 .ForMember(dest => dest.DayOfWeeks, opt => opt.MapFrom(src => src.DayOfWeeks));
+
+            CreateMap<ScheduleDays, ScheduleDaysDTO>()
+                .ForMember(dest => dest.DayOfWeeks, opt => opt.MapFrom(src => src.DayOfWeeks));
+
 
             //🔹TeacherMajor mapping
             CreateMap<TeacherMajor, TeacherMajorDTO>()
