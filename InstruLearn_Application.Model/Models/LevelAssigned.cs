@@ -17,5 +17,6 @@ namespace InstruLearn_Application.Model.Models
         public string LevelName { get; set; }
         [Column(TypeName = "decimal(18,2)")]
         public decimal LevelPrice { get; set; }
+        public ICollection<Learning_Registration> Learning_Registration { get; set; }
     }
 }

@@ -95,5 +95,16 @@ namespace InstruLearn_Application.DAL.Repository
 
             return formattedSchedules;
         }
+
+        public async Task<List<Schedules>> GetClassSchedulesByTeacherIdAsync(int teacherId)
+        {
+            return await _appDbContext.Schedules
+                .Where(s => s.TeacherId == teacherId)
+                .Include(s => s.Teacher)
+                .Include(s => s.Class)
+                .Include(s => s.ScheduleDays)
+                .ToListAsync();
+        }
+
     }
 }

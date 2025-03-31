@@ -268,6 +268,12 @@ namespace InstruLearn_Application.Model.Data
                 .HasForeignKey(l => l.ResponseId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<Learning_Registration>()
+                .HasOne(l => l.LevelAssigned)
+                .WithMany(la => la.Learning_Registration)
+                .HasForeignKey(l => l.LevelId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // Configure Learning_Registration_Type Entity
 
             modelBuilder.Entity<Learning_Registration_Type>()

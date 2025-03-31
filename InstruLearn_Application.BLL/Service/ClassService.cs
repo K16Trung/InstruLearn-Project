@@ -137,6 +137,39 @@ namespace InstruLearn_Application.BLL.Service
 
             // Save the class in the database
             await _unitOfWork.ClassRepository.AddAsync(classObj);
+            await _unitOfWork.SaveChangeAsync();
+
+            // 🔹 Generate Schedules for Teacher 🔹
+            List<Schedules> teacherSchedules = new List<Schedules>();
+            DateOnly currentDate = createClassDTO.StartDate;
+            int classDaysCount = 0;
+
+            while (classDaysCount < createClassDTO.totalDays)
+            {
+                if (createClassDTO.ClassDays.Contains((DayOfWeeks)currentDate.DayOfWeek))
+                {
+                    teacherSchedules.Add(new Schedules
+                    {
+                        TeacherId = teacher.TeacherId,
+                        ClassId = classObj.ClassId,  // Assign newly created class ID
+                        TimeStart = createClassDTO.ClassTime,
+                        TimeEnd = createClassDTO.ClassTime.AddHours(2),  // Assuming class duration is 2 hours
+                        Mode = ScheduleMode.Center,  // Change as needed
+                        ScheduleDays = new List<ScheduleDays>
+                {
+                    new ScheduleDays { DayOfWeeks = (DayOfWeeks)currentDate.DayOfWeek }
+                }
+                    });
+
+                    classDaysCount++;
+                }
+
+                currentDate = currentDate.AddDays(1);
+            }
+
+            // Save schedules to database
+            await _unitOfWork.ScheduleRepository.AddRangeAsync(teacherSchedules);
+            await _unitOfWork.SaveChangeAsync();
 
             return new ResponseDTO
             {

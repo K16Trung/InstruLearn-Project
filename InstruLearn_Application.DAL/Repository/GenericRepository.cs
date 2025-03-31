@@ -78,16 +78,24 @@ namespace InstruLearn_Application.DAL.Repository
 
         public async Task<List<T>> GetWithIncludesAsync(Expression<Func<T, bool>> filter, string includeProperties = "")
         {
-            IQueryable<T> query = _dbSet.Where(filter);
+            IQueryable<T> query = _dbSet;
 
-            foreach (var includeProperty in includeProperties.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+            if (filter != null)
             {
-                query = query.Include(includeProperty);
+                query = query.Where(filter);
             }
 
-            // Now returning a list instead of a single item.
-            return await query.ToListAsync();  // Using ToListAsync to get multiple records
+            if (!string.IsNullOrWhiteSpace(includeProperties))
+            {
+                foreach (var includeProperty in includeProperties.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    query = query.Include(includeProperty.Trim());
+                }
+            }
+
+            return await query.ToListAsync();
         }
+
 
 
         /*public async Task<List<T>> GetWithIncludesAsync(Expression<Func<T, bool>> filter, string includeProperties = "")
