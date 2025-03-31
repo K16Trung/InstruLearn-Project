@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using InstruLearn_Application.Model.Enum;
+using InstruLearn_Application.Model.Models;
 
 public class DateTimeHelper
 {
@@ -102,5 +103,48 @@ public class DateTimeHelper
 
         return classEndDateTime;
     }
+
+    public static List<Schedules> GenerateOnonOnSchedules(Learning_Registration learningRegis)
+    {
+        List<Schedules> schedules = new List<Schedules>();
+        if (learningRegis.StartDay == null || learningRegis.LearningRegistrationDay == null || !learningRegis.LearningRegistrationDay.Any())
+        {
+            return schedules;
+        }
+
+        DateOnly currentDate = learningRegis.StartDay.Value;
+        int sessionsCreated = 0;
+
+        while (sessionsCreated < learningRegis.NumberOfSession)
+        {
+            foreach (var day in learningRegis.LearningRegistrationDay.OrderBy(d => d.DayOfWeek))
+            {
+                if (sessionsCreated >= learningRegis.NumberOfSession)
+                    break;
+
+                // Find the next available date for this day of the week
+                while (currentDate.DayOfWeek != (DayOfWeek)day.DayOfWeek)
+                {
+                    currentDate = currentDate.AddDays(1);
+                }
+
+                schedules.Add(new Schedules
+                {
+                    LearnerId = learningRegis.LearnerId,
+                    TeacherId = learningRegis.TeacherId,
+                    LearningRegisId = learningRegis.LearningRegisId,
+                    TimeStart = learningRegis.TimeStart,
+                    TimeEnd = learningRegis.TimeStart.AddMinutes(learningRegis.TimeLearning),
+                    Mode = ScheduleMode.OneOnOne, // or another default mode
+                });
+
+                sessionsCreated++;
+                currentDate = currentDate.AddDays(1);
+            }
+        }
+
+        return schedules;
+    }
+
 
 }

@@ -22,6 +22,7 @@ using InstruLearn_Application.Model.Models.DTO.LevelAssigned;
 using InstruLearn_Application.Model.Models.DTO.Major;
 using InstruLearn_Application.Model.Models.DTO.MajorTest;
 using InstruLearn_Application.Model.Models.DTO.Manager;
+using InstruLearn_Application.Model.Models.DTO.Payment;
 using InstruLearn_Application.Model.Models.DTO.Purchase;
 using InstruLearn_Application.Model.Models.DTO.PurchaseItem;
 using InstruLearn_Application.Model.Models.DTO.QnA;
@@ -496,6 +497,9 @@ namespace InstruLearn_Application.Model.Mapper
 
             CreateMap<CreateResponseTypeDTO, ResponseType>().ReverseMap();
             CreateMap<UpdateResponseTypeDTO, ResponseType>().ReverseMap();
+
+            // payment mapping
+            CreateMap<Payment, PaymentDTO>().ReverseMap();
         }
     }
 }
