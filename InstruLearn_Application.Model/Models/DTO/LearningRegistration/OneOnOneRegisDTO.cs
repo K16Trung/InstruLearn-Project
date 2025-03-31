@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,6 +19,12 @@ namespace InstruLearn_Application.Model.Models.DTO.LearningRegistration
         public string RegisTypeName { get; set; }
         public int MajorId { get; set; }
         public string MajorName { get; set; }
+        public int ResponseId { get; set; }
+        public string ResponseName { get; set; }
+        public int LevelId { get; set; }
+        public string LevelName { get; set; }
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal LevelPrice { get; set; }
         public DateOnly? StartDay { get; set; }
         public TimeOnly TimeStart { get; set; }
         public int TimeLearning { get; set; }
@@ -26,9 +33,6 @@ namespace InstruLearn_Application.Model.Models.DTO.LearningRegistration
         public int NumberOfSession { get; set; }
         public string VideoUrl { get; set; }
         public string LearningRequest { get; set; }
-        public int? Score { get; set; }
-        public string? LevelAssigned { get; set; }
-        public string? Feedback { get; set; }
         public List<string> LearningDays { get; set; }
         public decimal? Price { get; set; }
         public string Status { get; set; }
