@@ -48,6 +48,7 @@ namespace InstruLearn_Application.Model.Data
         public DbSet<LevelAssigned> LevelAssigneds { get; set; }
         public DbSet<Response> Responses { get; set; }
         public DbSet<ResponseType> ResponseTypes { get; set; }
+        public DbSet<Learner_class> Learner_Classes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -422,12 +423,25 @@ namespace InstruLearn_Application.Model.Data
                .HasForeignKey(la => la.MajorId)
                .OnDelete(DeleteBehavior.Restrict);
 
-            // Configure Response Entity
+            // Response Entity
             modelBuilder.Entity<Response>()
                 .HasOne(r => r.ResponseType)
                 .WithMany(rt => rt.Responses)
                 .HasForeignKey(r => r.ResponseTypeId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Learner_class
+            modelBuilder.Entity<Learner_class>()
+                .HasOne(l => l.Learner)
+                .WithMany(lc => lc.Learner_Classes)
+                .HasForeignKey(l => l.LearnerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Learner_class>()
+                .HasOne(C => C.Classes)
+                .WithMany(lc => lc.Learner_Classes)
+                .HasForeignKey(C => C.ClassId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
