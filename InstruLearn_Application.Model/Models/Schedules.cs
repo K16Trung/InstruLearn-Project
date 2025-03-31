@@ -24,5 +24,7 @@ namespace InstruLearn_Application.Model.Models
         public TimeOnly TimeEnd { get; set; }
         public ScheduleMode Mode { get; set; }
         public ICollection<ScheduleDays> ScheduleDays { get; set; }
+        public ICollection<ClassDay> ClassDays { get; set; }
+
     }
 }
