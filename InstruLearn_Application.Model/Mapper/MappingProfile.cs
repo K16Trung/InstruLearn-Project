@@ -344,7 +344,11 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.TimeEnd, opt => opt.MapFrom(src => src.TimeStart.AddMinutes(src.TimeLearning)));
 
             CreateMap<UpdateLearningRegisDTO, Learning_Registration>()
+                .ForMember(dest => dest.LearningRegisId, opt => opt.Ignore())
+                .ForMember(dest => dest.Price, opt => opt.Ignore())
+                .ForMember(dest => dest.Status, opt => opt.Ignore())
                 .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+                
 
             //🔹 Learning_Registration_Type Mappings
             CreateMap<Learning_Registration_Type, RegisTypeDTO>().ReverseMap();
