@@ -30,5 +30,6 @@ namespace InstruLearn_Application.Model.Models
         public ICollection<ClassDay> ClassDays { get; set; }
         public ICollection<Learning_Registration> Learning_Registration { get; set; }
         public ICollection<Schedules> Schedules { get; set; }
+        public ICollection<Learner_class> Learner_Classes { get; set; }
     }
 }
