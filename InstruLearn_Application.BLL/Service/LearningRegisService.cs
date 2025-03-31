@@ -240,7 +240,6 @@ namespace InstruLearn_Application.BLL.Service
 
         public async Task<ResponseDTO> UpdateLearningRegisStatusAsync(UpdateLearningRegisDTO updateDTO)
         {
-
             try
             {
                 var learningRegis = await _unitOfWork.LearningRegisRepository.GetByIdAsync(updateDTO.LearningRegisId);
@@ -253,63 +252,32 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
+                // Fetch LevelAssigned to get the correct LevelPrice
+                var levelAssigned = await _unitOfWork.LevelAssignedRepository.GetByIdAsync(updateDTO.LevelId);
+                if (levelAssigned == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Level Assigned not found."
+                    };
+                }
+
                 using var transaction = await _unitOfWork.BeginTransactionAsync();
 
+                // Map other properties (excluding Price)
                 _mapper.Map(updateDTO, learningRegis);
+
+                // Update the Price based on LevelAssigned
+                learningRegis.Price = levelAssigned.LevelPrice;
+
+                // Manually update status
                 learningRegis.Status = LearningRegis.Accepted;
 
                 await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
-
-                // Create schedules based on NumberOfSessions and selected Learning Days
-                if (learningRegis.StartDay.HasValue && learningRegis.TimeStart != null && learningRegis.NumberOfSession > 0 && learningRegis.LearningRegistrationDay.Any())
-                {
-                    var schedules = new List<Schedules>();
-                    var startDate = learningRegis.StartDay.Value.ToDateTime(TimeOnly.MinValue);
-                    int sessionsCreated = 0;
-
-                    while (sessionsCreated < learningRegis.NumberOfSession)
-                    {
-                        // Create sessions on the selected learning days in a weekly pattern
-                        foreach (var learningDay in learningRegis.LearningRegistrationDay.Select(d => d?.DayOfWeek))
-                        {
-                            if (learningDay.HasValue)  // Check if DayOfWeek is not null
-                            {
-                                // Calculate the next session date
-                                DateTime nextSessionDate = startDate.AddDays((7 * (sessionsCreated / learningRegis.LearningRegistrationDay.Count)) +
-                                                             ((int)learningDay.Value - (int)startDate.DayOfWeek + 7) % 7);
-
-                                var scheduleDTO = new CreateScheduleDTO
-                                {
-                                    TeacherId = learningRegis.TeacherId ?? 0,
-                                    LearnerId = learningRegis.LearnerId,
-                                    LearningRegisId = learningRegis.LearningRegisId,
-                                    TimeStart = learningRegis.TimeStart,
-                                    TimeEnd = learningRegis.TimeStart.AddMinutes(learningRegis.TimeLearning),
-                                    Mode = ScheduleMode.OneOnOne,
-                                    ScheduleDays = new List<ScheduleDaysDTO>
-                            {
-                                new ScheduleDaysDTO
-                                {
-                                    DayOfWeeks = (DayOfWeeks)learningDay.Value  // Handle nullable DayOfWeeks
-                                }
-                            }
-                                };
-
-                                var schedule = _mapper.Map<Schedules>(scheduleDTO);
-                                schedules.Add(schedule);
-
-                                sessionsCreated++;
-                                if (sessionsCreated >= learningRegis.NumberOfSession)
-                                    break;  // Stop creating more sessions once the limit is reached
-                            }
-                        }
-                    }
-
-                    await _unitOfWork.ScheduleRepository.AddRangeAsync(schedules);
-                }
-
                 await _unitOfWork.SaveChangeAsync();
 
+                // Commit transaction
                 await _unitOfWork.CommitTransactionAsync();
 
                 return new ResponseDTO
@@ -328,6 +296,5 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
         }
-
     }
 }
