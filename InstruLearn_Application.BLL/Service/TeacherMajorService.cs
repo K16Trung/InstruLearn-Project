@@ -6,6 +6,7 @@ using InstruLearn_Application.Model.Enum;
 using InstruLearn_Application.Model.Models;
 using InstruLearn_Application.Model.Models.DTO;
 using InstruLearn_Application.Model.Models.DTO.Feedback;
+using InstruLearn_Application.Model.Models.DTO.Major;
 using InstruLearn_Application.Model.Models.DTO.Syllabus;
 using InstruLearn_Application.Model.Models.DTO.TeacherMajor;
 using System;
@@ -30,17 +31,48 @@ namespace InstruLearn_Application.BLL.Service
         public async Task<List<ResponseDTO>> GetAllTeacherMajorAsync()
         {
             var teacherMajorList = await _unitOfWork.TeacherMajorRepository.GetAllAsync();
-            var teacherMajorDtos = _mapper.Map<IEnumerable<TeacherMajorDTO>>(teacherMajorList);
             var responseList = new List<ResponseDTO>();
-            foreach (var teacherMajorDto in teacherMajorDtos)
+
+            // Group by TeacherId to handle each teacher's majors
+            var teacherGroups = teacherMajorList.GroupBy(tm => tm.TeacherId);
+
+            foreach (var teacherGroup in teacherGroups)
             {
-                responseList.Add(new ResponseDTO
+                // Get the first record to access teacher details
+                var firstTeacherMajor = teacherGroup.First();
+                var teacher = firstTeacherMajor.Teacher;
+
+                // Create separate response for each major
+                foreach (var teacherMajor in teacherGroup)
                 {
-                    IsSucceed = true,
-                    Message = "Lấy ra danh sách chuyên ngành giáo viên thành công.",
-                    Data = teacherMajorDto
-                });
+                    var teacherMajorDto = new TeacherMajorDTO
+                    {
+                        TeacherMajorId = teacherMajor.TeacherMajorId,
+                        Status = teacherMajor.Status,
+                        teacher = new TeacherMajorDetailDTO
+                        {
+                            TeacherId = teacher.TeacherId,
+                            Fullname = teacher.Fullname,
+                            Majors = new List<MajorjustNameDTO>
+                    {
+                        new MajorjustNameDTO
+                        {
+                            MajorId = teacherMajor.Major.MajorId,
+                            MajorName = teacherMajor.Major.MajorName
+                        }
+                    }
+                        }
+                    };
+
+                    responseList.Add(new ResponseDTO
+                    {
+                        IsSucceed = true,
+                        Message = "Lấy ra danh sách chuyên ngành giáo viên thành công.",
+                        Data = teacherMajorDto
+                    });
+                }
             }
+
             return responseList;
         }
         public async Task<ResponseDTO> GetTeacherMajorByIdAsync(int teacherMajorId)
