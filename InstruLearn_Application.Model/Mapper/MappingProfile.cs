@@ -18,6 +18,7 @@ using InstruLearn_Application.Model.Models.DTO.ItemTypes;
 using InstruLearn_Application.Model.Models.DTO.Learner;
 using InstruLearn_Application.Model.Models.DTO.LearningRegistration;
 using InstruLearn_Application.Model.Models.DTO.LearningRegistrationType;
+using InstruLearn_Application.Model.Models.DTO.LevelAssigned;
 using InstruLearn_Application.Model.Models.DTO.Major;
 using InstruLearn_Application.Model.Models.DTO.MajorTest;
 using InstruLearn_Application.Model.Models.DTO.Manager;
@@ -25,6 +26,8 @@ using InstruLearn_Application.Model.Models.DTO.Purchase;
 using InstruLearn_Application.Model.Models.DTO.PurchaseItem;
 using InstruLearn_Application.Model.Models.DTO.QnA;
 using InstruLearn_Application.Model.Models.DTO.QnAReplies;
+using InstruLearn_Application.Model.Models.DTO.Response;
+using InstruLearn_Application.Model.Models.DTO.ResponseType;
 using InstruLearn_Application.Model.Models.DTO.ScheduleDays;
 using InstruLearn_Application.Model.Models.DTO.Schedules;
 using InstruLearn_Application.Model.Models.DTO.Staff;
@@ -460,6 +463,34 @@ namespace InstruLearn_Application.Model.Mapper
             // Syllabus mapping
             CreateMap<Syllabus, SyllabusDTO>().ReverseMap();
             CreateMap<CreateSyllabusDTO, Syllabus>().ReverseMap();
+
+            //🔹LevelAssigned mappings
+            CreateMap<LevelAssigned, LevelAssignedDTO>()
+                .ForMember(dest => dest.LevelAssignedId, opt => opt.MapFrom(src => src.LevelId))
+                .ForMember(dest => dest.MajorId, opt => opt.MapFrom(src => src.MajorId))
+                .ForMember(dest => dest.LevelPrice, opt => opt.MapFrom(src => src.LevelPrice))
+                .ReverseMap();
+
+            CreateMap<CreateLevelAssignedDTO, LevelAssigned>().ReverseMap();
+            CreateMap<UpdateLevelAssignedDTO, LevelAssigned>().ReverseMap();
+
+            //🔹Response mappings
+            CreateMap<Response, ResponseForLearningRegisDTO>()
+                .ForMember(dest => dest.ResponseId, opt => opt.MapFrom(src => src.ResponseId))
+                .ForMember(dest => dest.ResponseName, opt => opt.MapFrom(src => src.ResponseName))
+                .ForMember(dest => dest.ResponseTypes, opt => opt.MapFrom(src => src.ResponseType));
+
+            CreateMap<CreateResponseDTO, Response>().ReverseMap();
+            CreateMap<UpdateResponseDTO, Response>().ReverseMap();
+
+            //🔹ResponseType mappings
+            CreateMap<ResponseType, ReponseTypeDTO>()
+                .ForMember(dest => dest.ResponseTypeId, opt => opt.MapFrom(src => src.ResponseTypeId))
+                .ForMember(dest => dest.ResponseName, opt => opt.MapFrom(src => src.ResponseTypeName))
+                .ReverseMap();
+
+            CreateMap<CreateResponseTypeDTO, ResponseType>().ReverseMap();
+            CreateMap<UpdateResponseTypeDTO, ResponseType>().ReverseMap();
         }
     }
 }
