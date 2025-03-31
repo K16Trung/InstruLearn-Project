@@ -20,6 +20,7 @@ namespace InstruLearn_Application.Model.Models
         public Learning_Registration? Registration { get; set; }
         public int? ClassId { get; set; }
         public Class? Class { get; set; }
+        public DateOnly StartDay { get; set; }
         public TimeOnly TimeStart { get; set; }
         public TimeOnly TimeEnd { get; set; }
         public ScheduleMode Mode { get; set; }
