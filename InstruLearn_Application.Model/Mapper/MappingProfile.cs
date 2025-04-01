@@ -482,6 +482,7 @@ namespace InstruLearn_Application.Model.Mapper
             //🔹LevelAssigned mappings
             CreateMap<LevelAssigned, LevelAssignedDTO>()
                 .ForMember(dest => dest.LevelAssignedId, opt => opt.MapFrom(src => src.LevelId))
+                .ForMember(dest => dest.LevelName, opt => opt.MapFrom(src => src.LevelName))
                 .ForMember(dest => dest.MajorId, opt => opt.MapFrom(src => src.MajorId))
                 .ForMember(dest => dest.LevelPrice, opt => opt.MapFrom(src => src.LevelPrice))
                 .ReverseMap();
