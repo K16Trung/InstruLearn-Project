@@ -148,7 +148,7 @@ namespace InstruLearn_Application.BLL.Service
                 // Fetch learning registrations for the learner with all necessary includes
                 var learningRegs = await _unitOfWork.LearningRegisRepository
                     .GetWithIncludesAsync(
-                        x => x.LearnerId == learnerId,
+                        x => x.LearnerId == learnerId && x.Status == LearningRegis.Completed,
                         "Teacher,Learner,LearningRegistrationDay,Schedules"
                     );
 
@@ -280,7 +280,7 @@ namespace InstruLearn_Application.BLL.Service
                 // Fetch learning registrations for the teacher with all necessary includes
                 var learningRegs = await _unitOfWork.LearningRegisRepository
                     .GetWithIncludesAsync(
-                        x => x.TeacherId == teacherId,
+                        x => x.TeacherId == teacherId && x.Status == LearningRegis.Completed,
                         "Teacher,Learner,LearningRegistrationDay,Schedules"
                     );
 
