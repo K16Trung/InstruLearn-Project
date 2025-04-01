@@ -13,6 +13,7 @@ namespace InstruLearn_Application.BLL.Service.IService
         Task<ResponseDTO> CreateTeacherAsync(CreateTeacherDTO createTeacherDTO);
         Task<ResponseDTO> GetTeacherByIdAsync(int teacherId);
         Task<ResponseDTO> UpdateTeacherAsync(int teacherId, UpdateTeacherDTO updateTeacherDTO);
+        Task<ResponseDTO> UpdateMajorTeacherAsync(int teacherId, UpdateMajorTeacherDTO updateMajorTeacherDTO);
         Task<ResponseDTO> DeleteTeacherAsync(int teacherId);
         Task<ResponseDTO> UnbanTeacherAsync(int teacherId);
         Task<List<ResponseDTO>> GetAllTeachersAsync();

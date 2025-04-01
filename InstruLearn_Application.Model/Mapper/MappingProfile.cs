@@ -159,6 +159,7 @@ namespace InstruLearn_Application.Model.Mapper
             // Teacher mapping
             CreateMap<Teacher, TeacherDTO>()
                 .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.Account.IsActive))
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Account.Email))
                 .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.Account.PhoneNumber))
                 .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => src.Account.Gender))
                 .ForMember(dest => dest.Avatar, opt => opt.MapFrom(src => src.Account.Avatar))
@@ -189,7 +190,7 @@ namespace InstruLearn_Application.Model.Mapper
                     }).ToList()));
 
             CreateMap<Teacher, UpdateTeacherDTO>()
-                .ForMember(dest => dest.MajorIds, opt => opt.MapFrom(src => src.TeacherMajors.Select(tm => tm.MajorId)))
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Account.Email))
                 .ForMember(dest => dest.Heading, opt => opt.MapFrom(src => src.Heading))
                 .ForMember(dest => dest.Details, opt => opt.MapFrom(src => src.Details))
                 .ForMember(dest => dest.Links, opt => opt.MapFrom(src => src.Links))
@@ -197,6 +198,10 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => src.Account.Gender))
                 .ForMember(dest => dest.Avatar, opt => opt.MapFrom(src => src.Account.Avatar))
                 .ForMember(dest => dest.Address, opt => opt.MapFrom(src => src.Account.Address))
+                .ReverseMap();
+
+            CreateMap<Teacher, UpdateMajorTeacherDTO>()
+                .ForMember(dest => dest.MajorIds, opt => opt.MapFrom(src => src.TeacherMajors.Select(tm => tm.MajorId).ToList()))
                 .ReverseMap();
 
             CreateMap<CreateTeacherDTO, Teacher>()
@@ -516,6 +521,7 @@ namespace InstruLearn_Application.Model.Mapper
             //🔹LevelAssigned mappings
             CreateMap<LevelAssigned, LevelAssignedDTO>()
                 .ForMember(dest => dest.LevelAssignedId, opt => opt.MapFrom(src => src.LevelId))
+                .ForMember(dest => dest.LevelName, opt => opt.MapFrom(src => src.LevelName))
                 .ForMember(dest => dest.MajorId, opt => opt.MapFrom(src => src.MajorId))
                 .ForMember(dest => dest.LevelPrice, opt => opt.MapFrom(src => src.LevelPrice))
                 .ReverseMap();

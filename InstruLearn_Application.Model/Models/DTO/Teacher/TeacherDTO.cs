@@ -13,6 +13,7 @@ namespace InstruLearn_Application.Model.Models.DTO.Teacher
         public List<MajorDTO> Majors { get; set; } = new List<MajorDTO>();
         public int TeacherId { get; set; }
         public string AccountId { get; set; }
+        public string Email { get; set; }
         public string Fullname { get; set; }
         public string? Heading { get; set; }
         public string? Details { get; set; }
