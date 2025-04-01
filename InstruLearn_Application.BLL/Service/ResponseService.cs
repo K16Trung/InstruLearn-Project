@@ -36,11 +36,11 @@ namespace InstruLearn_Application.BLL.Service
             var responseDtos = responses.Select(r => new ResponseForLearningRegisDTO
             {
                 ResponseId = r.ResponseId,
-                ResponseName = r.ResponseName,
+                ResponseDescription = r.ResponseName, // Changed from ResponseName
                 ResponseTypes = new List<ReponseTypeDTO>
-                {
-                    _mapper.Map<ReponseTypeDTO>(r.ResponseType)
-                }
+            {
+                _mapper.Map<ReponseTypeDTO>(r.ResponseType)
+            }
             });
 
             var responseList = new List<ResponseDTO>();
@@ -72,11 +72,11 @@ namespace InstruLearn_Application.BLL.Service
             var responseDto = new ResponseForLearningRegisDTO
             {
                 ResponseId = response.ResponseId,
-                ResponseName = response.ResponseName,
+                ResponseDescription = response.ResponseName, // Changed from ResponseName
                 ResponseTypes = new List<ReponseTypeDTO>
-                {
-                    _mapper.Map<ReponseTypeDTO>(response.ResponseType)
-                }
+            {
+                _mapper.Map<ReponseTypeDTO>(response.ResponseType)
+            }
             };
 
             return new ResponseDTO
@@ -91,7 +91,6 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                // Check if the response type exists
                 var responseType = await _unitOfWork.ResponseTypeRepository.GetByIdAsync(createResponseDTO.ResponseTypeId);
                 if (responseType == null)
                 {
@@ -102,21 +101,25 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                var response = _mapper.Map<Response>(createResponseDTO);
+                var response = new Response
+                {
+                    ResponseTypeId = createResponseDTO.ResponseTypeId,
+                    ResponseName = createResponseDTO.ResponseDescription // Changed from ResponseName
+                };
+
                 await _unitOfWork.ResponseRepository.AddAsync(response);
                 await _unitOfWork.SaveChangeAsync();
 
-                // Get the newly created response with its response type included
                 var createdResponse = await _unitOfWork.ResponseRepository.GetByIdAsync(response.ResponseId);
 
                 var responseDto = new ResponseForLearningRegisDTO
                 {
                     ResponseId = createdResponse.ResponseId,
-                    ResponseName = createdResponse.ResponseName,
+                    ResponseDescription = createdResponse.ResponseName, // Changed from ResponseName
                     ResponseTypes = new List<ReponseTypeDTO>
-                    {
-                        _mapper.Map<ReponseTypeDTO>(createdResponse.ResponseType)
-                    }
+                {
+                    _mapper.Map<ReponseTypeDTO>(createdResponse.ResponseType)
+                }
                 };
 
                 return new ResponseDTO
@@ -149,23 +152,22 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Only update the ResponseName property
-                response.ResponseName = updateResponseDTO.ResponseName;
+                // Update the ResponseName property using the ResponseDescription from DTO
+                response.ResponseName = updateResponseDTO.ResponseDescription; // Changed from ResponseName
 
                 await _unitOfWork.ResponseRepository.UpdateAsync(response);
                 await _unitOfWork.SaveChangeAsync();
 
-                // Get the updated response with its response type included
                 var updatedResponse = await _unitOfWork.ResponseRepository.GetByIdAsync(responseId);
 
                 var responseDto = new ResponseForLearningRegisDTO
                 {
                     ResponseId = updatedResponse.ResponseId,
-                    ResponseName = updatedResponse.ResponseName,
+                    ResponseDescription = updatedResponse.ResponseName, // Changed from ResponseName
                     ResponseTypes = new List<ReponseTypeDTO>
-                    {
-                        _mapper.Map<ReponseTypeDTO>(updatedResponse.ResponseType)
-                    }
+                {
+                    _mapper.Map<ReponseTypeDTO>(updatedResponse.ResponseType)
+                }
                 };
 
                 return new ResponseDTO

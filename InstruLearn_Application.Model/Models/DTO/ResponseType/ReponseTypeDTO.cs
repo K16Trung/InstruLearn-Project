@@ -9,6 +9,6 @@ namespace InstruLearn_Application.Model.Models.DTO.ResponseType
     public class ReponseTypeDTO
     {
         public int ResponseTypeId { get; set; }
-        public string ResponseName { get; set; }
+        public string ResponseTypeName { get; set; }
     }
 }

@@ -9,6 +9,6 @@ namespace InstruLearn_Application.Model.Models.DTO.Response
     public class CreateResponseDTO
     {
         public int ResponseTypeId { get; set; }
-        public string ResponseName { get; set; }
+        public string ResponseDescription { get; set; }
     }
 }

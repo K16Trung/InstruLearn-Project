@@ -11,6 +11,6 @@ namespace InstruLearn_Application.Model.Models.DTO.Response
     {
         public int ResponseId { get; set; }
         public List<ReponseTypeDTO> ResponseTypes { get; set; } = new List<ReponseTypeDTO>();
-        public string ResponseName { get; set; }
+        public string ResponseDescription { get; set; }
     }
 }

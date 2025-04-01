@@ -8,6 +8,6 @@ namespace InstruLearn_Application.Model.Models.DTO.Response
 {
     public class UpdateResponseDTO
     {
-        public string ResponseName { get; set; }
+        public string ResponseDescription { get; set; }
     }
 }

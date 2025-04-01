@@ -8,6 +8,6 @@ namespace InstruLearn_Application.Model.Models.DTO.ResponseType
 {
     public class UpdateResponseTypeDTO
     {
-        public string ResponseName { get; set; }
+        public string ResponseTypeName { get; set; }
     }
 }

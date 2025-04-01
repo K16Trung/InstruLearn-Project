@@ -360,7 +360,7 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.Learner.Account.PhoneNumber))
                 .ForMember(dest => dest.RegisTypeName, opt => opt.MapFrom(src => src.Learning_Registration_Type.RegisTypeName))
                 .ForMember(dest => dest.MajorName, opt => opt.MapFrom(src => src.Major.MajorName))
-                .ForMember(dest => dest.ResponseName, opt => opt.MapFrom(src => src.Response.ResponseName))
+                .ForMember(dest => dest.ResponseDescription, opt => opt.MapFrom(src => src.Response.ResponseName))
                 .ForMember(dest => dest.LevelName, opt => opt.MapFrom(src => src.LevelAssigned.LevelName))
                 .ForMember(dest => dest.LevelPrice, opt => opt.MapFrom(src => src.LevelAssigned.LevelPrice))
                 .ForMember(dest => dest.LearningDays, opt => opt.MapFrom(src =>
@@ -533,16 +533,21 @@ namespace InstruLearn_Application.Model.Mapper
             //🔹Response mappings
             CreateMap<Response, ResponseForLearningRegisDTO>()
                 .ForMember(dest => dest.ResponseId, opt => opt.MapFrom(src => src.ResponseId))
-                .ForMember(dest => dest.ResponseName, opt => opt.MapFrom(src => src.ResponseName))
+                .ForMember(dest => dest.ResponseDescription, opt => opt.MapFrom(src => src.ResponseName)) // Changed from ResponseName
                 .ForMember(dest => dest.ResponseTypes, opt => opt.MapFrom(src => src.ResponseType));
 
-            CreateMap<CreateResponseDTO, Response>().ReverseMap();
-            CreateMap<UpdateResponseDTO, Response>().ReverseMap();
+            CreateMap<CreateResponseDTO, Response>()
+                .ForMember(dest => dest.ResponseName, opt => opt.MapFrom(src => src.ResponseDescription)) // Changed from ResponseName
+                .ReverseMap();
+
+            CreateMap<UpdateResponseDTO, Response>()
+                .ForMember(dest => dest.ResponseName, opt => opt.MapFrom(src => src.ResponseDescription)) // Changed from ResponseName
+                .ReverseMap();
 
             //🔹ResponseType mappings
             CreateMap<ResponseType, ReponseTypeDTO>()
                 .ForMember(dest => dest.ResponseTypeId, opt => opt.MapFrom(src => src.ResponseTypeId))
-                .ForMember(dest => dest.ResponseName, opt => opt.MapFrom(src => src.ResponseTypeName))
+                .ForMember(dest => dest.ResponseTypeName, opt => opt.MapFrom(src => src.ResponseTypeName))
                 .ReverseMap();
 
             CreateMap<CreateResponseTypeDTO, ResponseType>().ReverseMap();
