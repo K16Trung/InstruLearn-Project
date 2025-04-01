@@ -1,6 +1,7 @@
 ﻿using InstruLearn_Application.BLL.Service;
 using InstruLearn_Application.BLL.Service.IService;
 using InstruLearn_Application.Model.Models.DTO.CourseType;
+using InstruLearn_Application.Model.Models.DTO.Response;
 using InstruLearn_Application.Model.Models.DTO.Syllabus;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
@@ -36,7 +37,7 @@ namespace InstruLearn_Application.Controllers
             return Ok(result);
         }
         
-        [HttpGet("class/{classId}/syllabus")]
+        [HttpGet("class-syllabus/{classId}")]
         public async Task<IActionResult> GetSyllabusByClassId(int classId)
         {
             var result = await _syllabusService.GetSyllabusByClassIdAsync(classId);
@@ -54,30 +55,17 @@ namespace InstruLearn_Application.Controllers
             return Ok(response);
         }
 
-        [HttpPut("{id}")]
+        [HttpPut("update/{id}")]
         public async Task<IActionResult> UpdateSyllabus(int id, [FromBody] UpdateSyllabusDTO updateSyllabusDTO)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
             var result = await _syllabusService.UpdateSyllabusAsync(id, updateSyllabusDTO);
-            if (!result.IsSucceed)
-            {
-                return BadRequest(result);
-            }
             return Ok(result);
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("delete/{id}")]
         public async Task<IActionResult> DeleteSyllabus(int id)
         {
             var result = await _syllabusService.DeleteSyllabusAsync(id);
-            if (!result.IsSucceed)
-            {
-                return NotFound(result);
-            }
             return Ok(result);
         }
     }
