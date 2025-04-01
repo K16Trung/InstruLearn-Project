@@ -113,19 +113,23 @@ namespace InstruLearn_Application.DAL.Repository
         {
             TimeOnly timeEnd = timeStart.AddMinutes(timeLearning);
 
+            // Get day of week if needed for recurring schedules
+            DayOfWeek dayOfWeek = startDay.DayOfWeek;
+
             var busyTeacherIds = await _appDbContext.Schedules
                 .Where(s => s.TeacherId.HasValue &&
                             s.StartDay == startDay &&  // Direct date match
                             (
                                 (s.TimeStart <= timeStart && s.TimeEnd > timeStart) ||  // Overlapping start
                                 (s.TimeStart < timeEnd && s.TimeEnd >= timeEnd) ||      // Overlapping end
-                                (s.TimeStart >= timeStart && s.TimeEnd <= timeEnd)      // Fully inside
+                                (s.TimeStart >= timeStart && s.TimeEnd <= timeEnd) ||   // Fully inside
+                                (timeStart <= s.TimeStart && timeEnd >= s.TimeEnd)      // Completely contains
                             ))
                 .Select(s => s.TeacherId.Value)
                 .Distinct()
                 .ToListAsync();
 
-            Console.WriteLine($"Busy Teacher IDs: {string.Join(", ", busyTeacherIds)}");
+            // If you need to handle recurring schedules based on day of week, add that logic here
 
             // Exclude busy teachers and fetch only those matching the major
             var freeTeacherIds = await _appDbContext.Teachers
@@ -133,8 +137,6 @@ namespace InstruLearn_Application.DAL.Repository
                             !busyTeacherIds.Contains(t.TeacherId))
                 .Select(t => t.TeacherId)
                 .ToListAsync();
-
-            Console.WriteLine($"Available Teacher IDs: {string.Join(", ", freeTeacherIds)}");
 
             return freeTeacherIds;
         }
