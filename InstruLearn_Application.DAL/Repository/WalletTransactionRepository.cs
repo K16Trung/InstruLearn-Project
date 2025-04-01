@@ -25,5 +25,23 @@ namespace InstruLearn_Application.DAL.Repository
             .Include(t => t.Wallet)
             .FirstOrDefaultAsync(t => t.TransactionId == transactionId);
         }
+        public async Task<List<WalletTransaction>> GetAllTransactionsAsync()
+        {
+            return await _appDbContext.WalletTransactions
+                .Include(wt => wt.Wallet)
+                    .ThenInclude(w => w.Learner)
+                .OrderByDescending(wt => wt.TransactionDate)
+                .ToListAsync();
+        }
+
+        public async Task<List<WalletTransaction>> GetTransactionsByWalletIdAsync(int walletId)
+        {
+            return await _appDbContext.WalletTransactions
+                .Where(wt => wt.WalletId == walletId)
+                .Include(wt => wt.Wallet)
+                    .ThenInclude(w => w.Learner)
+                .OrderByDescending(wt => wt.TransactionDate)
+                .ToListAsync();
+        }
     }
 }

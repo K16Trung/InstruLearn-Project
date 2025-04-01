@@ -146,6 +146,7 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<IResponseService, ResponseService>();
             builder.Services.AddScoped<IResponseTypeService, ResponseTypeService>();
             builder.Services.AddScoped<IPaymentService, PaymentService>();
+            builder.Services.AddScoped<IWalletTransactionService, WalletTransactionService>();
             builder.Services.AddAutoMapper(typeof(MappingProfile));
 
             // Add CORS
