@@ -360,6 +360,7 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.Learner.Account.PhoneNumber))
                 .ForMember(dest => dest.RegisTypeName, opt => opt.MapFrom(src => src.Learning_Registration_Type.RegisTypeName))
                 .ForMember(dest => dest.MajorName, opt => opt.MapFrom(src => src.Major.MajorName))
+                .ForMember(dest => dest.ResponseTypeId, opt => opt.MapFrom(src => src.Response.ResponseType.ResponseTypeId))
                 .ForMember(dest => dest.ResponseTypeName, opt => opt.MapFrom(src => src.Response.ResponseType.ResponseTypeName))
                 .ForMember(dest => dest.ResponseDescription, opt => opt.MapFrom(src => src.Response.ResponseName))
                 .ForMember(dest => dest.LevelName, opt => opt.MapFrom(src => src.LevelAssigned.LevelName))

@@ -31,7 +31,7 @@ namespace InstruLearn_Application.DAL.Repository
                 .Include(x => x.Learning_Registration_Type)
                 .Include(x => x.Major)
                 .Include(l => l.Response)
-                     .ThenInclude(r => r.ResponseType)
+                .Include(l => l.Response.ResponseType)
                 .Include(l => l.LevelAssigned)
                 .Include(x => x.LearningRegistrationDay)
                 .ToListAsync();
@@ -48,7 +48,7 @@ namespace InstruLearn_Application.DAL.Repository
                 .Include(x => x.Learning_Registration_Type)
                 .Include(x => x.Major)
                 .Include(l => l.Response)
-                     .ThenInclude(r => r.ResponseType)
+                .Include(l => l.Response.ResponseType)
                 .Include(l => l.LevelAssigned)
                 .Include(x => x.LearningRegistrationDay)
                 .ToListAsync();
