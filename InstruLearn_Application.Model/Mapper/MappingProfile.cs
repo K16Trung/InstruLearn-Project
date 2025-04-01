@@ -37,6 +37,7 @@ using InstruLearn_Application.Model.Models.DTO.Teacher;
 using InstruLearn_Application.Model.Models.DTO.TeacherMajor;
 using InstruLearn_Application.Model.Models.DTO.Test_Result;
 using InstruLearn_Application.Model.Models.DTO.Wallet;
+using InstruLearn_Application.Model.Models.DTO.WalletTransaction;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -549,6 +550,13 @@ namespace InstruLearn_Application.Model.Mapper
 
             // payment mapping
             CreateMap<Payment, PaymentDTO>().ReverseMap();
+
+            //wallet transaction mapping
+            CreateMap<WalletTransaction, WalletTransactionDTO>()
+            .ForMember(dest => dest.TransactionType, opt => opt.MapFrom(src => src.TransactionType.ToString()))
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+            .ForMember(dest => dest.LearnerFullname, opt => opt.MapFrom(src =>
+                src.Wallet.Learner != null ? src.Wallet.Learner.FullName : string.Empty));
         }
     }
 }

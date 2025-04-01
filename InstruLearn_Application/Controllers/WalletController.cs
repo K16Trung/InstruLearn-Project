@@ -30,12 +30,30 @@ namespace InstruLearn_Application.Controllers
         [HttpPost("update-payment-status")]
         public async Task<IActionResult> UpdatePaymentStatus([FromBody] PaymentStatusRequest request)
         {
-            if (request == null || string.IsNullOrEmpty(request.OrderCode) || string.IsNullOrEmpty(request.Status))
+            if (request == null || string.IsNullOrEmpty(request.OrderCode))
             {
                 return BadRequest(new { message = "Invalid request parameters" });
             }
 
-            var result = await _walletService.UpdatePaymentStatusAsync(request.OrderCode, request.Status);
+            var result = await _walletService.UpdatePaymentStatusAsync(request.OrderCode);
+
+            if (!result.IsSucceed)
+            {
+                return BadRequest(new { message = result.Message });
+            }
+
+            return Ok(new { message = "Payment status updated successfully" });
+        }
+        
+        [HttpPost("update-fail-payment-status")]
+        public async Task<IActionResult> FailedPaymentStatus([FromBody] PaymentStatusRequest request)
+        {
+            if (request == null || string.IsNullOrEmpty(request.OrderCode))
+            {
+                return BadRequest(new { message = "Invalid request parameters" });
+            }
+
+            var result = await _walletService.FailPaymentAsync(request.OrderCode);
 
             if (!result.IsSucceed)
             {

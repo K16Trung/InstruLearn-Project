@@ -99,29 +99,84 @@ namespace InstruLearn_Application.BLL.Service
             };
         }
 
-        public async Task<ResponseDTO> UpdatePaymentStatusAsync(string orderCode, string status)
+        public async Task<ResponseDTO> UpdatePaymentStatusAsync(string orderCode)
         {
             var transaction = await _unitOfWork.WalletTransactionRepository
-                .GetTransactionWithWalletAsync(orderCode);
-
+        .GetTransactionWithWalletAsync(orderCode);
 
             if (transaction == null)
             {
                 return new ResponseDTO { IsSucceed = false, Message = "Transaction not found" };
             }
 
-            if (status.ToUpper() == "PAID")
+            // Check if transaction is already completed
+            if (transaction.Status == TransactionStatus.Complete)
             {
-                transaction.Status = TransactionStatus.Complete;
-                transaction.Wallet.Balance += transaction.Amount;
-            }
-            else if (status.ToUpper() == "FAILED" || status.ToUpper() == "CANCELED")
-            {
-                transaction.Status = TransactionStatus.Failed;
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Transaction is already completed"
+                };
             }
 
-            await _unitOfWork.SaveChangeAsync();
-            return new ResponseDTO { IsSucceed = true, Message = "Payment status updated" };
+            // Begin transaction to ensure atomicity
+            using var dbTransaction = await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                // Update status to Complete
+                transaction.Status = TransactionStatus.Complete;
+
+                // Add the amount to the wallet balance
+                transaction.Wallet.Balance += transaction.Amount;
+
+                await _unitOfWork.SaveChangeAsync();
+                await dbTransaction.CommitAsync();
+
+                return new ResponseDTO { IsSucceed = true, Message = "Payment completed successfully" };
+            }
+            catch (Exception ex)
+            {
+                await dbTransaction.RollbackAsync();
+                return new ResponseDTO { IsSucceed = false, Message = $"Error completing payment: {ex.Message}" };
+            }
+        }
+
+        public async Task<ResponseDTO> FailPaymentAsync(string orderCode)
+        {
+            var transaction = await _unitOfWork.WalletTransactionRepository
+                .GetTransactionWithWalletAsync(orderCode);
+
+            if (transaction == null)
+            {
+                return new ResponseDTO { IsSucceed = false, Message = "Transaction not found" };
+            }
+
+            // Check if transaction is already in a final state
+            if (transaction.Status == TransactionStatus.Complete ||
+                transaction.Status == TransactionStatus.Failed)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Cannot update transaction that is already in {transaction.Status} status"
+                };
+            }
+
+            try
+            {
+                // Update status to Failed
+                transaction.Status = TransactionStatus.Failed;
+
+                // No balance update needed for failed transactions
+
+                await _unitOfWork.SaveChangeAsync();
+
+                return new ResponseDTO { IsSucceed = true, Message = "Payment marked as failed" };
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO { IsSucceed = false, Message = $"Error updating payment status: {ex.Message}" };
+            }
         }
 
         public async Task<ResponseDTO> GetWalletByLearnerIdAsync(int learnerId)
