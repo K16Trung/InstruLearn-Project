@@ -129,14 +129,17 @@ namespace InstruLearn_Application.DAL.Repository
                 .Distinct()
                 .ToListAsync();
 
-            // If you need to handle recurring schedules based on day of week, add that logic here
-
-            // Exclude busy teachers and fetch only those matching the major
-            var freeTeacherIds = await _appDbContext.Teachers
-                .Where(t => t.TeacherMajors.Any(tm => tm.MajorId == majorId) &&
-                            !busyTeacherIds.Contains(t.TeacherId))
-                .Select(t => t.TeacherId)
+            // Get teachers who have an active relationship with the specified major
+            var activeTeacherIdsForMajor = await _appDbContext.TeacherMajors
+                .Where(tm => tm.MajorId == majorId &&
+                             tm.Status == TeacherMajorStatus.Free)  // Assuming 1 is Active
+                .Select(tm => tm.TeacherId)
                 .ToListAsync();
+
+            // Exclude busy teachers from the active teachers
+            var freeTeacherIds = activeTeacherIdsForMajor
+                .Where(teacherId => !busyTeacherIds.Contains(teacherId))
+                .ToList();
 
             return freeTeacherIds;
         }
