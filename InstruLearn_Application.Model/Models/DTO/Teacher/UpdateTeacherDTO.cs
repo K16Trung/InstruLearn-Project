@@ -8,6 +8,7 @@ namespace InstruLearn_Application.Model.Models.DTO.Teacher
 {
     public class UpdateTeacherDTO
     {
+        public string Email { get; set; }
         public string Heading { get; set; }
         public string Details { get; set; }
         public string Links { get; set; }
