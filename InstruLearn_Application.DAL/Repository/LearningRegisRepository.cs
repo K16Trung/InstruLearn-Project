@@ -3,9 +3,11 @@ using InstruLearn_Application.Model.Data;
 using InstruLearn_Application.Model.Enum;
 using InstruLearn_Application.Model.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -78,5 +80,18 @@ namespace InstruLearn_Application.DAL.Repository
                 .FirstOrDefaultAsync(l => l.LearningRegisId == id);
         }
 
+        public async Task<Learning_Registration?> GetFirstOrDefaultAsync(
+            Expression<Func<Learning_Registration, bool>> predicate,
+            Func<IQueryable<Learning_Registration>, IIncludableQueryable<Learning_Registration, object>>? include = null)
+        {
+            IQueryable<Learning_Registration> query = _appDbContext.Learning_Registrations;
+
+            if (include != null)
+                query = include(query);
+            else
+                query = query.Include(lr => lr.LearningRegistrationDay); // ✅ Ensure it is included
+
+            return await query.FirstOrDefaultAsync(predicate);
+        }
     }
 }

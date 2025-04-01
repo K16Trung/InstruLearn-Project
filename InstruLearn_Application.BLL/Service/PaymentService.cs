@@ -89,7 +89,7 @@ namespace InstruLearn_Application.BLL.Service
                 await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
 
                 // ✅ Create schedules for learner and teacher
-                var schedules = DateTimeHelper.GenerateOnonOnSchedules(learningRegis);
+                var schedules = DateTimeHelper.GenerateOneOnOneSchedules(learningRegis);
                 await _unitOfWork.ScheduleRepository.AddRangeAsync(schedules);
 
                 await _unitOfWork.SaveChangeAsync();

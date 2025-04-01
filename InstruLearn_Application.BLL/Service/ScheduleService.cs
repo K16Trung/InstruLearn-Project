@@ -5,8 +5,11 @@ using InstruLearn_Application.DAL.UoW.IUoW;
 using InstruLearn_Application.Model.Enum;
 using InstruLearn_Application.Model.Models;
 using InstruLearn_Application.Model.Models.DTO;
+using InstruLearn_Application.Model.Models.DTO.LearningRegistration;
 using InstruLearn_Application.Model.Models.DTO.ScheduleDays;
 using InstruLearn_Application.Model.Models.DTO.Schedules;
+using InstruLearn_Application.Model.Models.DTO.Teacher;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -59,9 +62,9 @@ namespace InstruLearn_Application.BLL.Service
                 // Find the first valid session day from the registrationStartDay's day of the week
                 var currentDayOfWeek = registrationStartDate.DayOfWeek;
                 var learningDaysStartingFromRegistration = orderedLearningDays
-                    .SkipWhile(day => (DayOfWeek)day.DayOfWeek < currentDayOfWeek) // Skip days before the registration day
-                    .Concat(orderedLearningDays) // Handle circular day-of-week loop
-                    .Take(orderedLearningDays.Count); // Avoid duplicate iterations
+                    .Where(day => (DayOfWeek)day.DayOfWeek >= currentDayOfWeek) // Start from the first available learning day
+                    .Concat(orderedLearningDays.Where(day => (DayOfWeek)day.DayOfWeek < currentDayOfWeek)) // Append remaining days
+                    .ToList();
 
                 // Loop until the required number of sessions is generated
                 while (sessionCount < learningRegis.NumberOfSession)
@@ -84,7 +87,7 @@ namespace InstruLearn_Application.BLL.Service
                                 TimeStart = learningRegis.TimeStart.ToString("HH:mm"),
                                 TimeEnd = learningRegis.TimeStart.AddMinutes(learningRegis.TimeLearning).ToString("HH:mm"),
                                 DayOfWeek = nextSessionDate.DayOfWeek.ToString(),
-                                StartDate = nextSessionDate.ToString("yyyy-MM-dd"),
+                                //StartDay = nextSessionDate.ToString("yyyy-MM-dd"),
                                 TeacherId = learningRegis.TeacherId,
                                 LearnerId = learningRegis.LearnerId,
                                 RegistrationStartDay = learningRegis.StartDay,
@@ -128,14 +131,28 @@ namespace InstruLearn_Application.BLL.Service
             return startDate.AddDays(daysUntilNextSession);
         }
 
+        // get correct
         public async Task<ResponseDTO> GetSchedulesByLearnerIdAsync(int learnerId)
         {
             try
             {
-                var learningRegs = await _unitOfWork.LearningRegisRepository
-                    .GetWithIncludesAsync(x => x.LearnerId == learnerId, "Teacher,Learner,LearningRegistrationDay,Schedules");
+                if (learnerId <= 0)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Invalid learner ID."
+                    };
+                }
 
-                if (learningRegs == null || learningRegs.Count == 0)
+                // Fetch learning registrations for the learner with all necessary includes
+                var learningRegs = await _unitOfWork.LearningRegisRepository
+                    .GetWithIncludesAsync(
+                        x => x.LearnerId == learnerId,
+                        "Teacher,Learner,LearningRegistrationDay,Schedules"
+                    );
+
+                if (learningRegs == null || !learningRegs.Any())
                 {
                     return new ResponseDTO
                     {
@@ -148,8 +165,6 @@ namespace InstruLearn_Application.BLL.Service
 
                 foreach (var learningRegis in learningRegs)
                 {
-                    int sessionCount = 0;
-
                     if (!learningRegis.StartDay.HasValue)
                     {
                         return new ResponseDTO
@@ -159,49 +174,76 @@ namespace InstruLearn_Application.BLL.Service
                         };
                     }
 
-                    var registrationStartDate = learningRegis.StartDay.Value.ToDateTime(TimeOnly.MinValue);
-                    var orderedLearningDays = learningRegis.LearningRegistrationDay.OrderBy(day => day.DayOfWeek).ToList();
+                    // Use DateOnly instead of DateTime for the start date
+                    DateOnly registrationStartDate = learningRegis.StartDay.Value;
+                    var orderedLearningDays = learningRegis.LearningRegistrationDay
+                        .OrderBy(day => day.DayOfWeek)
+                        .ToList();
 
-                    // Continue scheduling sessions until the required number is reached
+                    var existingSchedules = learningRegis.Schedules
+                        .Where(s => s.Mode == ScheduleMode.OneOnOne)
+                        .OrderBy(s => s.StartDay)
+                        .ToList();
+
+                    int sessionCount = 0;
+                    int existingScheduleCount = existingSchedules.Count;
+                    DateOnly currentDate = registrationStartDate;
+
+                    // Generate schedules based on the number of sessions
                     while (sessionCount < learningRegis.NumberOfSession)
                     {
-                        foreach (var learningDay in orderedLearningDays)
+                        // Find the next valid learning day from the current date
+                        DayOfWeek currentDayOfWeek = currentDate.DayOfWeek;
+                        var nextLearningDays = orderedLearningDays
+                            .OrderBy(ld => ((int)ld.DayOfWeek - (int)currentDayOfWeek + 7) % 7)
+                            .ToList();
+
+                        if (!nextLearningDays.Any())
+                            break;
+
+                        // Get the next closest learning day
+                        var nextLearningDay = nextLearningDays.First();
+                        int daysToAdd = ((int)nextLearningDay.DayOfWeek - (int)currentDayOfWeek + 7) % 7;
+
+                        // If we are already on a learning day (daysToAdd would be 0), use that day
+                        // Otherwise, advance to the next scheduled day
+                        DateOnly scheduleStartDate = currentDate.AddDays(daysToAdd);
+
+                        // Get existing schedule if one exists for this session
+                        var existingSchedule = sessionCount < existingScheduleCount ? existingSchedules[sessionCount] : null;
+
+                        // Create schedule if it doesn't already exist in our list for this date and learning registration
+                        if (!schedules.Any(s => s.StartDay == scheduleStartDate && s.LearningRegisId == learningRegis.LearningRegisId))
                         {
-                            // Check if the registrationStartDate matches a valid learning day
-                            if (registrationStartDate.DayOfWeek == (DayOfWeek)learningDay.DayOfWeek && sessionCount < learningRegis.NumberOfSession)
+                            // Ensure LearningRegisId is set in the schedule
+                            schedules.Add(new ScheduleDTO
                             {
-                                var existingSchedule = learningRegis.Schedules.ElementAtOrDefault(sessionCount);
-
-                                var schedule = new ScheduleDTO
+                                ScheduleId = existingSchedule?.ScheduleId ?? 0,
+                                Mode = existingSchedule?.Mode ?? ScheduleMode.OneOnOne,
+                                TimeStart = learningRegis.TimeStart.ToString("HH:mm"),
+                                TimeEnd = learningRegis.TimeStart.AddMinutes(learningRegis.TimeLearning).ToString("HH:mm"),
+                                DayOfWeek = scheduleStartDate.DayOfWeek.ToString(),
+                                StartDay = scheduleStartDate, // Store the DateOnly object
+                                TeacherId = learningRegis.TeacherId,
+                                TeacherName = learningRegis.Teacher?.Fullname ?? "N/A",
+                                LearnerId = learningRegis.LearnerId,
+                                LearnerName = learningRegis.Learner?.FullName ?? "N/A",
+                                ClassId = learningRegis.ClassId,
+                                ClassName = learningRegis.Classes?.ClassName ?? "N/A",
+                                RegistrationStartDay = learningRegis.StartDay,
+                                LearningRegisId = learningRegis.LearningRegisId,
+                                ScheduleDays = orderedLearningDays.Select(day => new ScheduleDaysDTO
                                 {
-                                    ScheduleId = existingSchedule?.ScheduleId ?? 0,
-                                    Mode = existingSchedule?.Mode ?? 0,
-                                    TimeStart = learningRegis.TimeStart.ToString("HH:mm"),
-                                    TimeEnd = learningRegis.TimeStart.AddMinutes(learningRegis.TimeLearning).ToString("HH:mm"),
-                                    DayOfWeek = registrationStartDate.DayOfWeek.ToString(),
-                                    StartDate = registrationStartDate.ToString("yyyy-MM-dd"),
-                                    TeacherId = learningRegis.TeacherId,
-                                    TeacherName = learningRegis.Teacher.Fullname,
-                                    LearnerId = learningRegis.LearnerId,
-                                    LearnerName = learningRegis.Learner.FullName,
-                                    RegistrationStartDay = learningRegis.StartDay,
-                                    LearningRegisId = learningRegis.LearningRegisId,
-                                    ScheduleDays = orderedLearningDays.Select(day => new ScheduleDaysDTO
-                                    {
-                                        DayOfWeeks = (DayOfWeeks)day.DayOfWeek
-                                    }).ToList()
-                                };
+                                    DayOfWeeks = (DayOfWeeks)day.DayOfWeek
+                                }).ToList()
+                            });
 
-                                schedules.Add(schedule);
-                                sessionCount++;
-                            }
+                            sessionCount++;
                         }
 
-                        // Increment the date after checking all learning days
-                        registrationStartDate = registrationStartDate.AddDays(1);
+                        // Move to the next day to find the next schedule
+                        currentDate = scheduleStartDate.AddDays(1);
                     }
-
-
                 }
 
                 return new ResponseDTO
@@ -216,19 +258,33 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Failed to retrieve schedules. " + ex.Message
+                    Message = $"Failed to retrieve schedules: {ex.Message}"
                 };
             }
         }
 
+        // get correct
         public async Task<ResponseDTO> GetSchedulesByTeacherIdAsync(int teacherId)
         {
             try
             {
-                var learningRegs = await _unitOfWork.LearningRegisRepository
-                    .GetWithIncludesAsync(x => x.TeacherId == teacherId, "Teacher,Learner,LearningRegistrationDay,Schedules");
+                if (teacherId <= 0)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Invalid teacher ID."
+                    };
+                }
 
-                if (learningRegs == null || learningRegs.Count == 0)
+                // Fetch learning registrations for the teacher with all necessary includes
+                var learningRegs = await _unitOfWork.LearningRegisRepository
+                    .GetWithIncludesAsync(
+                        x => x.TeacherId == teacherId,
+                        "Teacher,Learner,LearningRegistrationDay,Schedules"
+                    );
+
+                if (learningRegs == null || !learningRegs.Any())
                 {
                     return new ResponseDTO
                     {
@@ -241,8 +297,6 @@ namespace InstruLearn_Application.BLL.Service
 
                 foreach (var learningRegis in learningRegs)
                 {
-                    int sessionCount = 0;
-
                     if (!learningRegis.StartDay.HasValue)
                     {
                         return new ResponseDTO
@@ -252,46 +306,73 @@ namespace InstruLearn_Application.BLL.Service
                         };
                     }
 
-                    var registrationStartDate = learningRegis.StartDay.Value.ToDateTime(TimeOnly.MinValue);
-                    var orderedLearningDays = learningRegis.LearningRegistrationDay.OrderBy(day => day.DayOfWeek).ToList();
+                    // Use DateOnly instead of DateTime for the start date
+                    DateOnly registrationStartDate = learningRegis.StartDay.Value;
+                    var orderedLearningDays = learningRegis.LearningRegistrationDay
+                        .OrderBy(day => day.DayOfWeek)
+                        .ToList();
 
-                    // Continue scheduling sessions until the required number is reached
+                    var existingSchedules = learningRegis.Schedules
+                        .Where(s => s.Mode == ScheduleMode.OneOnOne)
+                        .OrderBy(s => s.StartDay)
+                        .ToList();
+
+                    int sessionCount = 0;
+                    int existingScheduleCount = existingSchedules.Count;
+                    DateOnly currentDate = registrationStartDate;
+
+                    // Generate schedules based on the number of sessions
                     while (sessionCount < learningRegis.NumberOfSession)
                     {
-                        foreach (var learningDay in orderedLearningDays)
+                        // Find the next valid learning day from the current date
+                        DayOfWeek currentDayOfWeek = currentDate.DayOfWeek;
+                        var nextLearningDays = orderedLearningDays
+                            .OrderBy(ld => ((int)ld.DayOfWeek - (int)currentDayOfWeek + 7) % 7)
+                            .ToList();
+
+                        if (!nextLearningDays.Any())
+                            break;
+
+                        // Get the next closest learning day
+                        var nextLearningDay = nextLearningDays.First();
+                        int daysToAdd = ((int)nextLearningDay.DayOfWeek - (int)currentDayOfWeek + 7) % 7;
+
+                        // If we are already on a learning day (daysToAdd would be 0), use that day
+                        // Otherwise, advance to the next scheduled day
+                        DateOnly scheduleStartDate = currentDate.AddDays(daysToAdd);
+
+                        // Get existing schedule if one exists for this session
+                        var existingSchedule = sessionCount < existingScheduleCount ? existingSchedules[sessionCount] : null;
+
+                        // Create schedule if it doesn't already exist in our list for this date and learning registration
+                        if (!schedules.Any(s => s.StartDay == scheduleStartDate && s.LearningRegisId == learningRegis.LearningRegisId))
                         {
-                            // Check if the registrationStartDate matches a valid learning day
-                            if (registrationStartDate.DayOfWeek == (DayOfWeek)learningDay.DayOfWeek && sessionCount < learningRegis.NumberOfSession)
+                            // Ensure LearningRegisId is set in the schedule
+                            schedules.Add(new ScheduleDTO
                             {
-                                var existingSchedule = learningRegis.Schedules.ElementAtOrDefault(sessionCount);
-
-                                var schedule = new ScheduleDTO
+                                ScheduleId = existingSchedule?.ScheduleId ?? 0,
+                                Mode = existingSchedule?.Mode ?? ScheduleMode.OneOnOne,
+                                TimeStart = learningRegis.TimeStart.ToString("HH:mm"),
+                                TimeEnd = learningRegis.TimeStart.AddMinutes(learningRegis.TimeLearning).ToString("HH:mm"),
+                                DayOfWeek = scheduleStartDate.DayOfWeek.ToString(),
+                                StartDay = scheduleStartDate, // Store the DateOnly object
+                                TeacherId = learningRegis.TeacherId,
+                                TeacherName = learningRegis.Teacher?.Fullname ?? "N/A",
+                                LearnerId = learningRegis.LearnerId,
+                                LearnerName = learningRegis.Learner?.FullName ?? "N/A",
+                                RegistrationStartDay = learningRegis.StartDay,
+                                LearningRegisId = learningRegis.LearningRegisId,
+                                ScheduleDays = orderedLearningDays.Select(day => new ScheduleDaysDTO
                                 {
-                                    ScheduleId = existingSchedule?.ScheduleId ?? 0,
-                                    Mode = existingSchedule?.Mode ?? 0,
-                                    TimeStart = learningRegis.TimeStart.ToString("HH:mm"),
-                                    TimeEnd = learningRegis.TimeStart.AddMinutes(learningRegis.TimeLearning).ToString("HH:mm"),
-                                    DayOfWeek = registrationStartDate.DayOfWeek.ToString(),
-                                    StartDate = registrationStartDate.ToString("yyyy-MM-dd"),
-                                    TeacherId = learningRegis.TeacherId,
-                                    TeacherName = learningRegis.Teacher.Fullname,
-                                    LearnerId = learningRegis.LearnerId,
-                                    LearnerName = learningRegis.Learner.FullName,
-                                    RegistrationStartDay = learningRegis.StartDay,
-                                    LearningRegisId = learningRegis.LearningRegisId,
-                                    ScheduleDays = orderedLearningDays.Select(day => new ScheduleDaysDTO
-                                    {
-                                        DayOfWeeks = (DayOfWeeks)day.DayOfWeek
-                                    }).ToList()
-                                };
+                                    DayOfWeeks = (DayOfWeeks)day.DayOfWeek
+                                }).ToList()
+                            });
 
-                                schedules.Add(schedule);
-                                sessionCount++;
-                            }
+                            sessionCount++;
                         }
 
-                        // Increment the date after checking all learning days
-                        registrationStartDate = registrationStartDate.AddDays(1);
+                        // Move to the next day to find the next schedule
+                        currentDate = scheduleStartDate.AddDays(1);
                     }
                 }
 
@@ -307,7 +388,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Failed to retrieve schedules. " + ex.Message
+                    Message = $"Failed to retrieve schedules: {ex.Message}"
                 };
             }
         }
@@ -335,5 +416,19 @@ namespace InstruLearn_Application.BLL.Service
             };
         }
 
+        public async Task<List<ValidTeacherDTO>> GetAvailableTeachersAsync(int majorId, TimeOnly timeStart, int timeLearning, DateOnly startDay)
+        {
+            var freeTeacherIds = await _unitOfWork.ScheduleRepository.GetFreeTeacherIdsAsync(majorId, timeStart, timeLearning, startDay);
+
+            if (!freeTeacherIds.Any())
+            {
+                return new List<ValidTeacherDTO>(); // No available teachers
+            }
+
+            var availableTeachers = await _unitOfWork.TeacherRepository
+                .GetSchedulesTeachersByIdsAsync(freeTeacherIds);
+
+            return _mapper.Map<List<ValidTeacherDTO>>(availableTeachers);
+        }
     }
 }

@@ -36,5 +36,18 @@ namespace InstruLearn_Application.DAL.Repository
                 .ThenInclude(tm => tm.Major)
                 .FirstOrDefaultAsync(t => t.TeacherId == teacherId);
         }
+        public async Task<List<Teacher>> GetSchedulesTeachersByIdsAsync(List<int> teacherIds)
+        {
+            if (teacherIds == null || !teacherIds.Any())
+            {
+                return new List<Teacher>(); // Return empty if no free teachers
+            }
+
+            return await _appDbContext.Teachers
+                .Include(t => t.TeacherMajors)  // Ensure Majors are loaded
+                    .ThenInclude(tm => tm.Major) // Ensure Major details are loaded
+                .Where(t => teacherIds.Contains(t.TeacherId))
+                .ToListAsync();
+        }
     }
 }

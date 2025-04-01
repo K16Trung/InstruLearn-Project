@@ -39,9 +39,11 @@ using InstruLearn_Application.Model.Models.DTO.Test_Result;
 using InstruLearn_Application.Model.Models.DTO.Wallet;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static DateTimeHelper;
 using static InstruLearn_Application.Model.Models.DTO.PurchaseItem.CreatePurchaseItemDTO;
 
 namespace InstruLearn_Application.Model.Mapper
@@ -175,6 +177,17 @@ namespace InstruLearn_Application.Model.Mapper
                         : new List<MajorDTO>()))
                 .ReverseMap()
                 .ForMember(dest => dest.TeacherMajors, opt => opt.Ignore());
+
+            // New mapping for ValidTeacherDTO
+            CreateMap<Teacher, ValidTeacherDTO>()
+                .ForMember(dest => dest.TeacherId, opt => opt.MapFrom(src => src.TeacherId))
+                .ForMember(dest => dest.Fullname, opt => opt.MapFrom(src => src.Fullname))
+                .ForMember(dest => dest.Majors, opt => opt.MapFrom(src =>
+                    src.TeacherMajors.Select(tm => new MajorDTO
+                    {
+                        MajorId = tm.Major.MajorId,
+                        MajorName = tm.Major.MajorName
+                    }).ToList()));
 
             CreateMap<Teacher, UpdateTeacherDTO>()
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Account.Email))
@@ -430,22 +443,48 @@ namespace InstruLearn_Application.Model.Mapper
 
             // 🔹Schedules mapping
 
+            // For DateOnly conversion
+            CreateMap<string, DateOnly>()
+                .ConvertUsing(new DateOnlyTypeConverter());
+
+            // For TimeOnly conversion
+            CreateMap<string, TimeOnly>()
+                .ConvertUsing(new TimeOnlyTypeConverter());
+
+            CreateMap<DateOnly, string>()
+                .ConvertUsing(d => d.ToString("yyyy-MM-dd"));
+
+            CreateMap<TimeOnly, string>()
+                .ConvertUsing(t => t.ToString("HH:mm"));
+
             CreateMap<Schedules, ScheduleDTO>()
                 .ForMember(dest => dest.ClassName, opt => opt.MapFrom(src => src.Class != null ? src.Class.ClassName : null))
                 .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Teacher.Fullname))
                 .ForMember(dest => dest.ScheduleDays, opt => opt.MapFrom(src => src.ScheduleDays))
                 .ForMember(dest => dest.classDayDTOs, opt => opt.MapFrom(src => src.ClassDays))
+                .ForMember(dest => dest.StartDay, opt => opt.MapFrom(src => src.StartDay))
 
                 .ForMember(dest => dest.Mode, opt => opt.MapFrom(src => src.Mode));
 
             CreateMap<Schedules, ScheduleDTO>()
                 .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Teacher.Fullname))
+                .ForMember(dest => dest.LearnerName, opt => opt.MapFrom(src => src.Learner.FullName))
                 .ForMember(dest => dest.ClassName, opt => opt.MapFrom(src => src.Class.ClassName))
+                .ForMember(dest => dest.StartDay, opt => opt.MapFrom(src => src.StartDay))
                 .ForMember(dest => dest.TimeStart, opt => opt.MapFrom(src => src.TimeStart.ToString("HH:mm")))
                 .ForMember(dest => dest.TimeEnd, opt => opt.MapFrom(src => src.TimeEnd.ToString("HH:mm")))
+                .ForMember(dest => dest.ScheduleDays, opt => opt.MapFrom(src => src.ScheduleDays))
+                .ForMember(dest => dest.classDayDTOs, opt => opt.MapFrom(src => src.ClassDays))
+                .ForMember(dest => dest.RegistrationStartDay, opt => opt.MapFrom(src => src.Registration != null ? src.Registration.StartDay : null))
+                .ForMember(dest => dest.LearningRegisId, opt => opt.MapFrom(src => src.LearningRegisId ?? 0))
                 .ForMember(dest => dest.DayOfWeek, opt => opt.MapFrom(src =>
-                    string.Join(", ", src.ScheduleDays.Select(sd => sd.DayOfWeeks.ToString()))))
-                .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => src.Class.StartDate.ToString("yyyy-MM-dd")));
+                    string.Join(", ", src.ScheduleDays.Select(sd => sd.DayOfWeeks.ToString()))));
+                //.ForMember(dest => dest.StartDay, opt => opt.MapFrom(src => src.Class.StartDate.ToString("yyyy-MM-dd")));
+
+            CreateMap<Schedules, OneOnOneRegisDTO>()
+            .ForMember(dest => dest.TimeStart, opt => opt.MapFrom(src => src.TimeEnd)) // Adjust as per your properties
+            .ForMember(dest => dest.TimeEnd, opt => opt.MapFrom(src => src.TimeEnd))     // Adjust as per your properties
+            .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Teacher.Fullname)); // Adjust as per your properties
 
 
             CreateMap<CreateScheduleDTO, Schedules>()

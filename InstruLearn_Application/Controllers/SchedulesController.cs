@@ -62,5 +62,12 @@ namespace InstruLearn_Application.Controllers
             return Ok(response);
         }
 
+        [HttpGet("available-teachers")]
+        public async Task<IActionResult> GetAvailableTeachers([FromQuery] int majorId, [FromQuery] TimeOnly timeStart, [FromQuery] int timeLearning, [FromQuery] DateOnly startDay)
+        {
+            var result = await _scheduleService.GetAvailableTeachersAsync(majorId, timeStart, timeLearning, startDay);
+            return Ok(result);
+        }
+
     }
 }

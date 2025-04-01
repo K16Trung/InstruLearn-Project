@@ -113,6 +113,9 @@ namespace InstruLearn_Application.BLL.Service
             classObj.Teacher = teacher;
             classObj.CoursePackage = coursePackage;
 
+            // Calculate the end date for the class
+            DateOnly endDate = DateTimeHelper.CalculateEndDate(createClassDTO.StartDate, createClassDTO.totalDays, createClassDTO.ClassDays);
+
             // Determine class status based on the current date
             DateTime now = DateTime.Now;
             if (createClassDTO.StartDate.ToDateTime(new TimeOnly(0, 0)) > now)
@@ -120,7 +123,7 @@ namespace InstruLearn_Application.BLL.Service
                 classObj.Status = ClassStatus.Scheduled;
             }
             else if (createClassDTO.StartDate.ToDateTime(new TimeOnly(0, 0)) <= now &&
-                     createClassDTO.StartDate.AddDays(createClassDTO.totalDays - 1).ToDateTime(new TimeOnly(23, 59)) >= now)
+                     endDate.ToDateTime(new TimeOnly(23, 59)) >= now)
             {
                 classObj.Status = ClassStatus.Ongoing;
             }
@@ -132,7 +135,7 @@ namespace InstruLearn_Application.BLL.Service
             // Add ClassDays
             classObj.ClassDays = createClassDTO.ClassDays.Select(day => new Model.Models.ClassDay
             {
-                Day = day,  // Assuming Day is stored as an enum in your ClassDay model
+                Day = day,
             }).ToList();
 
             // Save the class in the database
@@ -151,19 +154,18 @@ namespace InstruLearn_Application.BLL.Service
                     teacherSchedules.Add(new Schedules
                     {
                         TeacherId = teacher.TeacherId,
-                        ClassId = classObj.ClassId,  // Assign newly created class ID
+                        ClassId = classObj.ClassId,
+                        StartDay = currentDate,  // Use the actual current date for each schedule
                         TimeStart = createClassDTO.ClassTime,
-                        TimeEnd = createClassDTO.ClassTime.AddHours(2),  // Assuming class duration is 2 hours
-                        Mode = ScheduleMode.Center,  // Change as needed
+                        TimeEnd = createClassDTO.ClassTime.AddHours(2),
+                        Mode = ScheduleMode.Center,
                         ScheduleDays = new List<ScheduleDays>
                 {
                     new ScheduleDays { DayOfWeeks = (DayOfWeeks)currentDate.DayOfWeek }
                 }
                     });
-
                     classDaysCount++;
                 }
-
                 currentDate = currentDate.AddDays(1);
             }
 
@@ -175,6 +177,15 @@ namespace InstruLearn_Application.BLL.Service
             {
                 IsSucceed = true,
                 Message = "Đã thêm lớp thành công",
+                Data = new
+                {
+                    ClassId = classObj.ClassId,
+                    StartDate = createClassDTO.StartDate,
+                    EndDate = endDate,
+                    TotalDays = createClassDTO.totalDays,
+                    ClassDays = createClassDTO.ClassDays,
+                    ScheduleCount = teacherSchedules.Count
+                }
             };
         }
 
