@@ -52,6 +52,7 @@ namespace InstruLearn_Application.BLL.Service
                 WalletId = wallet.WalletId,
                 Amount = amount,
                 TransactionId = Guid.NewGuid().ToString(),
+                //OrderCode = orderCode,
                 TransactionType = TransactionType.AddFuns,
                 Status = TransactionStatus.Pending,
                 TransactionDate = DateTime.Now
