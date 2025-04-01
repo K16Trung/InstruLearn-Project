@@ -19,6 +19,8 @@ namespace InstruLearn_Application.Model.Models.DTO.LearningRegistration
         public string RegisTypeName { get; set; }
         public int MajorId { get; set; }
         public string MajorName { get; set; }
+        public int ResponseTypeId { get; set; }
+        public string ResponseTypeName { get; set; }
         public int ResponseId { get; set; }
         public string ResponseDescription { get; set; }
         public int LevelId { get; set; }
