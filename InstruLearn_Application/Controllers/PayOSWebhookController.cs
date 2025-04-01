@@ -1,5 +1,7 @@
-﻿using InstruLearn_Application.BLL.Service.IService;
+﻿using InstruLearn_Application.BLL.Service;
+using InstruLearn_Application.BLL.Service.IService;
 using InstruLearn_Application.Model.Models.DTO.PayOSWebhook;
+using InstruLearn_Application.Model.Models.DTO.Wallet;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,24 +12,34 @@ namespace InstruLearn_Application.Controllers
     public class PayOSWebhookController : ControllerBase
     {
         private readonly IPayOSWebhookService _payOSWebhookService;
+        private readonly IWalletService _walletService;
 
-        public PayOSWebhookController(IPayOSWebhookService payOSWebhookService)
+        public PayOSWebhookController(IPayOSWebhookService payOSWebhookService, IWalletService walletService)
         {
             _payOSWebhookService = payOSWebhookService;
+            _walletService = walletService;
         }
 
-        [HttpPost]
-        public async Task<IActionResult> ReceiveWebhook([FromBody] PayOSWebhookDTO webhookDto)
+        [HttpPost("payos-webhook")]
+        public async Task<IActionResult> PayOSWebhook([FromBody] PayOSWebhookRequest request)
         {
-            try
+            if (request == null || string.IsNullOrEmpty(request.OrderCode))
             {
-                await _payOSWebhookService.ProcessWebhookAsync(webhookDto);
-                return Ok(new { message = "Webhook processed successfully." });
+                return BadRequest(new { message = "Invalid request parameters" });
             }
-            catch (Exception ex)
+
+            // Only process successful payments
+            if (request.Status == "PAID")
             {
-                return BadRequest(new { error = ex.Message });
+                var result = await _walletService.UpdatePaymentStatusAsync(request.OrderCode);
+                if (!result.IsSucceed)
+                {
+                    return BadRequest(new { message = result.Message });
+                }
+                return Ok(new { message = "Payment status updated successfully" });
             }
+
+            return Ok(new { message = "Webhook received" });
         }
     }
 }
