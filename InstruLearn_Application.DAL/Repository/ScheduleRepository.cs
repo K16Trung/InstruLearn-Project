@@ -100,9 +100,11 @@ namespace InstruLearn_Application.DAL.Repository
         public async Task<List<Schedules>> GetClassSchedulesByTeacherIdAsync(int teacherId)
         {
             return await _appDbContext.Schedules
-                .Where(s => s.TeacherId == teacherId)
+                .Where(s => s.TeacherId == teacherId && s.Mode == ScheduleMode.Center)
                 .Include(s => s.Teacher)
+                .Include(s => s.Learner)
                 .Include(s => s.Class)
+                .Include(s => s.Registration)
                 .Include(s => s.ScheduleDays)
                 .ToListAsync();
         }
@@ -136,5 +138,18 @@ namespace InstruLearn_Application.DAL.Repository
 
             return freeTeacherIds;
         }
+
+        public async Task<List<Schedules>> GetSchedulesByTeacherIdAsync(int teacherId)
+        {
+            return await _appDbContext.Schedules
+                .Where(s => s.TeacherId == teacherId && s.Mode == ScheduleMode.OneOnOne)
+                .ToListAsync();
+        }
+
+        public async Task<List<Schedules>> GetWhereAsync(Expression<Func<Schedules, bool>> predicate)
+        {
+            return await _appDbContext.Schedules.Where(predicate).ToListAsync();
+        }
+
     }
 }

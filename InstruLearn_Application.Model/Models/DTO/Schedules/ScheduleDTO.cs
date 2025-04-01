@@ -22,7 +22,7 @@ namespace InstruLearn_Application.Model.Models.DTO.Schedules
         public string TimeStart { get; set; }
         public string TimeEnd { get; set; }
         public string DayOfWeek { get; set; }
-        public string StartDate { get; set; }
+        public DateOnly StartDay { get; set; }
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public ScheduleMode Mode { get; set; }
 

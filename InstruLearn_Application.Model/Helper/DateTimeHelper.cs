@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using AutoMapper;
 using InstruLearn_Application.Model.Enum;
 using InstruLearn_Application.Model.Models;
 
@@ -104,47 +105,103 @@ public class DateTimeHelper
         return classEndDateTime;
     }
 
-    public static List<Schedules> GenerateOnonOnSchedules(Learning_Registration learningRegis)
+    public static List<Schedules> GenerateOneOnOneSchedules(Learning_Registration learningRegis)
     {
-        List<Schedules> schedules = new List<Schedules>();
-        if (learningRegis.StartDay == null || learningRegis.LearningRegistrationDay == null || !learningRegis.LearningRegistrationDay.Any())
-        {
-            return schedules;
-        }
+        var schedules = new List<Schedules>();
 
-        DateOnly currentDate = learningRegis.StartDay.Value;
-        int sessionsCreated = 0;
+        DateOnly startDate = learningRegis.StartDay ?? DateOnly.FromDateTime(DateTime.Today);
+        TimeOnly startTime = learningRegis.TimeStart;
+        int learningTime = learningRegis.TimeLearning; // In minutes
+        int sessions = learningRegis.NumberOfSession;
 
-        while (sessionsCreated < learningRegis.NumberOfSession)
+        List<DayOfWeek> learningDays = learningRegis.LearningRegistrationDay
+            .Select(ld => (DayOfWeek)ld.DayOfWeek)
+            .OrderBy(d => d)
+            .ToList();
+
+        for (int i = 0; i < sessions; i++)
         {
-            foreach (var day in learningRegis.LearningRegistrationDay.OrderBy(d => d.DayOfWeek))
+            TimeOnly endTime = startTime.AddMinutes(learningTime);
+
+            schedules.Add(new Schedules
             {
-                if (sessionsCreated >= learningRegis.NumberOfSession)
-                    break;
+                LearningRegisId =learningRegis.LearningRegisId,
+                TeacherId = learningRegis.TeacherId,
+                LearnerId = learningRegis.LearnerId,
+                StartDay = startDate,
+                TimeStart = startTime,
+                TimeEnd = endTime,
+                Mode = ScheduleMode.OneOnOne,
+                //Status = "Scheduled"
+            });
 
-                // Find the next available date for this day of the week
-                while (currentDate.DayOfWeek != (DayOfWeek)day.DayOfWeek)
-                {
-                    currentDate = currentDate.AddDays(1);
-                }
-
-                schedules.Add(new Schedules
-                {
-                    LearnerId = learningRegis.LearnerId,
-                    TeacherId = learningRegis.TeacherId,
-                    LearningRegisId = learningRegis.LearningRegisId,
-                    TimeStart = learningRegis.TimeStart,
-                    TimeEnd = learningRegis.TimeStart.AddMinutes(learningRegis.TimeLearning),
-                    Mode = ScheduleMode.OneOnOne, // or another default mode
-                });
-
-                sessionsCreated++;
-                currentDate = currentDate.AddDays(1);
-            }
+            startDate = GetNextLearningDay(startDate, learningDays);
         }
 
         return schedules;
     }
 
+    private static DateOnly GetNextLearningDay(DateOnly current, List<DayOfWeek> availableDays)
+    {
+        do
+        {
+            current = current.AddDays(1);
+        } while (!availableDays.Contains(current.DayOfWeek));
 
+        return current;
+    }
+
+    public class DateOnlyTypeConverter : ITypeConverter<string, DateOnly>
+    {
+        public DateOnly Convert(string source, DateOnly destination, ResolutionContext context)
+        {
+            if (string.IsNullOrEmpty(source))
+                return default;
+
+            if (DateOnly.TryParse(source, out var result))
+                return result;
+
+            return default;
+        }
+    }
+
+    public class TimeOnlyTypeConverter : ITypeConverter<string, TimeOnly>
+    {
+        public TimeOnly Convert(string source, TimeOnly destination, ResolutionContext context)
+        {
+            if (string.IsNullOrEmpty(source))
+                return default;
+
+            if (TimeOnly.TryParse(source, out var result))
+                return result;
+
+            return default;
+        }
+    }
+
+    // Helper method to calculate the end date
+    public static DateOnly CalculateEndDate(DateOnly startDate, int totalDays, ICollection<DayOfWeeks> classDays)
+    {
+        DateOnly currentDate = startDate;
+        int daysScheduled = 0;
+
+        // Keep advancing the date until we've scheduled all required days
+        while (daysScheduled < totalDays)
+        {
+            if (classDays.Contains((DayOfWeeks)currentDate.DayOfWeek))
+            {
+                daysScheduled++;
+
+                // If we've reached the total days, return this date as the end date
+                if (daysScheduled == totalDays)
+                {
+                    return currentDate;
+                }
+            }
+
+            currentDate = currentDate.AddDays(1);
+        }
+
+        return currentDate; // This should never be reached if the loop works correctly
+    }
 }

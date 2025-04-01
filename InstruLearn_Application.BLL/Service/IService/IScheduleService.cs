@@ -1,4 +1,5 @@
 ﻿using InstruLearn_Application.Model.Models.DTO;
+using InstruLearn_Application.Model.Models.DTO.LearningRegistration;
 using InstruLearn_Application.Model.Models.DTO.Schedules;
 using InstruLearn_Application.Model.Models.DTO.Teacher;
 using System;

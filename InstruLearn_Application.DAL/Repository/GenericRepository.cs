@@ -78,7 +78,7 @@ namespace InstruLearn_Application.DAL.Repository
 
         public async Task<List<T>> GetWithIncludesAsync(Expression<Func<T, bool>> filter, string includeProperties = "")
         {
-            IQueryable<T> query = _dbSet;
+            IQueryable<T> query = _dbSet.AsNoTracking();
 
             if (filter != null)
             {
