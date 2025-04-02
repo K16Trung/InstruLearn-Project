@@ -73,8 +73,8 @@ namespace InstruLearn_Application.BLL.Service
                 amount: (int)amount,
                 description: "Add Funds to Wallet",
                 items: items,
-                cancelUrl: "https://www.facebook.com/FPTU.HCM",
-                returnUrl: "https://fap.fpt.edu.vn/"
+                cancelUrl: "https://firebasestorage.googleapis.com/v0/b/sdn-project-aba8a.appspot.com/o/Screenshot%202025-04-02%20182541.png?alt=media&token=94a3f55f-2b3f-4d07-8153-4ffa4e8eed6e",
+                returnUrl: "https://firebasestorage.googleapis.com/v0/b/sdn-project-aba8a.appspot.com/o/Screenshot%202025-04-02%20182541.png?alt=media&token=94a3f55f-2b3f-4d07-8153-4ffa4e8eed6e"
                 );
 
             var createPayment = await payOS.createPaymentLink(paymentData);
