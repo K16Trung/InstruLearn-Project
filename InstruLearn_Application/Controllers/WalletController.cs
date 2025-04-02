@@ -27,7 +27,7 @@ namespace InstruLearn_Application.Controllers
             return Ok(result);
         }
 
-        [HttpPost("update-payment-status")]
+        [HttpPut("update-payment-status")]
         public async Task<IActionResult> UpdatePaymentStatus([FromBody] PaymentStatusRequest request)
         {
             if (request == null || string.IsNullOrEmpty(request.OrderCode))
@@ -45,7 +45,7 @@ namespace InstruLearn_Application.Controllers
             return Ok(new { message = "Payment status updated successfully" });
         }
         
-        [HttpPost("update-fail-payment-status")]
+        [HttpPut("update-fail-payment-status")]
         public async Task<IActionResult> FailedPaymentStatus([FromBody] PaymentStatusRequest request)
         {
             if (request == null || string.IsNullOrEmpty(request.OrderCode))
