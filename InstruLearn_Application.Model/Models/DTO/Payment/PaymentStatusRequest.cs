@@ -9,6 +9,6 @@ namespace InstruLearn_Application.Model.Models.DTO.Payment
     public class PaymentStatusRequest
     {
         public string OrderCode { get; set; }
-        public string Status { get; set; }
+        //public string Status { get; set; }
     }
 }
