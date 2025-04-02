@@ -9,7 +9,6 @@ namespace InstruLearn_Application.DAL.Repository.IRepository
 {
     public interface IAuthRepository : IGenericRepository<Account>
     {
-        Task<Account> GetByPhoneNumber(string phoneNumber);
         Task<Account> GetByUserName(string userName);
         Task<Account> GetByEmail(string email);
     }

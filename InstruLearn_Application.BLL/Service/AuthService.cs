@@ -85,12 +85,6 @@ namespace InstruLearn_Application.BLL.Service
                 response.Message = "Người dùng đã tồn tại!";
                 return response;
             }
-            var existingPhoneNumber = await _authRepository.GetByPhoneNumber(registerDTO.PhoneNumber);
-            if (existingPhoneNumber != null)
-            {
-                response.Message = "Số điện thoại đã tồn tại!";
-                return response;
-            }
 
             var account = _mapper.Map<Account>(registerDTO);
 
