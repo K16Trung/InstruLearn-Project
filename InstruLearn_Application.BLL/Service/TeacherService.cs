@@ -187,70 +187,53 @@ namespace InstruLearn_Application.BLL.Service
         // Update Teacher
         public async Task<ResponseDTO> UpdateMajorTeacherAsync(int teacherId, UpdateMajorTeacherDTO updateMajorTeacherDTO)
         {
-            var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(teacherId);
-            if (teacher == null)
-            {
-                return new ResponseDTO
-                {
-                    IsSucceed = false,
-                    Message = "Không tìm thấy giáo viên"
-                };
-            }
-
             try
             {
+                var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(teacherId);
+                if (teacher == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Không tìm thấy giáo viên"
+                    };
+                }
+
                 await using var transaction = await _unitOfWork.BeginTransactionAsync();
                 try
                 {
+                    // Get current teacher majors without tracking
+                    var currentTeacherMajors = await _unitOfWork.dbContext.TeacherMajors
+                        .AsNoTracking()
+                        .Where(tm => tm.TeacherId == teacherId)
+                        .ToListAsync();
+
+                    // Remove all existing majors
+                    _unitOfWork.dbContext.TeacherMajors.RemoveRange(
+                        _unitOfWork.dbContext.TeacherMajors.Where(tm => tm.TeacherId == teacherId)
+                    );
+                    await _unitOfWork.SaveChangeAsync();
+
+                    // Add new majors
                     if (updateMajorTeacherDTO.MajorIds != null && updateMajorTeacherDTO.MajorIds.Any())
                     {
-                        // Get current teacher majors
-                        var currentTeacherMajors = await _unitOfWork.TeacherMajorRepository
-                            .GetWithIncludesAsync(tm => tm.TeacherId == teacherId, "Major");
-
-                        // Get current major IDs
-                        var existingMajorIds = currentTeacherMajors.Select(tm => tm.MajorId).ToList();
-
-                        // Find new majors to add (ones that don't exist in current majors)
-                        var majorsToAdd = updateMajorTeacherDTO.MajorIds
-                            .Where(id => !existingMajorIds.Contains(id))
-                            .ToList();
-
-                        // Add only new majors
-                        foreach (var majorId in majorsToAdd)
+                        var newTeacherMajors = updateMajorTeacherDTO.MajorIds.Select(majorId => new TeacherMajor
                         {
-                            var newTeacherMajor = new TeacherMajor
-                            {
-                                TeacherId = teacherId,
-                                MajorId = majorId,
-                                Status = TeacherMajorStatus.Free
-                            };
-                            await _unitOfWork.dbContext.TeacherMajors.AddAsync(newTeacherMajor);
-                        }
+                            TeacherId = teacherId,
+                            MajorId = majorId,
+                            Status = TeacherMajorStatus.Free
+                        });
 
-                        await _unitOfWork.SaveChangeAsync();
+                        await _unitOfWork.dbContext.TeacherMajors.AddRangeAsync(newTeacherMajors);
                     }
 
+                    await _unitOfWork.SaveChangeAsync();
                     await _unitOfWork.CommitTransactionAsync();
-
-                    // Get updated teacher data for response
-                    var updatedTeacher = await _unitOfWork.TeacherRepository.GetByIdAsync(teacherId);
-                    var majors = updatedTeacher.TeacherMajors.Select(tm => new
-                    {
-                        MajorId = tm.MajorId,
-                        MajorName = tm.Major?.MajorName
-                    }).ToList();
 
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "Cập nhật giáo viên thành công",
-                        Data = new
-                        {
-                            TeacherId = teacher.TeacherId,
-                            TeacherName = teacher.Fullname,
-                            Majors = majors
-                        }
+                        Message = "Cập nhật giáo viên thành công"
                     };
                 }
                 catch (Exception)
