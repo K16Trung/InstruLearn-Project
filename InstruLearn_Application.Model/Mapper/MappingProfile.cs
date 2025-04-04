@@ -218,6 +218,10 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<UpdateTeacherDTO, Teacher>()
             .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
 
+            CreateMap<DeleteMajorTeacherDTO, TeacherMajor>()
+            .ForMember(dest => dest.MajorId, opt => opt.MapFrom(src => src.MajorIds))
+            .ReverseMap();
+
             // Course mapping
             CreateMap<Course_Package, CourseDTO>()
             .ForMember(dest => dest.TypeName, opt => opt.MapFrom(src => src.Type.CourseTypeName))

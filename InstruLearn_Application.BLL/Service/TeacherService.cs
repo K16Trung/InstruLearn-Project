@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using InstruLearn_Application.BLL.Service.IService;
+using InstruLearn_Application.DAL.Repository;
 using InstruLearn_Application.DAL.Repository.IRepository;
 using InstruLearn_Application.DAL.UoW.IUoW;
 using InstruLearn_Application.Model.Enum;
@@ -199,31 +200,23 @@ namespace InstruLearn_Application.BLL.Service
             try
             {
                 await using var transaction = await _unitOfWork.BeginTransactionAsync();
-
                 try
                 {
-                    _mapper.Map(updateMajorTeacherDTO, teacher);
-                    await _unitOfWork.TeacherRepository.UpdateAsync(teacher);
-
                     if (updateMajorTeacherDTO.MajorIds != null && updateMajorTeacherDTO.MajorIds.Any())
                     {
+                        // Get current teacher majors
                         var currentTeacherMajors = await _unitOfWork.TeacherMajorRepository
                             .GetWithIncludesAsync(tm => tm.TeacherId == teacherId, "Major");
 
-                        var majorsToRemove = currentTeacherMajors
-                            .Where(tm => !updateMajorTeacherDTO.MajorIds.Contains(tm.MajorId))
-                            .ToList();
+                        // Get current major IDs
+                        var existingMajorIds = currentTeacherMajors.Select(tm => tm.MajorId).ToList();
 
-                        foreach (var teacherMajor in majorsToRemove)
-                        {
-                            _unitOfWork.dbContext.TeacherMajors.Remove(teacherMajor);
-                        }
-
-                        var existingMajorIds = currentTeacherMajors.Select(tm => tm.MajorId);
+                        // Find new majors to add (ones that don't exist in current majors)
                         var majorsToAdd = updateMajorTeacherDTO.MajorIds
                             .Where(id => !existingMajorIds.Contains(id))
                             .ToList();
 
+                        // Add only new majors
                         foreach (var majorId in majorsToAdd)
                         {
                             var newTeacherMajor = new TeacherMajor
@@ -234,15 +227,30 @@ namespace InstruLearn_Application.BLL.Service
                             };
                             await _unitOfWork.dbContext.TeacherMajors.AddAsync(newTeacherMajor);
                         }
+
+                        await _unitOfWork.SaveChangeAsync();
                     }
 
-                    await _unitOfWork.SaveChangeAsync();
                     await _unitOfWork.CommitTransactionAsync();
+
+                    // Get updated teacher data for response
+                    var updatedTeacher = await _unitOfWork.TeacherRepository.GetByIdAsync(teacherId);
+                    var majors = updatedTeacher.TeacherMajors.Select(tm => new
+                    {
+                        MajorId = tm.MajorId,
+                        MajorName = tm.Major?.MajorName
+                    }).ToList();
 
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "Cập nhật giáo viên thành công"
+                        Message = "Cập nhật giáo viên thành công",
+                        Data = new
+                        {
+                            TeacherId = teacher.TeacherId,
+                            TeacherName = teacher.Fullname,
+                            Majors = majors
+                        }
                     };
                 }
                 catch (Exception)
@@ -321,6 +329,76 @@ namespace InstruLearn_Application.BLL.Service
         private string HashPassword(string password)
         {
             return BCrypt.Net.BCrypt.HashPassword(password); // Explicit namespace
+        }
+        public async Task<ResponseDTO> DeleteMajorTeacherAsync(int teacherId, DeleteMajorTeacherDTO deleteMajorTeacherDTO)
+        {
+            try
+            {
+                var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(teacherId);
+                if (teacher == null)
+                {
+                    return new ResponseDTO { IsSucceed = false, Message = "Teacher not found" };
+                }
+
+                await using var transaction = await _unitOfWork.BeginTransactionAsync();
+                try
+                {
+                    // Get teacher majors to delete
+                    var teacherMajorsToDelete = await _unitOfWork.dbContext.TeacherMajors
+                        .Where(tm => tm.TeacherId == teacherId && deleteMajorTeacherDTO.MajorIds.Contains(tm.MajorId))
+                        .ToListAsync();
+
+                    if (!teacherMajorsToDelete.Any())
+                    {
+                        return new ResponseDTO { IsSucceed = false, Message = "No matching majors found for this teacher" };
+                    }
+
+                    // Remove the selected majors
+                    _unitOfWork.dbContext.TeacherMajors.RemoveRange(teacherMajorsToDelete);
+                    await _unitOfWork.SaveChangeAsync();
+
+                    // Get remaining majors for response
+                    var remainingMajors = await _unitOfWork.dbContext.TeacherMajors
+                        .Include(tm => tm.Major)
+                        .Where(tm => tm.TeacherId == teacherId)
+                        .ToListAsync();
+
+                    await _unitOfWork.CommitTransactionAsync();
+
+                    // Return a simplified response without circular references
+                    var response = new ResponseDTO
+                    {
+                        IsSucceed = true,
+                        Message = $"Successfully removed {teacherMajorsToDelete.Count} major(s) from teacher",
+                        Data = new
+                        {
+                            TeacherId = teacher.TeacherId,
+                            TeacherName = teacher.Fullname,
+                            RemovedMajorIds = teacherMajorsToDelete.Select(tm => tm.MajorId).ToList(),
+                            RemainingMajors = remainingMajors.Select(tm => new
+                            {
+                                MajorId = tm.MajorId,
+                                MajorName = tm.Major?.MajorName
+                            }).ToList()
+                        }
+                    };
+
+                    return response;
+                }
+                catch (Exception)
+                {
+                    await _unitOfWork.RollbackTransactionAsync();
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Error removing majors from teacher: {ex.Message}"
+                };
+            }
         }
     }
 }
