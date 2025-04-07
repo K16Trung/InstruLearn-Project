@@ -23,7 +23,7 @@ namespace InstruLearn_Application.DAL.Repository
         {
             return await _appDbContext.Classes
                 .Include(c => c.Teacher)
-                .Include(c => c.CoursePackage) 
+                .Include(c => c.Major) 
                 .Include(c => c.ClassDays)
                 .ToListAsync();
         }
@@ -33,18 +33,18 @@ namespace InstruLearn_Application.DAL.Repository
         {
             return await _appDbContext.Classes
                 .Include(c => c.Teacher)
-                .Include(c => c.CoursePackage)
+                .Include(c => c.Major)
                 .Include(c => c.ClassDays)
                 .FirstOrDefaultAsync(c => c.ClassId == classId);
         }
 
-        public async Task<List<Class>> GetClassesByCoursePackageIdAsync(int coursePackageId)
+        public async Task<List<Class>> GetClassesByMajorIdAsync(int majorId)
         {
             return await _appDbContext.Classes
-                .Include(c => c.Teacher)        // Include related Teacher entity
-                .Include(c => c.CoursePackage)  // Include CoursePackage entity
-                .Include(c => c.ClassDays)      // Include related ClassDays
-                .Where(c => c.CoursePackageId == coursePackageId)  // Filter by CoursePackageId
+                .Include(c => c.Teacher)
+                .Include(c => c.Major)
+                .Include(c => c.ClassDays)
+                .Where(c => c.MajorId == majorId)
                 .ToListAsync();
         }
 
