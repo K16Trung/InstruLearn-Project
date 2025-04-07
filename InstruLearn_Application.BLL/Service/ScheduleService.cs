@@ -5,6 +5,7 @@ using InstruLearn_Application.DAL.UoW.IUoW;
 using InstruLearn_Application.Model.Enum;
 using InstruLearn_Application.Model.Models;
 using InstruLearn_Application.Model.Models.DTO;
+using InstruLearn_Application.Model.Models.DTO.ClassDay;
 using InstruLearn_Application.Model.Models.DTO.LearningRegistration;
 using InstruLearn_Application.Model.Models.DTO.ScheduleDays;
 using InstruLearn_Application.Model.Models.DTO.Schedules;
@@ -464,5 +465,101 @@ namespace InstruLearn_Application.BLL.Service
 
             return _mapper.Map<List<ValidTeacherDTO>>(availableTeachers);
         }
+
+        public async Task<ResponseDTO> GetClassSchedulesByLearnerIdAsync(int learnerId)
+        {
+            try
+            {
+                if (learnerId <= 0)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Invalid learner ID."
+                    };
+                }
+
+                // Fetch schedules for the learner
+                var schedules = await _unitOfWork.ScheduleRepository.GetClassSchedulesByLearnerIdAsync(learnerId);
+
+                if (schedules == null || !schedules.Any())
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "No schedules found for this learner."
+                    };
+                }
+
+                // Get class IDs for fetching class days
+                var classIds = schedules
+                    .Where(s => s.ClassId.HasValue)
+                    .Select(s => s.ClassId.Value)
+                    .Distinct()
+                    .ToList();
+
+                // Fetch class days for these classes
+                var classDays = await _unitOfWork.ClassDayRepository.GetQuery()
+                    .Where(cd => classIds.Contains(cd.ClassId))
+                    .ToListAsync();
+
+                // Group class days by class ID for easy lookup
+                var classDaysByClass = classDays
+                    .GroupBy(cd => cd.ClassId)
+                    .ToDictionary(g => g.Key, g => g.ToList());
+
+                // Map to DTOs with all the required information
+                var scheduleDTOs = schedules.Select(schedule => {
+                    var dto = _mapper.Map<ScheduleDTO>(schedule);
+
+                    // Set DayOfWeek
+                    dto.DayOfWeek = schedule.StartDay.DayOfWeek.ToString();
+
+                    // Set LearnerAddress
+                    dto.LearnerAddress = schedule.Learner?.Account?.Address;
+
+                    // Set RegistrationStartDay from the Registration
+                    dto.RegistrationStartDay = schedule.Registration?.StartDay;
+
+                    // Set ScheduleDays from classDays if we have a ClassId
+                    if (schedule.ClassId.HasValue && classDaysByClass.TryGetValue(schedule.ClassId.Value, out var days))
+                    {
+                        dto.ScheduleDays = days.Select(cd => new ScheduleDaysDTO
+                        {
+                            DayOfWeeks = cd.Day
+                        }).ToList();
+
+                        // Also set classDayDTOs
+                        dto.classDayDTOs = days.Select(cd => new ClassDayDTO
+                        {
+                            Day = cd.Day
+                        }).ToList();
+                    }
+                    else
+                    {
+                        dto.ScheduleDays = new List<ScheduleDaysDTO>();
+                        dto.classDayDTOs = new List<ClassDayDTO>();
+                    }
+
+                    return dto;
+                }).ToList();
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = "Schedules retrieved successfully.",
+                    Data = scheduleDTOs
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Failed to retrieve schedules: {ex.Message}"
+                };
+            }
+        }
+
     }
 }

@@ -500,6 +500,14 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.TimeEnd, opt => opt.MapFrom(src => src.TimeEnd))
                 .ForMember(dest => dest.ScheduleDays, opt => opt.MapFrom(src => src.ScheduleDays));
 
+            // Add mapping for ClassDay to ScheduleDaysDTO if not already defined
+            CreateMap<Models.ClassDay, ScheduleDaysDTO>()
+                .ForMember(dest => dest.DayOfWeeks, opt => opt.MapFrom(src => src.Day));
+
+            // Add mapping for ClassDay to ClassDayDTO if not already defined
+            CreateMap<Models.ClassDay, ClassDayDTO>()
+                .ForMember(dest => dest.Day, opt => opt.MapFrom(src => src.Day));
+
             // 🔹ScheduleDays mapping
             CreateMap<ScheduleDaysDTO, ScheduleDays>()
                 .ForMember(dest => dest.DayOfWeeks, opt => opt.MapFrom(src => src.DayOfWeeks));
