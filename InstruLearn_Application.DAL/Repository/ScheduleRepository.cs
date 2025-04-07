@@ -54,6 +54,8 @@ namespace InstruLearn_Application.DAL.Repository
                 .Where(s => s.TeacherId == teacherId)
                 .Include(s => s.ScheduleDays)
                 .ThenInclude(sd => sd.DayOfWeeks)
+                .Include(s => s.Learner)
+                    .ThenInclude(l => l.Account) // Include the Account relationship to access address
                 .ToListAsync();
         }
 
