@@ -55,8 +55,7 @@ namespace InstruLearn_Application.DAL.Repository
                 .Include(s => s.ScheduleDays)
                 .ThenInclude(sd => sd.DayOfWeeks)
                 .Include(s => s.Learner)
-                    .ThenInclude(l => l.Account)
-                    .ThenInclude(a => a.Address)
+                .ThenInclude(l => l.Account)
                 .ToListAsync();
         }
 
