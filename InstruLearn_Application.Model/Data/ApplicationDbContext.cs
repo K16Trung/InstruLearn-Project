@@ -93,12 +93,6 @@ namespace InstruLearn_Application.Model.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Course_Package>()
-                .HasMany(c => c.Classes)
-                .WithOne(c => c.CoursePackage)
-                .HasForeignKey(c => c.CoursePackageId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<Course_Package>()
                 .HasMany(c => c.CourseContents)
                 .WithOne(cc => cc.CoursePackage)
                 .HasForeignKey(cc => cc.CoursePackageId)
@@ -228,6 +222,12 @@ namespace InstruLearn_Application.Model.Data
             modelBuilder.Entity<Class>()
                 .Property(c => c.Price)
                 .HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<Class>()
+                .HasOne(c => c.Major)
+                .WithMany(m => m.Classes)
+                .HasForeignKey(c => c.MajorId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             //
 
