@@ -338,8 +338,21 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.SyllabusId, opt => opt.MapFrom(src => src.SyllabusId))
                 .ForMember(dest => dest.ClassDays, opt => opt.MapFrom(src => src.ClassDays.Select(day => new Models.ClassDay { Day = day })));
 
+            CreateMap<UpdateClassDTO, Class>()
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status));
+
+
             CreateMap<Models.ClassDay, ClassDayDTO>()
                 .ForMember(dest => dest.Day, opt => opt.MapFrom(src => src.Day));
+
+            CreateMap<Class, ClassDetailDTO>()
+                .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Teacher != null ? src.Teacher.Fullname : "N/A"))
+                .ForMember(dest => dest.MajorName, opt => opt.MapFrom(src => src.Major != null ? src.Major.MajorName : "N/A"))
+                .ForMember(dest => dest.SyllabusName, opt => opt.MapFrom(src => src.Syllabus != null ? src.Syllabus.SyllabusName : "N/A"))
+                .ForMember(dest => dest.TotalDays, opt => opt.MapFrom(src => src.totalDays))
+                .ForMember(dest => dest.ClassDays, opt => opt.Ignore())
+                .ForMember(dest => dest.StudentCount, opt => opt.Ignore())
+                .ForMember(dest => dest.Students, opt => opt.Ignore());
 
             //🔹 Major Mappings
             CreateMap<Major, MajorDTO>().ReverseMap();

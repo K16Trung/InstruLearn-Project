@@ -1,4 +1,5 @@
-﻿using InstruLearn_Application.Model.Models.DTO.ClassDay;
+﻿using InstruLearn_Application.Model.Enum;
+using InstruLearn_Application.Model.Models.DTO.ClassDay;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,10 +10,6 @@ namespace InstruLearn_Application.Model.Models.DTO.Class
 {
     public class UpdateClassDTO
     {
-        public int TeacherId { get; set; }
-        public DateTime StartDate { get; set; }
-        public DateTime EndDate { get; set; }
-        public TimeOnly ClassTime { get; set; }
-        public ICollection<ClassDayDTO> ClassDays { get; set; }
+        public ClassStatus Status { get; set; }
     }
 }
