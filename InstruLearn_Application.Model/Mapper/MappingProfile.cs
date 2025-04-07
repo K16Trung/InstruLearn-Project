@@ -16,6 +16,7 @@ using InstruLearn_Application.Model.Models.DTO.Feedback;
 using InstruLearn_Application.Model.Models.DTO.FeedbackReplies;
 using InstruLearn_Application.Model.Models.DTO.ItemTypes;
 using InstruLearn_Application.Model.Models.DTO.Learner;
+using InstruLearn_Application.Model.Models.DTO.LearnerClass;
 using InstruLearn_Application.Model.Models.DTO.LearningRegistration;
 using InstruLearn_Application.Model.Models.DTO.LearningRegistrationType;
 using InstruLearn_Application.Model.Models.DTO.LevelAssigned;
@@ -568,6 +569,9 @@ namespace InstruLearn_Application.Model.Mapper
             .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
             .ForMember(dest => dest.LearnerFullname, opt => opt.MapFrom(src =>
                 src.Wallet.Learner != null ? src.Wallet.Learner.FullName : string.Empty));
+
+            //wallet learner_class mapping
+            CreateMap<Learner_class, LearnerClassPaymentDTO>().ReverseMap();
         }
     }
 }

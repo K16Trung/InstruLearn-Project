@@ -61,6 +61,19 @@ namespace InstruLearn_Application.Controllers
 
             return Ok(response);
         }
+        
+        [HttpGet("teacher/{teacherId}/classs")]
+        public async Task<IActionResult> GetClassSchedulessByTeacher(int teacherId)
+        {
+            var response = await _scheduleService.GetClassSchedulesByTeacherIdAsyncc(teacherId);
+
+            if (!response.IsSucceed)
+            {
+                return NotFound(response);
+            }
+
+            return Ok(response);
+        }
 
         [HttpGet("available-teachers")]
         public async Task<IActionResult> GetAvailableTeachers([FromQuery] int majorId, [FromQuery] TimeOnly timeStart, [FromQuery] int timeLearning, [FromQuery] DateOnly startDay)

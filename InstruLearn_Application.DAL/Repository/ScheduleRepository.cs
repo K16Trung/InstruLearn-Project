@@ -156,5 +156,147 @@ namespace InstruLearn_Application.DAL.Repository
             return await _appDbContext.Schedules.Where(predicate).ToListAsync();
         }
 
+        public async Task<List<ConsolidatedScheduleDTO>> GetConsolidatedCenterSchedulesByTeacherIdAsync(int teacherId)
+        {
+            // Get all class schedules for the teacher with Mode = Center
+            var schedules = await _appDbContext.Schedules
+                .Where(s => s.TeacherId == teacherId && s.Mode == ScheduleMode.Center)
+                .Include(s => s.Teacher)
+                .Include(s => s.Class)
+                .Include(s => s.Learner)
+                .ToListAsync();
+
+            if (schedules == null || !schedules.Any())
+            {
+                return new List<ConsolidatedScheduleDTO>();
+            }
+
+            // Group schedules by class and timeslot
+            var groupedSchedules = schedules
+                .GroupBy(s => new
+                {
+                    s.ClassId,
+                    s.StartDay,
+                    s.TimeStart,
+                    s.TimeEnd
+                })
+                .Select(group => new
+                {
+                    ClassId = group.Key.ClassId,
+                    StartDay = group.Key.StartDay,
+                    TimeStart = group.Key.TimeStart,
+                    TimeEnd = group.Key.TimeEnd,
+                    Schedules = group.ToList(),
+                    FirstSchedule = group.First()
+                })
+                .ToList();
+
+            // Fetch class days for these classes
+            var classIds = schedules
+                .Where(s => s.ClassId.HasValue)
+                .Select(s => s.ClassId.Value)
+                .Distinct()
+                .ToList();
+
+            var classDays = await _appDbContext.ClassDays
+                .Where(cd => classIds.Contains(cd.ClassId))
+                .ToListAsync();
+
+            var classDaysByClass = classDays
+                .GroupBy(cd => cd.ClassId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            // Fetch class information
+            var classes = await _appDbContext.Classes
+                .Where(c => classIds.Contains(c.ClassId))
+                .ToListAsync();
+
+            var classDict = classes.ToDictionary(c => c.ClassId, c => c);
+
+            // Get all learners
+            var learnerIds = schedules
+                .Where(s => s.LearnerId.HasValue)
+                .Select(s => s.LearnerId.Value)
+                .Distinct()
+                .ToList();
+
+            var learners = new Dictionary<int, Learner>();
+            if (learnerIds.Any())
+            {
+                learners = await _appDbContext.Learners
+                    .Where(l => learnerIds.Contains(l.LearnerId))
+                    .ToDictionaryAsync(l => l.LearnerId, l => l);
+            }
+
+            // Create consolidated schedule DTOs
+            var consolidatedSchedules = new List<ConsolidatedScheduleDTO>();
+
+            foreach (var group in groupedSchedules)
+            {
+                // Get class info
+                string className = "N/A";
+                if (group.ClassId.HasValue && classDict.TryGetValue(group.ClassId.Value, out var classEntity))
+                {
+                    className = classEntity.ClassName;
+                }
+
+                // Get all learners for this schedule group - PREVENTING DUPLICATES
+                var scheduleParticipants = new List<ScheduleParticipantDTO>();
+
+                // Group the schedules by learner to eliminate duplicates
+                var participantGroups = group.Schedules
+                    .Where(s => s.LearnerId.HasValue && s.LearningRegisId.HasValue)
+                    .GroupBy(s => new { s.LearnerId, s.LearningRegisId })
+                    .ToList();
+
+                foreach (var participantGroup in participantGroups)
+                {
+                    if (participantGroup.Key.LearnerId.HasValue &&
+                        learners.TryGetValue(participantGroup.Key.LearnerId.Value, out var learner) &&
+                        participantGroup.Key.LearningRegisId.HasValue)
+                    {
+                        scheduleParticipants.Add(new ScheduleParticipantDTO
+                        {
+                            LearnerId = participantGroup.Key.LearnerId.Value,
+                            LearnerName = learner.FullName,
+                            LearningRegisId = participantGroup.Key.LearningRegisId.Value
+                        });
+                    }
+                }
+
+                // Create ScheduleDays info if available
+                var scheduleDays = new List<ScheduleDaysDTO>();
+                if (group.ClassId.HasValue &&
+                    classDaysByClass.TryGetValue(group.ClassId.Value, out var days))
+                {
+                    scheduleDays = days.Select(cd => new ScheduleDaysDTO
+                    {
+                        DayOfWeeks = cd.Day
+                    }).ToList();
+                }
+
+                // Create consolidated schedule DTO
+                var consolidatedSchedule = new ConsolidatedScheduleDTO
+                {
+                    ScheduleId = group.FirstSchedule.ScheduleId,
+                    TeacherId = teacherId,
+                    TeacherName = group.FirstSchedule.Teacher?.Fullname ?? "N/A",
+                    ClassId = group.ClassId,
+                    ClassName = className,
+                    TimeStart = group.TimeStart.ToString("HH:mm"),
+                    TimeEnd = group.TimeEnd.ToString("HH:mm"),
+                    DayOfWeek = group.StartDay.DayOfWeek.ToString(),
+                    StartDay = group.StartDay,
+                    Mode = ScheduleMode.Center,
+                    RegistrationStartDay = group.StartDay, // Using StartDay as registrationStartDay
+                    Participants = scheduleParticipants,
+                    ScheduleDays = scheduleDays
+                };
+
+                consolidatedSchedules.Add(consolidatedSchedule);
+            }
+
+            return consolidatedSchedules;
+        }
     }
 }
