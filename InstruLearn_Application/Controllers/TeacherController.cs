@@ -64,5 +64,12 @@ namespace InstruLearn_Application.Controllers
             var result = await _teacherService.UnbanTeacherAsync(id);
             return Ok(result);
         }
+
+        [HttpDelete("delete-major/{id}")]
+        public async Task<IActionResult> DeleteMajorTeacher(int id, DeleteMajorTeacherDTO deleteMajorTeacherDTO)
+        {
+            var result = await _teacherService.DeleteMajorTeacherAsync(id, deleteMajorTeacherDTO);
+            return Ok(result);
+        }
     }
 }
