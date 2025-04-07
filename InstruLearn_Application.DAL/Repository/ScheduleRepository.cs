@@ -301,5 +301,19 @@ namespace InstruLearn_Application.DAL.Repository
 
             return consolidatedSchedules;
         }
+
+        public async Task<List<Schedules>> GetClassSchedulesByLearnerIdAsync(int learnerId)
+        {
+            return await _appDbContext.Schedules
+                .Where(s => s.LearnerId == learnerId && s.Mode == ScheduleMode.Center)
+                .Include(s => s.Teacher)
+                .Include(s => s.Class)
+                    .ThenInclude(c => c.ClassDays)
+                .Include(s => s.Learner)
+                    .ThenInclude(l => l.Account)
+                .Include(s => s.Registration)
+                .Include(s => s.ScheduleDays)
+                .ToListAsync();
+        }
     }
 }

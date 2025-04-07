@@ -21,5 +21,6 @@ namespace InstruLearn_Application.DAL.Repository.IRepository
         Task<List<Schedules>> GetSchedulesByTeacherIdAsync(int teacherId);
         Task<List<Schedules>> GetWhereAsync(Expression<Func<Schedules, bool>> predicate);
         Task<List<ConsolidatedScheduleDTO>> GetConsolidatedCenterSchedulesByTeacherIdAsync(int teacherId);
+        Task<List<Schedules>> GetClassSchedulesByLearnerIdAsync(int learnerId);
     }
 }
