@@ -477,6 +477,7 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<Schedules, ScheduleDTO>()
                 .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Teacher.Fullname))
                 .ForMember(dest => dest.LearnerName, opt => opt.MapFrom(src => src.Learner.FullName))
+                .ForMember(dest => dest.LearnerAddress, opt => opt.MapFrom(src => src.Learner.Account.Address))
                 .ForMember(dest => dest.ClassName, opt => opt.MapFrom(src => src.Class.ClassName))
                 .ForMember(dest => dest.StartDay, opt => opt.MapFrom(src => src.StartDay))
                 .ForMember(dest => dest.TimeStart, opt => opt.MapFrom(src => src.TimeStart.ToString("HH:mm")))
