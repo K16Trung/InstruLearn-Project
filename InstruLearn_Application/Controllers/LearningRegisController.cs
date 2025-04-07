@@ -1,5 +1,6 @@
 ﻿using InstruLearn_Application.BLL.Service;
 using InstruLearn_Application.BLL.Service.IService;
+using InstruLearn_Application.Model.Models.DTO.LearnerClass;
 using InstruLearn_Application.Model.Models.DTO.LearningRegistration;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -34,6 +35,22 @@ namespace InstruLearn_Application.Controllers
         public async Task<IActionResult> AddLearningRegis([FromBody] CreateLearningRegisDTO createLearningRegisDTO)
         {
             var response = await _learningRegisService.CreateLearningRegisAsync(createLearningRegisDTO);
+            return Ok(response);
+        }
+
+        [HttpPost("join-class")]
+        public async Task<IActionResult> JoinClassWithWalletPayment([FromBody] LearnerClassPaymentDTO paymentDto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var response = await _learningRegisService.JoinClassWithWalletPaymentAsync(paymentDto);
+            if (!response.IsSucceed)
+            {
+                return BadRequest(response);
+            }
             return Ok(response);
         }
 

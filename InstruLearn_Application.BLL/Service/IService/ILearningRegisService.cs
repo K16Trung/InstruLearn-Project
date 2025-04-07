@@ -1,4 +1,5 @@
 ﻿using InstruLearn_Application.Model.Models.DTO;
+using InstruLearn_Application.Model.Models.DTO.LearnerClass;
 using InstruLearn_Application.Model.Models.DTO.LearningRegistration;
 using System;
 using System.Collections.Generic;
@@ -17,5 +18,6 @@ namespace InstruLearn_Application.BLL.Service.IService
         Task<ResponseDTO> GetAllPendingRegistrationsAsync();
         Task<ResponseDTO> GetRegistrationsByLearnerIdAsync(int learnerId);
         Task<ResponseDTO> UpdateLearningRegisStatusAsync(UpdateLearningRegisDTO updateDTO);
+        Task<ResponseDTO> JoinClassWithWalletPaymentAsync(LearnerClassPaymentDTO paymentDTO);
     }
 }
