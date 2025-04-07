@@ -105,6 +105,7 @@ namespace InstruLearn_Application.DAL.Repository
                 .Where(s => s.TeacherId == teacherId && s.Mode == ScheduleMode.Center)
                 .Include(s => s.Teacher)
                 .Include(s => s.Learner)
+                .Include(s => s.Learner.Account)
                 .Include(s => s.Class)
                 .Include(s => s.Registration)
                 .Include(s => s.ScheduleDays)
