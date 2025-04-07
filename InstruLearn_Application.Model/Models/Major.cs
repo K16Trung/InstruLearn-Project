@@ -1,4 +1,5 @@
 ﻿using InstruLearn_Application.Model.Enum;
+using Microsoft.Identity.Client;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -21,5 +22,6 @@ namespace InstruLearn_Application.Model.Models
         public ICollection<Test_Result> TestResults { get; set; }
         public ICollection<TeacherMajor> TeacherMajors { get; set; }
         public ICollection<LevelAssigned> LevelAssigneds { get; set; }
+        public ICollection<Class> Classes { get; set; }
     }
 }

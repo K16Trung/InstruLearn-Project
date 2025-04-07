@@ -27,10 +27,10 @@ namespace InstruLearn_Application.Controllers
             return Ok(result);
         }
 
-        [HttpGet("CoursePackageId/{coursePackageId}/class")]
-        public async Task<IActionResult> GetClassesByCoursePackageId(int coursePackageId)
+        [HttpGet("MajorId/{majorId}/class")]
+        public async Task<IActionResult> GetClassesByCoursePackageId(int majorId)
         {
-            var result = await _classService.GetClassesByCoursePackageIdAsync(coursePackageId);
+            var result = await _classService.GetClassesByMajorIdAsync(majorId);
 
             if (!result.IsSucceed)
                 return NotFound(result);

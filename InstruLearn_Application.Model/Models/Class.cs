@@ -13,7 +13,7 @@ namespace InstruLearn_Application.Model.Models
         [Key]
         public int ClassId { get; set; }
         public int TeacherId { get; set; }
-        public int CoursePackageId { get; set; }
+        public int MajorId { get; set; }
         public int SyllabusId { get; set; }
         public string ClassName { get; set; }
         public DateOnly StartDate { get; set; }
@@ -25,7 +25,7 @@ namespace InstruLearn_Application.Model.Models
 
         // Navigation properties
         public Teacher Teacher { get; set; }
-        public Course_Package CoursePackage { get; set; }
+        public Major Major { get; set; }
         public Syllabus Syllabus { get; set; }
         public ICollection<ClassDay> ClassDays { get; set; }
         public ICollection<Learning_Registration> Learning_Registration { get; set; }

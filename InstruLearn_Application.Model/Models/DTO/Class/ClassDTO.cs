@@ -13,8 +13,8 @@ namespace InstruLearn_Application.Model.Models.DTO.Class
         public int ClassId { get; set; }
         public int TeacherId { get; set; }
         public string TeacherName { get; set; }
-        public int CoursePackageId { get; set; }
-        public string CoursePackageName { get; set; }
+        public int MajorId { get; set; }
+        public string MajorName { get; set; }
         public string ClassName { get; set; }
         public DateOnly StartDate { get; set; }
         public DateOnly EndDate { get; set; }

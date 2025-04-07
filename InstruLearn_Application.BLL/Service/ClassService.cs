@@ -39,9 +39,9 @@ namespace InstruLearn_Application.BLL.Service
             return ClassMapper;
         }
 
-        public async Task<ResponseDTO> GetClassesByCoursePackageIdAsync(int coursePackageId)
+        public async Task<ResponseDTO> GetClassesByMajorIdAsync(int majorId)
         {
-            var classes = await _unitOfWork.ClassRepository.GetClassesByCoursePackageIdAsync(coursePackageId);
+            var classes = await _unitOfWork.ClassRepository.GetClassesByMajorIdAsync(majorId);
 
             if (classes == null || !classes.Any())
             {
@@ -78,8 +78,8 @@ namespace InstruLearn_Application.BLL.Service
             }
 
             // Check if CoursePackage exists
-            var coursePackage = await _unitOfWork.CourseRepository.GetByIdAsync(createClassDTO.CoursePackageId);
-            if (coursePackage == null)
+            var major = await _unitOfWork.MajorRepository.GetByIdAsync(createClassDTO.MajorId);
+            if (major == null)
             {
                 return new ResponseDTO
                 {
@@ -111,7 +111,7 @@ namespace InstruLearn_Application.BLL.Service
             // Map CreateClassDTO to Class entity
             var classObj = _mapper.Map<Class>(createClassDTO);
             classObj.Teacher = teacher;
-            classObj.CoursePackage = coursePackage;
+            classObj.Major = major;
 
             // Calculate the end date for the class
             DateOnly endDate = DateTimeHelper.CalculateEndDate(createClassDTO.StartDate, createClassDTO.totalDays, createClassDTO.ClassDays);

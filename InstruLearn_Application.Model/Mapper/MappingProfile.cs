@@ -322,7 +322,7 @@ namespace InstruLearn_Application.Model.Mapper
             // 🔹 Class Mappings
             CreateMap<Class, ClassDTO>()
             .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Teacher.Fullname))
-            .ForMember(dest => dest.CoursePackageName, opt => opt.MapFrom(src => src.CoursePackage.CourseName))
+            .ForMember(dest => dest.MajorName, opt => opt.MapFrom(src => src.Major.MajorName))
             .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src =>
                 DateTimeHelper.CalculateClassEndDate(
                     src.StartDate,

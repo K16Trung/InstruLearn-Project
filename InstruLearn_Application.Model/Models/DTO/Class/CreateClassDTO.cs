@@ -11,7 +11,7 @@ namespace InstruLearn_Application.Model.Models.DTO.Class
     public class CreateClassDTO
     {
         public int TeacherId { get; set; }
-        public int CoursePackageId { get; set; }
+        public int MajorId { get; set; }
         public int SyllabusId { get; set; }
         public string ClassName { get; set; }
         public DateOnly StartDate { get; set; }
