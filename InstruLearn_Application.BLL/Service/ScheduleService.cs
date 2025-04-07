@@ -360,6 +360,7 @@ namespace InstruLearn_Application.BLL.Service
                                 TeacherName = learningRegis.Teacher?.Fullname ?? "N/A",
                                 LearnerId = learningRegis.LearnerId,
                                 LearnerName = learningRegis.Learner?.FullName ?? "N/A",
+                                LearnerAddress = learningRegis.Learner?.Account?.Address ?? "N/A", // Add this line to include the learner's address
                                 RegistrationStartDay = learningRegis.StartDay,
                                 LearningRegisId = learningRegis.LearningRegisId,
                                 ScheduleDays = orderedLearningDays.Select(day => new ScheduleDaysDTO
