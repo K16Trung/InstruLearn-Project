@@ -7,6 +7,7 @@ using InstruLearn_Application.Model.Configuration;
 using InstruLearn_Application.Model.Enum;
 using InstruLearn_Application.Model.Models;
 using InstruLearn_Application.Model.Models.DTO;
+using InstruLearn_Application.Model.Models.DTO.Vnpay;
 using InstruLearn_Application.Model.Models.DTO.Wallet;
 using Net.payOS;
 using Net.payOS.Types;
@@ -21,14 +22,18 @@ namespace InstruLearn_Application.BLL.Service
     public class WalletService : IWalletService
     {
         private readonly PayOSSettings _payOSSettings;
+        private readonly VnpaySettings _vnpaySettings;
         private readonly IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IVnpayService _vnpayService;
 
-        public WalletService(PayOSSettings payOSSettings, IUnitOfWork unitOfWork, IMapper mapper)
+        public WalletService(PayOSSettings payOSSettings, VnpaySettings vnpaySettings, IUnitOfWork unitOfWork, IMapper mapper, IVnpayService vnpayService)
         {
             _payOSSettings = payOSSettings;
+            _vnpaySettings = vnpaySettings;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _vnpayService = vnpayService;
         }
 
         public async Task<ResponseDTO> AddFundsToWallet(int learnerId, decimal amount)
@@ -68,14 +73,14 @@ namespace InstruLearn_Application.BLL.Service
                 new ItemData("Add Funds to Wallet", 1, (int)amount)
             };
 
-                PaymentData paymentData = new PaymentData(
-                orderCode: orderCode,
-                amount: (int)amount,
-                description: "Add Funds to Wallet",
-                items: items,
-                cancelUrl: "https://firebasestorage.googleapis.com/v0/b/sdn-project-aba8a.appspot.com/o/Screenshot%202025-04-02%20182541.png?alt=media&token=94a3f55f-2b3f-4d07-8153-4ffa4e8eed6e",
-                returnUrl: "https://firebasestorage.googleapis.com/v0/b/sdn-project-aba8a.appspot.com/o/Screenshot%202025-04-02%20182541.png?alt=media&token=94a3f55f-2b3f-4d07-8153-4ffa4e8eed6e"
-                );
+            PaymentData paymentData = new PaymentData(
+            orderCode: orderCode,
+            amount: (int)amount,
+            description: "Add Funds to Wallet",
+            items: items,
+            cancelUrl: "https://firebasestorage.googleapis.com/v0/b/sdn-project-aba8a.appspot.com/o/Screenshot%202025-04-02%20182541.png?alt=media&token=94a3f55f-2b3f-4d07-8153-4ffa4e8eed6e",
+            returnUrl: "https://firebasestorage.googleapis.com/v0/b/sdn-project-aba8a.appspot.com/o/Screenshot%202025-04-02%20182541.png?alt=media&token=94a3f55f-2b3f-4d07-8153-4ffa4e8eed6e"
+            );
 
             var createPayment = await payOS.createPaymentLink(paymentData);
 
@@ -100,10 +105,67 @@ namespace InstruLearn_Application.BLL.Service
             };
         }
 
-        public async Task<ResponseDTO> UpdatePaymentStatusAsync(string orderCode)
+        public async Task<ResponseDTO> AddFundsWithVnpay(int learnerId, decimal amount, string ipAddress)
+        {
+            if (amount <= 0)
+            {
+                return new ResponseDTO { IsSucceed = false, Message = "Amount must be greater than zero." };
+            }
+
+            var wallet = await _unitOfWork.WalletRepository.FirstOrDefaultAsync(w => w.LearnerId == learnerId);
+            if (wallet == null)
+            {
+                return new ResponseDTO { IsSucceed = false, Message = "Wallet not found" };
+            }
+
+            // Generate a unique transaction ID
+            string transactionId = Guid.NewGuid().ToString();
+
+            // Create a wallet transaction
+            var transaction = new WalletTransaction
+            {
+                WalletId = wallet.WalletId,
+                Amount = amount,
+                TransactionId = transactionId,
+                TransactionType = TransactionType.AddFuns,
+                Status = TransactionStatus.Pending,
+                TransactionDate = DateTime.Now
+            };
+
+            await _unitOfWork.WalletTransactionRepository.AddAsync(transaction);
+            await _unitOfWork.SaveChangeAsync();
+
+            // Create VNPay payment request
+            var vnpayRequest = new VnpayPaymentRequest
+            {
+                OrderId = string.Empty, // Not using OrderId
+                Amount = amount,
+                OrderDescription = $"Add funds to wallet for user #{learnerId}",
+                LearnerId = learnerId,
+                TransactionId = transactionId
+            };
+
+            // Generate payment URL
+            string paymentUrl = _vnpayService.CreatePaymentUrl(vnpayRequest, ipAddress);
+
+            return new ResponseDTO
+            {
+                IsSucceed = true,
+                Message = "VNPay payment link created",
+                Data = new
+                {
+                    TransactionId = transaction.TransactionId,
+                    Amount = transaction.Amount,
+                    Status = transaction.Status.ToString(),
+                    PaymentUrl = paymentUrl
+                }
+            };
+        }
+
+        public async Task<ResponseDTO> UpdatePaymentStatusAsync(string transactionId)
         {
             var transaction = await _unitOfWork.WalletTransactionRepository
-        .GetTransactionWithWalletAsync(orderCode);
+                .GetTransactionWithWalletAsync(transactionId);
 
             if (transaction == null)
             {
@@ -142,10 +204,68 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
-        public async Task<ResponseDTO> FailPaymentAsync(string orderCode)
+        public async Task<ResponseDTO> ProcessVnpayReturnAsync(VnpayPaymentResponse paymentResponse)
+        {
+            if (!paymentResponse.Success)
+            {
+                return new ResponseDTO { IsSucceed = false, Message = $"Payment failed: {paymentResponse.Message}" };
+            }
+
+            var transaction = await _unitOfWork.WalletTransactionRepository
+                .GetTransactionWithWalletAsync(paymentResponse.TransactionId);
+
+            if (transaction == null)
+            {
+                return new ResponseDTO { IsSucceed = false, Message = "Transaction not found" };
+            }
+
+            // Check if transaction is already completed
+            if (transaction.Status == TransactionStatus.Complete)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Transaction is already completed"
+                };
+            }
+
+            // Begin transaction to ensure atomicity
+            using var dbTransaction = await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                // Update status to Complete
+                transaction.Status = TransactionStatus.Complete;
+
+                // Add the amount to the wallet balance
+                transaction.Wallet.Balance += transaction.Amount;
+                transaction.Wallet.UpdateAt = DateTime.Now;
+
+                await _unitOfWork.SaveChangeAsync();
+                await dbTransaction.CommitAsync();
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = "Payment completed successfully",
+                    Data = new
+                    {
+                        TransactionId = transaction.TransactionId,
+                        Amount = transaction.Amount,
+                        NewBalance = transaction.Wallet.Balance
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                await dbTransaction.RollbackAsync();
+                return new ResponseDTO { IsSucceed = false, Message = $"Error completing payment: {ex.Message}" };
+            }
+        }
+
+        public async Task<ResponseDTO> FailPaymentAsync(string transactionId)
         {
             var transaction = await _unitOfWork.WalletTransactionRepository
-                .GetTransactionWithWalletAsync(orderCode);
+                .GetTransactionWithWalletAsync(transactionId);
 
             if (transaction == null)
             {
@@ -169,7 +289,6 @@ namespace InstruLearn_Application.BLL.Service
                 transaction.Status = TransactionStatus.Failed;
 
                 // No balance update needed for failed transactions
-
                 await _unitOfWork.SaveChangeAsync();
 
                 return new ResponseDTO { IsSucceed = true, Message = "Payment marked as failed" };
