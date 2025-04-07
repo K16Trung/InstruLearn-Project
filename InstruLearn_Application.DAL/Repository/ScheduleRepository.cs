@@ -55,7 +55,8 @@ namespace InstruLearn_Application.DAL.Repository
                 .Include(s => s.ScheduleDays)
                 .ThenInclude(sd => sd.DayOfWeeks)
                 .Include(s => s.Learner)
-                    .ThenInclude(l => l.Account) // Include the Account relationship to access address
+                    .ThenInclude(l => l.Account)
+                    .ThenInclude(a => a.Address)
                 .ToListAsync();
         }
 
@@ -105,7 +106,7 @@ namespace InstruLearn_Application.DAL.Repository
                 .Where(s => s.TeacherId == teacherId && s.Mode == ScheduleMode.Center)
                 .Include(s => s.Teacher)
                 .Include(s => s.Learner)
-                .Include(s => s.Learner.Account)
+                .ThenInclude(l => l.Account)
                 .Include(s => s.Class)
                 .Include(s => s.Registration)
                 .Include(s => s.ScheduleDays)
