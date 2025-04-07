@@ -5,7 +5,9 @@ using InstruLearn_Application.Model.Enum;
 using InstruLearn_Application.Model.Models;
 using InstruLearn_Application.Model.Models.DTO;
 using InstruLearn_Application.Model.Models.DTO.Class;
+using InstruLearn_Application.Model.Models.DTO.ClassDay;
 using InstruLearn_Application.Model.Models.DTO.Feedback;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,11 +34,65 @@ namespace InstruLearn_Application.BLL.Service
             return ClassMapper;
         }
 
-        public async Task<ClassDTO> GetClassByIdAsync(int classId)
+        public async Task<ResponseDTO> GetClassByIdAsync(int id)
         {
-            var ClassGetById = await _unitOfWork.ClassRepository.GetByIdAsync(classId);
-            var ClassMapper = _mapper.Map<ClassDTO>(ClassGetById);
-            return ClassMapper;
+            try
+            {
+                var classEntity = await _unitOfWork.ClassRepository.GetByIdAsync(id);
+                if (classEntity == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Class not found."
+                    };
+                }
+
+                // Get class days
+                var classDays = await _unitOfWork.ClassDayRepository.GetQuery()
+                    .Where(cd => cd.ClassId == id)
+                    .ToListAsync();
+
+                // Get students enrolled in this class
+                var learnerClasses = await _unitOfWork.dbContext.Learner_Classes
+                    .Where(lc => lc.ClassId == id)
+                    .Include(lc => lc.Learner)
+                        .ThenInclude(l => l.Account)
+                    .ToListAsync();
+
+                // Map to DTO
+                var classDetailDTO = _mapper.Map<ClassDetailDTO>(classEntity);
+
+                // Map class days
+                classDetailDTO.ClassDays = _mapper.Map<List<ClassDayDTO>>(classDays);
+
+                // Add student information
+                classDetailDTO.StudentCount = learnerClasses.Count;
+                classDetailDTO.Students = learnerClasses.Select(lc => new ClassStudentDTO
+                {
+                    LearnerId = lc.LearnerId,
+                    FullName = lc.Learner?.FullName ?? "N/A",
+                    Email = lc.Learner?.Account?.Email ?? "N/A",
+                    PhoneNumber = lc.Learner?.Account?.PhoneNumber ?? "N/A",
+                    Avatar = lc.Learner?.Account?.Avatar ?? "N/A"
+
+                }).ToList();
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = "Class details retrieved successfully.",
+                    Data = classDetailDTO
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Failed to retrieve class details: {ex.Message}"
+                };
+            }
         }
 
         public async Task<ResponseDTO> GetClassesByMajorIdAsync(int majorId)
@@ -191,32 +247,56 @@ namespace InstruLearn_Application.BLL.Service
 
         public async Task<ResponseDTO> UpdateClassAsync(int classId, UpdateClassDTO updateClassDTO)
         {
-            var classUpdate = await _unitOfWork.ClassRepository.GetByIdAsync(classId);
-            if (classUpdate != null)
+            using var transaction = await _unitOfWork.BeginTransactionAsync();
+
+            try
             {
-                classUpdate = _mapper.Map(updateClassDTO, classUpdate);
-                await _unitOfWork.ClassRepository.UpdateAsync(classUpdate);
-                var result = await _unitOfWork.SaveChangeAsync();
-                if (result > 0)
+                var classEntity = await _unitOfWork.ClassRepository.GetByIdAsync(classId);
+                if (classEntity == null)
                 {
                     return new ResponseDTO
                     {
-                        IsSucceed = true,
-                        Message = "Đã cập nhật lớp thành công!"
+                        IsSucceed = false,
+                        Message = "Không tìm thấy lớp!"
                     };
                 }
+
+                // Store the previous status
+                var previousStatus = classEntity.Status;
+
+                // Update the status property
+                classEntity.Status = updateClassDTO.Status;
+
+                await _unitOfWork.ClassRepository.UpdateAsync(classEntity);
+                await _unitOfWork.SaveChangeAsync();
+
+                // Commit the transaction regardless of the SaveChangeAsync return value
+                await _unitOfWork.CommitTransactionAsync();
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = "Đã cập nhật trạng thái lớp thành công!",
+                    Data = new
+                    {
+                        ClassId = classId,
+                        ClassName = classEntity.ClassName,
+                        PreviousStatus = previousStatus,
+                        NewStatus = classEntity.Status
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Cập nhật lớp thất bại!"
+                    Message = $"Lỗi khi cập nhật trạng thái lớp: {ex.Message}"
                 };
             }
-            return new ResponseDTO
-            {
-                IsSucceed = false,
-                Message = "Không tìm thấy lớp!"
-            };
         }
+
 
         public async Task<ResponseDTO> DeleteClassAsync(int classId)
         {
