@@ -11,16 +11,31 @@ namespace InstruLearn_Application.Controllers
     public class WalletController : ControllerBase
     {
         private readonly IWalletService _walletService;
+        private readonly IVnpayService _vnpayService;
 
-        public WalletController(IWalletService walletService)
+        public WalletController(IWalletService walletService, IVnpayService vnpayService)
         {
             _walletService = walletService;
+            _vnpayService = vnpayService;
         }
 
         [HttpPost("add-funds")]
         public async Task<IActionResult> AddFunds([FromBody] AddFundsRequest request)
         {
             var result = await _walletService.AddFundsToWallet(request.LearnerId, request.Amount);
+            if (!result.IsSucceed)
+                return BadRequest(result);
+
+            return Ok(result);
+        }
+
+        [HttpPost("add-funds-vnpay")]
+        public async Task<IActionResult> AddFundsWithVnpay([FromBody] AddFundsRequest request)
+        {
+            // Get the client IP address
+            string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
+
+            var result = await _walletService.AddFundsWithVnpay(request.LearnerId, request.Amount, ipAddress);
             if (!result.IsSucceed)
                 return BadRequest(result);
 
@@ -44,7 +59,7 @@ namespace InstruLearn_Application.Controllers
 
             return Ok(new { message = "Payment status updated successfully" });
         }
-        
+
         [HttpPut("update-fail-payment-status")]
         public async Task<IActionResult> FailedPaymentStatus([FromBody] PaymentStatusRequest request)
         {
@@ -73,6 +88,5 @@ namespace InstruLearn_Application.Controllers
 
             return Ok(response);
         }
-
     }
 }

@@ -1,4 +1,3 @@
-
 using InstruLearn_Application.DAL.Repository.IRepository;
 using InstruLearn_Application.DAL.Repository;
 using InstruLearn_Application.Model.Data;
@@ -69,6 +68,13 @@ namespace InstruLearn_Application
             //PayOS
             builder.Services.Configure<PayOSSettings>(builder.Configuration.GetSection("PayOS"));
             builder.Services.AddSingleton<PayOSSettings>(sp => sp.GetRequiredService<IOptions<PayOSSettings>>().Value);
+
+            // Add the following to ConfigureServices in Program.cs
+
+            // VNPay Configuration
+            builder.Services.Configure<VnpaySettings>(builder.Configuration.GetSection("Vnpay"));
+            builder.Services.AddSingleton<VnpaySettings>(sp => sp.GetRequiredService<IOptions<VnpaySettings>>().Value);
+            builder.Services.AddScoped<IVnpayService, VnpayService>();
 
             // Inject app Dependency Injection
             builder.Services.AddScoped<ApplicationDbContext>();
