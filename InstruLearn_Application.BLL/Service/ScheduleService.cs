@@ -149,7 +149,7 @@ namespace InstruLearn_Application.BLL.Service
                 var learningRegs = await _unitOfWork.LearningRegisRepository
                     .GetWithIncludesAsync(
                         x => x.LearnerId == learnerId && x.Status == LearningRegis.Completed,
-                        "Teacher,Learner,LearningRegistrationDay,Schedules"
+                        "Teacher,Learner.Account,LearningRegistrationDay,Schedules"
                     );
 
                 if (learningRegs == null || !learningRegs.Any())
@@ -228,6 +228,7 @@ namespace InstruLearn_Application.BLL.Service
                                 TeacherName = learningRegis.Teacher?.Fullname ?? "N/A",
                                 LearnerId = learningRegis.LearnerId,
                                 LearnerName = learningRegis.Learner?.FullName ?? "N/A",
+                                LearnerAddress = learningRegis.Learner?.Account?.Address ?? "N/A",
                                 ClassId = learningRegis.ClassId,
                                 ClassName = learningRegis.Classes?.ClassName ?? "N/A",
                                 RegistrationStartDay = learningRegis.StartDay,
@@ -281,7 +282,7 @@ namespace InstruLearn_Application.BLL.Service
                 var learningRegs = await _unitOfWork.LearningRegisRepository
                     .GetWithIncludesAsync(
                         x => x.TeacherId == teacherId && x.Status == LearningRegis.Completed,
-                        "Teacher,Learner,LearningRegistrationDay,Schedules"
+                        "Teacher,Learner.Account,LearningRegistrationDay,Schedules"
                     );
 
                 if (learningRegs == null || !learningRegs.Any())
@@ -360,7 +361,7 @@ namespace InstruLearn_Application.BLL.Service
                                 TeacherName = learningRegis.Teacher?.Fullname ?? "N/A",
                                 LearnerId = learningRegis.LearnerId,
                                 LearnerName = learningRegis.Learner?.FullName ?? "N/A",
-                                LearnerAddress = learningRegis.Learner?.Account?.Address ?? "N/A", // Add this line to include the learner's address
+                                LearnerAddress = learningRegis.Learner?.Account?.Address ?? "N/A",
                                 RegistrationStartDay = learningRegis.StartDay,
                                 LearningRegisId = learningRegis.LearningRegisId,
                                 ScheduleDays = orderedLearningDays.Select(day => new ScheduleDaysDTO
