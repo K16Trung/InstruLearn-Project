@@ -14,5 +14,7 @@ namespace InstruLearn_Application.Model.Models.DTO.Vnpay
         public decimal Amount { get; set; }
         public int LearnerId { get; set; }
         public string TransactionId { get; set; } = string.Empty;
+        public string SuccessUrl { get; set; } = string.Empty;
+        public string FailureUrl { get; set; } = string.Empty;
     }
 }

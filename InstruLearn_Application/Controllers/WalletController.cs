@@ -1,5 +1,8 @@
 ﻿using InstruLearn_Application.BLL.Service.IService;
+using InstruLearn_Application.Model.Configuration;
+using InstruLearn_Application.Model.Helper;
 using InstruLearn_Application.Model.Models.DTO.Payment;
+using InstruLearn_Application.Model.Models.DTO.Vnpay;
 using InstruLearn_Application.Model.Models.DTO.Wallet;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -12,11 +15,13 @@ namespace InstruLearn_Application.Controllers
     {
         private readonly IWalletService _walletService;
         private readonly IVnpayService _vnpayService;
+        private readonly VnpaySettings _vnpaySettings;
 
-        public WalletController(IWalletService walletService, IVnpayService vnpayService)
+        public WalletController(IWalletService walletService, IVnpayService vnpayService, VnpaySettings vnpaySettings)
         {
             _walletService = walletService;
             _vnpayService = vnpayService;
+            _vnpaySettings = vnpaySettings;
         }
 
         [HttpPost("add-funds")]
@@ -80,6 +85,102 @@ namespace InstruLearn_Application.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "An error occurred while processing the payment" });
+            }
+        }
+
+        [HttpPut("update-vnpay-payment-status-by-ordercode")]
+        public async Task<IActionResult> UpdateVnpayPaymentStatusByOrderCode([FromBody] PaymentStatusRequest request)
+        {
+            if (request == null || request.OrderCode <= 0)
+            {
+                return BadRequest(new { message = "Invalid OrderCode parameter" });
+            }
+
+            if (string.IsNullOrEmpty(request.Status))
+            {
+                request.Status = "00"; // Default to "00" (success code) if not specified
+            }
+
+            try
+            {
+                var result = await _walletService.UpdatePaymentStatusByOrderCodeWithVnpayAsync(request.OrderCode, request.Status);
+
+                if (!result.IsSucceed)
+                {
+                    return BadRequest(result);
+                }
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while processing the VNPay payment" });
+            }
+        }
+
+        [HttpGet("vnpay-return")]
+        public async Task<IActionResult> VnpayReturn()
+        {
+            try
+            {
+                // Extract success and failure URLs from query parameters
+                string successUrl = Request.Query["successUrl"].ToString();
+                string failureUrl = Request.Query["failureUrl"].ToString();
+
+                // Use VnPayLibrary to get a properly mapped response
+                var vnpayLib = new VnPayLibrary();
+                var response = vnpayLib.GetFullResponseData(Request.Query, _vnpaySettings.HashSecret);
+
+                // Log transaction information
+                Console.WriteLine($"Processing VNPay return: TxnRef={response.TxnRef}, ResponseCode={response.ResponseCode}");
+
+                if (!response.Success)
+                {
+                    // If signature validation fails, redirect to failure URL
+                    if (!string.IsNullOrEmpty(failureUrl))
+                    {
+                        return Redirect(failureUrl);
+                    }
+                    return BadRequest(new { message = "Invalid VNPay signature" });
+                }
+
+                var result = await _walletService.ProcessVnpayReturnAsync(response);
+
+                if (!result.IsSucceed)
+                {
+                    Console.WriteLine($"Failed to process payment: {result.Message}");
+
+                    // If payment processing fails, redirect to failure URL
+                    if (!string.IsNullOrEmpty(failureUrl))
+                    {
+                        return Redirect(failureUrl);
+                    }
+                    return BadRequest(result);
+                }
+
+                // Payment successful, redirect to success URL
+                if (!string.IsNullOrEmpty(successUrl))
+                {
+                    return Redirect(successUrl);
+                }
+
+                // If no success URL is provided, return success response as JSON
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception in VnpayReturn: {ex.Message}");
+
+                // Extract failure URL from query params
+                string failureUrl = Request.Query["failureUrl"].ToString();
+
+                // If exception occurs, redirect to failure URL
+                if (!string.IsNullOrEmpty(failureUrl))
+                {
+                    return Redirect(failureUrl);
+                }
+
+                return StatusCode(500, new { message = $"An error occurred: {ex.Message}" });
             }
         }
     }
