@@ -33,15 +33,15 @@ namespace InstruLearn_Application.BLL.Service
             pay.AddRequestData("vnp_Version", _vnpaySettings.Version);
             pay.AddRequestData("vnp_Command", _vnpaySettings.Command);
             pay.AddRequestData("vnp_TmnCode", _vnpaySettings.TmnCode);
-            pay.AddRequestData("vnp_Amount", ((int)request.Amount * 100).ToString()); // Amount in VND, multiply by 100
+            pay.AddRequestData("vnp_Amount", ((int)request.Amount * 100).ToString());
             pay.AddRequestData("vnp_CreateDate", vietnamTime.ToString("yyyyMMddHHmmss"));
             pay.AddRequestData("vnp_CurrCode", _vnpaySettings.CurrCode);
-            pay.AddRequestData("vnp_IpAddr", ipAddress.Replace("::1", "127.0.0.1")); // Replace this line
+            pay.AddRequestData("vnp_IpAddr", ipAddress.Replace("::1", "127.0.0.1")); 
             pay.AddRequestData("vnp_Locale", _vnpaySettings.Locale);
             pay.AddRequestData("vnp_OrderInfo", request.OrderDescription);
             pay.AddRequestData("vnp_OrderType", request.OrderType);
             pay.AddRequestData("vnp_ReturnUrl", _vnpaySettings.PaymentBackReturnUrl);
-            pay.AddRequestData("vnp_TxnRef", request.TransactionId); // Using TransactionId instead of OrderId
+            pay.AddRequestData("vnp_TxnRef", request.TransactionId); 
 
             var paymentUrl = pay.CreateRequestUrl(_vnpaySettings.BaseUrl, _vnpaySettings.HashSecret);
 
@@ -50,25 +50,23 @@ namespace InstruLearn_Application.BLL.Service
 
         public VnpayPaymentResponse ProcessPaymentReturn(IQueryCollection collection)
         {
-            // Use the VnPayLibrary directly to process the payment return
             var vnPayLibrary = new VnPayLibrary();
             var paymentResponse = vnPayLibrary.GetFullResponseData(collection, _vnpaySettings.HashSecret);
 
-            // Add additional fields that might not be set by the library
             if (collection.ContainsKey("vnp_Amount") && decimal.TryParse(collection["vnp_Amount"], out decimal amount))
             {
-                paymentResponse.Amount = amount / 100; // Amount is multiplied by 100 when sending
+                paymentResponse.Amount = amount / 100; 
             }
 
             paymentResponse.Message = GetResponseMessage(paymentResponse.ResponseCode);
-            paymentResponse.PaymentMethod = "VnPay"; // Set consistent payment method
+            paymentResponse.PaymentMethod = "VnPay";
 
             return paymentResponse;
         }
 
         public bool ValidateSignature(string inputHash, Dictionary<string, string> requestData)
         {
-            // Remove vnp_SecureHashType and vnp_SecureHash from the dictionary (if they exist)
+
             if (requestData.ContainsKey("vnp_SecureHashType"))
             {
                 requestData.Remove("vnp_SecureHashType");
@@ -78,18 +76,15 @@ namespace InstruLearn_Application.BLL.Service
                 requestData.Remove("vnp_SecureHash");
             }
 
-            // Sort the dictionary by key name
+
             var sortedData = new SortedDictionary<string, string>(requestData, new VnPayLibrary.VnPayCompare());
             
-            // Create a query string without the hash
             var queryString = string.Join("&", sortedData
                 .Where(kv => !string.IsNullOrEmpty(kv.Value))
                 .Select(kv => $"{WebUtility.UrlEncode(kv.Key)}={WebUtility.UrlEncode(kv.Value)}"));
 
-            // Calculate the hash value
             var hashValue = HmacSha512(_vnpaySettings.HashSecret, queryString);
 
-            // Compare the calculated hash with the input hash
             return string.Equals(inputHash, hashValue, StringComparison.OrdinalIgnoreCase);
         }
 

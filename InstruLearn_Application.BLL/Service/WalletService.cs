@@ -138,10 +138,9 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO { IsSucceed = false, Message = "Wallet not found" };
             }
 
-            // Generate a unique transaction ID
+
             string transactionId = Guid.NewGuid().ToString();
 
-            // Create a wallet transaction
             var transaction = new WalletTransaction
             {
                 WalletId = wallet.WalletId,
@@ -155,17 +154,15 @@ namespace InstruLearn_Application.BLL.Service
             await _unitOfWork.WalletTransactionRepository.AddAsync(transaction);
             await _unitOfWork.SaveChangeAsync();
 
-            // Create VNPay payment request
             var vnpayRequest = new VnpayPaymentRequest
             {
-                OrderId = string.Empty, // Not using OrderId
+                OrderId = string.Empty,
                 Amount = amount,
                 OrderDescription = $"Add funds to wallet for user #{learnerId}",
                 LearnerId = learnerId,
                 TransactionId = transactionId
             };
 
-            // Generate payment URL
             string paymentUrl = _vnpayService.CreatePaymentUrl(vnpayRequest, ipAddress);
 
             return new ResponseDTO
@@ -192,7 +189,6 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO { IsSucceed = false, Message = "Transaction not found" };
             }
 
-            // Check if transaction is already completed
             if (transaction.Status == TransactionStatus.Complete)
             {
                 return new ResponseDTO
@@ -202,14 +198,11 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
-            // Begin transaction to ensure atomicity
             using var dbTransaction = await _unitOfWork.BeginTransactionAsync();
             try
             {
-                // Update status to Complete
                 transaction.Status = TransactionStatus.Complete;
 
-                // Add the amount to the wallet balance
                 transaction.Wallet.Balance += transaction.Amount;
 
                 await _unitOfWork.SaveChangeAsync();
@@ -239,7 +232,6 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO { IsSucceed = false, Message = "Transaction not found" };
             }
 
-            // Check if transaction is already completed
             if (transaction.Status == TransactionStatus.Complete)
             {
                 return new ResponseDTO
@@ -249,14 +241,11 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
-            // Begin transaction to ensure atomicity
             using var dbTransaction = await _unitOfWork.BeginTransactionAsync();
             try
             {
-                // Update status to Complete
                 transaction.Status = TransactionStatus.Complete;
 
-                // Add the amount to the wallet balance
                 transaction.Wallet.Balance += transaction.Amount;
                 transaction.Wallet.UpdateAt = DateTime.Now;
 
@@ -292,7 +281,6 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO { IsSucceed = false, Message = "Transaction not found" };
             }
 
-            // Check if transaction is already in a final state
             if (transaction.Status == TransactionStatus.Complete ||
                 transaction.Status == TransactionStatus.Failed)
             {
@@ -305,10 +293,8 @@ namespace InstruLearn_Application.BLL.Service
 
             try
             {
-                // Update status to Failed
                 transaction.Status = TransactionStatus.Failed;
 
-                // No balance update needed for failed transactions
                 await _unitOfWork.SaveChangeAsync();
 
                 return new ResponseDTO { IsSucceed = true, Message = "Payment marked as failed" };
@@ -333,7 +319,6 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
-            // Use AutoMapper to map Wallet entity to WalletDTO
             var walletDto = _mapper.Map<WalletDTO>(wallet);
 
             return new ResponseDTO
