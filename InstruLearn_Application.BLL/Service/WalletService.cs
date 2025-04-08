@@ -95,6 +95,22 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO { IsSucceed = false, Message = "Failed to generate payment link" };
             }
 
+            transaction.OrderCode = createPayment.orderCode; // Add this field to WalletTransaction if it doesn't exist
+            await _unitOfWork.SaveChangeAsync();
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await PollTransactionStatusAsync(transactionId, createPayment.orderCode);
+                }
+                catch (Exception ex)
+                {
+                    // Log but don't throw
+                    // _logger.LogError(ex, $"Error polling transaction status: {ex.Message}");
+                }
+            });
+
             return new ResponseDTO
             {
                 IsSucceed = true,
@@ -326,6 +342,56 @@ namespace InstruLearn_Application.BLL.Service
                 Message = "Wallet retrieved successfully",
                 Data = walletDto
             };
+        }
+
+        private async Task PollTransactionStatusAsync(string transactionId, long orderCode)
+        {
+            // First poll after 2 minutes
+            await Task.Delay(TimeSpan.FromMinutes(2));
+
+            // Create PayOS instance
+            PayOS payOS = new PayOS(_payOSSettings.ClientId, _payOSSettings.ApiKey, _payOSSettings.ChecksumKey);
+
+            // Total number of attempts (checking every 5 mins for 30 mins)
+            int maxAttempts = 6;
+
+            for (int i = 0; i < maxAttempts; i++)
+            {
+                try
+                {
+                    // Get transaction from database first to check if it's already processed
+                    var transaction = await _unitOfWork.WalletTransactionRepository.GetTransactionWithWalletAsync(transactionId);
+
+                    // If transaction is already in final state, no need to continue polling
+                    if (transaction != null && (transaction.Status == TransactionStatus.Complete ||
+                                               transaction.Status == TransactionStatus.Failed))
+                    {
+                        return;
+                    }
+
+                    // Get payment status from PayOS
+                    var paymentInfo = await payOS.getPaymentLinkInformation(orderCode);
+
+                    if (paymentInfo.status == "PAID")
+                    {
+                        // Update wallet balance
+                        await UpdatePaymentStatusAsync(transactionId);
+                        return;
+                    }
+                    else if (paymentInfo.status == "CANCELLED" || paymentInfo.status == "FAILED")
+                    {
+                        await FailPaymentAsync(transactionId);
+                        return;
+                    }
+                }
+                catch
+                {
+                    // Ignore errors and continue polling
+                }
+
+                // Wait 5 minutes before next check
+                await Task.Delay(TimeSpan.FromMinutes(5));
+            }
         }
     }
 }
