@@ -329,6 +329,101 @@ namespace InstruLearn_Application.BLL.Service
             };
         }
 
+        public async Task<ResponseDTO> UpdatePaymentStatusByOrderCodeAsync(long orderCode, string status)
+        {
+            // Get the transaction by OrderCode
+            var transaction = await _unitOfWork.WalletTransactionRepository.GetOrderCodeWithWalletAsync(orderCode);
+
+            if (transaction == null)
+            {
+                return new ResponseDTO { IsSucceed = false, Message = $"Transaction not found for OrderCode: {orderCode}" };
+            }
+
+            // Check if transaction is already in a final state
+            if (transaction.Status == TransactionStatus.Complete || transaction.Status == TransactionStatus.Failed)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Cannot update transaction that is already in {transaction.Status} status"
+                };
+            }
+
+            // Process based on status
+            if (status == "PAID")
+            {
+                // Begin transaction to ensure atomicity
+                using var dbTransaction = await _unitOfWork.BeginTransactionAsync();
+                try
+                {
+                    // Update status to Complete
+                    transaction.Status = TransactionStatus.Complete;
+
+                    // Add the amount to the wallet balance
+                    transaction.Wallet.Balance += transaction.Amount;
+                    transaction.Wallet.UpdateAt = DateTime.Now;
+
+                    await _unitOfWork.SaveChangeAsync();
+                    await dbTransaction.CommitAsync();
+
+                    return new ResponseDTO
+                    {
+                        IsSucceed = true,
+                        Message = "Payment completed successfully",
+                        Data = new
+                        {
+                            TransactionId = transaction.TransactionId,
+                            OrderCode = transaction.OrderCode,
+                            Amount = transaction.Amount,
+                            NewBalance = transaction.Wallet.Balance
+                        }
+                    };
+                }
+                catch (Exception ex)
+                {
+                    await dbTransaction.RollbackAsync();
+                    return new ResponseDTO { IsSucceed = false, Message = $"Error completing payment: {ex.Message}" };
+                }
+            }
+            else if (status == "CANCELLED" || status == "FAILED")
+            {
+                try
+                {
+                    // Update status to Failed
+                    transaction.Status = TransactionStatus.Failed;
+
+                    // No balance update needed for failed transactions
+                    await _unitOfWork.SaveChangeAsync();
+
+                    return new ResponseDTO
+                    {
+                        IsSucceed = true,
+                        Message = "Payment marked as failed",
+                        Data = new
+                        {
+                            TransactionId = transaction.TransactionId,
+                            OrderCode = transaction.OrderCode,
+                            Status = "Failed"
+                        }
+                    };
+                }
+                catch (Exception ex)
+                {
+                    return new ResponseDTO { IsSucceed = false, Message = $"Error updating payment status: {ex.Message}" };
+                }
+            }
+            else
+            {
+                // Unknown status
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Unknown payment status: {status}"
+                };
+            }
+        }
+
+
         private async Task PollTransactionStatusAsync(string transactionId, long orderCode)
         {
             // First poll after 2 minutes

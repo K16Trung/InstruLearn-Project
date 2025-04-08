@@ -25,6 +25,12 @@ namespace InstruLearn_Application.DAL.Repository
             .Include(t => t.Wallet)
             .FirstOrDefaultAsync(t => t.TransactionId == transactionId);
         }
+        public async Task<WalletTransaction?> GetOrderCodeWithWalletAsync(long orderCode)
+        {
+            return await _appDbContext.Set<WalletTransaction>()
+            .Include(t => t.Wallet)
+            .FirstOrDefaultAsync(t => t.OrderCode == orderCode);
+        }
         public async Task<List<WalletTransaction>> GetAllTransactionsAsync()
         {
             return await _appDbContext.WalletTransactions
