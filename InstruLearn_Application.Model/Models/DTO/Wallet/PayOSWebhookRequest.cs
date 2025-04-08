@@ -1,4 +1,5 @@
-﻿using System;
+﻿using InstruLearn_Application.Model.Models.DTO.PayOSWebhook;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,10 +9,7 @@ namespace InstruLearn_Application.Model.Models.DTO.Wallet
 {
     public class PayOSWebhookRequest
     {
-        public string OrderCode { get; set; }
-        public string Status { get; set; }
-        public string TransactionId { get; set; }
-        public int Amount { get; set; }
-        public string Description { get; set; }
+        public PayOSWebhookData Data { get; set; }
+        public string Signature { get; set; }
     }
 }

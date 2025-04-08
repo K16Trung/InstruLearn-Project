@@ -51,12 +51,15 @@ namespace InstruLearn_Application.BLL.Service
 
             long orderCode = new Random().Next(100000, 999999);
 
+            // Generate a unique transaction ID
+            string transactionId = Guid.NewGuid().ToString();
+
             // Create a wallet transaction
             var transaction = new WalletTransaction
             {
                 WalletId = wallet.WalletId,
                 Amount = amount,
-                TransactionId = Guid.NewGuid().ToString(),
+                TransactionId = transactionId,
                 //OrderCode = orderCode,
                 TransactionType = TransactionType.AddFuns,
                 Status = TransactionStatus.Pending,
@@ -72,14 +75,15 @@ namespace InstruLearn_Application.BLL.Service
             {
                 new ItemData("Add Funds to Wallet", 1, (int)amount)
             };
+            string baseUrl = "https://instrulearnapplication2025-h7hfdte3etdth7av.southeastasia-01.azurewebsites.net";
 
             PaymentData paymentData = new PaymentData(
             orderCode: orderCode,
             amount: (int)amount,
-            description: "Add Funds to Wallet",
+            description: $"Add Funds to Wallet for Learner #{learnerId}",
             items: items,
-            cancelUrl: "https://firebasestorage.googleapis.com/v0/b/sdn-project-aba8a.appspot.com/o/Screenshot%202025-04-02%20182541.png?alt=media&token=94a3f55f-2b3f-4d07-8153-4ffa4e8eed6e",
-            returnUrl: "https://firebasestorage.googleapis.com/v0/b/sdn-project-aba8a.appspot.com/o/Screenshot%202025-04-02%20182541.png?alt=media&token=94a3f55f-2b3f-4d07-8153-4ffa4e8eed6e"
+            cancelUrl: $"{baseUrl}/api/payos/result?id={transactionId}&cancel=true",
+            returnUrl: $"{baseUrl}/api/payos/result?id={transactionId}&cancel=false"
             );
 
             var createPayment = await payOS.createPaymentLink(paymentData);
