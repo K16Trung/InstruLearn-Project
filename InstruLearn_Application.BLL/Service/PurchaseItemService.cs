@@ -21,12 +21,16 @@ namespace InstruLearn_Application.BLL.Service
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public PurchaseItemService(IPurchaseItemRepository purchaseItemRepository, IUnitOfWork unitOfWork, IMapper mapper)
+        public PurchaseItemService(
+            IPurchaseItemRepository purchaseItemRepository,
+            IUnitOfWork unitOfWork,
+            IMapper mapper)
         {
             _purchaseItemRepository = purchaseItemRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
+
         public async Task<List<ResponseDTO>> GetAllPurchaseItemAsync()
         {
             var purchaseItemList = await _unitOfWork.PurchaseItemRepository.GetPurchaseItemWithFullCourseDetailsAsync();
@@ -145,6 +149,7 @@ namespace InstruLearn_Application.BLL.Service
                 decimal totalAmountToDeduct = 0;
                 List<Purchase_Items> purchaseItems = new List<Purchase_Items>();
                 List<string> courseNames = new List<string>();
+                List<int> coursePackageIds = new List<int>();
 
                 // Process each course package in the request
                 foreach (var item in createPurchaseItemsDTO.CoursePackages)
@@ -153,6 +158,7 @@ namespace InstruLearn_Application.BLL.Service
                     var coursePackage = await _unitOfWork.CourseRepository.GetByIdAsync(item.CoursePackageId);
                     if (coursePackage == null)
                     {
+                        await _unitOfWork.RollbackTransactionAsync();
                         return new ResponseDTO
                         {
                             IsSucceed = false,
@@ -160,8 +166,9 @@ namespace InstruLearn_Application.BLL.Service
                         };
                     }
 
-                    // Store course name for success message
+                    // Store course information
                     courseNames.Add(coursePackage.CourseName);
+                    coursePackageIds.Add(item.CoursePackageId);
 
                     // Add course price to total
                     decimal itemAmount = coursePackage.Price ?? 0m;
@@ -170,7 +177,7 @@ namespace InstruLearn_Application.BLL.Service
                     // Create purchase item
                     var purchaseItem = new Purchase_Items
                     {
-                        PurchaseId = purchase.PurchaseId, // Use the new purchase ID
+                        PurchaseId = purchase.PurchaseId,
                         CoursePackageId = item.CoursePackageId,
                         TotalAmount = itemAmount,
                         Purchase = purchase,
@@ -182,6 +189,7 @@ namespace InstruLearn_Application.BLL.Service
                 // Check if wallet has sufficient funds
                 if (wallet.Balance < totalAmountToDeduct)
                 {
+                    await _unitOfWork.RollbackTransactionAsync();
                     return new ResponseDTO
                     {
                         IsSucceed = false,
@@ -229,6 +237,41 @@ namespace InstruLearn_Application.BLL.Service
                 wallet.Balance -= totalAmountToDeduct;
                 wallet.UpdateAt = DateTime.Now;
 
+                // Get all course content items for the purchased course packages
+                var allCourseContentItems = new List<Course_Content_Item>();
+
+                foreach (var coursePackageId in coursePackageIds)
+                {
+                    var courseContents = await _unitOfWork.CourseContentRepository.GetWithIncludesAsync(
+                        cc => cc.CoursePackageId == coursePackageId,
+                        "CourseContentItems");
+
+                    if (courseContents != null && courseContents.Any())
+                    {
+                        foreach (var content in courseContents)
+                        {
+                            if (content.CourseContentItems != null && content.CourseContentItems.Any())
+                            {
+                                foreach (var contentItem in content.CourseContentItems)
+                                {
+                                    if (contentItem.Status == CourseContentItemStatus.Free)
+                                    {
+                                        contentItem.Status = CourseContentItemStatus.Paid;
+                                        allCourseContentItems.Add(contentItem);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Update all content items in a batch
+                foreach (var item in allCourseContentItems)
+                {
+                    await _unitOfWork.CourseContentItemRepository.UpdateAsync(item);
+                }
+
+                // Save all changes and commit transaction
                 await _unitOfWork.SaveChangeAsync();
                 await _unitOfWork.CommitTransactionAsync();
 
@@ -254,7 +297,8 @@ namespace InstruLearn_Application.BLL.Service
                             CoursePackageId = pi.CoursePackageId,
                             CoursePackageName = pi.CoursePackage.CourseName,
                             Amount = pi.TotalAmount
-                        }).ToList()
+                        }).ToList(),
+                        UpdatedContentItems = allCourseContentItems.Count
                     }
                 };
             }

@@ -85,7 +85,6 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
-            // Validate course package type
             if (!Enum.IsDefined(typeof(CoursePackageStatus), createDto.Status))
             {
                 return new ResponseDTO

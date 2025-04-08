@@ -15,6 +15,6 @@ namespace InstruLearn_Application.Model.Models.DTO.Course
         public string? CourseDescription { get; set; }
         public string? Headline { get; set; }
         public string? ImageUrl { get; set; }
-        public CoursePackageStatus CoursePackageType { get; set; }
+        public CoursePackageStatus Status { get; set; }
     }
 }
