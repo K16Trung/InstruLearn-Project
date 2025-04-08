@@ -10,7 +10,8 @@ namespace InstruLearn_Application.Model.Enum
     {
         Pending,
         Accepted,
-        Completed,
+        Fourty,
+        Sixty,
         Rejected
     }
 }
