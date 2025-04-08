@@ -17,6 +17,6 @@ namespace InstruLearn_Application.Model.Models
         public int ItemTypeId { get; set; }
         public ItemTypes ItemType { get; set; }
         public string ItemDes { get; set; }
-        public CourseContentItemType CourseContentItemType { get; set; }
+        public CourseContentItemStatus Status { get; set; }
     }
 }

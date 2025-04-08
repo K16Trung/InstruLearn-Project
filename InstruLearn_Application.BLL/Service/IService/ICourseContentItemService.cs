@@ -15,5 +15,6 @@ namespace InstruLearn_Application.BLL.Service.IService
         Task<ResponseDTO> AddCourseContentItemAsync(CreateCourseContentItemDTO createDto);
         Task<ResponseDTO> UpdateCourseContentItemAsync(int itemId, UpdateCourseContentItemDTO updateDto);
         Task<ResponseDTO> DeleteCourseContentItemAsync(int itemId);
+        Task<ResponseDTO> UpdateContentItemsStatusForPurchaseAsync(int coursePackageId, int learnerId);
     }
 }

@@ -57,13 +57,63 @@ namespace InstruLearn_Application.BLL.Service
 
         public async Task<ResponseDTO> AddCourseContentItemAsync(CreateCourseContentItemDTO createDto)
         {
-            var courseContentItem = _mapper.Map<Course_Content_Item>(createDto);
-            await _unitOfWork.CourseContentItemRepository.AddAsync(courseContentItem);
-            return new ResponseDTO
+            try
             {
-                IsSucceed = true,
-                Message = "Đã thêm nội dung khóa học thành công."
-            };
+                // Validate that the content exists
+                var courseContent = await _unitOfWork.CourseContentRepository.GetByIdAsync(createDto.ContentId);
+                if (courseContent == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Không tìm thấy nội dung khóa học với ID đã cung cấp."
+                    };
+                }
+
+                // Validate that the item type exists
+                var itemType = await _unitOfWork.ItemTypeRepository.GetByIdAsync(createDto.ItemTypeId);
+                if (itemType == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Không tìm thấy loại mục với ID đã cung cấp."
+                    };
+                }
+
+                // Map DTO to entity
+                var courseContentItem = new Course_Content_Item
+                {
+                    ContentId = createDto.ContentId,
+                    ItemTypeId = createDto.ItemTypeId,
+                    ItemDes = createDto.ItemDes,
+                    Status = createDto.Status // Use the status from the DTO (Free or Paid)
+                };
+
+                // Add the entity to repository
+                await _unitOfWork.CourseContentItemRepository.AddAsync(courseContentItem);
+
+                // Save changes to database
+                await _unitOfWork.SaveChangeAsync();
+
+                // Map the created entity back to DTO for response
+                var responseDto = _mapper.Map<CourseContentItemDTO>(courseContentItem);
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = "Đã thêm nội dung khóa học thành công.",
+                    Data = responseDto
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Lỗi khi thêm nội dung khóa học: {ex.Message}"
+                };
+            }
         }
 
         public async Task<ResponseDTO> UpdateCourseContentItemAsync(int itemId, UpdateCourseContentItemDTO updateDto)
@@ -84,6 +134,60 @@ namespace InstruLearn_Application.BLL.Service
                 IsSucceed = true,
                 Message = "Nội dung khóa học đã được cập nhật thành công."
             };
+        }
+        public async Task<ResponseDTO> UpdateContentItemsStatusForPurchaseAsync(int coursePackageId, int learnerId)
+        {
+            try
+            {
+                // Get all course contents for the purchased course package
+                var courseContents = await _unitOfWork.CourseContentRepository.GetWithIncludesAsync(
+                    cc => cc.CoursePackageId == coursePackageId,
+                    "CourseContentItems");
+
+                if (courseContents == null || !courseContents.Any())
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Không tìm thấy nội dung khóa học cho gói học này."
+                    };
+                }
+
+                int updatedItemsCount = 0;
+
+                foreach (var content in courseContents)
+                {
+                    if (content.CourseContentItems != null && content.CourseContentItems.Any())
+                    {
+                        foreach (var item in content.CourseContentItems)
+                        {
+                            if (item.Status == Model.Enum.CourseContentItemStatus.Paid)
+                            {
+                                item.Status = Model.Enum.CourseContentItemStatus.Free;
+                                await _unitOfWork.CourseContentItemRepository.UpdateAsync(item);
+                                updatedItemsCount++;
+                            }
+                        }
+                    }
+                }
+
+                await _unitOfWork.SaveChangeAsync();
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = $"Đã cập nhật {updatedItemsCount} mục nội dung từ mua sang đã miễn phí.",
+                    Data = updatedItemsCount
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Lỗi khi cập nhật trạng thái nội dung khóa học: {ex.Message}"
+                };
+            }
         }
 
         public async Task<ResponseDTO> DeleteCourseContentItemAsync(int itemId)

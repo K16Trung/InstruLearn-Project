@@ -1,4 +1,5 @@
-﻿using System;
+﻿using InstruLearn_Application.Model.Enum;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,5 +12,6 @@ namespace InstruLearn_Application.Model.Models.DTO.Course_Content_Item
         public int ItemTypeId { get; set; }
         public int ContentId { get; set; }
         public string ItemDes { get; set; }
+        public CourseContentItemStatus Status { get; set; }
     }
 }
