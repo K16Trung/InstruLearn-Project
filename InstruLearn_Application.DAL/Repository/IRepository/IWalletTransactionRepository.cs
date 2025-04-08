@@ -12,5 +12,6 @@ namespace InstruLearn_Application.DAL.Repository.IRepository
         Task<WalletTransaction?> GetTransactionWithWalletAsync(string transactionId);
         Task<List<WalletTransaction>> GetTransactionsByWalletIdAsync(int walletId);
         Task<List<WalletTransaction>> GetAllTransactionsAsync();
+        Task<WalletTransaction?> GetOrderCodeWithWalletAsync(long orderCode);
     }
 }
