@@ -232,7 +232,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO { IsSucceed = false, Message = "Transaction not found" };
             }
 
-            if (transaction.Status == TransactionStatus.Complete)
+            if (transaction.Status == TransactionStatus.Complete || transaction.Status == TransactionStatus.Complete)
             {
                 return new ResponseDTO
                 {
@@ -244,10 +244,34 @@ namespace InstruLearn_Application.BLL.Service
             using var dbTransaction = await _unitOfWork.BeginTransactionAsync();
             try
             {
+                // Set status to Paid for VNPAY transactions
                 transaction.Status = TransactionStatus.Complete;
 
                 transaction.Wallet.Balance += transaction.Amount;
                 transaction.Wallet.UpdateAt = DateTime.Now;
+
+                // Create a payment record if it doesn't exist
+                var payment = await _unitOfWork.PaymentsRepository.GetByTransactionIdAsync(transaction.TransactionId);
+                if (payment == null)
+                {
+                    payment = new Payment
+                    {
+                        WalletId = transaction.WalletId,
+                        TransactionId = transaction.TransactionId,
+                        WalletTransaction = transaction,
+                        AmountPaid = transaction.Amount,
+                        PaymentMethod = PaymentMethod.Wallet,
+                        PaymentFor = PaymentFor.AddFuns,
+                        Status = PaymentStatus.Completed,
+                        Wallet = transaction.Wallet
+                    };
+                    await _unitOfWork.PaymentsRepository.AddAsync(payment);
+                }
+                else
+                {
+                    payment.Status = PaymentStatus.Completed;
+                    // Update payment if necessary
+                }
 
                 await _unitOfWork.SaveChangeAsync();
                 await dbTransaction.CommitAsync();
