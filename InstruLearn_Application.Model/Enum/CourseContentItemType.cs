@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace InstruLearn_Application.Model.Enum
 {
-    public enum CoursePackageType
+    public enum CourseContentItemType
     {
-        Pending = 0,
-        Open = 1,
+        Free = 0,
+        Paid = 1,
     }
 }
