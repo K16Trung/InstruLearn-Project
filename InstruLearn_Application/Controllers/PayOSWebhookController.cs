@@ -131,5 +131,13 @@ namespace InstruLearn_Application.Controllers
                 return StatusCode(500, new { message = "Internal server error" });
             }
         }
+
+        // Add to PayOSWebhookController.cs
+        [HttpGet("webhook-test")]
+        public IActionResult TestWebhook()
+        {
+            return Ok(new { message = "PayOS webhook endpoint is accessible", timestamp = DateTime.UtcNow });
+        }
+
     }
 }
