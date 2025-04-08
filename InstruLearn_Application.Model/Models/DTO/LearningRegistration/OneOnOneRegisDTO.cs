@@ -37,6 +37,7 @@ namespace InstruLearn_Application.Model.Models.DTO.LearningRegistration
         public string LearningRequest { get; set; }
         public List<string> LearningDays { get; set; }
         public decimal? Price { get; set; }
+        public string? LearningPath { get; set; }
         public string Status { get; set; }
     }
 }
