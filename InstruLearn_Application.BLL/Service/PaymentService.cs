@@ -46,7 +46,9 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO { IsSucceed = false, Message = "Wallet not found." };
                 }
 
-                decimal requiredAmount = learningRegis.Price.Value * 0.4m; // 40% of total price
+                decimal totalPrice = learningRegis.Price.Value;
+                decimal requiredAmount = totalPrice * 0.4m; // 40% of total price
+                decimal remainingAmount = totalPrice * 0.6m; // 60% of total price
 
                 if (wallet.Balance < requiredAmount)
                 {
@@ -85,7 +87,8 @@ namespace InstruLearn_Application.BLL.Service
                 await _unitOfWork.PaymentsRepository.AddAsync(payment);
 
                 // Update Learning Registration Status
-                learningRegis.Status = LearningRegis.Completed;
+                learningRegis.Status = LearningRegis.Fourty;
+                learningRegis.RemainingAmount = remainingAmount;
                 await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
 
                 // ✅ Create schedules for learner and teacher
@@ -111,6 +114,87 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO { IsSucceed = false, Message = "Payment failed. " + ex.Message };
             }
         }
+
+
+        public async Task<ResponseDTO> ProcessRemainingPaymentAsync(int learningRegisId)
+        {
+            try
+            {
+                var learningRegis = await _unitOfWork.LearningRegisRepository.GetByIdAsync(learningRegisId);
+                if (learningRegis == null)
+                {
+                    return new ResponseDTO { IsSucceed = false, Message = "Learning Registration not found." };
+                }
+
+                if (learningRegis.RemainingAmount == null || learningRegis.RemainingAmount <= 0)
+                {
+                    return new ResponseDTO { IsSucceed = false, Message = "No remaining payment required." };
+                }
+
+                var wallet = await _unitOfWork.WalletRepository.GetFirstOrDefaultAsync(w => w.LearnerId == learningRegis.LearnerId);
+                if (wallet == null)
+                {
+                    return new ResponseDTO { IsSucceed = false, Message = "Wallet not found." };
+                }
+
+                if (wallet.Balance < learningRegis.RemainingAmount)
+                {
+                    return new ResponseDTO { IsSucceed = false, Message = "Insufficient balance in wallet." };
+                }
+
+                using var transaction = await _unitOfWork.BeginTransactionAsync();
+
+                // Deduct from Wallet Balance
+                wallet.Balance -= learningRegis.RemainingAmount.Value;
+                wallet.UpdateAt = DateTime.UtcNow;
+                await _unitOfWork.WalletRepository.UpdateAsync(wallet);
+
+                // Create Wallet Transaction
+                var walletTransaction = new WalletTransaction
+                {
+                    TransactionId = Guid.NewGuid().ToString(),
+                    WalletId = wallet.WalletId,
+                    Amount = learningRegis.RemainingAmount.Value,
+                    TransactionType = TransactionType.Payment,
+                    Status = TransactionStatus.Complete,
+                    TransactionDate = DateTime.UtcNow
+                };
+                await _unitOfWork.WalletTransactionRepository.AddAsync(walletTransaction);
+
+                // Create Payment Record
+                var payment = new Payment
+                {
+                    WalletId = wallet.WalletId,
+                    TransactionId = walletTransaction.TransactionId,
+                    AmountPaid = learningRegis.RemainingAmount.Value,
+                    PaymentMethod = PaymentMethod.Wallet,
+                    PaymentFor = PaymentFor.LearningRegistration,
+                    Status = PaymentStatus.Completed
+                };
+                await _unitOfWork.PaymentsRepository.AddAsync(payment);
+
+                // Update Learning Registration Status and Clear Remaining Amount
+                learningRegis.Status = LearningRegis.Sixty;
+                learningRegis.RemainingAmount = 0;
+                await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
+
+                await _unitOfWork.SaveChangeAsync();
+                await _unitOfWork.CommitTransactionAsync();
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = "Remaining payment successful.",
+                    Data = null
+                };
+            }
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                return new ResponseDTO { IsSucceed = false, Message = "Payment failed. " + ex.Message };
+            }
+        }
+
 
     }
 }
