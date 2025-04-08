@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace InstruLearn_Application.Model.Enum
 {
-    public enum CourseContentItemType
+    public enum CourseContentItemStatus
     {
         Free = 0,
         Paid = 1,

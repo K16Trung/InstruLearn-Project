@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace InstruLearn_Application.Model.Enum
 {
-    public enum CoursePackageType
+    public enum CoursePackageStatus
     {
         Pending = 0,
         Open = 1,

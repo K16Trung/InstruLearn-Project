@@ -59,7 +59,7 @@ namespace InstruLearn_Application.BLL.Service
             var courses = await _unitOfWork.CourseRepository.GetAllAsync();
 
             // Filter courses with status = 0 and map to DTO
-            var filteredCourses = courses.Where(c => (int)c.CoursePackageType == 0).ToList();
+            var filteredCourses = courses.Where(c => (int)c.Status == 0).ToList();
             return _mapper.Map<List<CoursePackageTypeDTO>>(filteredCourses);
         }
 
@@ -69,7 +69,7 @@ namespace InstruLearn_Application.BLL.Service
             var courses = await _unitOfWork.CourseRepository.GetAllAsync();
 
             // Filter courses with status = 1 and map to DTO
-            var filteredCourses = courses.Where(c => (int)c.CoursePackageType == 1).ToList();
+            var filteredCourses = courses.Where(c => (int)c.Status == 1).ToList();
             return _mapper.Map<List<CoursePackageTypeDTO>>(filteredCourses);
         }
 
@@ -86,7 +86,7 @@ namespace InstruLearn_Application.BLL.Service
             }
 
             // Validate course package type
-            if (!Enum.IsDefined(typeof(CoursePackageType), createDto.CoursePackageType))
+            if (!Enum.IsDefined(typeof(CoursePackageStatus), createDto.Status))
             {
                 return new ResponseDTO
                 {
@@ -97,7 +97,7 @@ namespace InstruLearn_Application.BLL.Service
 
             var course = _mapper.Map<Course_Package>(createDto);
             course.Type = type;
-            course.CoursePackageType = createDto.CoursePackageType;
+            course.Status = createDto.Status;
             await _unitOfWork.CourseRepository.AddAsync(course);
             return new ResponseDTO
             {
