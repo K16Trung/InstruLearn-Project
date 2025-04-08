@@ -12,7 +12,5 @@ namespace InstruLearn_Application.BLL.Service.IService
     public interface IVnpayService
     {
         string CreatePaymentUrl(VnpayPaymentRequest request, string ipAddress);
-        VnpayPaymentResponse ProcessPaymentReturn(IQueryCollection collection);
-        bool ValidateSignature(string inputHash, Dictionary<string, string> requestData);
     }
 }

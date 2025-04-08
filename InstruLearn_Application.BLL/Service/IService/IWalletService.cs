@@ -17,6 +17,7 @@ namespace InstruLearn_Application.BLL.Service.IService
         Task<ResponseDTO> ProcessVnpayReturnAsync(VnpayPaymentResponse paymentResponse);
         Task<ResponseDTO> FailPaymentAsync(string transactionId);
         Task<ResponseDTO> UpdatePaymentStatusByOrderCodeAsync(long orderCode, string status);
+        Task<ResponseDTO> UpdatePaymentStatusByOrderCodeWithVnpayAsync(long orderCode, string status);
         Task<ResponseDTO> GetWalletByLearnerIdAsync(int learnerId);
     }
 }

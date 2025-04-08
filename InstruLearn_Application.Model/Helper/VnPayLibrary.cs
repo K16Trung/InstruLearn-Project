@@ -19,6 +19,8 @@ namespace InstruLearn_Application.Model.Helper
         public VnpayPaymentResponse GetFullResponseData(IQueryCollection collection, string hashSecret)
         {
             var vnPay = new VnPayLibrary();
+
+            // Add all VNPay parameters to the response data
             foreach (var (key, value) in collection)
             {
                 if (!string.IsNullOrEmpty(key) && key.StartsWith("vnp_"))
@@ -26,29 +28,44 @@ namespace InstruLearn_Application.Model.Helper
                     vnPay.AddResponseData(key, value);
                 }
             }
-            var orderId = Convert.ToInt64(vnPay.GetResponseData("vnp_TxnRef"));
-            var vnPayTranId = Convert.ToInt64(vnPay.GetResponseData("vnp_TransactionNo"));
-            var responseCode = vnPay.GetResponseData("vnp_ResponseCode");
+
+            // Extract the secure hash for validation
             var vnpSecureHash = collection.FirstOrDefault(k => k.Key == "vnp_SecureHash").Value;
-            var orderInfo = vnPay.GetResponseData("vnp_OrderInfo");
+
+            // Validate the signature
             var checkSignature = vnPay.ValidateSignature(vnpSecureHash, hashSecret);
 
             if (!checkSignature)
+            {
                 return new VnpayPaymentResponse()
                 {
-                    Success = false
+                    Success = false,
+                    Message = "Invalid signature"
                 };
+            }
 
+            // Map VNPay parameters to the response model
             return new VnpayPaymentResponse()
             {
                 Success = true,
-                PaymentMethod = "Wallet",
-                OrderDescription = orderInfo,
-                OrderId = orderId.ToString(),
-                PaymentId = vnPayTranId.ToString(),
+                Amount = vnPay.GetResponseData("vnp_Amount"),
+                BankCode = vnPay.GetResponseData("vnp_BankCode"),
+                BankTranNo = vnPay.GetResponseData("vnp_BankTranNo"),
+                CardType = vnPay.GetResponseData("vnp_CardType"),
+                OrderDescription = vnPay.GetResponseData("vnp_OrderInfo"),
+                PayDate = vnPay.GetResponseData("vnp_PayDate"),
+                ResponseCode = vnPay.GetResponseData("vnp_ResponseCode"),
+                TmnCode = vnPay.GetResponseData("vnp_TmnCode"),
+                TransactionNo = vnPay.GetResponseData("vnp_TransactionNo"),
+                TransactionStatus = vnPay.GetResponseData("vnp_TransactionStatus"),
+                TxnRef = vnPay.GetResponseData("vnp_TxnRef"),
+                SecureHash = vnpSecureHash,
+                PaymentMethod = "VNPay",
+                OrderId = vnPay.GetResponseData("vnp_TxnRef"),
+                PaymentId = vnPay.GetResponseData("vnp_TransactionNo"),
                 TransactionId = vnPay.GetResponseData("vnp_TxnRef"),
-                Token = vnpSecureHash,
-                ResponseCode = responseCode
+                Message = GetResponseMessage(vnPay.GetResponseData("vnp_ResponseCode")),
+                Token = vnpSecureHash
             };
         }
         public string GetIpAddress(HttpContext context)
@@ -178,6 +195,32 @@ namespace InstruLearn_Application.Model.Helper
                 var vnpCompare = CompareInfo.GetCompareInfo("en-US");
                 return vnpCompare.Compare(x, y, CompareOptions.Ordinal);
             }
+        }
+        private string GetResponseMessage(string responseCode)
+        {
+            return responseCode switch
+            {
+                "00" => "Successful transaction",
+                "01" => "Order not found",
+                "02" => "Transaction declined by bank",
+                "03" => "Invalid card/account information",
+                "04" => "Invalid card/account",
+                "05" => "Insufficient funds",
+                "06" => "Error from payment gateway",
+                "07" => "Card/account has reached credit limit",
+                "09" => "Expired card/account",
+                "10" => "Card/account is restricted",
+                "11" => "Card/account is inactive",
+                "12" => "Invalid card authentication",
+                "13" => "Transaction is already processed",
+                "24" => "Transaction cancelled",
+                "51" => "Insufficient balance",
+                "65" => "Exceeds withdrawal limit",
+                "75" => "Exceeded number of attempts",
+                "79" => "Card is suspected of fraud",
+                "99" => "Connection timed out",
+                _ => "Unknown error"
+            };
         }
     }
 }
