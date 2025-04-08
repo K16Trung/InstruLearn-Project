@@ -76,7 +76,7 @@ namespace InstruLearn_Application.BLL.Service
             {
                 new ItemData("Add Funds to Wallet", 1, (int)amount)
             };
-            string baseUrl = "https://fap.fpt.edu.vn/";
+            string baseUrl = "http://localhost:3000/profile";
 
             PaymentData paymentData = new PaymentData(
             orderCode: orderCode,
