@@ -29,16 +29,16 @@ namespace InstruLearn_Application.Model.Helper
             var orderId = Convert.ToInt64(vnPay.GetResponseData("vnp_TxnRef"));
             var vnPayTranId = Convert.ToInt64(vnPay.GetResponseData("vnp_TransactionNo"));
             var responseCode = vnPay.GetResponseData("vnp_ResponseCode");
-            var vnpSecureHash =
-                collection.FirstOrDefault(k => k.Key == "vnp_SecureHash").Value; //hash của dữ liệu trả về
+            var vnpSecureHash = collection.FirstOrDefault(k => k.Key == "vnp_SecureHash").Value;
             var orderInfo = vnPay.GetResponseData("vnp_OrderInfo");
-            var checkSignature =
-                vnPay.ValidateSignature(vnpSecureHash, hashSecret); //check Signature
+            var checkSignature = vnPay.ValidateSignature(vnpSecureHash, hashSecret);
+
             if (!checkSignature)
                 return new VnpayPaymentResponse()
                 {
                     Success = false
                 };
+
             return new VnpayPaymentResponse()
             {
                 Success = true,
@@ -46,7 +46,7 @@ namespace InstruLearn_Application.Model.Helper
                 OrderDescription = orderInfo,
                 OrderId = orderId.ToString(),
                 PaymentId = vnPayTranId.ToString(),
-                TransactionId = vnPayTranId.ToString(),
+                TransactionId = vnPay.GetResponseData("vnp_TxnRef"),
                 Token = vnpSecureHash,
                 ResponseCode = responseCode
             };
