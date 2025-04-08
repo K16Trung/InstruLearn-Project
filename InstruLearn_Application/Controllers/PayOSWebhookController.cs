@@ -38,8 +38,8 @@ namespace InstruLearn_Application.Controllers
                 if (cancel == "true")
                 {
                     await _walletService.FailPaymentAsync(id);
-                    // Redirect to your frontend
-                    return Redirect("https://www.facebook.com/FPTU.HCM/payment-failed");
+                    // Use a simpler URL during testing - this should eventually be your frontend URL
+                    return Redirect("/payment-failed");
                 }
 
                 // For successful payments, we'll receive code=00 and status=PAID
@@ -50,29 +50,26 @@ namespace InstruLearn_Application.Controllers
                     if (result.IsSucceed)
                     {
                         _logger.LogInformation($"Successfully updated payment for transaction {id}");
-                        // Redirect to your frontend
-                        return Redirect("https://fap.fpt.edu.vn/payment-success");
+                        return Redirect("/payment-success");
                     }
                     else
                     {
                         _logger.LogWarning($"Failed to update payment: {result.Message}");
-                        // Redirect to your frontend
-                        return Redirect($"https://www.facebook.com/FPTU.HCM/payment-failed?message={Uri.EscapeDataString(result.Message)}");
+                        return Redirect($"/payment-failed?message={Uri.EscapeDataString(result.Message)}");
                     }
                 }
 
                 // Default case for other statuses
                 await _walletService.FailPaymentAsync(id);
-                // Redirect to your frontend
-                return Redirect("https://www.facebook.com/FPTU.HCM/payment-failed");
+                return Redirect("/payment-failed");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing PayOS payment result");
-                // Redirect to your frontend with error message
-                return Redirect("https://www.facebook.com/FPTU.HCM/payment-failed?message=An+error+occurred");
+                return Redirect("/payment-failed?message=An+error+occurred");
             }
         }
+
 
 
 
@@ -131,5 +128,13 @@ namespace InstruLearn_Application.Controllers
                 return StatusCode(500, new { message = "Internal server error" });
             }
         }
+
+        // Add to PayOSWebhookController.cs
+        [HttpGet("webhook-test")]
+        public IActionResult TestWebhook()
+        {
+            return Ok(new { message = "PayOS webhook endpoint is accessible", timestamp = DateTime.UtcNow });
+        }
+
     }
 }

@@ -154,6 +154,8 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<IPaymentService, PaymentService>();
             builder.Services.AddScoped<IWalletTransactionService, WalletTransactionService>();
             builder.Services.AddAutoMapper(typeof(MappingProfile));
+            // Add after service registration in Program.cs
+            builder.Services.AddHostedService<PayOSWebhookRegistrationService>();
 
             // Add CORS
             builder.Services.AddCors(options =>
