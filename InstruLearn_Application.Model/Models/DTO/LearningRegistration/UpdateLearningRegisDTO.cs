@@ -13,5 +13,6 @@ namespace InstruLearn_Application.Model.Models.DTO.LearningRegistration
         public int LevelId { get; set; }
         public int? ResponseId { get; set; }
         //public decimal? Price { get; set; }
+        public string? LearningPath { get; set; }
     }
 }
