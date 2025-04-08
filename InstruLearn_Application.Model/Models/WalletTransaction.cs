@@ -13,6 +13,7 @@ namespace InstruLearn_Application.Model.Models
     {
         [Key]
         public string TransactionId { get; set; }
+        public long? OrderCode { get; set; }
         public int WalletId { get; set; }
         public Wallet Wallet { get; set; }
         [Column(TypeName = "decimal(18,2)")]
