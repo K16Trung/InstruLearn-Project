@@ -42,42 +42,6 @@ namespace InstruLearn_Application.Controllers
             return Ok(result);
         }
 
-        [HttpPut("update-payment-status")]
-        public async Task<IActionResult> UpdatePaymentStatus([FromBody] PaymentStatusRequest request)
-        {
-            if (request == null || string.IsNullOrEmpty(request.OrderCode))
-            {
-                return BadRequest(new { message = "Invalid request parameters" });
-            }
-
-            var result = await _walletService.UpdatePaymentStatusAsync(request.OrderCode);
-
-            if (!result.IsSucceed)
-            {
-                return BadRequest(new { message = result.Message });
-            }
-
-            return Ok(new { message = "Payment status updated successfully" });
-        }
-
-        [HttpPut("update-fail-payment-status")]
-        public async Task<IActionResult> FailedPaymentStatus([FromBody] PaymentStatusRequest request)
-        {
-            if (request == null || string.IsNullOrEmpty(request.OrderCode))
-            {
-                return BadRequest(new { message = "Invalid request parameters" });
-            }
-
-            var result = await _walletService.FailPaymentAsync(request.OrderCode);
-
-            if (!result.IsSucceed)
-            {
-                return BadRequest(new { message = result.Message });
-            }
-
-            return Ok(new { message = "Payment status updated successfully" });
-        }
-
         [HttpGet("{learnerId}")]
         public async Task<IActionResult> GetWalletByLearnerId(int learnerId)
         {
@@ -87,6 +51,36 @@ namespace InstruLearn_Application.Controllers
                 return NotFound(response);
 
             return Ok(response);
+        }
+
+        [HttpPut("update-payment-status-by-ordercode")]
+        public async Task<IActionResult> UpdatePaymentStatusByOrderCode([FromBody] PaymentStatusRequest request)
+        {
+            if (request == null || request.OrderCode <= 0)
+            {
+                return BadRequest(new { message = "Invalid OrderCode parameter" });
+            }
+
+            if (string.IsNullOrEmpty(request.Status))
+            {
+                request.Status = "PAID"; // Default to PAID if not specified
+            }
+
+            try
+            {
+                var result = await _walletService.UpdatePaymentStatusByOrderCodeAsync(request.OrderCode, request.Status);
+
+                if (!result.IsSucceed)
+                {
+                    return BadRequest(result);
+                }
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while processing the payment" });
+            }
         }
     }
 }
