@@ -75,12 +75,12 @@ namespace InstruLearn_Application.BLL.Service
             {
                 new ItemData("Add Funds to Wallet", 1, (int)amount)
             };
-            string baseUrl = "https://instrulearnapplication2025-h7hfdte3etdth7av.southeastasia-01.azurewebsites.net";
+            string baseUrl = "https://fap.fpt.edu.vn/";
 
             PaymentData paymentData = new PaymentData(
             orderCode: orderCode,
             amount: (int)amount,
-            description: $"Add Funds to Wallet for Learner #{learnerId}",
+            description: $"Add Funds #{learnerId}",
             items: items,
             cancelUrl: $"{baseUrl}/api/payos/result?id={transactionId}&cancel=true",
             returnUrl: $"{baseUrl}/api/payos/result?id={transactionId}&cancel=false"
