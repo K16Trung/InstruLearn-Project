@@ -88,36 +88,6 @@ namespace InstruLearn_Application.Controllers
             }
         }
 
-        [HttpPut("update-vnpay-payment-status-by-ordercode")]
-        public async Task<IActionResult> UpdateVnpayPaymentStatusByOrderCode([FromBody] PaymentStatusRequest request)
-        {
-            if (request == null || request.OrderCode <= 0)
-            {
-                return BadRequest(new { message = "Invalid OrderCode parameter" });
-            }
-
-            if (string.IsNullOrEmpty(request.Status))
-            {
-                request.Status = "00"; // Default to "00" (success code) if not specified
-            }
-
-            try
-            {
-                var result = await _walletService.UpdatePaymentStatusByOrderCodeWithVnpayAsync(request.OrderCode, request.Status);
-
-                if (!result.IsSucceed)
-                {
-                    return BadRequest(result);
-                }
-
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "An error occurred while processing the VNPay payment" });
-            }
-        }
-
         [HttpGet("vnpay-return")]
         public async Task<IActionResult> VnpayReturn()
         {
