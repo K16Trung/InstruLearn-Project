@@ -12,6 +12,7 @@ namespace InstruLearn_Application.BLL.Service.IService
     public interface IPaymentService
     {
         Task<ResponseDTO> ProcessLearningRegisPaymentAsync(CreatePaymentDTO paymentDTO);
+        Task<ResponseDTO> ProcessRemainingPaymentAsync(int learningRegisId);
 
     }
 }

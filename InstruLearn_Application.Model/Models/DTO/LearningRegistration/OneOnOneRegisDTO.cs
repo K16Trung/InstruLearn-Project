@@ -38,6 +38,8 @@ namespace InstruLearn_Application.Model.Models.DTO.LearningRegistration
         public List<string> LearningDays { get; set; }
         public decimal? Price { get; set; }
         public string? LearningPath { get; set; }
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal? RemainingAmount { get; set; }
         public string Status { get; set; }
     }
 }

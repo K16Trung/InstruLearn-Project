@@ -33,5 +33,18 @@ namespace InstruLearn_Application.Controllers
             }
             return BadRequest(result);
         }
+
+        [HttpPost("process-remaining-payment/{learningRegisId}")]
+        public async Task<IActionResult> ProcessRemainingPayment(int learningRegisId)
+        {
+            var result = await _paymentService.ProcessRemainingPaymentAsync(learningRegisId);
+
+            if (result.IsSucceed)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+
     }
 }
