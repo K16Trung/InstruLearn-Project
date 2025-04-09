@@ -21,7 +21,6 @@ namespace InstruLearn_Application.Model.Models.DTO.Vnpay
         public string CardType { get; set; } = string.Empty;
         public string Token { get; set; } = string.Empty;
         public string ResponseCode { get; set; } = string.Empty;
-        public string Link { get; set; } = string.Empty;
 
         // Additional fields for direct VNPay parameters
         public string BankTranNo { get; set; } = string.Empty;

@@ -368,90 +368,6 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
-        public async Task<ResponseDTO> UpdatePaymentStatusByOrderCodeWithVnpayAsync(long orderCode, string status)
-        {
-            // Get the transaction by OrderCode
-            var transaction = await _unitOfWork.WalletTransactionRepository.GetOrderCodeWithWalletAsync(orderCode);
-
-            if (transaction == null)
-            {
-                return new ResponseDTO { IsSucceed = false, Message = $"Transaction not found for OrderCode: {orderCode}" };
-            }
-
-            // Check if transaction is already in a final state
-            if (transaction.Status == TransactionStatus.Complete || transaction.Status == TransactionStatus.Failed)
-            {
-                return new ResponseDTO
-                {
-                    IsSucceed = false,
-                    Message = $"Cannot update transaction that is already in {transaction.Status} status"
-                };
-            }
-
-            // Process based on status
-            if (status == "00") // VNPay success code
-            {
-                // Begin transaction to ensure atomicity
-                using var dbTransaction = await _unitOfWork.BeginTransactionAsync();
-                try
-                {
-                    // Update status to Complete
-                    transaction.Status = TransactionStatus.Complete;
-
-                    // Add the amount to the wallet balance
-                    transaction.Wallet.Balance += transaction.Amount;
-                    transaction.Wallet.UpdateAt = DateTime.Now;
-
-                    await _unitOfWork.SaveChangeAsync();
-                    await dbTransaction.CommitAsync();
-
-                    return new ResponseDTO
-                    {
-                        IsSucceed = true,
-                        Message = "VNPay payment completed successfully",
-                        Data = new
-                        {
-                            TransactionId = transaction.TransactionId,
-                            OrderCode = transaction.OrderCode,
-                            Amount = transaction.Amount,
-                            NewBalance = transaction.Wallet.Balance
-                        }
-                    };
-                }
-                catch (Exception ex)
-                {
-                    await dbTransaction.RollbackAsync();
-                    return new ResponseDTO { IsSucceed = false, Message = $"Error completing VNPay payment: {ex.Message}" };
-                }
-            }
-            else
-            {
-                try
-                {
-                    // Update status to Failed
-                    transaction.Status = TransactionStatus.Failed;
-
-                    // No balance update needed for failed transactions
-                    await _unitOfWork.SaveChangeAsync();
-
-                    return new ResponseDTO
-                    {
-                        IsSucceed = true,
-                        Message = "VNPay payment marked as failed",
-                        Data = new
-                        {
-                            TransactionId = transaction.TransactionId,
-                            OrderCode = transaction.OrderCode,
-                            Status = "Failed"
-                        }
-                    };
-                }
-                catch (Exception ex)
-                {
-                    return new ResponseDTO { IsSucceed = false, Message = $"Error updating VNPay payment status: {ex.Message}" };
-                }
-            }
-        }
         public async Task<ResponseDTO> ProcessVnpayReturnAsync(VnpayPaymentResponse paymentResponse)
         {
             if (paymentResponse == null)
@@ -471,8 +387,15 @@ namespace InstruLearn_Application.BLL.Service
             {
                 return new ResponseDTO
                 {
-                    IsSucceed = false,
-                    Message = $"Cannot update transaction that is already in {transaction.Status} status"
+                    IsSucceed = transaction.Status == TransactionStatus.Complete,
+                    Message = $"Transaction is already in {transaction.Status} status",
+                    Data = new
+                    {
+                        TransactionId = transaction.TransactionId,
+                        Status = transaction.Status.ToString(),
+                        SuccessUrl = _vnpaySettings.SuccessUrl,
+                        FailureUrl = _vnpaySettings.FailureUrl
+                    }
                 };
             }
 
@@ -481,9 +404,7 @@ namespace InstruLearn_Application.BLL.Service
                 using var dbTransaction = await _unitOfWork.BeginTransactionAsync();
                 try
                 {
-  
                     transaction.Status = TransactionStatus.Complete;
-
                     transaction.Wallet.Balance += transaction.Amount;
                     transaction.Wallet.UpdateAt = DateTime.Now;
 
@@ -499,41 +420,57 @@ namespace InstruLearn_Application.BLL.Service
                             TransactionId = transaction.TransactionId,
                             Amount = transaction.Amount,
                             NewBalance = transaction.Wallet.Balance,
-                            Link = "https://firebasestorage.googleapis.com/v0/b/sdn-project-aba8a.appspot.com/o/Screenshot%202025-04-02%20182541.png?alt=media&token=94a3f55f-2b3f-4d07-8153-4ffa4e8eed6e"
+                            SuccessUrl = _vnpaySettings.SuccessUrl,
+                            FailureUrl = _vnpaySettings.FailureUrl
                         }
                     };
                 }
                 catch (Exception ex)
                 {
                     await dbTransaction.RollbackAsync();
-                    return new ResponseDTO { IsSucceed = false, Message = $"Error completing payment: {ex.Message}" };
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = $"Error completing payment: {ex.Message}",
+                        Data = new
+                        {
+                            FailureUrl = _vnpaySettings.FailureUrl
+                        }
+                    };
                 }
             }
             else
             {
                 try
                 {
-
                     transaction.Status = TransactionStatus.Failed;
                     await _unitOfWork.SaveChangeAsync();
 
                     return new ResponseDTO
                     {
-                        IsSucceed = true,
-                        Message = $"Payment marked as failed: {paymentResponse.Message}",
+                        IsSucceed = false,
+                        Message = $"Payment failed: {paymentResponse.Message}",
                         Data = new
                         {
                             TransactionId = transaction.TransactionId,
                             Status = "Failed",
                             ResponseCode = paymentResponse.ResponseCode,
                             ResponseMessage = paymentResponse.Message,
-                            Link = "https://firebasestorage.googleapis.com/v0/b/sdn-project-aba8a.appspot.com/o/Screenshot%202025-04-08%20211829.png?alt=media&token=68c9e81b-c748-4fde-997f-2fcc26b1bff6"
+                            FailureUrl = _vnpaySettings.FailureUrl
                         }
                     };
                 }
                 catch (Exception ex)
                 {
-                    return new ResponseDTO { IsSucceed = false, Message = $"Error updating payment status: {ex.Message}" };
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = $"Error updating payment status: {ex.Message}",
+                        Data = new
+                        {
+                            FailureUrl = _vnpaySettings.FailureUrl
+                        }
+                    };
                 }
             }
         }

@@ -89,13 +89,20 @@ namespace InstruLearn_Application.Controllers
         }
 
         [HttpGet("vnpay-return")]
-        public async Task<IActionResult> VnpayReturn()
+        public async Task<IActionResult> VnpayReturn([FromQuery] string successUrl = null, [FromQuery] string failureUrl = null)
         {
             try
             {
-                // Extract success and failure URLs from query parameters
-                string successUrl = Request.Query["successUrl"].ToString();
-                string failureUrl = Request.Query["failureUrl"].ToString();
+                // Get the URLs from query parameters if provided, otherwise use the ones from settings
+                string finalSuccessUrl = !string.IsNullOrEmpty(successUrl) ? successUrl : _vnpaySettings.SuccessUrl;
+                string finalFailureUrl = !string.IsNullOrEmpty(failureUrl) ? failureUrl : _vnpaySettings.FailureUrl;
+
+                // Fallback to application URLs if still empty
+                if (string.IsNullOrEmpty(finalSuccessUrl))
+                    finalSuccessUrl = "https://firebasestorage.googleapis.com/v0/b/sdn-project-aba8a.appspot.com/o/Screenshot%202025-04-02%20182541.png?alt=media&token=94a3f55f-2b3f-4d07-8153-4ffa4e8eed6e "; // Default frontend success page
+
+                if (string.IsNullOrEmpty(finalFailureUrl))
+                    finalFailureUrl = "https://firebasestorage.googleapis.com/v0/b/sdn-project-aba8a.appspot.com/o/Screenshot%202025-04-08%20211829.png?alt=media&token=68c9e81b-c748-4fde-997f-2fcc26b1bff6 "; // Default frontend failure page
 
                 // Use VnPayLibrary to get a properly mapped response
                 var vnpayLib = new VnPayLibrary();
@@ -107,50 +114,53 @@ namespace InstruLearn_Application.Controllers
                 if (!response.Success)
                 {
                     // If signature validation fails, redirect to failure URL
-                    if (!string.IsNullOrEmpty(failureUrl))
-                    {
-                        return Redirect(failureUrl);
-                    }
-                    return BadRequest(new { message = "Invalid VNPay signature" });
+                    return Redirect(finalFailureUrl);
                 }
 
                 var result = await _walletService.ProcessVnpayReturnAsync(response);
 
-                if (!result.IsSucceed)
+                if (response.ResponseCode == "00" && result.IsSucceed)
                 {
-                    Console.WriteLine($"Failed to process payment: {result.Message}");
-
-                    // If payment processing fails, redirect to failure URL
-                    if (!string.IsNullOrEmpty(failureUrl))
-                    {
-                        return Redirect(failureUrl);
-                    }
-                    return BadRequest(result);
+                    // Payment successful, redirect to success URL
+                    return Redirect(finalSuccessUrl);
                 }
-
-                // Payment successful, redirect to success URL
-                if (!string.IsNullOrEmpty(successUrl))
+                else
                 {
-                    return Redirect(successUrl);
+                    // Payment failed or processing error, redirect to failure URL
+                    return Redirect(finalFailureUrl);
                 }
-
-                // If no success URL is provided, return success response as JSON
-                return Ok(result);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Exception in VnpayReturn: {ex.Message}");
 
-                // Extract failure URL from query params
-                string failureUrl = Request.Query["failureUrl"].ToString();
+                // Default failure URL if we can't get it from settings or query
+                string emergencyFailureUrl = "http://localhost:3000/payment/failure";
 
-                // If exception occurs, redirect to failure URL
-                if (!string.IsNullOrEmpty(failureUrl))
+                try
                 {
-                    return Redirect(failureUrl);
-                }
+                    // Try to use the failure URL from settings if available
+                    if (!string.IsNullOrEmpty(_vnpaySettings.FailureUrl))
+                        return Redirect(_vnpaySettings.FailureUrl);
 
-                return StatusCode(500, new { message = $"An error occurred: {ex.Message}" });
+                    // Try to get it from query params
+                    string queryFailureUrl = Request.Query["failureUrl"].ToString();
+                    if (!string.IsNullOrEmpty(queryFailureUrl))
+                        return Redirect(queryFailureUrl);
+
+                    // Use emergency fallback
+                    return Redirect(emergencyFailureUrl);
+                }
+                catch
+                {
+                    // Last resort - return JSON response instead of redirect
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "Payment processing failed",
+                        error = ex.Message
+                    });
+                }
             }
         }
     }
