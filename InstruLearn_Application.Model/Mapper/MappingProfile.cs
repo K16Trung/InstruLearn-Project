@@ -225,17 +225,17 @@ namespace InstruLearn_Application.Model.Mapper
 
             // Course mapping
             CreateMap<Course_Package, CourseDTO>()
-            .ForMember(dest => dest.TypeName, opt => opt.MapFrom(src => src.Type.CourseTypeName))
+            .ForMember(dest => dest.CourseTypeName, opt => opt.MapFrom(src => src.Type.CourseTypeName))
             .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
             .ForMember(dest => dest.CourseContents, opt => opt.MapFrom(src => src.CourseContents))
             .ForMember(dest => dest.FeedBacks, opt => opt.MapFrom(src => src.FeedBacks))
             .ForMember(dest => dest.QnAs, opt => opt.MapFrom(src => src.QnAs));
             CreateMap<Course_Package, GetAllCourseDTO>()
-             .ForMember(dest => dest.TypeName, opt => opt.MapFrom(src => src.Type.CourseTypeName))
+             .ForMember(dest => dest.CourseTypeName, opt => opt.MapFrom(src => src.Type.CourseTypeName))
              .ReverseMap();
             
             CreateMap<Course_Package, CoursePackageTypeDTO>()
-             .ForMember(dest => dest.TypeName, opt => opt.MapFrom(src => src.Type.CourseTypeName))
+             .ForMember(dest => dest.CourseTypeName, opt => opt.MapFrom(src => src.Type.CourseTypeName))
              .ReverseMap();
 
             CreateMap<CreateCourseDTO, Course_Package>()
@@ -246,7 +246,7 @@ namespace InstruLearn_Application.Model.Mapper
                 .ReverseMap();
 
             CreateMap<Course_Package, CourseDTO>()
-            .ForMember(dest => dest.TypeName, opt => opt.MapFrom(src => src.Type.CourseTypeName));
+            .ForMember(dest => dest.CourseTypeName, opt => opt.MapFrom(src => src.Type.CourseTypeName));
 
             // Course Type mapping
             CreateMap<CourseType, CourseTypeDTO>().ReverseMap();
@@ -419,7 +419,7 @@ namespace InstruLearn_Application.Model.Mapper
 
             CreateMap<Course_Package, CourseDetailPurchaseDTO>()
                 .ForMember(dest => dest.CourseName, opt => opt.MapFrom(src => src.CourseName))
-                .ForMember(dest => dest.TypeName, opt => opt.MapFrom(src => src.Type.CourseTypeName))
+                .ForMember(dest => dest.CourseTypeName, opt => opt.MapFrom(src => src.Type.CourseTypeName))
                 .ForMember(dest => dest.CourseDescription, opt => opt.MapFrom(src => src.CourseDescription))
                 .ForMember(dest => dest.Headline, opt => opt.MapFrom(src => src.Headline))
                 .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.ImageUrl))

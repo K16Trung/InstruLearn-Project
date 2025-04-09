@@ -10,7 +10,7 @@ namespace InstruLearn_Application.Model.Models.DTO.Course
     public class CoursePackageTypeDTO
     {
         public int CoursePackageId { get; set; }
-        public string TypeName { get; set; }
+        public string CourseTypeName { get; set; }
         public string CourseName { get; set; }
         public string? CourseDescription { get; set; }
         public string? Headline { get; set; }
