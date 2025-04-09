@@ -16,5 +16,6 @@ namespace InstruLearn_Application.Model.Models
 
         // Navigation properties
         public ICollection<Class> Classes { get; set; }
+        public ICollection<Syllabus_Content> SyllabusContents { get; set; }
     }
 }

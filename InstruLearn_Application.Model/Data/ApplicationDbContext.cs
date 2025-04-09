@@ -49,6 +49,7 @@ namespace InstruLearn_Application.Model.Data
         public DbSet<Response> Responses { get; set; }
         public DbSet<ResponseType> ResponseTypes { get; set; }
         public DbSet<Learner_class> Learner_Classes { get; set; }
+        public DbSet<Syllabus_Content> Syllabus_Contents { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -441,6 +442,13 @@ namespace InstruLearn_Application.Model.Data
                 .HasOne(C => C.Classes)
                 .WithMany(lc => lc.Learner_Classes)
                 .HasForeignKey(C => C.ClassId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Syllabus
+            modelBuilder.Entity<Syllabus_Content>()
+                .HasOne(sc => sc.Syllabus)
+                .WithMany(s => s.SyllabusContents)
+                .HasForeignKey(sc => sc.SyllabusId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }
