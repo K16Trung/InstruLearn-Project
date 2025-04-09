@@ -10,10 +10,10 @@ namespace InstruLearn_Application.BLL.Service.IService
 {
     public interface ISyllabusContentService
     {
-        Task<ResponseDTO> GetAllSyllabusContentsAsync();
-        Task<ResponseDTO> GetSyllabusContentByIdAsync(int contentId);
+        Task<List<ResponseDTO>> GetAllSyllabusContentsAsync();
+        Task<ResponseDTO> GetSyllabusContentByIdAsync(int syallbusContentId);
         Task<ResponseDTO> AddSyllabusContentAsync(CreateSyllabusContentDTO createDto);
-        Task<ResponseDTO> UpdateSyllabusContentAsync(UpdateSyllabusContentDTO updateDto);
-        Task<ResponseDTO> DeleteSyllabusContentAsync(int contentId);
+        Task<ResponseDTO> UpdateSyllabusContentAsync(int syallbusContentId, UpdateSyllabusContentDTO updateDto);
+        Task<ResponseDTO> DeleteSyllabusContentAsync(int syallbusContentId);
     }
 }

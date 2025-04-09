@@ -34,6 +34,7 @@ using InstruLearn_Application.Model.Models.DTO.ScheduleDays;
 using InstruLearn_Application.Model.Models.DTO.Schedules;
 using InstruLearn_Application.Model.Models.DTO.Staff;
 using InstruLearn_Application.Model.Models.DTO.Syllabus;
+using InstruLearn_Application.Model.Models.DTO.SyllbusContent;
 using InstruLearn_Application.Model.Models.DTO.Teacher;
 using InstruLearn_Application.Model.Models.DTO.TeacherMajor;
 using InstruLearn_Application.Model.Models.DTO.Test_Result;
@@ -600,6 +601,25 @@ namespace InstruLearn_Application.Model.Mapper
 
             //wallet learner_class mapping
             CreateMap<Learner_class, LearnerClassPaymentDTO>().ReverseMap();
+
+            // Syllabus Content mapping
+            CreateMap<Syllabus, SyllabusContentDTO>()
+                .ForMember(dest => dest.SyllabusId, opt => opt.MapFrom(src => src.SyllabusId))
+                .ForMember(dest => dest.SyllabusName, opt => opt.MapFrom(src => src.SyllabusName))
+                .ForMember(dest => dest.SyllabusContents, opt => opt.MapFrom(src => src.SyllabusContents));
+
+            CreateMap<Syllabus_Content, SyllabusContentDetailDTO>()
+                .ForMember(dest => dest.SyllabusContentId, opt => opt.MapFrom(src => src.SyllabusContentId))
+                .ForMember(dest => dest.ContentName, opt => opt.MapFrom(src => src.ContentName));
+
+            CreateMap<Syllabus_Content, SyllabusContentDTO>()
+                .ForMember(dest => dest.SyllabusId, opt => opt.MapFrom(src => src.SyllabusId))
+                .ForMember(dest => dest.SyllabusName, opt => opt.MapFrom(src => src.Syllabus.SyllabusName))
+                .ForMember(dest => dest.SyllabusContents, opt => opt.Ignore());
+
+            CreateMap<CreateSyllabusContentDTO, Syllabus_Content>()
+                .ForMember(dest => dest.SyllabusId, opt => opt.MapFrom(src => src.SyllabusId))
+                .ForMember(dest => dest.ContentName, opt => opt.MapFrom(src => src.ContentName));
         }
     }
 }
