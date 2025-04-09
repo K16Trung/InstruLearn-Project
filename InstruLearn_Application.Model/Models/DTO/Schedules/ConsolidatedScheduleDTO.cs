@@ -22,6 +22,7 @@ namespace InstruLearn_Application.Model.Models.DTO.Schedules
         public DateOnly StartDay { get; set; }
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public ScheduleMode Mode { get; set; }
+        public AttendanceStatus AttendanceStatus { get; set; }
         public DateOnly? RegistrationStartDay { get; set; }
         public List<ScheduleParticipantDTO> Participants { get; set; } = new List<ScheduleParticipantDTO>();
         public List<ScheduleDaysDTO> ScheduleDays { get; set; } = new List<ScheduleDaysDTO>();

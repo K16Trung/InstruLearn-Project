@@ -1,4 +1,5 @@
-﻿using System;
+﻿using InstruLearn_Application.Model.Enum;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,5 +13,6 @@ namespace InstruLearn_Application.Model.Models.DTO.Schedules
         public string LearnerName { get; set; }
         public int LearningRegisId { get; set; }
         public int ScheduleId { get; set; }
+        public AttendanceStatus AttendanceStatus { get; set; }
     }
 }
