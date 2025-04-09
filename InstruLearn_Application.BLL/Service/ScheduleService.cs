@@ -234,6 +234,7 @@ namespace InstruLearn_Application.BLL.Service
                                 ClassName = learningRegis.Classes?.ClassName ?? "N/A",
                                 RegistrationStartDay = learningRegis.StartDay,
                                 LearningRegisId = learningRegis.LearningRegisId,
+                                AttendanceStatus = existingSchedule?.AttendanceStatus ?? 0,
                                 ScheduleDays = orderedLearningDays.Select(day => new ScheduleDaysDTO
                                 {
                                     DayOfWeeks = (DayOfWeeks)day.DayOfWeek
@@ -365,6 +366,7 @@ namespace InstruLearn_Application.BLL.Service
                                 LearnerAddress = learningRegis.Learner?.Account?.Address ?? "N/A",
                                 RegistrationStartDay = learningRegis.StartDay,
                                 LearningRegisId = learningRegis.LearningRegisId,
+                                AttendanceStatus = existingSchedule?.AttendanceStatus ?? 0,
                                 ScheduleDays = orderedLearningDays.Select(day => new ScheduleDaysDTO
                                 {
                                     DayOfWeeks = (DayOfWeeks)day.DayOfWeek

@@ -11,5 +11,6 @@ namespace InstruLearn_Application.Model.Models.DTO.Schedules
         public int LearnerId { get; set; }
         public string LearnerName { get; set; }
         public int LearningRegisId { get; set; }
+        public int ScheduleId { get; set; }
     }
 }

@@ -258,8 +258,11 @@ namespace InstruLearn_Application.DAL.Repository
                         learners.TryGetValue(participantGroup.Key.LearnerId.Value, out var learner) &&
                         participantGroup.Key.LearningRegisId.HasValue)
                     {
+                        var schedule = participantGroup.First();
+
                         scheduleParticipants.Add(new ScheduleParticipantDTO
                         {
+                            ScheduleId = schedule.ScheduleId,
                             LearnerId = participantGroup.Key.LearnerId.Value,
                             LearnerName = learner.FullName,
                             LearningRegisId = participantGroup.Key.LearningRegisId.Value
