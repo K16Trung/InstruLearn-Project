@@ -7,6 +7,16 @@
       "type": "mssql.azure",
       "connectionId": "ConnectionStrings:DB1",
       "dynamicId": null
+    },
+    "mssql3": {
+      "ignored": "true",
+      "type": "mssql",
+      "connectionId": "ConnectionStrings:DB"
+    },
+    "mssql1": {
+      "ignored": "true",
+      "type": "mssql",
+      "connectionId": "ConnectionStrings:DatabaseConnection"
     }
   }
 }

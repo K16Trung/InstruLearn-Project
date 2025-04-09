@@ -59,7 +59,6 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                // Validate that the content exists
                 var courseContent = await _unitOfWork.CourseContentRepository.GetByIdAsync(createDto.ContentId);
                 if (courseContent == null)
                 {
@@ -70,7 +69,6 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Validate that the item type exists
                 var itemType = await _unitOfWork.ItemTypeRepository.GetByIdAsync(createDto.ItemTypeId);
                 if (itemType == null)
                 {
@@ -81,22 +79,18 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Map DTO to entity
                 var courseContentItem = new Course_Content_Item
                 {
                     ContentId = createDto.ContentId,
                     ItemTypeId = createDto.ItemTypeId,
                     ItemDes = createDto.ItemDes,
-                    Status = createDto.Status // Use the status from the DTO (Free or Paid)
+                    Status = createDto.Status
                 };
 
-                // Add the entity to repository
                 await _unitOfWork.CourseContentItemRepository.AddAsync(courseContentItem);
 
-                // Save changes to database
                 await _unitOfWork.SaveChangeAsync();
 
-                // Map the created entity back to DTO for response
                 var responseDto = _mapper.Map<CourseContentItemDTO>(courseContentItem);
 
                 return new ResponseDTO
@@ -139,7 +133,6 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                // Get all course contents for the purchased course package
                 var courseContents = await _unitOfWork.CourseContentRepository.GetWithIncludesAsync(
                     cc => cc.CoursePackageId == coursePackageId,
                     "CourseContentItems");

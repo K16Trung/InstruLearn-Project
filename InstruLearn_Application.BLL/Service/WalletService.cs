@@ -52,7 +52,6 @@ namespace InstruLearn_Application.BLL.Service
 
             long orderCode = new Random().Next(100000, 999999);
 
-            // Generate a unique transaction ID
             string transactionId = Guid.NewGuid().ToString();
 
             // Create a wallet transaction
@@ -276,7 +275,6 @@ namespace InstruLearn_Application.BLL.Service
 
         public async Task<ResponseDTO> UpdatePaymentStatusByOrderCodeAsync(long orderCode, string status)
         {
-            // Get the transaction by OrderCode
             var transaction = await _unitOfWork.WalletTransactionRepository.GetOrderCodeWithWalletAsync(orderCode);
 
             if (transaction == null)
@@ -284,7 +282,6 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO { IsSucceed = false, Message = $"Transaction not found for OrderCode: {orderCode}" };
             }
 
-            // Check if transaction is already in a final state
             if (transaction.Status == TransactionStatus.Complete || transaction.Status == TransactionStatus.Failed)
             {
                 return new ResponseDTO
@@ -294,17 +291,13 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
-            // Process based on status
             if (status == "PAID")
             {
-                // Begin transaction to ensure atomicity
                 using var dbTransaction = await _unitOfWork.BeginTransactionAsync();
                 try
                 {
-                    // Update status to Complete
                     transaction.Status = TransactionStatus.Complete;
 
-                    // Add the amount to the wallet balance
                     transaction.Wallet.Balance += transaction.Amount;
                     transaction.Wallet.UpdateAt = DateTime.Now;
 
@@ -334,10 +327,8 @@ namespace InstruLearn_Application.BLL.Service
             {
                 try
                 {
-                    // Update status to Failed
                     transaction.Status = TransactionStatus.Failed;
 
-                    // No balance update needed for failed transactions
                     await _unitOfWork.SaveChangeAsync();
 
                     return new ResponseDTO
