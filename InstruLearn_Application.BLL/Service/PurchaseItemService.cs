@@ -238,9 +238,9 @@ namespace InstruLearn_Application.BLL.Service
                             {
                                 foreach (var contentItem in content.CourseContentItems)
                                 {
-                                    if (contentItem.Status == CourseContentItemStatus.Paid)
+                                    if (contentItem.Status == CourseContentItemStatus.Free)
                                     {
-                                        contentItem.Status = CourseContentItemStatus.Free;
+                                        contentItem.Status = CourseContentItemStatus.Paid;
                                         allCourseContentItems.Add(contentItem);
                                     }
                                 }

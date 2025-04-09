@@ -154,9 +154,9 @@ namespace InstruLearn_Application.BLL.Service
                     {
                         foreach (var item in content.CourseContentItems)
                         {
-                            if (item.Status == Model.Enum.CourseContentItemStatus.Paid)
+                            if (item.Status == Model.Enum.CourseContentItemStatus.Free)
                             {
-                                item.Status = Model.Enum.CourseContentItemStatus.Free;
+                                item.Status = Model.Enum.CourseContentItemStatus.Paid;
                                 await _unitOfWork.CourseContentItemRepository.UpdateAsync(item);
                                 updatedItemsCount++;
                             }
