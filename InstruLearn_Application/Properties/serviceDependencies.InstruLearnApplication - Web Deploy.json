@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "mssql2": {
+      "serviceConnectorResourceId": "/subscriptions/[parameters('subscriptionId')]/resourceGroups/[parameters('serviceConnectorResourceGroupName')]/providers/Microsoft.Web/sites/InstruLearnApplication/providers/Microsoft.ServiceLinker/linkers/ConnectionStringsDB1_A190E90D21",
+      "secretStore": "AzureAppSettings",
+      "resourceId": "/subscriptions/[parameters('subscriptionId')]/resourceGroups/[parameters('resourceGroupName')]/providers/Microsoft.Sql/servers/instrulearn-applicationdb/databases/InstruLearn_Application_db",
+      "type": "mssql.azure",
+      "connectionId": "ConnectionStrings:DB1",
+      "dynamicId": null
+    }
+  }
+}
