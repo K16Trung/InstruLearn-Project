@@ -265,7 +265,8 @@ namespace InstruLearn_Application.DAL.Repository
                             ScheduleId = schedule.ScheduleId,
                             LearnerId = participantGroup.Key.LearnerId.Value,
                             LearnerName = learner.FullName,
-                            LearningRegisId = participantGroup.Key.LearningRegisId.Value
+                            LearningRegisId = participantGroup.Key.LearningRegisId.Value,
+                            AttendanceStatus = schedule.AttendanceStatus
                         });
                     }
                 }
@@ -294,6 +295,7 @@ namespace InstruLearn_Application.DAL.Repository
                     DayOfWeek = group.StartDay.DayOfWeek.ToString(),
                     StartDay = group.StartDay,
                     Mode = ScheduleMode.Center,
+                    AttendanceStatus = group.FirstSchedule.AttendanceStatus,
                     RegistrationStartDay = group.StartDay, // Using StartDay as registrationStartDay
                     Participants = scheduleParticipants,
                     ScheduleDays = scheduleDays
