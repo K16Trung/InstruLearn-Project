@@ -24,6 +24,7 @@ namespace InstruLearn_Application.Model.Models
         public TimeOnly TimeStart { get; set; }
         public TimeOnly TimeEnd { get; set; }
         public ScheduleMode Mode { get; set; }
+        public AttendanceStatus AttendanceStatus { get; set; } = AttendanceStatus.NotYet;
         public ICollection<ScheduleDays> ScheduleDays { get; set; }
         public ICollection<ClassDay> ClassDays { get; set; }
 
