@@ -75,13 +75,13 @@ namespace InstruLearn_Application.BLL.Service
 
         public async Task<ResponseDTO> AddCourseAsync(CreateCourseDTO createDto)
         {
-            var type = await _unitOfWork.CourseTypeRepository.GetByIdAsync(createDto.TypeId);
+            var type = await _unitOfWork.CourseTypeRepository.GetByIdAsync(createDto.CourseTypeId);
             if (type == null)
             {
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Course  not found",
+                    Message = "Course Type not found",
                 };
             }
 
