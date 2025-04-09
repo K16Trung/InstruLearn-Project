@@ -315,5 +315,44 @@ namespace InstruLearn_Application.DAL.Repository
                 .Include(s => s.ScheduleDays)
                 .ToListAsync();
         }
+
+        public async Task<List<AttendanceDTO>> GetClassAttendanceAsync(int classId)
+        {
+            var schedules = await _appDbContext.Schedules
+                .Where(s => s.ClassId == classId && s.Mode == ScheduleMode.Center)
+                .Include(s => s.Learner)
+                .ToListAsync();
+
+            return schedules.Select(s => new AttendanceDTO
+            {
+                ScheduleId = s.ScheduleId,
+                StartDay = s.StartDay,
+                TimeStart = s.TimeStart,
+                TimeEnd = s.TimeEnd,
+                LearnerId = s.LearnerId ?? 0,
+                LearnerName = s.Learner.FullName ?? "Unknown",
+                AttendanceStatus = s.AttendanceStatus
+            }).ToList();
+        }
+
+        public async Task<List<AttendanceDTO>> GetOneOnOneAttendanceAsync(int learnerId)
+        {
+            var schedules = await _appDbContext.Schedules
+                .Where(s => s.LearnerId == learnerId && s.Mode == ScheduleMode.OneOnOne)
+                .Include(s => s.Learner)
+                .ToListAsync();
+
+            return schedules.Select(s => new AttendanceDTO
+            {
+                ScheduleId = s.ScheduleId,
+                StartDay = s.StartDay,
+                TimeStart = s.TimeStart,
+                TimeEnd = s.TimeEnd,
+                LearnerId = s.LearnerId ?? 0,
+                LearnerName = s.Learner.FullName ?? "Unknown",
+                AttendanceStatus = s.AttendanceStatus
+            }).ToList();
+        }
+
     }
 }

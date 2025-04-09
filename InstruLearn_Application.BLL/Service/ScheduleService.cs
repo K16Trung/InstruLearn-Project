@@ -562,5 +562,75 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
+        public async Task<ResponseDTO> GetClassAttendanceAsync(int classId)
+        {
+            var attendance = await _unitOfWork.ScheduleRepository.GetClassAttendanceAsync(classId);
+
+            if (attendance == null || !attendance.Any())
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "No attendance records found for this class."
+                };
+            }
+
+            return new ResponseDTO
+            {
+                IsSucceed = true,
+                Message = "Attendance records retrieved successfully.",
+                Data = attendance
+            };
+        }
+
+        public async Task<ResponseDTO> GetOneOnOneAttendanceAsync(int learnerId)
+        {
+            var attendance = await _unitOfWork.ScheduleRepository.GetOneOnOneAttendanceAsync(learnerId);
+
+            if (attendance == null || !attendance.Any())
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "No attendance records found for this learner."
+                };
+            }
+
+            return new ResponseDTO
+            {
+                IsSucceed = true,
+                Message = "Attendance records retrieved successfully.",
+                Data = attendance
+            };
+        }
+
+
+        public async Task<ResponseDTO> UpdateAttendanceAsync(int scheduleId, AttendanceStatus status)
+        {
+            var schedule = await _unitOfWork.ScheduleRepository.GetByIdAsync(scheduleId);
+
+            if (schedule == null)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Schedule not found."
+                };
+            }
+
+            schedule.AttendanceStatus = status;
+            await _unitOfWork.ScheduleRepository.UpdateAsync(schedule);
+            await _unitOfWork.SaveChangeAsync();
+
+            return new ResponseDTO
+            {
+                IsSucceed = true,
+                Message = "Attendance updated successfully."
+            };
+        }
+
+
+
+
     }
 }
