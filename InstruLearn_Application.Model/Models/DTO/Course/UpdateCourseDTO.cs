@@ -9,7 +9,7 @@ namespace InstruLearn_Application.Model.Models.DTO.Course
 {
     public class UpdateCourseDTO
     {
-        public int TypeId { get; set; }
+        public int CourseTypeId { get; set; }
         public string CourseName { get; set; }
         public string? CourseDescription { get; set; }
         public string? Headline { get; set; }
