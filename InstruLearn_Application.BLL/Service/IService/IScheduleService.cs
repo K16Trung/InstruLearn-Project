@@ -1,4 +1,5 @@
-﻿using InstruLearn_Application.Model.Models.DTO;
+﻿using InstruLearn_Application.Model.Enum;
+using InstruLearn_Application.Model.Models.DTO;
 using InstruLearn_Application.Model.Models.DTO.LearningRegistration;
 using InstruLearn_Application.Model.Models.DTO.Schedules;
 using InstruLearn_Application.Model.Models.DTO.Teacher;
@@ -20,5 +21,8 @@ namespace InstruLearn_Application.BLL.Service.IService
         Task<ResponseDTO> GetClassSchedulesByTeacherIdAsyncc(int teacherId);
         Task<List<ValidTeacherDTO>> GetAvailableTeachersAsync(int majorId, TimeOnly timeStart, int timeLearning, DateOnly startDay);
         Task<ResponseDTO> GetClassSchedulesByLearnerIdAsync(int learnerId);
+        Task<ResponseDTO> GetClassAttendanceAsync(int classId);
+        Task<ResponseDTO> GetOneOnOneAttendanceAsync(int learnerId);
+        Task<ResponseDTO> UpdateAttendanceAsync(int scheduleId, AttendanceStatus status);
     }
 }

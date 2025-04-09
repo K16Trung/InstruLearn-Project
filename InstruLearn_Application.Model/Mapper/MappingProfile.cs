@@ -505,6 +505,7 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.classDayDTOs, opt => opt.MapFrom(src => src.ClassDays))
                 .ForMember(dest => dest.RegistrationStartDay, opt => opt.MapFrom(src => src.Registration != null ? src.Registration.StartDay : null))
                 .ForMember(dest => dest.LearningRegisId, opt => opt.MapFrom(src => src.LearningRegisId ?? 0))
+                .ForMember(dest => dest.AttendanceStatus, opt => opt.MapFrom(src => src.AttendanceStatus))
                 .ForMember(dest => dest.DayOfWeek, opt => opt.MapFrom(src =>
                     string.Join(", ", src.ScheduleDays.Select(sd => sd.DayOfWeeks.ToString()))));
                 //.ForMember(dest => dest.StartDay, opt => opt.MapFrom(src => src.Class.StartDate.ToString("yyyy-MM-dd")));

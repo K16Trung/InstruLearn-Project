@@ -149,7 +149,7 @@ namespace InstruLearn_Application.BLL.Service
                 // Fetch learning registrations for the learner with all necessary includes
                 var learningRegs = await _unitOfWork.LearningRegisRepository
                     .GetWithIncludesAsync(
-                        x => x.LearnerId == learnerId && x.Status == LearningRegis.Fourty,
+                        x => x.LearnerId == learnerId && x.Status == LearningRegis.Fourty || x.Status == LearningRegis.Sixty,
                         "Teacher,Learner.Account,LearningRegistrationDay,Schedules"
                     );
 
@@ -234,6 +234,7 @@ namespace InstruLearn_Application.BLL.Service
                                 ClassName = learningRegis.Classes?.ClassName ?? "N/A",
                                 RegistrationStartDay = learningRegis.StartDay,
                                 LearningRegisId = learningRegis.LearningRegisId,
+                                AttendanceStatus = existingSchedule?.AttendanceStatus ?? 0,
                                 ScheduleDays = orderedLearningDays.Select(day => new ScheduleDaysDTO
                                 {
                                     DayOfWeeks = (DayOfWeeks)day.DayOfWeek
@@ -282,7 +283,7 @@ namespace InstruLearn_Application.BLL.Service
                 // Fetch learning registrations for the teacher with all necessary includes
                 var learningRegs = await _unitOfWork.LearningRegisRepository
                     .GetWithIncludesAsync(
-                        x => x.TeacherId == teacherId && x.Status == LearningRegis.Fourty,
+                        x => x.TeacherId == teacherId && x.Status == LearningRegis.Fourty || x.Status == LearningRegis.Sixty,
                         "Teacher,Learner.Account,LearningRegistrationDay,Schedules"
                     );
 
@@ -365,6 +366,7 @@ namespace InstruLearn_Application.BLL.Service
                                 LearnerAddress = learningRegis.Learner?.Account?.Address ?? "N/A",
                                 RegistrationStartDay = learningRegis.StartDay,
                                 LearningRegisId = learningRegis.LearningRegisId,
+                                AttendanceStatus = existingSchedule?.AttendanceStatus ?? 0,
                                 ScheduleDays = orderedLearningDays.Select(day => new ScheduleDaysDTO
                                 {
                                     DayOfWeeks = (DayOfWeeks)day.DayOfWeek
@@ -561,6 +563,76 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
         }
+
+        public async Task<ResponseDTO> GetClassAttendanceAsync(int classId)
+        {
+            var attendance = await _unitOfWork.ScheduleRepository.GetClassAttendanceAsync(classId);
+
+            if (attendance == null || !attendance.Any())
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "No attendance records found for this class."
+                };
+            }
+
+            return new ResponseDTO
+            {
+                IsSucceed = true,
+                Message = "Attendance records retrieved successfully.",
+                Data = attendance
+            };
+        }
+
+        public async Task<ResponseDTO> GetOneOnOneAttendanceAsync(int learnerId)
+        {
+            var attendance = await _unitOfWork.ScheduleRepository.GetOneOnOneAttendanceAsync(learnerId);
+
+            if (attendance == null || !attendance.Any())
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "No attendance records found for this learner."
+                };
+            }
+
+            return new ResponseDTO
+            {
+                IsSucceed = true,
+                Message = "Attendance records retrieved successfully.",
+                Data = attendance
+            };
+        }
+
+
+        public async Task<ResponseDTO> UpdateAttendanceAsync(int scheduleId, AttendanceStatus status)
+        {
+            var schedule = await _unitOfWork.ScheduleRepository.GetByIdAsync(scheduleId);
+
+            if (schedule == null)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Schedule not found."
+                };
+            }
+
+            schedule.AttendanceStatus = status;
+            await _unitOfWork.ScheduleRepository.UpdateAsync(schedule);
+            await _unitOfWork.SaveChangeAsync();
+
+            return new ResponseDTO
+            {
+                IsSucceed = true,
+                Message = "Attendance updated successfully."
+            };
+        }
+
+
+
 
     }
 }

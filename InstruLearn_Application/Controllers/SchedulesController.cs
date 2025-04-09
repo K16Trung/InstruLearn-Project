@@ -1,4 +1,5 @@
 ﻿using InstruLearn_Application.BLL.Service.IService;
+using InstruLearn_Application.Model.Enum;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -94,6 +95,28 @@ namespace InstruLearn_Application.Controllers
             var result = await _scheduleService.GetAvailableTeachersAsync(majorId, timeStart, timeLearning, startDay);
             return Ok(result);
         }
+
+        [HttpGet("class-attendance/{classId}")]
+        public async Task<IActionResult> GetClassAttendance(int classId)
+        {
+            var result = await _scheduleService.GetClassAttendanceAsync(classId);
+            return Ok(result);
+        }
+
+        [HttpGet("one-on-one-attendance/{learnerId}")]
+        public async Task<IActionResult> GetOneOnOneAttendance(int learnerId)
+        {
+            var result = await _scheduleService.GetOneOnOneAttendanceAsync(learnerId);
+            return Ok(result);
+        }
+
+        [HttpPut("update-attendance/{scheduleId}")]
+        public async Task<IActionResult> UpdateAttendance(int scheduleId, [FromBody] AttendanceStatus status)
+        {
+            var result = await _scheduleService.UpdateAttendanceAsync(scheduleId, status);
+            return Ok(result);
+        }
+
 
     }
 }
