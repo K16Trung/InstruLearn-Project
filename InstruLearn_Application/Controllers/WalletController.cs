@@ -97,10 +97,10 @@ namespace InstruLearn_Application.Controllers
                 string finalFailureUrl = !string.IsNullOrEmpty(failureUrl) ? failureUrl : _vnpaySettings.FailureUrl;
 
                 if (string.IsNullOrEmpty(finalSuccessUrl))
-                    finalSuccessUrl = "https://firebasestorage.googleapis.com/v0/b/sdn-project-aba8a.appspot.com/o/Screenshot%202025-04-02%20182541.png?alt=media&token=94a3f55f-2b3f-4d07-8153-4ffa4e8eed6e "; // Default frontend success page
+                    finalSuccessUrl = "http://localhost:3000/profile?";
 
                 if (string.IsNullOrEmpty(finalFailureUrl))
-                    finalFailureUrl = "https://firebasestorage.googleapis.com/v0/b/sdn-project-aba8a.appspot.com/o/Screenshot%202025-04-08%20211829.png?alt=media&token=68c9e81b-c748-4fde-997f-2fcc26b1bff6 "; // Default frontend failure page
+                    finalFailureUrl = "http://localhost:3000/profile?";
 
                 var vnpayLib = new VnPayLibrary();
                 var response = vnpayLib.GetFullResponseData(Request.Query, _vnpaySettings.HashSecret);
