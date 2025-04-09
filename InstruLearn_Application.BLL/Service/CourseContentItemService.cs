@@ -129,59 +129,6 @@ namespace InstruLearn_Application.BLL.Service
                 Message = "Nội dung khóa học đã được cập nhật thành công."
             };
         }
-        public async Task<ResponseDTO> UpdateContentItemsStatusForPurchaseAsync(int coursePackageId, int learnerId)
-        {
-            try
-            {
-                var courseContents = await _unitOfWork.CourseContentRepository.GetWithIncludesAsync(
-                    cc => cc.CoursePackageId == coursePackageId,
-                    "CourseContentItems");
-
-                if (courseContents == null || !courseContents.Any())
-                {
-                    return new ResponseDTO
-                    {
-                        IsSucceed = false,
-                        Message = "Không tìm thấy nội dung khóa học cho gói học này."
-                    };
-                }
-
-                int updatedItemsCount = 0;
-
-                foreach (var content in courseContents)
-                {
-                    if (content.CourseContentItems != null && content.CourseContentItems.Any())
-                    {
-                        foreach (var item in content.CourseContentItems)
-                        {
-                            if (item.Status == Model.Enum.CourseContentItemStatus.Free)
-                            {
-                                item.Status = Model.Enum.CourseContentItemStatus.Paid;
-                                await _unitOfWork.CourseContentItemRepository.UpdateAsync(item);
-                                updatedItemsCount++;
-                            }
-                        }
-                    }
-                }
-
-                await _unitOfWork.SaveChangeAsync();
-
-                return new ResponseDTO
-                {
-                    IsSucceed = true,
-                    Message = $"Đã cập nhật {updatedItemsCount} mục nội dung từ mua sang đã miễn phí.",
-                    Data = updatedItemsCount
-                };
-            }
-            catch (Exception ex)
-            {
-                return new ResponseDTO
-                {
-                    IsSucceed = false,
-                    Message = $"Lỗi khi cập nhật trạng thái nội dung khóa học: {ex.Message}"
-                };
-            }
-        }
 
         public async Task<ResponseDTO> DeleteCourseContentItemAsync(int itemId)
         {
