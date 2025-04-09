@@ -49,6 +49,7 @@ namespace InstruLearn_Application.DAL.UoW
         private readonly ILevelAssignedRepository _levelAssignedRepository;
         private readonly IResponseRepository _responseRepository;
         private readonly IResponseTypeRepository _responseTypeRepository;
+        private readonly ISyllabusContentRepository _syllabusContentRepository;
         private readonly ApplicationDbContext _dbContext;
         private IDbContextTransaction? _transaction;
         private bool disposed = false;
@@ -88,6 +89,7 @@ namespace InstruLearn_Application.DAL.UoW
         public ILevelAssignedRepository LevelAssignedRepository { get { return _levelAssignedRepository; } }
         public IResponseRepository ResponseRepository { get { return _responseRepository; } }
         public IResponseTypeRepository ResponseTypeRepository { get { return _responseTypeRepository; } }
+        public ISyllabusContentRepository SyllabusContentRepository { get { return _syllabusContentRepository; } }
 
         public ApplicationDbContext dbContext { get { return _dbContext; } }
 
@@ -95,7 +97,7 @@ namespace InstruLearn_Application.DAL.UoW
 
         public UnitOfWork(ApplicationDbContext dbContext, IAccountRepository accountRepository, IAdminRepository adminRepository, IManagerRepository managerRepository, IStaffRepository staffRepository, ILearnerRepository learnerRepository, ITeacherRepository teacherRepository, ICourseRepository courseRepository, ICourseTypeRepository courseTypeRepository, ICourseContentRepository courseContentRepository, IItemTypeRepository itemTypeRepository, ICourseContentItemRepository courseContentItemRepository, IFeedbackRepository feedbackRepository,
             IFeedbackRepliesRepository feedbackRepliesRepository, IQnARepository qnARepository, IQnARepliesRepository qnARepliesRepository, IWalletRepository walletRepository, IPaymentRepository paymentRepository, IWalletTransactionRepository walletTransactionRepository, IClassRepository classRepository, IClassDayRepository classDayRepository, IMajorRepository majorRepository, ILearningRegisRepository learningRegisRepository, ILearningRegisTypeRepository learningRegisTypeRepository, ISyllabusRepository syllabusRepository, ITestResultRepository testResultRepository, 
-            IMajorTestRepository majorTestRepository, IPurchaseRepository purchaseRepository, IPurchaseItemRepository purchaseItemRepository, ILearningRegisDayRepository learningRegisDayRepository, ICertificationRepository certificationRepository, IScheduleRepository scheduleRepository, ITeacherMajorRepository teacherMajorRepository, ILevelAssignedRepository levelAssignedRepository, IResponseRepository responseRepository, IResponseTypeRepository responseTypeRepository)
+            IMajorTestRepository majorTestRepository, IPurchaseRepository purchaseRepository, IPurchaseItemRepository purchaseItemRepository, ILearningRegisDayRepository learningRegisDayRepository, ICertificationRepository certificationRepository, IScheduleRepository scheduleRepository, ITeacherMajorRepository teacherMajorRepository, ILevelAssignedRepository levelAssignedRepository, IResponseRepository responseRepository, IResponseTypeRepository responseTypeRepository, ISyllabusContentRepository syllabusContentRepository)
         {
             _dbContext = dbContext;
             _adminRepository = adminRepository;
@@ -133,6 +135,7 @@ namespace InstruLearn_Application.DAL.UoW
             _levelAssignedRepository = levelAssignedRepository;
             _responseRepository = responseRepository;
             _responseTypeRepository = responseTypeRepository;
+            _syllabusContentRepository = syllabusContentRepository;
         }
 
         protected virtual void Dispose(bool disposing)

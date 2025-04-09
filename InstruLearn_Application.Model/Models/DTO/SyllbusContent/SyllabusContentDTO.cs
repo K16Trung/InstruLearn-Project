@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace InstruLearn_Application.Model.Models.DTO.SyllbusContent
 {
-    public class SyllbusContentDTO
+    public class SyllabusContentDTO
     {
-        public int SyllabusContentId { get; set; }
         public int SyllabusId { get; set; }
-        public string ContentName { get; set; }
+        public string SyllabusName { get; set; }
+        public List<SyllabusContentDetailDTO> SyllabusContents { get; set; } = new List<SyllabusContentDetailDTO>();
     }
 }
