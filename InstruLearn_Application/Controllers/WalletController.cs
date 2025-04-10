@@ -97,10 +97,10 @@ namespace InstruLearn_Application.Controllers
                 string finalFailureUrl = !string.IsNullOrEmpty(failureUrl) ? failureUrl : _vnpaySettings.FailureUrl;
 
                 if (string.IsNullOrEmpty(finalSuccessUrl))
-                    finalSuccessUrl = "http://localhost:3000/profile?";
+                    finalSuccessUrl = "https://instru-learn-zpt6.vercel.app/profile";
 
                 if (string.IsNullOrEmpty(finalFailureUrl))
-                    finalFailureUrl = "http://localhost:3000/profile?";
+                    finalFailureUrl = "https://instru-learn-zpt6.vercel.app/profile";
 
                 var vnpayLib = new VnPayLibrary();
                 var response = vnpayLib.GetFullResponseData(Request.Query, _vnpaySettings.HashSecret);
