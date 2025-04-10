@@ -167,13 +167,27 @@ namespace InstruLearn_Application.BLL.Service
                 return response;
             }
 
-            // Map the changes from DTO to the entity
-            _mapper.Map(updateTeacherDTO, teacher);
+            // Get the associated account
+            var account = await _unitOfWork.AccountRepository.GetByIdAsync(teacher.AccountId);
+            if (account == null)
+            {
+                response.Message = "Teacher account not found.";
+                return response;
+            }
 
-            // Save changes
-            var updated = await _unitOfWork.TeacherRepository.UpdateAsync(teacher);
+            teacher.Heading = updateTeacherDTO.Heading;
+            teacher.Details = updateTeacherDTO.Details;
+            teacher.Links = updateTeacherDTO.Links;
 
-            if (!updated)
+            account.PhoneNumber = updateTeacherDTO.PhoneNumber;
+            account.Gender = updateTeacherDTO.Gender;
+            account.Address = updateTeacherDTO.Address;
+            account.Avatar = updateTeacherDTO.Avatar;
+
+            var teacherUpdated = await _unitOfWork.TeacherRepository.UpdateAsync(teacher);
+            var accountUpdated = await _unitOfWork.AccountRepository.UpdateAsync(account);
+
+            if (!teacherUpdated || !accountUpdated)
             {
                 response.Message = "Failed to update teacher.";
                 return response;
