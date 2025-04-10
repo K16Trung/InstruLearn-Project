@@ -75,7 +75,7 @@ namespace InstruLearn_Application.BLL.Service
             {
                 new ItemData("Add Funds to Wallet", 1, (int)amount)
             };
-            string baseUrl = "https://instru-learn-zpt6.vercel.app/profile";
+            string baseUrl = "https://instru-learn-zpt6.vercel.app/profile?";
 
             PaymentData paymentData = new PaymentData(
             orderCode: orderCode,
