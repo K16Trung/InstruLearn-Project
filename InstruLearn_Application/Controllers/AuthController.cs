@@ -44,6 +44,21 @@ namespace InstruLearn_Application.Controllers
             return Ok(result);
         }
 
+        [HttpPost("google-login")]
+        public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginDTO googleLoginDTO)
+        {
+            if (string.IsNullOrEmpty(googleLoginDTO.IdToken))
+            {
+                return BadRequest(new ResponseDTO { IsSucceed = false, Message = "Google ID token is required" });
+            }
+
+            var result = await _authService.GoogleLoginAsync(googleLoginDTO);
+            if (!result.IsSucceed)
+                return BadRequest(result);
+
+            return Ok(result);
+        }
+
         [Authorize]
         [HttpGet("Profile")]
         public async Task<IActionResult> GetUserProfile()

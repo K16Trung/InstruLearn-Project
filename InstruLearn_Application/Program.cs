@@ -69,12 +69,17 @@ namespace InstruLearn_Application
             builder.Services.Configure<PayOSSettings>(builder.Configuration.GetSection("PayOS"));
             builder.Services.AddSingleton<PayOSSettings>(sp => sp.GetRequiredService<IOptions<PayOSSettings>>().Value);
 
-            // Add the following to ConfigureServices in Program.cs
-
             // VNPay Configuration
             builder.Services.Configure<VnpaySettings>(builder.Configuration.GetSection("Vnpay"));
             builder.Services.AddSingleton<VnpaySettings>(sp => sp.GetRequiredService<IOptions<VnpaySettings>>().Value);
             builder.Services.AddScoped<IVnpayService, VnpayService>();
+
+            // Add Google Auth Services
+            builder.Services.AddSingleton<GoogleTokenValidator>();
+
+            // Configure Google Auth
+            builder.Services.Configure<GoogleAuthSettings>(builder.Configuration.GetSection("GoogleAuth"));
+            builder.Services.AddSingleton<GoogleAuthSettings>(sp => sp.GetRequiredService<IOptions<GoogleAuthSettings>>().Value);
 
             // Inject app Dependency Injection
             builder.Services.AddScoped<ApplicationDbContext>();
