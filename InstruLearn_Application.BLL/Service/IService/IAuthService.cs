@@ -12,6 +12,6 @@ namespace InstruLearn_Application.BLL.Service.IService
     {
         Task<ResponseDTO> RegisterAsync(RegisterDTO registerDTO);
         Task<ResponseDTO> LoginAsync(LoginDTO loginDTO);
-        //Task<ResponseDTO> LoginWithGoogleAsync(string googleToken);
+        Task<ResponseDTO> GoogleLoginAsync(GoogleLoginDTO googleLoginDTO);
     }
 }

@@ -22,10 +22,11 @@ namespace InstruLearn_Application.BLL.Service
         private readonly IConfiguration _configuration;
         private readonly ILearnerRepository _learnerRepository;
         private readonly IWalletRepository _walletRepository;
+        private readonly GoogleTokenValidator _googleTokenValidator;
         private IMapper _mapper;
         private JwtHelper _jwtHelper;
 
-        public AuthService(IAuthRepository authRepository, IConfiguration configuration, IMapper mapper, JwtHelper jwtHelper, ILearnerRepository learnerRepository, IWalletRepository walletRepository)
+        public AuthService(IAuthRepository authRepository, IConfiguration configuration, IMapper mapper, JwtHelper jwtHelper, ILearnerRepository learnerRepository, IWalletRepository walletRepository, GoogleTokenValidator googleTokenValidator)
         {
             _authRepository = authRepository;
             _configuration = configuration;
@@ -33,6 +34,7 @@ namespace InstruLearn_Application.BLL.Service
             _jwtHelper = jwtHelper;
             _learnerRepository = learnerRepository;
             _walletRepository = walletRepository;
+            _googleTokenValidator = googleTokenValidator;
         }
 
         // Login
@@ -104,7 +106,6 @@ namespace InstruLearn_Application.BLL.Service
                 FullName = registerDTO.FullName,
             };
 
-            // Add the customer to the database
             await _learnerRepository.AddAsync(user);
 
             var wallet = new Wallet
@@ -121,15 +122,108 @@ namespace InstruLearn_Application.BLL.Service
             response.Data = true;
             return response;
         }
+        // Login google
+        public async Task<ResponseDTO> GoogleLoginAsync(GoogleLoginDTO googleLoginDTO)
+        {
+            var response = new ResponseDTO();
 
+            try
+            {
+                var payload = await _googleTokenValidator.ValidateGoogleTokenAsync(googleLoginDTO.IdToken);
+
+                if (payload == null)
+                {
+                    response.Message = "Invalid Google token.";
+                    return response;
+                }
+
+                var email = payload.Email;
+
+                var existingAccount = await _authRepository.GetByEmail(email);
+
+                if (existingAccount == null)
+                {
+                    var account = new Account
+                    {
+                        AccountId = GenerateUniqueId(),
+                        Username = email.Split('@')[0],
+                        Email = email,
+                        PasswordHash = HashPassword(GenerateRandomPassword()),
+                        IsActive = AccountStatus.Active,
+                        Role = AccountRoles.Learner,
+                        Avatar = payload.Picture,
+                        Token = string.Empty,
+                        RefreshToken = string.Empty,
+                        CreatedAt = DateTime.Now
+                    };
+
+                    await _authRepository.AddAsync(account);
+
+                    var learner = new Learner
+                    {
+                        AccountId = account.AccountId,
+                        FullName = payload.Name ?? "Google User",
+                    };
+
+                    await _learnerRepository.AddAsync(learner);
+
+                    var wallet = new Wallet
+                    {
+                        LearnerId = learner.LearnerId,
+                        Balance = 0,
+                        UpdateAt = DateTime.UtcNow
+                    };
+
+                    await _walletRepository.AddAsync(wallet);
+
+                    existingAccount = account;
+                }
+
+                var token = _jwtHelper.GenerateJwtToken(existingAccount);
+                var refreshToken = _jwtHelper.GenerateRefreshToken();
+
+                var tokenExpiration = DateTime.Now.AddHours(1);
+                var refreshTokenExpiration = DateTime.Now.AddDays(7);
+
+                existingAccount.Token = token;
+                existingAccount.TokenExpires = tokenExpiration;
+                existingAccount.RefreshToken = refreshToken;
+                existingAccount.RefreshTokenExpires = refreshTokenExpiration;
+                await _authRepository.UpdateAsync(existingAccount);
+
+                response.IsSucceed = true;
+                response.Message = "Google login successful!";
+                response.Data = new { Token = token, RefreshToken = refreshToken };
+            }
+            catch (Exception ex)
+            {
+                response.Message = $"Google login failed: {ex.Message}";
+            }
+
+            return response;
+        }
+
+        private string GenerateRandomPassword()
+        {
+            const string allowedChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+";
+            var random = new Random();
+            var password = new char[16];
+
+            for (int i = 0; i < password.Length; i++)
+            {
+                password[i] = allowedChars[random.Next(allowedChars.Length)];
+            }
+
+            return new string(password);
+        }
         private string HashPassword(string password)
         {
-            return BCrypt.Net.BCrypt.HashPassword(password); // Explicit namespace
+            return BCrypt.Net.BCrypt.HashPassword(password); 
         }
 
         private bool VerifyPassword(string enteredPassword, string hashedPassword)
         {
-            return BCrypt.Net.BCrypt.Verify(enteredPassword, hashedPassword); // Explicit namespace
+            return BCrypt.Net.BCrypt.Verify(enteredPassword, hashedPassword);
         }
 
         private string GenerateUniqueId()
