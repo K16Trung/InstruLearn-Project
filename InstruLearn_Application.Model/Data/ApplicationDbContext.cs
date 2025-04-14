@@ -50,6 +50,7 @@ namespace InstruLearn_Application.Model.Data
         public DbSet<ResponseType> ResponseTypes { get; set; }
         public DbSet<Learner_class> Learner_Classes { get; set; }
         public DbSet<Syllabus_Content> Syllabus_Contents { get; set; }
+        public DbSet<LearningPathSession> LearningPathSessions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -449,6 +450,13 @@ namespace InstruLearn_Application.Model.Data
                 .HasOne(sc => sc.Syllabus)
                 .WithMany(s => s.SyllabusContents)
                 .HasForeignKey(sc => sc.SyllabusId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // LearningPathSession
+            modelBuilder.Entity<LearningPathSession>()
+                .HasOne(lps => lps.LearningRegistration)
+                .WithMany(lr => lr.LearningPathSessions)
+                .HasForeignKey(lps => lps.LearningRegisId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }
