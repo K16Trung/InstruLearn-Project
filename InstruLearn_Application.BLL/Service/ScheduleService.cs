@@ -688,6 +688,19 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
+            // Get current date as DateOnly
+            DateOnly today = DateOnly.FromDateTime(DateTime.Now);
+
+            // Check if the schedule's date is equal to today
+            if (schedule.StartDay != today)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Attendance can only be updated for today's schedule."
+                };
+            }
+
             schedule.AttendanceStatus = status;
             await _unitOfWork.ScheduleRepository.UpdateAsync(schedule);
             await _unitOfWork.SaveChangeAsync();
