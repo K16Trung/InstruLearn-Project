@@ -1,4 +1,5 @@
-﻿using System;
+﻿using InstruLearn_Application.Model.Models.DTO.LearningPathSession;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,5 +15,6 @@ namespace InstruLearn_Application.Model.Models.DTO.LearningRegistration
         public int? ResponseId { get; set; }
         //public decimal? Price { get; set; }
         public string? LearningPath { get; set; }
+        public List<CreateLearningPathSessionDTO> LearningPathSessions { get; set; }
     }
 }

@@ -122,6 +122,7 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<IResponseRepository, ResponseRepository>();
             builder.Services.AddScoped<IResponseTypeRepository, ResponseTypeRepository>();
             builder.Services.AddScoped<ISyllabusContentRepository, SyllabusContentRepository>();
+            builder.Services.AddScoped<ILearningPathSessionRepository, LearningPathSessionRepository>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             builder.Services.AddScoped<IAuthService, AuthService>();
@@ -160,6 +161,7 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<IPaymentService, PaymentService>();
             builder.Services.AddScoped<IWalletTransactionService, WalletTransactionService>();
             builder.Services.AddScoped<ISyllabusContentService, SyllabusContentService>();
+            builder.Services.AddScoped<ILearningPathService, LearningPathService>();
             builder.Services.AddAutoMapper(typeof(MappingProfile));
             // Add after service registration in Program.cs
             builder.Services.AddHostedService<PayOSWebhookRegistrationService>();
