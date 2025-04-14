@@ -341,7 +341,7 @@ namespace InstruLearn_Application.BLL.Service
                         Title = lps.Title,
                         Description = lps.Description,
                         IsCompleted = lps.IsCompleted, // Use the value from the DTO
-                        CreatedAt = DateTime.UtcNow
+                        CreatedAt = DateTime.Now
                     }).ToList();
 
                     await _unitOfWork.LearningPathSessionRepository.AddRangeAsync(learningPathSessions);
