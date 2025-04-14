@@ -359,5 +359,72 @@ namespace InstruLearn_Application.DAL.Repository
             }).ToList();
         }
 
+        public async Task<(bool HasConflict, List<Schedules> ConflictingSchedules)> CheckLearnerScheduleConflictAsync(
+    int learnerId, DateOnly startDay, TimeOnly timeStart, int durationMinutes)
+        {
+            TimeOnly timeEnd = timeStart.AddMinutes(durationMinutes);
+
+            var conflictingSchedules = await _appDbContext.Schedules
+                .Where(s => s.LearnerId == learnerId &&
+                           s.StartDay == startDay && 
+                           (
+                               (s.TimeStart <= timeStart && s.TimeEnd > timeStart) || 
+                               (s.TimeStart < timeEnd && s.TimeEnd >= timeEnd) ||
+                               (s.TimeStart >= timeStart && s.TimeEnd <= timeEnd) ||
+                               (timeStart <= s.TimeStart && timeEnd >= s.TimeEnd) 
+                           ))
+                .Include(s => s.Class)
+                .Include(s => s.Teacher)
+                .Include(s => s.Registration)
+                .ToListAsync();
+
+            return (conflictingSchedules.Any(), conflictingSchedules);
+        }
+
+        public async Task<(bool HasConflict, List<Schedules> ConflictingSchedules)> CheckLearnerClassScheduleConflictAsync(
+            int learnerId, int classId)
+        {
+            var classEntity = await _appDbContext.Classes
+                .Include(c => c.ClassDays)
+                .FirstOrDefaultAsync(c => c.ClassId == classId);
+
+            if (classEntity == null)
+            {
+                return (false, new List<Schedules>());
+            }
+
+            var classDays = classEntity.ClassDays.ToList();
+            var conflicts = new List<Schedules>();
+
+            TimeOnly classTimeStart = classEntity.ClassTime;
+            TimeOnly classTimeEnd = classEntity.ClassTime.AddHours(2);
+
+            var learnerSchedules = await _appDbContext.Schedules
+                .Where(s => s.LearnerId == learnerId)
+                .Include(s => s.Class)
+                .Include(s => s.Teacher)
+                .ToListAsync();
+
+            foreach (var classDay in classDays)
+            {
+                DayOfWeek dayOfWeek = (DayOfWeek)classDay.Day;
+
+                var dayConflicts = learnerSchedules
+                    .Where(s => s.StartDay.DayOfWeek == dayOfWeek &&
+                               (
+                                   (s.TimeStart <= classTimeStart && s.TimeEnd > classTimeStart) ||
+                                   (s.TimeStart < classTimeEnd && s.TimeEnd >= classTimeEnd) ||
+                                   (s.TimeStart >= classTimeStart && s.TimeEnd <= classTimeEnd) ||
+                                   (classTimeStart <= s.TimeStart && classTimeEnd >= s.TimeEnd)
+                               ))
+                    .ToList();
+
+                conflicts.AddRange(dayConflicts);
+            }
+
+            return (conflicts.Any(), conflicts);
+        }
+
+
     }
 }

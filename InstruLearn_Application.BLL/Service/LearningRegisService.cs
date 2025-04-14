@@ -27,13 +27,15 @@ namespace InstruLearn_Application.BLL.Service
         private readonly ILogger<LearningRegisService> _logger;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly IScheduleService _scheduleService;
 
-        public LearningRegisService(ILearningRegisRepository learningRegisRepository, IUnitOfWork unitOfWork, IMapper mapper, ILogger<LearningRegisService> logger)
+        public LearningRegisService(ILearningRegisRepository learningRegisRepository, IUnitOfWork unitOfWork, IMapper mapper, ILogger<LearningRegisService> logger, IScheduleService scheduleService)
         {
             _learningRegisRepository = learningRegisRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _logger = logger;
+            _scheduleService = scheduleService;
         }
         public async Task<ResponseDTO> GetAllLearningRegisAsync()
         {
@@ -74,6 +76,13 @@ namespace InstruLearn_Application.BLL.Service
             try
             {
                 _logger.LogInformation("Starting learning registration process.");
+
+                var scheduleConflict = await _scheduleService.CheckLearnerScheduleConflictAsync(createLearningRegisDTO.LearnerId, createLearningRegisDTO.StartDay.Value, createLearningRegisDTO.TimeStart, createLearningRegisDTO.TimeLearning);
+
+                if (!scheduleConflict.IsSucceed)
+                {
+                    return scheduleConflict; // Return the conflict response
+                }
 
                 // Start EF Core transaction instead of TransactionScope
                 using (var transaction = await _unitOfWork.BeginTransactionAsync())
@@ -304,6 +313,12 @@ namespace InstruLearn_Application.BLL.Service
             try
             {
                 _logger.LogInformation($"Starting class enrollment process for learner ID: {paymentDTO.LearnerId}, class ID: {paymentDTO.ClassId}");
+                var classScheduleConflict = await _scheduleService.CheckLearnerClassScheduleConflictAsync(paymentDTO.LearnerId, paymentDTO.ClassId);
+
+                if (!classScheduleConflict.IsSucceed)
+                {
+                    return classScheduleConflict; // Return the conflict response
+                }
 
                 // Start transaction
                 using var transaction = await _unitOfWork.BeginTransactionAsync();

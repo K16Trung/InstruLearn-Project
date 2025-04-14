@@ -24,5 +24,10 @@ namespace InstruLearn_Application.DAL.Repository.IRepository
         Task<List<Schedules>> GetClassSchedulesByLearnerIdAsync(int learnerId);
         Task<List<AttendanceDTO>> GetClassAttendanceAsync(int classId);
         Task<List<AttendanceDTO>> GetOneOnOneAttendanceAsync(int learnerId);
+        Task<(bool HasConflict, List<Schedules> ConflictingSchedules)> CheckLearnerScheduleConflictAsync(
+            int learnerId, DateOnly startDay, TimeOnly timeStart, int durationMinutes);
+        Task<(bool HasConflict, List<Schedules> ConflictingSchedules)> CheckLearnerClassScheduleConflictAsync(
+            int learnerId, int classId);
+
     }
 }
