@@ -117,6 +117,34 @@ namespace InstruLearn_Application.Controllers
             return Ok(result);
         }
 
+        [HttpGet("conflict-check/learner/{learnerId}")]
+        public async Task<IActionResult> CheckLearnerScheduleConflict(int learnerId, [FromQuery] DateOnly startDay, [FromQuery] TimeOnly timeStart, [FromQuery] int durationMinutes)
+        {
+            var result = await _scheduleService.CheckLearnerScheduleConflictAsync(
+                learnerId, startDay, timeStart, durationMinutes);
+
+            if (result.IsSucceed)
+            {
+                return Ok(result);
+            }
+
+            return BadRequest(result);
+        }
+
+        [HttpGet("conflict-check/learner/{learnerId}/class/{classId}")]
+        public async Task<IActionResult> CheckLearnerClassScheduleConflict(int learnerId, int classId)
+        {
+            var result = await _scheduleService.CheckLearnerClassScheduleConflictAsync(learnerId, classId);
+
+            if (result.IsSucceed)
+            {
+                return Ok(result);
+            }
+
+            return BadRequest(result);
+        }
+
+
 
     }
 }

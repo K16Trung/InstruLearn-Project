@@ -631,6 +631,114 @@ namespace InstruLearn_Application.BLL.Service
             };
         }
 
+        public async Task<ResponseDTO> CheckLearnerScheduleConflictAsync(int learnerId, DateOnly startDay, TimeOnly timeStart, int durationMinutes)
+        {
+            try
+            {
+                if (learnerId <= 0)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Invalid learner ID."
+                    };
+                }
+
+                var (hasConflict, conflictingSchedules) = await _unitOfWork.ScheduleRepository
+                    .CheckLearnerScheduleConflictAsync(learnerId, startDay, timeStart, durationMinutes);
+
+                if (hasConflict)
+                {
+                    var conflictDetails = conflictingSchedules.Select(s => new
+                    {
+                        ScheduleId = s.ScheduleId,
+                        StartDay = s.StartDay.ToString("yyyy-MM-dd"),
+                        TimeStart = s.TimeStart.ToString("HH:mm"),
+                        TimeEnd = s.TimeEnd.ToString("HH:mm"),
+                        TeacherName = s.Teacher?.Fullname ?? "N/A",
+                        ClassName = s.Class?.ClassName ?? "One-on-One Session",
+                        Mode = s.Mode
+                    }).ToList();
+
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Schedule conflict detected. The learner already has classes scheduled during this time.",
+                        Data = conflictDetails
+                    };
+                }
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = "No scheduling conflicts found."
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Error checking schedule conflicts: {ex.Message}"
+                };
+            }
+        }
+
+        public async Task<ResponseDTO> CheckLearnerClassScheduleConflictAsync(int learnerId, int classId)
+        {
+            try
+            {
+                if (learnerId <= 0 || classId <= 0)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Invalid learner ID or class ID."
+                    };
+                }
+
+                var (hasConflict, conflictingSchedules) = await _unitOfWork.ScheduleRepository
+                    .CheckLearnerClassScheduleConflictAsync(learnerId, classId);
+
+                if (hasConflict)
+                {
+                    // Format conflicting schedules for display
+                    var conflictDetails = conflictingSchedules.Select(s => new
+                    {
+                        ScheduleId = s.ScheduleId,
+                        DayOfWeek = s.StartDay.DayOfWeek.ToString(),
+                        TimeStart = s.TimeStart.ToString("HH:mm"),
+                        TimeEnd = s.TimeEnd.ToString("HH:mm"),
+                        TeacherName = s.Teacher?.Fullname ?? "N/A",
+                        ClassName = s.Class?.ClassName ?? "One-on-One Session",
+                        Mode = s.Mode
+                    }).ToList();
+
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Schedule conflicts detected. The learner has existing classes that overlap with this class schedule.",
+                        Data = conflictDetails
+                    };
+                }
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = "No scheduling conflicts found."
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Error checking class schedule conflicts: {ex.Message}"
+                };
+            }
+        }
+
+
 
 
 
