@@ -34,5 +34,11 @@ namespace InstruLearn_Application.Model.Models.DTO.Schedules
         public AttendanceStatus AttendanceStatus { get; set; }
         public List<ScheduleDaysDTO> ScheduleDays { get; set; }
         public List<ClassDayDTO> classDayDTOs { get; set; }
+
+        public int? LearningPathSessionId { get; set; }
+        public int? SessionNumber { get; set; }
+        public string SessionTitle { get; set; }
+        public string SessionDescription { get; set; }
+        public bool IsSessionCompleted { get; set; }
     }
 }
