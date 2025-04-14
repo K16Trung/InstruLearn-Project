@@ -17,6 +17,7 @@ using InstruLearn_Application.Model.Models.DTO.FeedbackReplies;
 using InstruLearn_Application.Model.Models.DTO.ItemTypes;
 using InstruLearn_Application.Model.Models.DTO.Learner;
 using InstruLearn_Application.Model.Models.DTO.LearnerClass;
+using InstruLearn_Application.Model.Models.DTO.LearningPathSession;
 using InstruLearn_Application.Model.Models.DTO.LearningRegistration;
 using InstruLearn_Application.Model.Models.DTO.LearningRegistrationType;
 using InstruLearn_Application.Model.Models.DTO.LevelAssigned;
@@ -620,6 +621,14 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<CreateSyllabusContentDTO, Syllabus_Content>()
                 .ForMember(dest => dest.SyllabusId, opt => opt.MapFrom(src => src.SyllabusId))
                 .ForMember(dest => dest.ContentName, opt => opt.MapFrom(src => src.ContentName));
+
+            // Learning Path Session mapping
+            CreateMap<LearningPathSession, LearningPathSessionDTO>().ReverseMap();
+            CreateMap<LearningPathSessionDTO, LearningPathSession>().ReverseMap();
+            CreateMap<CreateLearningPathSessionDTO, LearningPathSession>()
+                .ForMember(dest => dest.LearningRegisId, opt => opt.MapFrom(src => src.LearningRegisId));
+
+
         }
     }
 }

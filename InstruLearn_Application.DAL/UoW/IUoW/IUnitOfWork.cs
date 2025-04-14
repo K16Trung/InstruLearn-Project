@@ -47,6 +47,7 @@ namespace InstruLearn_Application.DAL.UoW.IUoW
         IResponseRepository ResponseRepository { get; }
         IResponseTypeRepository ResponseTypeRepository { get; }
         ISyllabusContentRepository SyllabusContentRepository { get; }
+        ILearningPathSessionRepository LearningPathSessionRepository { get; }
         ApplicationDbContext dbContext { get; }
         public Task<int> SaveChangeAsync();
         Task<IDbContextTransaction> BeginTransactionAsync();

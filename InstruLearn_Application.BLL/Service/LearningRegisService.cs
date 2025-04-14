@@ -288,6 +288,66 @@ namespace InstruLearn_Application.BLL.Service
                 await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
                 await _unitOfWork.SaveChangeAsync();
 
+                // Process learning path sessions if provided
+                if (updateDTO.LearningPathSessions != null && updateDTO.LearningPathSessions.Any())
+                {
+                    // Check if number of sessions is valid
+                    if (updateDTO.LearningPathSessions.Count > learningRegis.NumberOfSession)
+                    {
+                        await _unitOfWork.RollbackTransactionAsync();
+                        return new ResponseDTO
+                        {
+                            IsSucceed = false,
+                            Message = $"Number of learning path sessions ({updateDTO.LearningPathSessions.Count}) exceeds the number of sessions ({learningRegis.NumberOfSession})."
+                        };
+                    }
+
+                    // First, check for duplicate session numbers in the payload
+                    var distinctSessionCount = updateDTO.LearningPathSessions
+                        .Select(s => s.SessionNumber)
+                        .Distinct()
+                        .Count();
+
+                    if (distinctSessionCount != updateDTO.LearningPathSessions.Count)
+                    {
+                        await _unitOfWork.RollbackTransactionAsync();
+                        return new ResponseDTO
+                        {
+                            IsSucceed = false,
+                            Message = "Duplicate session numbers found in the request."
+                        };
+                    }
+
+                    // Get existing learning path sessions for this registration
+                    var existingSessions = await _unitOfWork.LearningPathSessionRepository
+                        .GetByLearningRegisIdAsync(updateDTO.LearningRegisId);
+
+                    // Delete existing sessions if we're doing a complete replacement
+                    if (existingSessions.Any())
+                    {
+                        foreach (var session in existingSessions)
+                        {
+                            await _unitOfWork.LearningPathSessionRepository
+                                .DeleteAsync(session.LearningPathSessionId);
+                        }
+                        await _unitOfWork.SaveChangeAsync();
+                    }
+
+                    // Create new learning path sessions
+                    var learningPathSessions = updateDTO.LearningPathSessions.Select(lps => new LearningPathSession
+                    {
+                        LearningRegisId = learningRegis.LearningRegisId,
+                        SessionNumber = lps.SessionNumber,
+                        Title = lps.Title,
+                        Description = lps.Description,
+                        IsCompleted = lps.IsCompleted, // Use the value from the DTO
+                        CreatedAt = DateTime.UtcNow
+                    }).ToList();
+
+                    await _unitOfWork.LearningPathSessionRepository.AddRangeAsync(learningPathSessions);
+                    await _unitOfWork.SaveChangeAsync();
+                }
+
                 // Commit transaction
                 await _unitOfWork.CommitTransactionAsync();
 
