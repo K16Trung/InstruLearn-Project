@@ -175,6 +175,15 @@ namespace InstruLearn_Application.BLL.Service
                         };
                     }
 
+                    // Get learning path sessions for this registration
+                    var learningPathSessions = await _unitOfWork.LearningPathSessionRepository
+                        .GetByLearningRegisIdAsync(learningRegis.LearningRegisId);
+
+                    // Sort by session number
+                    var sortedSessions = learningPathSessions
+                        .OrderBy(s => s.SessionNumber)
+                        .ToList();
+
                     // Use DateOnly instead of DateTime for the start date
                     DateOnly registrationStartDate = learningRegis.StartDay.Value;
                     var orderedLearningDays = learningRegis.LearningRegistrationDay
@@ -213,11 +222,15 @@ namespace InstruLearn_Application.BLL.Service
                         // Get existing schedule if one exists for this session
                         var existingSchedule = sessionCount < existingScheduleCount ? existingSchedules[sessionCount] : null;
 
+                        // Find corresponding learning path session for this session number
+                        var sessionNumber = sessionCount + 1; // Session numbers typically start at 1
+                        var learningPathSession = sortedSessions.FirstOrDefault(s => s.SessionNumber == sessionNumber);
+
                         // Create schedule if it doesn't already exist in our list for this date and learning registration
                         if (!schedules.Any(s => s.StartDay == scheduleStartDate && s.LearningRegisId == learningRegis.LearningRegisId))
                         {
                             // Ensure LearningRegisId is set in the schedule
-                            schedules.Add(new ScheduleDTO
+                            var scheduleDto = new ScheduleDTO
                             {
                                 ScheduleId = existingSchedule?.ScheduleId ?? 0,
                                 Mode = existingSchedule?.Mode ?? ScheduleMode.OneOnOne,
@@ -239,7 +252,27 @@ namespace InstruLearn_Application.BLL.Service
                                 {
                                     DayOfWeeks = (DayOfWeeks)day.DayOfWeek
                                 }).ToList()
-                            });
+                            };
+
+                            // Add learning path session information if available
+                            if (learningPathSession != null)
+                            {
+                                scheduleDto.LearningPathSessionId = learningPathSession.LearningPathSessionId;
+                                scheduleDto.SessionNumber = learningPathSession.SessionNumber;
+                                scheduleDto.SessionTitle = learningPathSession.Title;
+                                scheduleDto.SessionDescription = learningPathSession.Description;
+                                scheduleDto.IsSessionCompleted = learningPathSession.IsCompleted;
+                            }
+                            else
+                            {
+                                // Default values if no session is found
+                                scheduleDto.SessionNumber = sessionNumber;
+                                scheduleDto.SessionTitle = $"Session {sessionNumber}";
+                                scheduleDto.SessionDescription = "";
+                                scheduleDto.IsSessionCompleted = false;
+                            }
+
+                            schedules.Add(scheduleDto);
 
                             sessionCount++;
                         }
@@ -309,6 +342,15 @@ namespace InstruLearn_Application.BLL.Service
                         };
                     }
 
+                    // Get learning path sessions for this registration
+                    var learningPathSessions = await _unitOfWork.LearningPathSessionRepository
+                        .GetByLearningRegisIdAsync(learningRegis.LearningRegisId);
+
+                    // Sort by session number
+                    var sortedSessions = learningPathSessions
+                        .OrderBy(s => s.SessionNumber)
+                        .ToList();
+
                     // Use DateOnly instead of DateTime for the start date
                     DateOnly registrationStartDate = learningRegis.StartDay.Value;
                     var orderedLearningDays = learningRegis.LearningRegistrationDay
@@ -347,11 +389,15 @@ namespace InstruLearn_Application.BLL.Service
                         // Get existing schedule if one exists for this session
                         var existingSchedule = sessionCount < existingScheduleCount ? existingSchedules[sessionCount] : null;
 
+                        // Find corresponding learning path session for this session number
+                        var sessionNumber = sessionCount + 1; // Session numbers typically start at 1
+                        var learningPathSession = sortedSessions.FirstOrDefault(s => s.SessionNumber == sessionNumber);
+
                         // Create schedule if it doesn't already exist in our list for this date and learning registration
                         if (!schedules.Any(s => s.StartDay == scheduleStartDate && s.LearningRegisId == learningRegis.LearningRegisId))
                         {
                             // Ensure LearningRegisId is set in the schedule
-                            schedules.Add(new ScheduleDTO
+                            var scheduleDto = new ScheduleDTO
                             {
                                 ScheduleId = existingSchedule?.ScheduleId ?? 0,
                                 Mode = existingSchedule?.Mode ?? ScheduleMode.OneOnOne,
@@ -364,6 +410,8 @@ namespace InstruLearn_Application.BLL.Service
                                 LearnerId = learningRegis.LearnerId,
                                 LearnerName = learningRegis.Learner?.FullName ?? "N/A",
                                 LearnerAddress = learningRegis.Learner?.Account?.Address ?? "N/A",
+                                ClassId = learningRegis.ClassId,
+                                ClassName = learningRegis.Classes?.ClassName ?? "N/A",
                                 RegistrationStartDay = learningRegis.StartDay,
                                 LearningRegisId = learningRegis.LearningRegisId,
                                 AttendanceStatus = existingSchedule?.AttendanceStatus ?? 0,
@@ -371,7 +419,27 @@ namespace InstruLearn_Application.BLL.Service
                                 {
                                     DayOfWeeks = (DayOfWeeks)day.DayOfWeek
                                 }).ToList()
-                            });
+                            };
+
+                            // Add learning path session information if available
+                            if (learningPathSession != null)
+                            {
+                                scheduleDto.LearningPathSessionId = learningPathSession.LearningPathSessionId;
+                                scheduleDto.SessionNumber = learningPathSession.SessionNumber;
+                                scheduleDto.SessionTitle = learningPathSession.Title;
+                                scheduleDto.SessionDescription = learningPathSession.Description;
+                                scheduleDto.IsSessionCompleted = learningPathSession.IsCompleted;
+                            }
+                            else
+                            {
+                                // Default values if no session is found
+                                scheduleDto.SessionNumber = sessionNumber;
+                                scheduleDto.SessionTitle = $"Session {sessionNumber}";
+                                scheduleDto.SessionDescription = "";
+                                scheduleDto.IsSessionCompleted = false;
+                            }
+
+                            schedules.Add(scheduleDto);
 
                             sessionCount++;
                         }
