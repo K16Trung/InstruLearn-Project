@@ -116,7 +116,7 @@ namespace InstruLearn_Application.BLL.Service
             account.CreatedAt = DateTime.Now;
             account.IsEmailVerified = false;
             account.EmailVerificationToken = GenerateSixDigitCode();
-            account.EmailVerificationTokenExpires = DateTime.Now.AddMinutes(1);
+            account.EmailVerificationTokenExpires = DateTime.Now.AddMinutes(2);
 
             await _authRepository.AddAsync(account);
 
