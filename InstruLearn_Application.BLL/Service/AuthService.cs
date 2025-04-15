@@ -115,7 +115,7 @@ namespace InstruLearn_Application.BLL.Service
             account.RefreshToken = string.Empty;
             account.CreatedAt = DateTime.Now;
             account.IsEmailVerified = false;
-            account.EmailVerificationToken = GenerateRandomToken();
+            account.EmailVerificationToken = GenerateSixDigitCode();
             account.EmailVerificationTokenExpires = DateTime.Now.AddHours(24);
 
             await _authRepository.AddAsync(account);
@@ -381,7 +381,7 @@ namespace InstruLearn_Application.BLL.Service
             }
 
             // Generate new verification token
-            account.EmailVerificationToken = GenerateRandomToken();
+            account.EmailVerificationToken = GenerateSixDigitCode();
             account.EmailVerificationTokenExpires = DateTime.Now.AddHours(24);
             await _authRepository.UpdateAsync(account);
 
@@ -396,31 +396,10 @@ namespace InstruLearn_Application.BLL.Service
             response.Message = "Verification email has been sent.";
             return response;
         }
-        private string GenerateRandomToken()
+        private string GenerateSixDigitCode()
         {
-            var tokenBytes = new byte[32];
-            using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
-            {
-                rng.GetBytes(tokenBytes);
-            }
-
-            string token = Convert.ToBase64String(tokenBytes)
-                .Replace("+", "")
-                .Replace("/", "")
-                .Replace("=", "");
-
-            if (token.Length < 24)
-            {
-                var random = new Random();
-                const string chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-                while (token.Length < 24)
-                {
-                    token += chars[random.Next(chars.Length)];
-                }
-                return token;
-            }
-
-            return token.Substring(0, 24);
+            Random random = new Random();
+            return random.Next(100000, 999999).ToString();
         }
 
         private string GenerateRandomPassword()
