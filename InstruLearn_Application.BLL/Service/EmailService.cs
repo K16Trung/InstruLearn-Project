@@ -44,18 +44,16 @@ namespace InstruLearn_Application.BLL.Service
 
         public async Task SendVerificationEmailAsync(string email, string username, string token)
         {
-            var frontendUrl = _configuration["ApplicationSettings:FrontendUrl"];
-            var verificationLink = $"{frontendUrl}/verify-email?token={WebUtility.UrlEncode(token)}&email={WebUtility.UrlEncode(email)}";
-
+            // Use the token provided by AuthService - don't generate a new one
             var subject = "Verify Your InstruLearn Account";
             var body = $@"
               <html>
                  <body>
                    <h2>Welcome to InstruLearn!</h2>
                    <p>Hello {username},</p>
-                   <p>Thank you for registering with InstruLearn. Please click the link below to verify your email address:</p>
-                   <p><a href='{verificationLink}'>Verify Email Address</a></p>
-                   <p>This link will expire in 24 hours.</p>
+                   <p>Thank you for registering with InstruLearn. Your email verification code is:</p>
+                   <h3 style=""font-size: 24px; padding: 10px; background-color: #f0f0f0; text-align: center; letter-spacing: 5px;"">{token}</h3>
+                   <p>This code will expire in 24 hours.</p>
                    <p>If you didn't create an account, please ignore this email.</p>
                    <p>Best regards,</p>
                    <p>The InstruLearn Team</p>

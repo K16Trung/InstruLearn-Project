@@ -10,6 +10,8 @@ namespace InstruLearn_Application.Model.Models.DTO.Auth
     public class VerifyEmailDTO
     {
         [Required]
+        [StringLength(6, MinimumLength = 6, ErrorMessage = "Verification code must be 6 digits.")]
+        [RegularExpression(@"^\d{6}$", ErrorMessage = "Verification code must contain exactly 6 digits.")]
         public string Token { get; set; }
 
         [Required]
