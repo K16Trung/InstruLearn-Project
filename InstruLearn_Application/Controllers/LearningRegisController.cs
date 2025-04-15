@@ -88,5 +88,24 @@ namespace InstruLearn_Application.Controllers
             return Ok(result);
         }
 
+        [HttpPost("reject/{learningRegisId}")]
+        public async Task<IActionResult> RejectLearningRegistration(int learningRegisId, [FromBody] RejectLearningRegisDTO rejectDTO)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var result = await _learningRegisService.RejectLearningRegisAsync(learningRegisId, rejectDTO.RejectReason);
+
+            if (!result.IsSucceed)
+            {
+                return BadRequest(result);
+            }
+
+            return Ok(result);
+        }
+
+
     }
 }
