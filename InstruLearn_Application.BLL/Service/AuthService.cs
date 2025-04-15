@@ -261,7 +261,6 @@ namespace InstruLearn_Application.BLL.Service
 
             return response;
         }
-
         public async Task<ResponseDTO> ResetPasswordAsync(ResetPasswordDTO resetPasswordDTO)
         {
             var response = new ResponseDTO();
