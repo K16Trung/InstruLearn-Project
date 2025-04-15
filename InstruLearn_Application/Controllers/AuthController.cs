@@ -1,7 +1,6 @@
 ﻿using InstruLearn_Application.BLL.Service.IService;
 using InstruLearn_Application.Model.Data;
 using InstruLearn_Application.Model.Models.DTO;
-using InstruLearn_Application.Model.Models.DTO.Account;
 using InstruLearn_Application.Model.Models.DTO.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -81,6 +80,29 @@ namespace InstruLearn_Application.Controllers
                 return BadRequest(result);
 
             return Ok(result);
+        }
+
+        [HttpPost("verify-email")]
+        public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailDTO verifyEmailDTO)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var result = await _authService.VerifyEmailAsync(verifyEmailDTO);
+            if (!result.IsSucceed)
+                return BadRequest(result);
+
+            return Ok(result);
+        }
+
+        [HttpPost("resend-verification")]
+        public async Task<IActionResult> ResendVerification([FromBody] ForgotPasswordDTO model)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var result = await _authService.ResendVerificationEmailAsync(model.Email);
+            return Ok(result); // Always return OK for security reasons
         }
 
         [Authorize]

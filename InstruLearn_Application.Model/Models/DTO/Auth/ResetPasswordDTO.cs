@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace InstruLearn_Application.Model.Models.DTO.Account
+namespace InstruLearn_Application.Model.Models.DTO.Auth
 {
     public class ResetPasswordDTO
     {
