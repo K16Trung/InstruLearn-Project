@@ -145,7 +145,7 @@ namespace InstruLearn_Application.BLL.Service
             );
 
             response.IsSucceed = true;
-            response.Message = "Registration successful! Please check your email to verify your account. Your verification code will expire in 2 minutes.";
+            response.Message = "Registration successful! Please check your email to verify your account.";
             response.Data = true;
             return response;
         }
