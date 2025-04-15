@@ -41,5 +41,28 @@ namespace InstruLearn_Application.BLL.Service
 
             await client.SendMailAsync(message);
         }
+
+        public async Task SendVerificationEmailAsync(string email, string username, string token)
+        {
+            var frontendUrl = _configuration["ApplicationSettings:FrontendUrl"];
+            var verificationLink = $"{frontendUrl}/verify-email?token={WebUtility.UrlEncode(token)}&email={WebUtility.UrlEncode(email)}";
+
+            var subject = "Verify Your InstruLearn Account";
+            var body = $@"
+              <html>
+                 <body>
+                   <h2>Welcome to InstruLearn!</h2>
+                   <p>Hello {username},</p>
+                   <p>Thank you for registering with InstruLearn. Please click the link below to verify your email address:</p>
+                   <p><a href='{verificationLink}'>Verify Email Address</a></p>
+                   <p>This link will expire in 24 hours.</p>
+                   <p>If you didn't create an account, please ignore this email.</p>
+                   <p>Best regards,</p>
+                   <p>The InstruLearn Team</p>
+                 </body>
+               </html>";
+
+            await SendEmailAsync(email, subject, body);
+        }
     }
 }

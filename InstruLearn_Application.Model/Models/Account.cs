@@ -27,6 +27,9 @@ namespace InstruLearn_Application.Model.Models
         public DateTime TokenExpires { get; set; }
         public string RefreshToken { get; set; }
         public DateTime RefreshTokenExpires { get; set; }
+        public bool IsEmailVerified { get; set; } = false;
+        public string? EmailVerificationToken { get; set; }
+        public DateTime? EmailVerificationTokenExpires { get; set; }
 
         // Navigation Properties
         public virtual Admin? Admin { get; set; }

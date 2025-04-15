@@ -13,7 +13,6 @@ using System.Threading.Tasks;
 using InstruLearn_Application.Model.Enum;
 using InstruLearn_Application.Model.Models;
 using InstruLearn_Application.DAL.Repository;
-using InstruLearn_Application.Model.Models.DTO.Account;
 using System.Net;
 
 namespace InstruLearn_Application.BLL.Service
@@ -24,11 +23,12 @@ namespace InstruLearn_Application.BLL.Service
         private readonly IConfiguration _configuration;
         private readonly ILearnerRepository _learnerRepository;
         private readonly IWalletRepository _walletRepository;
+        private readonly IEmailService _emailService;
         private readonly GoogleTokenValidator _googleTokenValidator;
         private IMapper _mapper;
         private JwtHelper _jwtHelper;
 
-        public AuthService(IAuthRepository authRepository, IConfiguration configuration, IMapper mapper, JwtHelper jwtHelper, ILearnerRepository learnerRepository, IWalletRepository walletRepository, GoogleTokenValidator googleTokenValidator)
+        public AuthService(IAuthRepository authRepository, IConfiguration configuration, IMapper mapper, JwtHelper jwtHelper, ILearnerRepository learnerRepository, IWalletRepository walletRepository, GoogleTokenValidator googleTokenValidator, IEmailService emailService)
         {
             _authRepository = authRepository;
             _configuration = configuration;
@@ -37,6 +37,7 @@ namespace InstruLearn_Application.BLL.Service
             _learnerRepository = learnerRepository;
             _walletRepository = walletRepository;
             _googleTokenValidator = googleTokenValidator;
+            _emailService = emailService;
         }
 
         // Login
@@ -56,6 +57,13 @@ namespace InstruLearn_Application.BLL.Service
             if (!isPasswordValid)
             {
                 response.Message = "Invalid credentials";
+                return response;
+            }
+
+            // Check if email is verified
+            if (!user.IsEmailVerified)
+            {
+                response.Message = "Please verify your email before logging in. Check your inbox for a verification link.";
                 return response;
             }
 
@@ -90,6 +98,13 @@ namespace InstruLearn_Application.BLL.Service
                 return response;
             }
 
+            var existingEmail = await _authRepository.GetByEmail(registerDTO.Email);
+            if (existingEmail != null)
+            {
+                response.Message = "Email đã tồn tại!";
+                return response;
+            }
+
             var account = _mapper.Map<Account>(registerDTO);
 
             account.AccountId = GenerateUniqueId();
@@ -99,6 +114,9 @@ namespace InstruLearn_Application.BLL.Service
             account.Token = string.Empty;
             account.RefreshToken = string.Empty;
             account.CreatedAt = DateTime.Now;
+            account.IsEmailVerified = false;
+            account.EmailVerificationToken = GenerateRandomToken();
+            account.EmailVerificationTokenExpires = DateTime.Now.AddHours(24);
 
             await _authRepository.AddAsync(account);
 
@@ -119,8 +137,15 @@ namespace InstruLearn_Application.BLL.Service
 
             await _walletRepository.AddAsync(wallet);
 
+            // Send verification email
+            await _emailService.SendVerificationEmailAsync(
+                account.Email,
+                account.Username,
+                account.EmailVerificationToken
+            );
+
             response.IsSucceed = true;
-            response.Message = "Registration successful!";
+            response.Message = "Registration successful! Please check your email to verify your account.";
             response.Data = true;
             return response;
         }
@@ -156,7 +181,8 @@ namespace InstruLearn_Application.BLL.Service
                         Avatar = payload.Picture,
                         Token = string.Empty,
                         RefreshToken = string.Empty,
-                        CreatedAt = DateTime.Now
+                        CreatedAt = DateTime.Now,
+                        IsEmailVerified = true
                     };
 
                     await _authRepository.AddAsync(account);
@@ -261,6 +287,8 @@ namespace InstruLearn_Application.BLL.Service
 
             return response;
         }
+
+
         public async Task<ResponseDTO> ResetPasswordAsync(ResetPasswordDTO resetPasswordDTO)
         {
             var response = new ResponseDTO();
@@ -291,6 +319,109 @@ namespace InstruLearn_Application.BLL.Service
             response.IsSucceed = true;
             response.Message = "Password has been reset successfully.";
             return response;
+        }
+
+        public async Task<ResponseDTO> VerifyEmailAsync(VerifyEmailDTO verifyEmailDTO)
+        {
+            var response = new ResponseDTO();
+
+            var account = await _authRepository.GetByEmail(verifyEmailDTO.Email);
+            if (account == null)
+            {
+                response.Message = "Invalid verification request.";
+                return response;
+            }
+
+            // Check if email is already confirmed
+            if (account.IsEmailVerified)
+            {
+                response.IsSucceed = true;
+                response.Message = "Email already verified.";
+                return response;
+            }
+
+            // Validate token
+            if (account.EmailVerificationToken != verifyEmailDTO.Token ||
+                account.EmailVerificationTokenExpires == null ||
+                account.EmailVerificationTokenExpires < DateTime.Now)
+            {
+                response.Message = "Invalid or expired verification token.";
+                return response;
+            }
+
+            // Update account
+            account.IsEmailVerified = true;
+            account.EmailVerificationToken = null;
+            account.EmailVerificationTokenExpires = null;
+
+            await _authRepository.UpdateAsync(account);
+
+            response.IsSucceed = true;
+            response.Message = "Email verified successfully.";
+            return response;
+        }
+
+        public async Task<ResponseDTO> ResendVerificationEmailAsync(string email)
+        {
+            var response = new ResponseDTO();
+
+            var account = await _authRepository.GetByEmail(email);
+            if (account == null)
+            {
+                // For security, don't reveal that the email doesn't exist
+                response.IsSucceed = true;
+                response.Message = "If your email is registered with us, you will receive a verification email.";
+                return response;
+            }
+
+            if (account.IsEmailVerified )
+            {
+                response.IsSucceed = true;
+                response.Message = "Email already verified.";
+                return response;
+            }
+
+            // Generate new verification token
+            account.EmailVerificationToken = GenerateRandomToken();
+            account.EmailVerificationTokenExpires = DateTime.Now.AddHours(24);
+            await _authRepository.UpdateAsync(account);
+
+            // Send verification email
+            await _emailService.SendVerificationEmailAsync(
+                account.Email,
+                account.Username,
+                account.EmailVerificationToken
+            );
+
+            response.IsSucceed = true;
+            response.Message = "Verification email has been sent.";
+            return response;
+        }
+        private string GenerateRandomToken()
+        {
+            var tokenBytes = new byte[32];
+            using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(tokenBytes);
+            }
+
+            string token = Convert.ToBase64String(tokenBytes)
+                .Replace("+", "")
+                .Replace("/", "")
+                .Replace("=", "");
+
+            if (token.Length < 24)
+            {
+                var random = new Random();
+                const string chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+                while (token.Length < 24)
+                {
+                    token += chars[random.Next(chars.Length)];
+                }
+                return token;
+            }
+
+            return token.Substring(0, 24);
         }
 
         private string GenerateRandomPassword()
