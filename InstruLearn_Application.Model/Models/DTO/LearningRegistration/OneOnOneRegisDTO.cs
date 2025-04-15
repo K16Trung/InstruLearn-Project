@@ -47,7 +47,7 @@ namespace InstruLearn_Application.Model.Models.DTO.LearningRegistration
         public DateTime? PaymentDeadline { get; set; }
         public bool IsPaymentPending => Status == "Accepted" && PaymentDeadline.HasValue;
         public bool IsPaymentOverdue => IsPaymentPending && PaymentDeadline < DateTime.Now;
-        public string PaymentStatus => IsPaymentOverdue ? "Overdue" : IsPaymentPending ? "Pending" : "N/A";
+        public string PaymentStatus => IsPaymentOverdue ? "Overdue" : IsPaymentPending ? "Pending" : "40% payment";
         public int? DaysRemaining => PaymentDeadline.HasValue ? (PaymentDeadline.Value.Date - DateTime.Now.Date).Days : null;
     }
 }
