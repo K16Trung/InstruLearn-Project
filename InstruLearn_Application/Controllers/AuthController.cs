@@ -1,6 +1,7 @@
 ﻿using InstruLearn_Application.BLL.Service.IService;
 using InstruLearn_Application.Model.Data;
 using InstruLearn_Application.Model.Models.DTO;
+using InstruLearn_Application.Model.Models.DTO.Account;
 using InstruLearn_Application.Model.Models.DTO.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -53,6 +54,29 @@ namespace InstruLearn_Application.Controllers
             }
 
             var result = await _authService.GoogleLoginAsync(googleLoginDTO);
+            if (!result.IsSucceed)
+                return BadRequest(result);
+
+            return Ok(result);
+        }
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDTO forgotPasswordDTO)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var result = await _authService.ForgotPasswordAsync(forgotPasswordDTO);
+            return Ok(result); // Always return OK for security reasons
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDTO resetPasswordDTO)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var result = await _authService.ResetPasswordAsync(resetPasswordDTO);
             if (!result.IsSucceed)
                 return BadRequest(result);
 

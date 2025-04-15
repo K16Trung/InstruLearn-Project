@@ -1,4 +1,5 @@
 ﻿using InstruLearn_Application.Model.Models.DTO;
+using InstruLearn_Application.Model.Models.DTO.Account;
 using InstruLearn_Application.Model.Models.DTO.Auth;
 using System;
 using System.Collections.Generic;
@@ -13,5 +14,7 @@ namespace InstruLearn_Application.BLL.Service.IService
         Task<ResponseDTO> RegisterAsync(RegisterDTO registerDTO);
         Task<ResponseDTO> LoginAsync(LoginDTO loginDTO);
         Task<ResponseDTO> GoogleLoginAsync(GoogleLoginDTO googleLoginDTO);
+        Task<ResponseDTO> ForgotPasswordAsync(ForgotPasswordDTO forgotPasswordDTO);
+        Task<ResponseDTO> ResetPasswordAsync(ResetPasswordDTO resetPasswordDTO);
     }
 }
