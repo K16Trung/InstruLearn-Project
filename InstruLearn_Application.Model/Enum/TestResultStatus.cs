@@ -9,6 +9,7 @@ namespace InstruLearn_Application.Model.Enum
     public enum TestResultStatus
     {
         Pending,
-        Dotted
+        Dotted,
+        Cancelled
     }
 }

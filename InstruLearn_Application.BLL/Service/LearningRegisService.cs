@@ -748,6 +748,96 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
+        public async Task<ResponseDTO> RejectLearningRegisAsync(int learningRegisId, string rejectReason)
+        {
+            try
+            {
+                _logger.LogInformation($"Starting learning registration rejection process for registration ID: {learningRegisId}");
+
+                // Find the registration
+                var learningRegis = await _unitOfWork.LearningRegisRepository.GetByIdAsync(learningRegisId);
+                if (learningRegis == null)
+                {
+                    _logger.LogWarning($"Learning Registration with ID {learningRegisId} not found");
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Learning Registration not found."
+                    };
+                }
+
+                // Verify it's in a "Pending" state - only pending registrations can be rejected
+                if (learningRegis.Status != LearningRegis.Pending)
+                {
+                    _logger.LogWarning($"Cannot reject registration {learningRegisId} with status {learningRegis.Status}. Only pending registrations can be rejected.");
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = $"Cannot reject registration with status {learningRegis.Status}. Only pending registrations can be rejected."
+                    };
+                }
+
+                // Start a transaction to ensure atomic operations
+                using var transaction = await _unitOfWork.BeginTransactionAsync();
+                try
+                {
+                    // Update the registration status to rejected
+                    learningRegis.Status = LearningRegis.Rejected;
+
+                    // Add reason for rejection if provided
+                    if (!string.IsNullOrEmpty(rejectReason))
+                    {
+                        learningRegis.LearningRequest = rejectReason; // Storing rejection reason in the LearningRequest field
+                    }
+
+                    await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
+                    await _unitOfWork.SaveChangeAsync();
+
+                    // Update associated test result if it exists
+                    var testResult = await _unitOfWork.TestResultRepository.GetByLearningRegisIdAsync(learningRegisId);
+                    if (testResult != null)
+                    {
+                        testResult.Status = TestResultStatus.Cancelled;
+                        await _unitOfWork.TestResultRepository.UpdateAsync(testResult);
+                        await _unitOfWork.SaveChangeAsync();
+                    }
+
+                    // Commit the transaction
+                    await _unitOfWork.CommitTransactionAsync();
+
+                    _logger.LogInformation($"Learning registration {learningRegisId} successfully rejected without refund");
+
+                    return new ResponseDTO
+                    {
+                        IsSucceed = true,
+                        Message = "Learning Registration rejected successfully. No refund has been processed.",
+                        Data = new
+                        {
+                            LearningRegisId = learningRegisId,
+                            LearnerId = learningRegis.LearnerId,
+                            Status = "Rejected"
+                        }
+                    };
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"Error during rejection of learning registration {learningRegisId}: {ex.Message}");
+                    await _unitOfWork.RollbackTransactionAsync();
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"An error occurred while processing learning registration rejection: {ex.Message}");
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Failed to reject learning registration: {ex.Message}"
+                };
+            }
+        }
+
+
 
 
         // Helper method to get the next occurrence of a specific day of week

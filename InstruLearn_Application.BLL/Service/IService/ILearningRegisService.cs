@@ -19,5 +19,6 @@ namespace InstruLearn_Application.BLL.Service.IService
         Task<ResponseDTO> GetRegistrationsByLearnerIdAsync(int learnerId);
         Task<ResponseDTO> UpdateLearningRegisStatusAsync(UpdateLearningRegisDTO updateDTO);
         Task<ResponseDTO> JoinClassWithWalletPaymentAsync(LearnerClassPaymentDTO paymentDTO);
+        Task<ResponseDTO> RejectLearningRegisAsync(int learningRegisId, string rejectReason);
     }
 }

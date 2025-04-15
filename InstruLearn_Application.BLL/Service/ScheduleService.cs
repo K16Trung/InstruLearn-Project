@@ -818,10 +818,5 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
         }
-
-
-
-
-
     }
 }
