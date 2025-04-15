@@ -284,6 +284,8 @@ namespace InstruLearn_Application.BLL.Service
 
                 // Manually update status
                 learningRegis.Status = LearningRegis.Accepted;
+                learningRegis.AcceptedDate = DateTime.Now;
+                learningRegis.PaymentDeadline = DateTime.Now.AddDays(3);
 
                 await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
                 await _unitOfWork.SaveChangeAsync();
@@ -351,10 +353,23 @@ namespace InstruLearn_Application.BLL.Service
                 // Commit transaction
                 await _unitOfWork.CommitTransactionAsync();
 
+                // Calculate total price and payment amount (40%)
+                decimal totalPrice = learningRegis.Price.Value;
+                decimal paymentAmount = totalPrice * 0.4m;
+
+                var deadline = learningRegis.PaymentDeadline.Value.ToString("yyyy-MM-dd HH:mm");
+
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Learning Registration updated successfully."
+                    Message = $"Learning Registration updated successfully. Payment of {paymentAmount:F2} VND (40% of total {totalPrice:F2} VND) is required by {deadline}.",
+                    Data = new
+                    {
+                        LearningRegisId = learningRegis.LearningRegisId,
+                        PaymentAmount = paymentAmount,
+                        TotalPrice = totalPrice,
+                        PaymentDeadline = deadline
+                    }
                 };
             }
             catch (Exception ex)
