@@ -360,7 +360,6 @@ namespace InstruLearn_Application.BLL.Service
             response.Message = "Email verified successfully.";
             return response;
         }
-
         public async Task<ResponseDTO> ResendVerificationEmailAsync(string email)
         {
             var response = new ResponseDTO();
@@ -374,7 +373,7 @@ namespace InstruLearn_Application.BLL.Service
                 return response;
             }
 
-            if (account.IsEmailVerified )
+            if (account.IsEmailVerified)
             {
                 response.IsSucceed = true;
                 response.Message = "Email already verified.";
