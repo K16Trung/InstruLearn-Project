@@ -13,6 +13,8 @@ using System.Threading.Tasks;
 using InstruLearn_Application.Model.Enum;
 using InstruLearn_Application.Model.Models;
 using InstruLearn_Application.DAL.Repository;
+using InstruLearn_Application.Model.Models.DTO.Account;
+using System.Net;
 
 namespace InstruLearn_Application.BLL.Service
 {
@@ -200,6 +202,95 @@ namespace InstruLearn_Application.BLL.Service
                 response.Message = $"Google login failed: {ex.Message}";
             }
 
+            return response;
+        }
+
+        public async Task<ResponseDTO> ForgotPasswordAsync(ForgotPasswordDTO forgotPasswordDTO)
+        {
+            var response = new ResponseDTO();
+
+            var account = await _authRepository.GetByEmail(forgotPasswordDTO.Email);
+            if (account == null)
+            {
+                // For security, don't reveal that the email doesn't exist
+                response.IsSucceed = true;
+                response.Message = "If your email is registered with us, you will receive a password reset link.";
+                return response;
+            }
+
+            // Generate a reset token
+            var token = GenerateRandomPassword();
+
+            // Store token in the account
+            account.RefreshToken = token;
+            account.RefreshTokenExpires = DateTime.Now.AddHours(1); // Token valid for 1 hour
+            await _authRepository.UpdateAsync(account);
+
+            // Generate the reset link
+            var frontendUrl = _configuration["ApplicationSettings:FrontendUrl"];
+            var resetLink = $"{frontendUrl}/reset-password?token={WebUtility.UrlEncode(token)}&email={WebUtility.UrlEncode(forgotPasswordDTO.Email)}";
+
+            // Create the email body
+            var subject = "Reset Your InstruLearn Password";
+            var body = $@"
+             <html>
+                <body>
+                  <h2>Password Reset Request</h2>
+                  <p>Hello {account.Username},</p>
+                  <p>We received a request to reset your password. Please click the link below to reset your password:</p>
+                  <p><a href='{resetLink}'>Reset Password</a></p>
+                  <p>This link will expire in 1 hour.</p>
+                  <p>If you didn't request this, please ignore this email.</p>
+                  <p>Best regards,</p>
+                  <p>The InstruLearn Team</p>
+                 </body>
+             </html>";
+
+            try
+            {
+                var emailService = new EmailService(_configuration);
+                await emailService.SendEmailAsync(forgotPasswordDTO.Email, subject, body);
+
+                response.IsSucceed = true;
+                response.Message = "If your email is registered with us, you will receive a password reset link.";
+            }
+            catch (Exception ex)
+            {
+                response.Message = "There was an error sending the password reset email.";
+            }
+
+            return response;
+        }
+
+        public async Task<ResponseDTO> ResetPasswordAsync(ResetPasswordDTO resetPasswordDTO)
+        {
+            var response = new ResponseDTO();
+
+            var account = await _authRepository.GetByEmail(resetPasswordDTO.Email);
+            if (account == null)
+            {
+                response.Message = "Invalid request.";
+                return response;
+            }
+
+            // Validate token
+            if (account.RefreshToken != resetPasswordDTO.Token ||
+                account.RefreshTokenExpires == null ||
+                account.RefreshTokenExpires < DateTime.Now)
+            {
+                response.Message = "Invalid or expired token.";
+                return response;
+            }
+
+            // Reset the password
+            account.PasswordHash = HashPassword(resetPasswordDTO.NewPassword);
+            account.RefreshToken = string.Empty;
+            account.RefreshTokenExpires = DateTime.MinValue;
+
+            await _authRepository.UpdateAsync(account);
+
+            response.IsSucceed = true;
+            response.Message = "Password has been reset successfully.";
             return response;
         }
 
