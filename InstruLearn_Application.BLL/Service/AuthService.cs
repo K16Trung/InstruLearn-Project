@@ -109,14 +109,14 @@ namespace InstruLearn_Application.BLL.Service
 
             account.AccountId = GenerateUniqueId();
             account.PasswordHash = HashPassword(registerDTO.Password);
-            account.IsActive = AccountStatus.Active;
+            account.IsActive = AccountStatus.PendingEmailVerification;
             account.Role = AccountRoles.Learner;
             account.Token = string.Empty;
             account.RefreshToken = string.Empty;
             account.CreatedAt = DateTime.Now;
             account.IsEmailVerified = false;
             account.EmailVerificationToken = GenerateSixDigitCode();
-            account.EmailVerificationTokenExpires = DateTime.Now.AddHours(24);
+            account.EmailVerificationTokenExpires = DateTime.Now.AddMinutes(1);
 
             await _authRepository.AddAsync(account);
 
@@ -145,7 +145,7 @@ namespace InstruLearn_Application.BLL.Service
             );
 
             response.IsSucceed = true;
-            response.Message = "Registration successful! Please check your email to verify your account.";
+            response.Message = "Registration successful! Please check your email to verify your account. Your verification code will expire in 2 minutes.";
             response.Data = true;
             return response;
         }
@@ -238,25 +238,21 @@ namespace InstruLearn_Application.BLL.Service
             var account = await _authRepository.GetByEmail(forgotPasswordDTO.Email);
             if (account == null)
             {
-                // For security, don't reveal that the email doesn't exist
+
                 response.IsSucceed = true;
                 response.Message = "If your email is registered with us, you will receive a password reset link.";
                 return response;
             }
 
-            // Generate a reset token
             var token = GenerateRandomPassword();
 
-            // Store token in the account
             account.RefreshToken = token;
-            account.RefreshTokenExpires = DateTime.Now.AddHours(1); // Token valid for 1 hour
+            account.RefreshTokenExpires = DateTime.Now.AddHours(1);
             await _authRepository.UpdateAsync(account);
 
-            // Generate the reset link
             var frontendUrl = _configuration["ApplicationSettings:FrontendUrl"];
             var resetLink = $"{frontendUrl}/reset-password?token={WebUtility.UrlEncode(token)}&email={WebUtility.UrlEncode(forgotPasswordDTO.Email)}";
 
-            // Create the email body
             var subject = "Reset Your InstruLearn Password";
             var body = $@"
              <html>
@@ -300,7 +296,6 @@ namespace InstruLearn_Application.BLL.Service
                 return response;
             }
 
-            // Validate token
             if (account.RefreshToken != resetPasswordDTO.Token ||
                 account.RefreshTokenExpires == null ||
                 account.RefreshTokenExpires < DateTime.Now)
@@ -309,7 +304,6 @@ namespace InstruLearn_Application.BLL.Service
                 return response;
             }
 
-            // Reset the password
             account.PasswordHash = HashPassword(resetPasswordDTO.NewPassword);
             account.RefreshToken = string.Empty;
             account.RefreshTokenExpires = DateTime.MinValue;
@@ -332,7 +326,6 @@ namespace InstruLearn_Application.BLL.Service
                 return response;
             }
 
-            // Check if email is already confirmed
             if (account.IsEmailVerified)
             {
                 response.IsSucceed = true;
@@ -340,19 +333,18 @@ namespace InstruLearn_Application.BLL.Service
                 return response;
             }
 
-            // Validate token
             if (account.EmailVerificationToken != verifyEmailDTO.Token ||
                 account.EmailVerificationTokenExpires == null ||
                 account.EmailVerificationTokenExpires < DateTime.Now)
             {
-                response.Message = "Invalid or expired verification token.";
+                response.Message = "Invalid or expired verification token. Please register again.";
                 return response;
             }
 
-            // Update account
             account.IsEmailVerified = true;
             account.EmailVerificationToken = null;
             account.EmailVerificationTokenExpires = null;
+            account.IsActive = AccountStatus.Active;
 
             await _authRepository.UpdateAsync(account);
 
@@ -367,7 +359,7 @@ namespace InstruLearn_Application.BLL.Service
             var account = await _authRepository.GetByEmail(email);
             if (account == null)
             {
-                // For security, don't reveal that the email doesn't exist
+
                 response.IsSucceed = true;
                 response.Message = "If your email is registered with us, you will receive a verification email.";
                 return response;
@@ -380,12 +372,10 @@ namespace InstruLearn_Application.BLL.Service
                 return response;
             }
 
-            // Generate new verification token
             account.EmailVerificationToken = GenerateSixDigitCode();
             account.EmailVerificationTokenExpires = DateTime.Now.AddHours(24);
             await _authRepository.UpdateAsync(account);
 
-            // Send verification email
             await _emailService.SendVerificationEmailAsync(
                 account.Email,
                 account.Username,
