@@ -8,8 +8,8 @@ namespace InstruLearn_Application.Model.Enum
 {
     public enum AccountStatus
     {
-        Banned = 0,                    // Account is banned
-        Active = 1,                    // Account is active and verified
-        PendingEmailVerification = 2   // Waiting for email confirmation
+        Banned = 0,
+        Active = 1,
+        PendingEmailVerification = 2
     }
 }
