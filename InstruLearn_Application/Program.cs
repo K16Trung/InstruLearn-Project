@@ -163,6 +163,7 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<ISyllabusContentService, SyllabusContentService>();
             builder.Services.AddScoped<ILearningPathService, LearningPathService>();
             builder.Services.AddScoped<IEmailService, EmailService>();
+            builder.Services.AddHostedService<PaymentDeadlineService>();
             builder.Services.AddAutoMapper(typeof(MappingProfile));
             // Add after service registration in Program.cs
             builder.Services.AddHostedService<PayOSWebhookRegistrationService>();

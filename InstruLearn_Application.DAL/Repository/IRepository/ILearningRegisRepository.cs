@@ -13,6 +13,7 @@ namespace InstruLearn_Application.DAL.Repository.IRepository
     {
         Task<IEnumerable<Learning_Registration>> GetPendingRegistrationsAsync();
         Task<IEnumerable<Learning_Registration>> GetRegistrationsByLearnerIdAsync(int learnerId);
+        Task<IEnumerable<Learning_Registration>> GetAcceptedRegistrationsAsync();
         Task<IEnumerable<Learning_Registration>> GetAllAsync();
         Task<Learning_Registration> GetByIdAsync(int id);
         Task<Learning_Registration?> GetFirstOrDefaultAsync(

@@ -97,5 +97,18 @@ namespace InstruLearn_Application.DAL.Repository
 
             return await query.FirstOrDefaultAsync(predicate);
         }
+
+        public async Task<IEnumerable<Learning_Registration>> GetAcceptedRegistrationsAsync()
+        {
+            return await _appDbContext.Learning_Registrations
+                .Where(x => x.Status == LearningRegis.Accepted && x.PaymentDeadline.HasValue)
+                .Include(x => x.Learner)
+                .Include(x => x.Teacher)
+                .Include(l => l.Learner.Account)
+                .Include(x => x.Learning_Registration_Type)
+                .Include(x => x.Major)
+                .ToListAsync();
+        }
+
     }
 }
