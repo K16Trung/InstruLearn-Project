@@ -41,6 +41,9 @@ namespace InstruLearn_Application.Model.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal? RemainingAmount { get; set; }
 
+        public DateTime? AcceptedDate { get; set; }
+        public DateTime? PaymentDeadline { get; set; }
+
         // Navigation properties
         public ICollection<Test_Result> Test_Results { get; set; }
         public ICollection<LearningRegistrationDay> LearningRegistrationDay { get; set; }

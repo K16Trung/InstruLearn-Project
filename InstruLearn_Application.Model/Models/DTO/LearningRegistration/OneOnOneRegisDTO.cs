@@ -41,5 +41,13 @@ namespace InstruLearn_Application.Model.Models.DTO.LearningRegistration
         [Column(TypeName = "decimal(18,2)")]
         public decimal? RemainingAmount { get; set; }
         public string Status { get; set; }
+
+        // New properties for payment deadline
+        public DateTime? AcceptedDate { get; set; }
+        public DateTime? PaymentDeadline { get; set; }
+        public bool IsPaymentPending => Status == "Accepted" && PaymentDeadline.HasValue;
+        public bool IsPaymentOverdue => IsPaymentPending && PaymentDeadline < DateTime.Now;
+        public string PaymentStatus => IsPaymentOverdue ? "Overdue" : IsPaymentPending ? "Pending" : "N/A";
+        public int? DaysRemaining => PaymentDeadline.HasValue ? (PaymentDeadline.Value.Date - DateTime.Now.Date).Days : null;
     }
 }
