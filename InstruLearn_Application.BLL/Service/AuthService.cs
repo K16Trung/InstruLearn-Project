@@ -191,7 +191,7 @@ namespace InstruLearn_Application.BLL.Service
                     var learner = new Learner
                     {
                         AccountId = account.AccountId,
-                        FullName = payload.Name ?? "Google User",
+                        FullName = string.IsNullOrEmpty(googleLoginDTO.FullName) ? payload.Name ?? "Google User" : googleLoginDTO.FullName,
                     };
 
                     await _learnerRepository.AddAsync(learner);
