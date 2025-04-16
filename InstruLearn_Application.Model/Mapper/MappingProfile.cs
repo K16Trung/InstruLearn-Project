@@ -148,6 +148,7 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.Account.IsActive))
                 .ReverseMap();
             CreateMap<Learner, UpdateLearnerDTO>()
+                .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName))
                 .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.Account.PhoneNumber))
                 .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => src.Account.Gender))
                 .ForMember(dest => dest.Address, opt => opt.MapFrom(src => src.Account.Address))
