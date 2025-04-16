@@ -84,6 +84,26 @@ namespace InstruLearn_Application.BLL.Service
                     return scheduleConflict; // Return the conflict response
                 }
 
+                // Check for duplicate registrations - prevent spam registrations
+                var existingRegistrations = await _unitOfWork.LearningRegisRepository
+                    .GetQuery()
+                    .Where(r =>
+                        r.LearnerId == createLearningRegisDTO.LearnerId &&
+                        //r.MajorId == createLearningRegisDTO.MajorId && 
+                        r.TimeStart == createLearningRegisDTO.TimeStart &&
+                        //r.TimeLearning == createLearningRegisDTO.TimeLearning &&
+                        r.Status == LearningRegis.Pending)
+                    .ToListAsync();
+
+                if (existingRegistrations.Any())
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "You already have a pending registration for this major. Please wait for it to be processed before creating a new one."
+                    };
+                }
+
                 // Start EF Core transaction instead of TransactionScope
                 using (var transaction = await _unitOfWork.BeginTransactionAsync())
                 {
@@ -393,6 +413,23 @@ namespace InstruLearn_Application.BLL.Service
                 if (!classScheduleConflict.IsSucceed)
                 {
                     return classScheduleConflict; // Return the conflict response
+                }
+
+                // Check if learner is already enrolled or has a pending enrollment for this class
+                var existingEnrollments = await _unitOfWork.LearningRegisRepository
+                    .GetQuery()
+                    .AnyAsync(lr =>
+                        lr.LearnerId == paymentDTO.LearnerId &&
+                        lr.ClassId == paymentDTO.ClassId &&
+                        (lr.Status == LearningRegis.Pending || lr.Status == LearningRegis.Accepted || lr.Status == LearningRegis.Fourty || lr.Status == LearningRegis.Sixty));
+
+                if (existingEnrollments)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "You already have an enrollment or pending enrollment for this class."
+                    };
                 }
 
                 // Start transaction
