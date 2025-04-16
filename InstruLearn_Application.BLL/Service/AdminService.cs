@@ -50,7 +50,6 @@ namespace InstruLearn_Application.BLL.Service
         {
             var response = new ResponseDTO();
 
-            // Check if email is already used
             var accounts = _unitOfWork.AccountRepository.GetFilter(x => x.Email == createAdminDTO.Email);
             var existingAccount = accounts.Items.FirstOrDefault();
             if (existingAccount != null)
@@ -59,7 +58,6 @@ namespace InstruLearn_Application.BLL.Service
                 return response;
             }
 
-            // Create Account
             var account = new Account
             {
                 AccountId = Guid.NewGuid().ToString(),
@@ -78,7 +76,6 @@ namespace InstruLearn_Application.BLL.Service
 
             await _unitOfWork.AccountRepository.AddAsync(account);
 
-            // Create Teacher
             var admin = new Admin
             {
                 AccountId = account.AccountId,
@@ -133,7 +130,7 @@ namespace InstruLearn_Application.BLL.Service
         }
         private string HashPassword(string password)
         {
-            return BCrypt.Net.BCrypt.HashPassword(password); // Explicit namespace
+            return BCrypt.Net.BCrypt.HashPassword(password);
         }
     }
 }

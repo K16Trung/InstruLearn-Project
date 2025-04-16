@@ -48,7 +48,7 @@ namespace InstruLearn_Application.BLL.Service
             var user = await _authRepository.GetByUserName(loginDTO.Username);
             if (user == null)
             {
-                response.Message = "Invalid credentials";
+                response.Message = "Thông tin đăng nhập không hợp lệ";
                 return response;
             }
 
@@ -56,14 +56,13 @@ namespace InstruLearn_Application.BLL.Service
 
             if (!isPasswordValid)
             {
-                response.Message = "Invalid credentials";
+                response.Message = "Thông tin đăng nhập không hợp lệ";
                 return response;
             }
 
-            // Check if email is verified
             if (!user.IsEmailVerified)
             {
-                response.Message = "Please verify your email before logging in. Check your inbox for a verification link.";
+                response.Message = "Vui lòng xác minh email của bạn trước khi đăng nhập. Kiểm tra hộp thư đến để biết mã xác minh.";
                 return response;
             }
 
@@ -137,7 +136,6 @@ namespace InstruLearn_Application.BLL.Service
 
             await _walletRepository.AddAsync(wallet);
 
-            // Send verification email
             await _emailService.SendVerificationEmailAsync(
                 account.Email,
                 account.Username,
@@ -145,10 +143,11 @@ namespace InstruLearn_Application.BLL.Service
             );
 
             response.IsSucceed = true;
-            response.Message = "Registration successful! Please check your email to verify your account.";
+            response.Message = "Đăng ký thành công! Vui lòng kiểm tra email để xác minh tài khoản của bạn.";
             response.Data = true;
             return response;
         }
+
         // Login google
         public async Task<ResponseDTO> GoogleLoginAsync(GoogleLoginDTO googleLoginDTO)
         {
@@ -160,7 +159,7 @@ namespace InstruLearn_Application.BLL.Service
 
                 if (payload == null)
                 {
-                    response.Message = "Invalid Google token.";
+                    response.Message = "Mã thông báo Google không hợp lệ.";
                     return response;
                 }
 
@@ -183,14 +182,12 @@ namespace InstruLearn_Application.BLL.Service
                         RefreshToken = string.Empty,
                         CreatedAt = DateTime.Now,
                         IsEmailVerified = true,
-                        // Add missing required fields
-                        PhoneNumber = string.Empty, // Set default or prompt user to add later
-                        DateOfEmployment = new DateOnly(1900, 1, 1) // Set default value
+                        PhoneNumber = string.Empty,
+                        DateOfEmployment = new DateOnly(1900, 1, 1)
                     };
 
                     await _authRepository.AddAsync(account);
 
-                    // Create the learner record
                     var learner = new Learner
                     {
                         AccountId = account.AccountId,
@@ -199,7 +196,6 @@ namespace InstruLearn_Application.BLL.Service
 
                     await _learnerRepository.AddAsync(learner);
 
-                    // Create the wallet record
                     var wallet = new Wallet
                     {
                         LearnerId = learner.LearnerId,
@@ -225,7 +221,7 @@ namespace InstruLearn_Application.BLL.Service
                 await _authRepository.UpdateAsync(existingAccount);
 
                 response.IsSucceed = true;
-                response.Message = "Google login successful!";
+                response.Message = "Đăng nhập Google thành công!";
                 response.Data = new { Token = token, RefreshToken = refreshToken };
             }
             catch (Exception ex)
@@ -236,7 +232,7 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
                 }
-                response.Message = $"Google login failed: {ex.Message}";
+                response.Message = $"Đăng nhập Google không thành công: {ex.Message}";
             }
 
             return response;
@@ -249,33 +245,30 @@ namespace InstruLearn_Application.BLL.Service
             var account = await _authRepository.GetByEmail(forgotPasswordDTO.Email);
             if (account == null)
             {
-                // For security, don't reveal that the email doesn't exist
+
                 response.IsSucceed = true;
-                response.Message = "If your email is registered with us, you will receive a password reset code.";
+                response.Message = "Nếu email của bạn đã được đăng ký với chúng tôi, bạn sẽ nhận được mã đặt lại mật khẩu.";
                 return response;
             }
 
-            // Generate a 6-digit reset code
             var resetCode = GenerateSixDigitCode();
 
-            // Store code in the account
             account.RefreshToken = resetCode;
-            account.RefreshTokenExpires = DateTime.Now.AddHours(1); // Code valid for 1 hour
+            account.RefreshTokenExpires = DateTime.Now.AddHours(1);
             await _authRepository.UpdateAsync(account);
 
-            // Create the email body
             var subject = "Reset Your InstruLearn Password";
             var body = $@"
              <html>
                <body>
-                 <h2>Password Reset Request</h2>
-                 <p>Hello {account.Username},</p>
-                 <p>We received a request to reset your password. Please use the following code to reset your password:</p>
+                 <h2>Yêu cầu đặt lại mật khẩu</h2>
+                 <p>Xin chào {account.Username},</p>
+                 <p>Chúng tôi đã nhận được yêu cầu đặt lại mật khẩu của bạn. Vui lòng sử dụng mã sau để đặt lại mật khẩu của bạn:</p>
                  <h3 style='font-size: 24px; background-color: #f5f5f5; padding: 10px; text-align: center;'>{resetCode}</h3>
-                 <p>This code will expire in 1 hour.</p>
-                 <p>If you didn't request this, please ignore this email.</p>
-                 <p>Best regards,</p>
-                 <p>The InstruLearn Team</p>
+                 <p>Mã này sẽ hết hạn sau 1 giờ.</p>
+                 <p>Nếu bạn không yêu cầu, vui lòng bỏ qua email này.</p>
+                 <p>Trân trọng,</p>
+                 <p>InstruLearn</p>
                </body>
              </html>";
 
@@ -284,11 +277,11 @@ namespace InstruLearn_Application.BLL.Service
                 await _emailService.SendEmailAsync(forgotPasswordDTO.Email, subject, body);
 
                 response.IsSucceed = true;
-                response.Message = "If your email is registered with us, you will receive a password reset code.";
+                response.Message = "Nếu email của bạn đã được đăng ký với chúng tôi, bạn sẽ nhận được mã đặt lại mật khẩu.";
             }
             catch (Exception ex)
             {
-                response.Message = "There was an error sending the password reset email.";
+                response.Message = "Đã xảy ra lỗi khi gửi email đặt lại mật khẩu.";
             }
 
             return response;
@@ -301,7 +294,7 @@ namespace InstruLearn_Application.BLL.Service
             var account = await _authRepository.GetByEmail(resetPasswordDTO.Email);
             if (account == null)
             {
-                response.Message = "Invalid request.";
+                response.Message = "Yêu cầu không hợp lệ.";
                 return response;
             }
 
@@ -309,7 +302,7 @@ namespace InstruLearn_Application.BLL.Service
                 account.RefreshTokenExpires == null ||
                 account.RefreshTokenExpires < DateTime.Now)
             {
-                response.Message = "Invalid or expired token.";
+                response.Message = "Mã thông báo không hợp lệ hoặc đã hết hạn.";
                 return response;
             }
 
@@ -320,7 +313,7 @@ namespace InstruLearn_Application.BLL.Service
             await _authRepository.UpdateAsync(account);
 
             response.IsSucceed = true;
-            response.Message = "Password has been reset successfully.";
+            response.Message = "Mật khẩu đã được đặt lại thành công.";
             return response;
         }
 
@@ -331,14 +324,14 @@ namespace InstruLearn_Application.BLL.Service
             var account = await _authRepository.GetByEmail(verifyEmailDTO.Email);
             if (account == null)
             {
-                response.Message = "Invalid verification request.";
+                response.Message = "Yêu cầu xác minh không hợp lệ.";
                 return response;
             }
 
             if (account.IsEmailVerified)
             {
                 response.IsSucceed = true;
-                response.Message = "Email already verified.";
+                response.Message = "Email đã được xác minh thành công.";
                 return response;
             }
 
@@ -346,7 +339,7 @@ namespace InstruLearn_Application.BLL.Service
                 account.EmailVerificationTokenExpires == null ||
                 account.EmailVerificationTokenExpires < DateTime.Now)
             {
-                response.Message = "Invalid or expired verification token. Please register again.";
+                response.Message = "Mã xác minh không hợp lệ hoặc đã hết hạn. Vui lòng đăng ký lại.";
                 return response;
             }
 
@@ -358,7 +351,7 @@ namespace InstruLearn_Application.BLL.Service
             await _authRepository.UpdateAsync(account);
 
             response.IsSucceed = true;
-            response.Message = "Email verified successfully.";
+            response.Message = "Email đã được xác minh thành công.";
             return response;
         }
         public async Task<ResponseDTO> ResendVerificationEmailAsync(string email)
@@ -370,14 +363,14 @@ namespace InstruLearn_Application.BLL.Service
             {
 
                 response.IsSucceed = true;
-                response.Message = "If your email is registered with us, you will receive a verification email.";
+                response.Message = "Nếu email của bạn đã được đăng ký với chúng tôi, bạn sẽ nhận được email xác minh.";
                 return response;
             }
 
             if (account.IsEmailVerified)
             {
                 response.IsSucceed = true;
-                response.Message = "Email already verified.";
+                response.Message = "Email đã được xác minh.";
                 return response;
             }
 
@@ -392,7 +385,7 @@ namespace InstruLearn_Application.BLL.Service
             );
 
             response.IsSucceed = true;
-            response.Message = "Verification email has been sent.";
+            response.Message = "Email xác minh đã được gửi.";
             return response;
         }
         private string GenerateSixDigitCode()

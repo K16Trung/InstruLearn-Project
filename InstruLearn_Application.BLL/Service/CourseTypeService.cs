@@ -32,7 +32,7 @@ namespace InstruLearn_Application.BLL.Service
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Courses type retrieved successfully.",
+                Message = "Đã lấy loại khóa học thành công.",
                 Data = coursetypeDtos
             };
         }
@@ -45,14 +45,14 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Course type not found."
+                    Message = "Không tìm thấy loại khóa học."
                 };
             }
             var courseTypeDto = _mapper.Map<CourseTypeDTO>(courseType);
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Course type retrieved successfully.",
+                Message = "Đã lấy lại loại khóa học thành công.",
                 Data = courseTypeDto
             };
         }
@@ -65,7 +65,7 @@ namespace InstruLearn_Application.BLL.Service
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Course added successfully.",
+                Message = "Khóa học đã được thêm thành công.",
             };
         }
 
@@ -77,7 +77,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Course type not found."
+                    Message = "Không tìm thấy loại khóa học."
                 };
             }
             _mapper.Map(updateDto, existingCourseType);
@@ -85,7 +85,7 @@ namespace InstruLearn_Application.BLL.Service
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Course type updated successfully."
+                Message = "Loại khóa học đã được cập nhật thành công."
             };
         }
 
@@ -97,14 +97,14 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Course type not found."
+                    Message = "Không tìm thấy loại khóa học."
                 };
             }
             await _unitOfWork.CourseTypeRepository.DeleteAsync(courseTypeId);
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Course type deleted successfully."
+                Message = "Đã xóa loại khóa học thành công."
             };
         }
         

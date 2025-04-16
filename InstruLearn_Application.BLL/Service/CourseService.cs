@@ -53,22 +53,18 @@ namespace InstruLearn_Application.BLL.Service
             return courseMapper;
         }
 
-        // Get courses with status = 0
         public async Task<List<CoursePackageTypeDTO>> GetAllCoursesWithStatusZeroAsync()
         {
             var courses = await _unitOfWork.CourseRepository.GetAllAsync();
 
-            // Filter courses with status = 0 and map to DTO
             var filteredCourses = courses.Where(c => (int)c.Status == 0).ToList();
             return _mapper.Map<List<CoursePackageTypeDTO>>(filteredCourses);
         }
 
-        // Get courses with status = 1
         public async Task<List<CoursePackageTypeDTO>> GetAllCoursesWithStatusOneAsync()
         {
             var courses = await _unitOfWork.CourseRepository.GetAllAsync();
 
-            // Filter courses with status = 1 and map to DTO
             var filteredCourses = courses.Where(c => (int)c.Status == 1).ToList();
             return _mapper.Map<List<CoursePackageTypeDTO>>(filteredCourses);
         }
@@ -81,7 +77,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Course Type not found",
+                    Message = "Không tìm thấy Loại khóa học",
                 };
             }
 
@@ -90,7 +86,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Invalid course package type.",
+                    Message = "Loại gói khóa học không hợp lệ.",
                 };
             }
 
@@ -101,7 +97,7 @@ namespace InstruLearn_Application.BLL.Service
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Course added successfully.",
+                Message = "Khóa học đã được thêm thành công.",
             };
         }
 
@@ -113,7 +109,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Course not found."
+                    Message = "Không tìm thấy khóa học."
                 };
             }
             _mapper.Map(updateDto, existingCourse);
@@ -121,7 +117,7 @@ namespace InstruLearn_Application.BLL.Service
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Course updated successfully."
+                Message = "Khóa học đã được cập nhật thành công."
             };
         }
 
@@ -133,14 +129,14 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Course not found."
+                    Message = "Không tìm thấy khóa học."
                 };
             }
             await _unitOfWork.CourseRepository.DeleteAsync(courseId);
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Course deleted successfully."
+                Message = "Khóa học đã xóa thành công."
             };
         }
         private double CalculateAverageRating(ICollection<FeedBack> feedbacks)

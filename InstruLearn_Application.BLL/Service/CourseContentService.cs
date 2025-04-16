@@ -30,7 +30,7 @@ namespace InstruLearn_Application.BLL.Service
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Courses content retrieved successfully.",
+                Message = "Đã truy xuất nội dung khóa học thành công.",
                 Data = courseContentDtos
             };
         }
@@ -43,14 +43,14 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Course content not found."
+                    Message = "Không tìm thấy nội dung khóa học."
                 };
             }
             var courseContentDtos = _mapper.Map<CourseContentDTO>(courseContent);
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Course content retrieved successfully.",
+                Message = "Nội dung khóa học đã được truy xuất thành công.",
                 Data = courseContentDtos
             };
         }
@@ -62,7 +62,7 @@ namespace InstruLearn_Application.BLL.Service
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Course added successfully.",
+                Message = "Khóa học đã được thêm thành công.",
             };
         }
 
@@ -74,7 +74,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Course content not found."
+                    Message = "Không tìm thấy nội dung khóa học."
                 };
             }
             _mapper.Map(updateDto, existingCourseContent);
@@ -82,7 +82,7 @@ namespace InstruLearn_Application.BLL.Service
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Course content updated successfully."
+                Message = "Nội dung khóa học đã được cập nhật thành công."
             };
         }
 
@@ -94,14 +94,14 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Course content not found."
+                    Message = "Không tìm thấy nội dung khóa học."
                 };
             }
             await _unitOfWork.CourseContentRepository.DeleteAsync(courseContentId);
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Course content deleted successfully."
+                Message = "Nội dung khóa học đã được xóa thành công."
             };
         }
         

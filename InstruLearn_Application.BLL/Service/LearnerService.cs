@@ -39,7 +39,7 @@ namespace InstruLearn_Application.BLL.Service
             var learnerDTOs = _mapper.Map<IEnumerable<LearnerDTO>>(learners);
 
             response.IsSucceed = true;
-            response.Message = "Data retrieved successfully";
+            response.Message = "Dữ liệu đã được lấy thành công";
             response.Data = learnerDTOs;
             return response;
         }
@@ -50,7 +50,7 @@ namespace InstruLearn_Application.BLL.Service
             var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(learnerId);
             if (learner == null)
             {
-                response.Message = "Learner not found.";
+                response.Message = "Không tìm thấy học viên.";
                 return response;
             }
 
@@ -62,12 +62,12 @@ namespace InstruLearn_Application.BLL.Service
 
             if (!updated)
             {
-                response.Message = "Failed to delete learner.";
+                response.Message = "Không xóa được học viên.";
                 return response;
             }
 
             response.IsSucceed = true;
-            response.Message = "Learner delete successfully!";
+            response.Message = "Xóa học viên thành công!";
             return response;
         }
 
@@ -78,7 +78,7 @@ namespace InstruLearn_Application.BLL.Service
             var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(learnerId);
             if (learner == null)
             {
-                response.Message = "Learner not found.";
+                response.Message = "Không tìm thấy học viên.";
                 return response;
             }
 
@@ -90,12 +90,12 @@ namespace InstruLearn_Application.BLL.Service
 
             if (!updated)
             {
-                response.Message = "Failed to unban learner.";
+                response.Message = "Thất bại trong việc bỏ lệnh cấm học viên.";
                 return response;
             }
 
             response.IsSucceed = true;
-            response.Message = "Learner unban successfully!";
+            response.Message = "Bỏ lệnh cấm học viên thành công!";
             return response;
         }
 
@@ -105,12 +105,12 @@ namespace InstruLearn_Application.BLL.Service
             var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(learnerId);
             if (learner == null)
             {
-                response.Message = "Learner not found.";
+                response.Message = "Không tìm thấy học viên.";
                 return response;
             }
             var learnerDTO = _mapper.Map<LearnerDTO>(learner);
             response.IsSucceed = true;
-            response.Message = "Learner retrieved successfully";
+            response.Message = "Học viên đã được lấy lại thành công.";
             response.Data = learnerDTO;
             return response;
         }
@@ -122,7 +122,7 @@ namespace InstruLearn_Application.BLL.Service
             var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(learnerId);
             if (learner == null)
             {
-                response.Message = "Learner not found.";
+                response.Message = "Không tìm thấy học viên.";
                 return response;
             }
 
@@ -132,12 +132,12 @@ namespace InstruLearn_Application.BLL.Service
 
             if (!updated)
             {
-                response.Message = "Failed to update learner.";
+                response.Message = "Thất bại trong việc cập nhật học viên.";
                 return response;
             }
 
             response.IsSucceed = true;
-            response.Message = "Learner updated successfully!";
+            response.Message = "Cập nhật học viên thành công!";
             return response;
         }
     }

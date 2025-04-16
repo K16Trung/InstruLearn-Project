@@ -44,21 +44,21 @@ namespace InstruLearn_Application.BLL.Service
 
         public async Task SendVerificationEmailAsync(string email, string username, string token)
         {
-            // Use the token provided by AuthService - don't generate a new one
+
             var subject = "Verify Your InstruLearn Account";
             var body = $@"
-              <html>
-                 <body>
-                   <h2>Welcome to InstruLearn!</h2>
-                   <p>Hello {username},</p>
-                   <p>Thank you for registering with InstruLearn. Your email verification code is:</p>
-                   <h3 style=""font-size: 24px; padding: 10px; background-color: #f0f0f0; text-align: center; letter-spacing: 5px;"">{token}</h3>
-                   <p>This code will expire in 24 hours.</p>
-                   <p>If you didn't create an account, please ignore this email.</p>
-                   <p>Best regards,</p>
-                   <p>The InstruLearn Team</p>
-                 </body>
-               </html>";
+             <html>
+               <body>
+                 <h2>Chào mừng đến với InstruLearn!</h2>
+                 <p>Xin chào {username},</p>
+                 <p>Cảm ơn bạn đã đăng ký với InstruLearn. Mã xác minh email của bạn là:</p>
+                 <h3 style=""font-size: 24px; padding: 10px; background-color: #f0f0f0; text-align: center; letter-spacing: 5px;"">{token}</h3>
+                 <p>Mã này sẽ hết hạn sau 24 giờ.</p>
+                 <p>Nếu bạn không tạo tài khoản, vui lòng bỏ qua email này.</p>
+                 <p>Trân trọng,</p>
+                 <p>InstruLearn</p>
+               </body>
+             </html>";
 
             await SendEmailAsync(email, subject, body);
         }

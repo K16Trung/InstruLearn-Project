@@ -31,7 +31,7 @@ namespace InstruLearn_Application.BLL.Service
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Item type retrieved successfully.",
+                Message = "Đã lấy lại loại mục thành công.",
                 Data = itemTypeDtos
             };
         }
@@ -44,14 +44,14 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Item type not found."
+                    Message = "Không tìm thấy loại mục."
                 };
             }
             var itemTypeDto = _mapper.Map<ItemTypeDTO>(itemType);
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Item type retrieved successfully.",
+                Message = "Đã lấy lại loại mục thành công.",
                 Data = itemTypeDto
             };
         }
@@ -63,7 +63,7 @@ namespace InstruLearn_Application.BLL.Service
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Item Type added successfully.",
+                Message = "Loại mục đã được thêm thành công.",
             };
         }
         public async Task<ResponseDTO> UpdateItemTypeAsync(int itemTypeId, UpdateItemTypeDTO updateDto)
@@ -74,7 +74,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Item type not found."
+                    Message = "Không tìm thấy loại mục."
                 };
             }
             _mapper.Map(updateDto, existingItemType);
@@ -82,7 +82,7 @@ namespace InstruLearn_Application.BLL.Service
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Item type updated successfully."
+                Message = "Loại mục đã được cập nhật thành công."
             };
         }
 
@@ -94,14 +94,14 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Item type not found."
+                    Message = "Không tìm thấy loại mục."
                 };
             }
             await _unitOfWork.ItemTypeRepository.DeleteAsync(itemTypeId);
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Item type deleted successfully."
+                Message = "Đã xóa loại mục thành công."
             };
         }
     }

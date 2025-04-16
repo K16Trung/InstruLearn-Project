@@ -44,29 +44,24 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Class not found."
+                        Message = "Không tìm thấy lớp."
                     };
                 }
 
-                // Get class days
                 var classDays = await _unitOfWork.ClassDayRepository.GetQuery()
                     .Where(cd => cd.ClassId == id)
                     .ToListAsync();
 
-                // Get students enrolled in this class
                 var learnerClasses = await _unitOfWork.dbContext.Learner_Classes
                     .Where(lc => lc.ClassId == id)
                     .Include(lc => lc.Learner)
                         .ThenInclude(l => l.Account)
                     .ToListAsync();
 
-                // Map to DTO
                 var classDetailDTO = _mapper.Map<ClassDetailDTO>(classEntity);
 
-                // Map class days
                 classDetailDTO.ClassDays = _mapper.Map<List<ClassDayDTO>>(classDays);
 
-                // Add student information
                 classDetailDTO.StudentCount = learnerClasses.Count;
                 classDetailDTO.Students = learnerClasses.Select(lc => new ClassStudentDTO
                 {
@@ -81,7 +76,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Class details retrieved successfully.",
+                    Message = "Đã lấy thông tin chi tiết về lớp học thành công.",
                     Data = classDetailDTO
                 };
             }
@@ -90,7 +85,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Failed to retrieve class details: {ex.Message}"
+                    Message = $"Không thể lấy thông tin chi tiết về lớp học: {ex.Message}"
                 };
             }
         }
@@ -104,7 +99,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "No classes found for the given course package.",
+                    Message = "Không tìm thấy lớp học nào cho gói khóa học đã cho.",
                     Data = null
                 };
             }
@@ -119,10 +114,9 @@ namespace InstruLearn_Application.BLL.Service
             };
         }
 
-
         public async Task<ResponseDTO> AddClassAsync(CreateClassDTO createClassDTO)
         {
-            // Check if Teacher exists
+
             var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(createClassDTO.TeacherId);
             if (teacher == null)
             {
@@ -133,7 +127,6 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
-            // Check if CoursePackage exists
             var major = await _unitOfWork.MajorRepository.GetByIdAsync(createClassDTO.MajorId);
             if (major == null)
             {
@@ -143,7 +136,7 @@ namespace InstruLearn_Application.BLL.Service
                     Message = "Không tìm thấy gói học",
                 };
             }
-            // Check if CoursePackage exists
+
             var Syllabus = await _unitOfWork.SyllabusRepository.GetByIdAsync(createClassDTO.SyllabusId);
             if (Syllabus == null)
             {
@@ -154,7 +147,6 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
-            // Validate and add ClassDays (at least one day required)
             if (createClassDTO.ClassDays == null || !createClassDTO.ClassDays.Any())
             {
                 return new ResponseDTO
@@ -164,15 +156,12 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
-            // Map CreateClassDTO to Class entity
             var classObj = _mapper.Map<Class>(createClassDTO);
             classObj.Teacher = teacher;
             classObj.Major = major;
 
-            // Calculate the end date for the class
             DateOnly endDate = DateTimeHelper.CalculateEndDate(createClassDTO.StartDate, createClassDTO.totalDays, createClassDTO.ClassDays);
 
-            // Determine class status based on the current date
             DateTime now = DateTime.Now;
             if (createClassDTO.StartDate.ToDateTime(new TimeOnly(0, 0)) > now)
             {
@@ -188,17 +177,14 @@ namespace InstruLearn_Application.BLL.Service
                 classObj.Status = ClassStatus.Completed;
             }
 
-            // Add ClassDays
             classObj.ClassDays = createClassDTO.ClassDays.Select(day => new Model.Models.ClassDay
             {
                 Day = day,
             }).ToList();
 
-            // Save the class in the database
             await _unitOfWork.ClassRepository.AddAsync(classObj);
             await _unitOfWork.SaveChangeAsync();
 
-            // 🔹 Generate Schedules for Teacher 🔹
             List<Schedules> teacherSchedules = new List<Schedules>();
             DateOnly currentDate = createClassDTO.StartDate;
             int classDaysCount = 0;
@@ -211,7 +197,7 @@ namespace InstruLearn_Application.BLL.Service
                     {
                         TeacherId = teacher.TeacherId,
                         ClassId = classObj.ClassId,
-                        StartDay = currentDate,  // Use the actual current date for each schedule
+                        StartDay = currentDate,
                         TimeStart = createClassDTO.ClassTime,
                         TimeEnd = createClassDTO.ClassTime.AddHours(2),
                         Mode = ScheduleMode.Center,
@@ -261,16 +247,13 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Store the previous status
                 var previousStatus = classEntity.Status;
 
-                // Update the status property
                 classEntity.Status = updateClassDTO.Status;
 
                 await _unitOfWork.ClassRepository.UpdateAsync(classEntity);
                 await _unitOfWork.SaveChangeAsync();
 
-                // Commit the transaction regardless of the SaveChangeAsync return value
                 await _unitOfWork.CommitTransactionAsync();
 
                 return new ResponseDTO
