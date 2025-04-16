@@ -238,43 +238,42 @@ namespace InstruLearn_Application.BLL.Service
             var account = await _authRepository.GetByEmail(forgotPasswordDTO.Email);
             if (account == null)
             {
-
+                // For security, don't reveal that the email doesn't exist
                 response.IsSucceed = true;
-                response.Message = "If your email is registered with us, you will receive a password reset link.";
+                response.Message = "If your email is registered with us, you will receive a password reset code.";
                 return response;
             }
 
-            var token = GenerateRandomPassword();
+            // Generate a 6-digit reset code
+            var resetCode = GenerateSixDigitCode();
 
-            account.RefreshToken = token;
-            account.RefreshTokenExpires = DateTime.Now.AddHours(1);
+            // Store code in the account
+            account.RefreshToken = resetCode;
+            account.RefreshTokenExpires = DateTime.Now.AddHours(1); // Code valid for 1 hour
             await _authRepository.UpdateAsync(account);
 
-            var frontendUrl = _configuration["ApplicationSettings:FrontendUrl"];
-            var resetLink = $"{frontendUrl}/reset-password?token={WebUtility.UrlEncode(token)}&email={WebUtility.UrlEncode(forgotPasswordDTO.Email)}";
-
+            // Create the email body
             var subject = "Reset Your InstruLearn Password";
             var body = $@"
              <html>
-                <body>
-                  <h2>Password Reset Request</h2>
-                  <p>Hello {account.Username},</p>
-                  <p>We received a request to reset your password. Please click the link below to reset your password:</p>
-                  <p><a href='{resetLink}'>Reset Password</a></p>
-                  <p>This link will expire in 1 hour.</p>
-                  <p>If you didn't request this, please ignore this email.</p>
-                  <p>Best regards,</p>
-                  <p>The InstruLearn Team</p>
-                 </body>
+               <body>
+                 <h2>Password Reset Request</h2>
+                 <p>Hello {account.Username},</p>
+                 <p>We received a request to reset your password. Please use the following code to reset your password:</p>
+                 <h3 style='font-size: 24px; background-color: #f5f5f5; padding: 10px; text-align: center;'>{resetCode}</h3>
+                 <p>This code will expire in 1 hour.</p>
+                 <p>If you didn't request this, please ignore this email.</p>
+                 <p>Best regards,</p>
+                 <p>The InstruLearn Team</p>
+               </body>
              </html>";
 
             try
             {
-                var emailService = new EmailService(_configuration);
-                await emailService.SendEmailAsync(forgotPasswordDTO.Email, subject, body);
+                await _emailService.SendEmailAsync(forgotPasswordDTO.Email, subject, body);
 
                 response.IsSucceed = true;
-                response.Message = "If your email is registered with us, you will receive a password reset link.";
+                response.Message = "If your email is registered with us, you will receive a password reset code.";
             }
             catch (Exception ex)
             {
@@ -283,7 +282,6 @@ namespace InstruLearn_Application.BLL.Service
 
             return response;
         }
-
 
         public async Task<ResponseDTO> ResetPasswordAsync(ResetPasswordDTO resetPasswordDTO)
         {
