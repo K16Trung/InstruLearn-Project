@@ -84,7 +84,7 @@ namespace InstruLearn_Application.BLL.Service
                 PhoneNumber = createManagerDTO.PhoneNumber,
                 DateOfEmployment = DateOnly.FromDateTime(DateTime.Now),
                 IsActive = AccountStatus.Active,
-
+                IsEmailVerified = true,
                 RefreshToken = _jwtHelper.GenerateRefreshToken(),
                 RefreshTokenExpires = DateTime.Now.AddDays(7)
             };

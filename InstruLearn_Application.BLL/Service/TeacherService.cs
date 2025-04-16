@@ -109,6 +109,7 @@ namespace InstruLearn_Application.BLL.Service
                         DateOfEmployment = createTeacherDTO.DateOfEmployment,
                         Role = AccountRoles.Teacher,
                         IsActive = AccountStatus.Active,
+                        IsEmailVerified = true,
                         RefreshToken = _jwtHelper.GenerateRefreshToken(),
                         RefreshTokenExpires = DateTime.Now.AddDays(7)
                     };

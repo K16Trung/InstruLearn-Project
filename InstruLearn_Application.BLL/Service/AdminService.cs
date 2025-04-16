@@ -66,7 +66,7 @@ namespace InstruLearn_Application.BLL.Service
                 PasswordHash = HashPassword(createAdminDTO.Password),
                 Role = AccountRoles.Admin,
                 IsActive = AccountStatus.Active,
-
+                IsEmailVerified = true, // Set email as verified for Admins
                 RefreshToken = _jwtHelper.GenerateRefreshToken(),
                 RefreshTokenExpires = DateTime.Now.AddDays(7)
             };
@@ -88,6 +88,7 @@ namespace InstruLearn_Application.BLL.Service
             response.Message = "Quản trị viên đã tạo thành công!";
             return response;
         }
+
         public async Task<ResponseDTO> GetAdminByIdAsync(int adminId)
         {
             var response = new ResponseDTO();
