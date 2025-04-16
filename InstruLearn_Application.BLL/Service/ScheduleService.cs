@@ -725,6 +725,47 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
+                // Calculate the end time for this session
+                TimeOnly timeEnd = timeStart.AddMinutes(durationMinutes);
+
+                // Get all existing registrations for this learner on the same day
+                var existingRegistrations = await _unitOfWork.LearningRegisRepository
+                    .GetQuery()
+                    .Where(r =>
+                        r.LearnerId == learnerId &&
+                        r.StartDay == startDay &&
+                        (r.Status == LearningRegis.Pending ||
+                         r.Status == LearningRegis.Accepted ||
+                         r.Status == LearningRegis.Fourty ||
+                         r.Status == LearningRegis.Sixty))
+                    .ToListAsync();
+
+                // Check for overlaps with existing registrations
+                foreach (var registration in existingRegistrations)
+                {
+                    TimeOnly existingStart = registration.TimeStart;
+                    TimeOnly existingEnd = registration.TimeStart.AddMinutes(registration.TimeLearning);
+
+                    // Check for any kind of overlap
+                    bool hasOverlap = (timeStart < existingEnd && existingStart < timeEnd);
+
+                    if (hasOverlap)
+                    {
+                        return new ResponseDTO
+                        {
+                            IsSucceed = false,
+                            Message = $"Schedule conflict detected. You already have a session from {existingStart:HH:mm} to {existingEnd:HH:mm} on this day. Please choose a different time slot.",
+                            Data = new
+                            {
+                                ExistingStart = existingStart.ToString("HH:mm"),
+                                ExistingEnd = existingEnd.ToString("HH:mm"),
+                                RequestedStart = timeStart.ToString("HH:mm"),
+                                RequestedEnd = timeEnd.ToString("HH:mm")
+                            }
+                        };
+                    }
+                }
+
                 var (hasConflict, conflictingSchedules) = await _unitOfWork.ScheduleRepository
                     .CheckLearnerScheduleConflictAsync(learnerId, startDay, timeStart, durationMinutes);
 
@@ -778,6 +819,17 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
+                // Get class information for clear error messages
+                var classInfo = await _unitOfWork.ClassRepository.GetByIdAsync(classId);
+                if (classInfo == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Class not found."
+                    };
+                }
+
                 var (hasConflict, conflictingSchedules) = await _unitOfWork.ScheduleRepository
                     .CheckLearnerClassScheduleConflictAsync(learnerId, classId);
 
@@ -792,7 +844,8 @@ namespace InstruLearn_Application.BLL.Service
                         TimeEnd = s.TimeEnd.ToString("HH:mm"),
                         TeacherName = s.Teacher?.Fullname ?? "N/A",
                         ClassName = s.Class?.ClassName ?? "One-on-One Session",
-                        Mode = s.Mode
+                        Mode = s.Mode,
+                        ConflictDetails = $"{s.StartDay.DayOfWeek} {s.TimeStart:HH:mm}-{s.TimeEnd:HH:mm} conflicts with {classInfo.ClassName} {classInfo.ClassTime:HH:mm}-{classInfo.ClassTime.AddHours(2):HH:mm}"
                     }).ToList();
 
                     return new ResponseDTO

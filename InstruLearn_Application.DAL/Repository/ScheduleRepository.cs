@@ -366,12 +366,12 @@ namespace InstruLearn_Application.DAL.Repository
 
             var conflictingSchedules = await _appDbContext.Schedules
                 .Where(s => s.LearnerId == learnerId &&
-                           s.StartDay == startDay && 
+                           s.StartDay == startDay &&
                            (
-                               (s.TimeStart <= timeStart && s.TimeEnd > timeStart) || 
-                               (s.TimeStart < timeEnd && s.TimeEnd >= timeEnd) ||
-                               (s.TimeStart >= timeStart && s.TimeEnd <= timeEnd) ||
-                               (timeStart <= s.TimeStart && timeEnd >= s.TimeEnd) 
+                               (timeStart >= s.TimeStart && timeStart < s.TimeEnd) ||
+                               (timeEnd > s.TimeStart && timeEnd <= s.TimeEnd) ||
+                               (s.TimeStart >= timeStart && s.TimeStart < timeEnd) ||
+                               (s.TimeEnd > timeStart && s.TimeEnd <= timeEnd)
                            ))
                 .Include(s => s.Class)
                 .Include(s => s.Teacher)
@@ -382,8 +382,16 @@ namespace InstruLearn_Application.DAL.Repository
         }
 
         public async Task<(bool HasConflict, List<Schedules> ConflictingSchedules)> CheckLearnerClassScheduleConflictAsync(
-            int learnerId, int classId)
+    int learnerId, int classId)
         {
+            // First, get all learner schedules regardless of day
+            var learnerSchedules = await _appDbContext.Schedules
+                .Where(s => s.LearnerId == learnerId)
+                .Include(s => s.Class)
+                .Include(s => s.Teacher)
+                .ToListAsync();
+
+            // Get the class entity with its days
             var classEntity = await _appDbContext.Classes
                 .Include(c => c.ClassDays)
                 .FirstOrDefaultAsync(c => c.ClassId == classId);
@@ -393,38 +401,66 @@ namespace InstruLearn_Application.DAL.Repository
                 return (false, new List<Schedules>());
             }
 
-            var classDays = classEntity.ClassDays.ToList();
-            var conflicts = new List<Schedules>();
-
+            // Extract class time information
             TimeOnly classTimeStart = classEntity.ClassTime;
-            TimeOnly classTimeEnd = classEntity.ClassTime.AddHours(2);
+            TimeOnly classTimeEnd = classEntity.ClassTime.AddHours(2); // Standard 2-hour class
 
-            var learnerSchedules = await _appDbContext.Schedules
-                .Where(s => s.LearnerId == learnerId)
-                .Include(s => s.Class)
-                .Include(s => s.Teacher)
+            // Get the class days as int values (0-6 for Sunday-Saturday)
+            var classDayValues = classEntity.ClassDays.Select(cd => (int)cd.Day).ToList();
+
+            // Perform the filtering in memory
+            var conflictingSchedules = learnerSchedules
+                .Where(s => classDayValues.Contains((int)s.StartDay.DayOfWeek) &&
+                            (classTimeStart < s.TimeEnd && s.TimeStart < classTimeEnd))
+                .ToList();
+
+            // Now handle pending registrations
+            var pendingRegistrations = await _appDbContext.Learning_Registrations
+                .Where(r => r.LearnerId == learnerId &&
+                           (r.Status == LearningRegis.Pending ||
+                            r.Status == LearningRegis.Accepted))
+                .Include(r => r.LearningRegistrationDay)
                 .ToListAsync();
 
-            foreach (var classDay in classDays)
+            foreach (var registration in pendingRegistrations)
             {
-                DayOfWeek dayOfWeek = (DayOfWeek)classDay.Day;
+                if (!registration.StartDay.HasValue) continue;
 
-                var dayConflicts = learnerSchedules
-                    .Where(s => s.StartDay.DayOfWeek == dayOfWeek &&
-                               (
-                                   (s.TimeStart <= classTimeStart && s.TimeEnd > classTimeStart) ||
-                                   (s.TimeStart < classTimeEnd && s.TimeEnd >= classTimeEnd) ||
-                                   (s.TimeStart >= classTimeStart && s.TimeEnd <= classTimeEnd) ||
-                                   (classTimeStart <= s.TimeStart && classTimeEnd >= s.TimeEnd)
-                               ))
+                // Check for day conflicts between registration and class
+                var registrationDayValues = registration.LearningRegistrationDay
+                    .Select(ld => (int)ld.DayOfWeek)
                     .ToList();
 
-                conflicts.AddRange(dayConflicts);
+                // Check if any learning day matches class days
+                bool hasDayOverlap = registrationDayValues.Any(regDay => classDayValues.Contains(regDay));
+
+                if (hasDayOverlap)
+                {
+                    TimeOnly regisStart = registration.TimeStart;
+                    TimeOnly regisEnd = registration.TimeStart.AddMinutes(registration.TimeLearning);
+
+                    // Check time overlap
+                    bool hasTimeOverlap = (classTimeStart < regisEnd && regisStart < classTimeEnd);
+
+                    if (hasTimeOverlap)
+                    {
+                        // Create a virtual schedule representing the conflict
+                        var virtualSchedule = new Schedules
+                        {
+                            ScheduleId = -1, // Virtual ID
+                            LearnerId = registration.LearnerId,
+                            StartDay = registration.StartDay.Value,
+                            TimeStart = registration.TimeStart,
+                            TimeEnd = regisEnd,
+                            Registration = registration
+                        };
+
+                        conflictingSchedules.Add(virtualSchedule);
+                    }
+                }
             }
 
-            return (conflicts.Any(), conflicts);
+            return (conflictingSchedules.Any(), conflictingSchedules);
         }
-
-
     }
 }
