@@ -851,8 +851,8 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Schedule conflicts detected. The learner has existing classes that overlap with this class schedule.",
-                        Data = conflictDetails
+                        Message = $"Schedule conflicts detected. The learner has existing classes that overlap with {classInfo.ClassName}.",
+                        Data = null
                     };
                 }
 
