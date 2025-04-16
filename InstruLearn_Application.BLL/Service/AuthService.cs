@@ -182,11 +182,15 @@ namespace InstruLearn_Application.BLL.Service
                         Token = string.Empty,
                         RefreshToken = string.Empty,
                         CreatedAt = DateTime.Now,
-                        IsEmailVerified = true
+                        IsEmailVerified = true,
+                        // Add missing required fields
+                        PhoneNumber = string.Empty, // Set default or prompt user to add later
+                        DateOfEmployment = new DateOnly(1900, 1, 1) // Set default value
                     };
 
                     await _authRepository.AddAsync(account);
 
+                    // Create the learner record
                     var learner = new Learner
                     {
                         AccountId = account.AccountId,
@@ -195,6 +199,7 @@ namespace InstruLearn_Application.BLL.Service
 
                     await _learnerRepository.AddAsync(learner);
 
+                    // Create the wallet record
                     var wallet = new Wallet
                     {
                         LearnerId = learner.LearnerId,
@@ -225,6 +230,12 @@ namespace InstruLearn_Application.BLL.Service
             }
             catch (Exception ex)
             {
+                // Log the full exception details including inner exception
+                Console.WriteLine($"Google login error: {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                }
                 response.Message = $"Google login failed: {ex.Message}";
             }
 

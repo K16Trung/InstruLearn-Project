@@ -13,7 +13,6 @@ namespace InstruLearn_Application.Model.Helper
         {
             _googleAuthSettings = googleAuthSettings;
         }
-
         public async Task<GoogleJsonWebSignature.Payload> ValidateGoogleTokenAsync(string idToken)
         {
             try
@@ -26,8 +25,9 @@ namespace InstruLearn_Application.Model.Helper
                 var payload = await GoogleJsonWebSignature.ValidateAsync(idToken, settings);
                 return payload;
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine($"Google token validation failed: {ex.Message}");
                 return null;
             }
         }
