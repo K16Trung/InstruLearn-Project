@@ -12,5 +12,6 @@ namespace InstruLearn_Application.Model.Models.DTO.LevelAssigned
         public string? LevelName { get; set; }
         public int MajorId { get; set; }
         public decimal LevelPrice { get; set; }
+        public string SyllabusLink { get; set; }
     }
 }
