@@ -24,9 +24,9 @@ namespace InstruLearn_Application.Controllers
         }
 
         [HttpPost("update-content-item")]
-        public async Task<IActionResult> UpdateContentItemProgress(int learnerId, int contentItemId, bool isCompleted)
+        public async Task<IActionResult> UpdateContentItemProgress(int learnerId, int contentItemId)
         {
-            var response = await _courseProgressService.UpdateContentItemProgressAsync(learnerId, contentItemId, isCompleted);
+            var response = await _courseProgressService.UpdateContentItemProgressAsync(learnerId, contentItemId);
             return response.IsSucceed ? Ok(response) : BadRequest(response);
         }
 

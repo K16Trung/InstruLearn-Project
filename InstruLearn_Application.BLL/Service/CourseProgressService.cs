@@ -88,11 +88,12 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
-        public async Task<ResponseDTO> UpdateContentItemProgressAsync(int learnerId, int contentItemId, bool isCompleted)
+        public async Task<ResponseDTO> UpdateContentItemProgressAsync(int learnerId, int contentItemId)
         {
             try
             {
-                // Validate learner
+                bool isCompleted = true;
+
                 var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(learnerId);
                 if (learner == null)
                 {
@@ -103,7 +104,6 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Validate content item
                 var contentItem = await _unitOfWork.CourseContentItemRepository.GetByIdAsync(contentItemId);
                 if (contentItem == null)
                 {
@@ -114,7 +114,6 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Get course content
                 var courseContent = await _unitOfWork.CourseContentRepository.GetByIdAsync(contentItem.ContentId);
                 if (courseContent == null)
                 {
@@ -125,22 +124,20 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Track content item completion
-                // This could be in another repository/table, but for now we'll just update the course progress
                 var courseProgress = await _unitOfWork.LearnerCourseRepository.GetByLearnerAndCourseAsync(
                     learnerId,
                     courseContent.CoursePackageId);
 
                 if (courseProgress == null)
                 {
-                    // Need to count completed items vs total items
+
                     var allContentItems = await GetAllCourseContentItemsAsync(courseContent.CoursePackageId);
                     int totalItems = allContentItems.Count;
-                    int completedItems = isCompleted ? 1 : 0;
+
+                    int completedItems = 1;
 
                     double percentage = totalItems > 0 ? (double)completedItems / totalItems * 100 : 0;
 
-                    // Create a new progress entry
                     await _unitOfWork.LearnerCourseRepository.UpdateProgressAsync(
                         learnerId,
                         courseContent.CoursePackageId,
@@ -149,7 +146,6 @@ namespace InstruLearn_Application.BLL.Service
                 }
                 else
                 {
-                    // Calculate new percentage based on all content items
                     double newPercentage = await CalculateCompletionPercentageFromContentItemsAsync(
                         learnerId,
                         courseContent.CoursePackageId,
@@ -157,12 +153,21 @@ namespace InstruLearn_Application.BLL.Service
                         contentItemId,
                         isCompleted);
 
-                    // Update existing progress entry
                     await _unitOfWork.LearnerCourseRepository.UpdateProgressAsync(
                         learnerId,
                         courseContent.CoursePackageId,
                         newPercentage
                     );
+                }
+
+                courseProgress = await _unitOfWork.LearnerCourseRepository.GetByLearnerAndCourseAsync(
+                    learnerId,
+                    courseContent.CoursePackageId);
+
+                if (courseProgress != null)
+                {
+                    courseProgress.LastAccessDate = DateTime.Now;
+                    await _unitOfWork.SaveChangeAsync();
                 }
 
                 return new ResponseDTO
@@ -191,12 +196,10 @@ namespace InstruLearn_Application.BLL.Service
         {
             var contentItems = new List<Course_Content_Item>();
 
-            // Get all course contents for this course package
             var courseContents = await _unitOfWork.CourseContentRepository.GetQuery()
                 .Where(cc => cc.CoursePackageId == coursePackageId)
                 .ToListAsync();
 
-            // Get all content items for these course contents
             foreach (var content in courseContents)
             {
                 var items = await _unitOfWork.CourseContentItemRepository.GetQuery()
@@ -216,30 +219,18 @@ namespace InstruLearn_Application.BLL.Service
             int? updatedContentItemId = null,
             bool? isCompleted = null)
         {
-            // Get all content items for the course
             var allContentItems = await GetAllCourseContentItemsAsync(coursePackageId);
             int totalItems = allContentItems.Count;
 
             if (totalItems == 0)
             {
-                // If there are no content items, just use the provided percentage
                 return currentPercentage;
             }
 
-            // For a proper implementation, you would need a table to track which content items
-            // have been completed by each learner. For now, we'll just use the passed-in percentage
-            // and adjust it if a specific content item was updated
-
             if (updatedContentItemId.HasValue && isCompleted.HasValue)
             {
-                // Calculate percentage value of a single item
                 double itemPercentValue = 100.0 / totalItems;
 
-                // If item is completed and wasn't before, add its percentage
-                // If item is uncompleted and was before, subtract its percentage
-                // Otherwise, no change
-
-                // For simplicity, we're just assuming the item's status is changing from its opposite
                 if (isCompleted.Value)
                 {
                     currentPercentage += itemPercentValue;
@@ -249,7 +240,6 @@ namespace InstruLearn_Application.BLL.Service
                     currentPercentage -= itemPercentValue;
                 }
 
-                // Ensure percentage is within valid range
                 currentPercentage = Math.Max(0, Math.Min(100, currentPercentage));
             }
 
@@ -314,7 +304,6 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                // Check if learner exists
                 var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(learnerId);
                 if (learner == null)
                 {
@@ -325,7 +314,6 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Get all progress for learner
                 var learnerCourses = await _unitOfWork.LearnerCourseRepository.GetByLearnerIdAsync(learnerId);
                 var progressDTOs = new List<LearnerCourseDTO>();
 
@@ -334,7 +322,6 @@ namespace InstruLearn_Application.BLL.Service
                     var course = await _unitOfWork.CourseRepository.GetByIdAsync(lc.CoursePackageId);
                     if (course == null) continue;
 
-                    // Count content items for this course
                     var allContentItems = await GetAllCourseContentItemsAsync(lc.CoursePackageId);
                     int totalItems = allContentItems.Count;
 
@@ -373,7 +360,6 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                // Check if course exists
                 var course = await _unitOfWork.CourseRepository.GetByIdAsync(coursePackageId);
                 if (course == null)
                 {
@@ -384,11 +370,9 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Count content items for this course
                 var allContentItems = await GetAllCourseContentItemsAsync(coursePackageId);
                 int totalItems = allContentItems.Count;
 
-                // Get all learners and their progress for this course
                 var learnerCourses = await _unitOfWork.LearnerCourseRepository.GetByCoursePackageIdAsync(coursePackageId);
                 var progressDTOs = new List<LearnerCourseDTO>();
 

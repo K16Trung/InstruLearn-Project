@@ -11,7 +11,7 @@ namespace InstruLearn_Application.BLL.Service.IService
     public interface ICourseProgressService
     {
         Task<ResponseDTO> UpdateCourseProgressAsync(UpdateLearnerCourseProgressDTO updateDto);
-        Task<ResponseDTO> UpdateContentItemProgressAsync(int learnerId, int contentItemId, bool isCompleted);
+        Task<ResponseDTO> UpdateContentItemProgressAsync(int learnerId, int contentItemId);
         Task<ResponseDTO> GetCourseProgressAsync(int learnerId, int coursePackageId);
         Task<ResponseDTO> GetAllCourseProgressByLearnerAsync(int learnerId);
         Task<ResponseDTO> GetAllLearnersForCourseAsync(int coursePackageId);
