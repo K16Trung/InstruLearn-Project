@@ -51,6 +51,7 @@ namespace InstruLearn_Application.Model.Data
         public DbSet<Learner_class> Learner_Classes { get; set; }
         public DbSet<Syllabus_Content> Syllabus_Contents { get; set; }
         public DbSet<LearningPathSession> LearningPathSessions { get; set; }
+        public DbSet<Learner_Course> LearnerCourses { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -457,6 +458,19 @@ namespace InstruLearn_Application.Model.Data
                 .HasOne(lps => lps.LearningRegistration)
                 .WithMany(lr => lr.LearningPathSessions)
                 .HasForeignKey(lps => lps.LearningRegisId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            //
+            modelBuilder.Entity<Learner_Course>()
+                .HasOne(lc => lc.Learner)
+                .WithMany(l => l.LearnerCourses)
+                .HasForeignKey(lc => lc.LearnerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Learner_Course>()
+                .HasOne(lc => lc.CoursePackage)
+                .WithMany(cp => cp.LearnerCourses)
+                .HasForeignKey(lc => lc.CoursePackageId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

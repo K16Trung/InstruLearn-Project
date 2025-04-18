@@ -123,6 +123,7 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<IResponseTypeRepository, ResponseTypeRepository>();
             builder.Services.AddScoped<ISyllabusContentRepository, SyllabusContentRepository>();
             builder.Services.AddScoped<ILearningPathSessionRepository, LearningPathSessionRepository>();
+            builder.Services.AddScoped<ILearnerCourseRepository, LearnerCourseRepository>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             builder.Services.AddScoped<IAuthService, AuthService>();
@@ -163,6 +164,7 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<ISyllabusContentService, SyllabusContentService>();
             builder.Services.AddScoped<ILearningPathService, LearningPathService>();
             builder.Services.AddScoped<IEmailService, EmailService>();
+            builder.Services.AddScoped<ICourseProgressService, CourseProgressService>();
             builder.Services.AddHostedService<UnverifiedAccountCleanupService>();
             builder.Services.AddHostedService<PaymentDeadlineService>();
             builder.Services.AddAutoMapper(typeof(MappingProfile));

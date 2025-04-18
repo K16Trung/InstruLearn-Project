@@ -31,6 +31,7 @@ namespace InstruLearn_Application.Model.Models
         public ICollection<FeedBack> FeedBacks { get; set; }
         public ICollection<QnA> QnAs { get; set; }
         public ICollection<Purchase_Items> PurchaseItems { get; set; }
+        public ICollection<Learner_Course> LearnerCourses { get; set; }
 
     }
 }
