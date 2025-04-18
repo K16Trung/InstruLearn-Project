@@ -27,6 +27,7 @@ namespace InstruLearn_Application.Model.Models.DTO.LearningRegistration
         public string LevelName { get; set; }
         [Column(TypeName = "decimal(18,2)")]
         public decimal LevelPrice { get; set; }
+        public string SyllabusLink { get; set; }
         public DateOnly? StartDay { get; set; }
         public TimeOnly TimeStart { get; set; }
         public int TimeLearning { get; set; }

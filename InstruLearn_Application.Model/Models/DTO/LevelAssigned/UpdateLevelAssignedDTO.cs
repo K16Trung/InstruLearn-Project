@@ -9,5 +9,6 @@ namespace InstruLearn_Application.Model.Models.DTO.LevelAssigned
     public class UpdateLevelAssignedDTO
     {
         public string LevelName { get; set; }
+        public string SyllabusLink { get; set; }
     }
 }

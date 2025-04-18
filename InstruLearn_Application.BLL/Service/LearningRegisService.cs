@@ -307,6 +307,8 @@ namespace InstruLearn_Application.BLL.Service
                 learningRegis.AcceptedDate = DateTime.Now;
                 learningRegis.PaymentDeadline = DateTime.Now.AddDays(3);
 
+                learningRegis.LearningPath = levelAssigned.SyllabusLink;
+
                 await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
                 await _unitOfWork.SaveChangeAsync();
 
@@ -328,7 +330,8 @@ namespace InstruLearn_Application.BLL.Service
                         LearningRegisId = learningRegis.LearningRegisId,
                         PaymentAmount = paymentAmount,
                         TotalPrice = totalPrice,
-                        PaymentDeadline = deadline
+                        PaymentDeadline = deadline,
+                        SyllabusLink = levelAssigned.SyllabusLink
                     }
                 };
             }

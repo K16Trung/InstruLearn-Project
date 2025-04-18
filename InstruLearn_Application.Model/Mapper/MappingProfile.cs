@@ -391,6 +391,7 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.ResponseDescription, opt => opt.MapFrom(src => src.Response.ResponseName))
                 .ForMember(dest => dest.LevelName, opt => opt.MapFrom(src => src.LevelAssigned.LevelName))
                 .ForMember(dest => dest.LevelPrice, opt => opt.MapFrom(src => src.LevelAssigned.LevelPrice))
+                .ForMember(dest => dest.SyllabusLink, opt => opt.MapFrom(src => src.LevelAssigned.SyllabusLink))
                 .ForMember(dest => dest.LearningDays, opt => opt.MapFrom(src =>
                     src.LearningRegistrationDay.Select(ld => DateTimeHelper.GetDayName((int)ld.DayOfWeek)).ToList()))
                 .ForMember(dest => dest.TimeEnd, opt => opt.MapFrom(src => src.TimeStart.AddMinutes(src.TimeLearning)));
