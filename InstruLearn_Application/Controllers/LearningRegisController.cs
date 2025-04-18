@@ -78,6 +78,11 @@ namespace InstruLearn_Application.Controllers
         [HttpPut("update-status")]
         public async Task<IActionResult> UpdateLearningRegisStatus([FromBody] UpdateLearningRegisDTO updateDTO)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             var result = await _learningRegisService.UpdateLearningRegisStatusAsync(updateDTO);
 
             if (!result.IsSucceed)
@@ -97,6 +102,24 @@ namespace InstruLearn_Application.Controllers
             }
 
             var result = await _learningRegisService.RejectLearningRegisAsync(learningRegisId, rejectDTO.RejectReason);
+
+            if (!result.IsSucceed)
+            {
+                return BadRequest(result);
+            }
+
+            return Ok(result);
+        }
+
+        [HttpPost("create-learning-path-sessions")]
+        public async Task<IActionResult> CreateLearningPathSessions([FromBody] LearningPathSessionsCreateDTO createDTO)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var result = await _learningRegisService.CreateLearningPathSessionsAsync(createDTO);
 
             if (!result.IsSucceed)
             {
