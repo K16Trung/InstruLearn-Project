@@ -24,5 +24,6 @@ namespace InstruLearn_Application.Model.Models
         public ICollection<Purchase> Purchases { get; set; }
         public ICollection<Schedules> Schedules { get; set; }
         public ICollection<Learner_class> Learner_Classes { get; set; }
+        public ICollection<Learner_Course> LearnerCourses { get; set; }
     }
 }
