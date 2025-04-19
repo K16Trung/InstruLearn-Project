@@ -51,27 +51,6 @@ namespace InstruLearn_Application.Controllers
             return response.IsSucceed ? Ok(response) : BadRequest(response);
         }
 
-        [HttpGet("{learnerId}/{coursePackageId}")]
-        public async Task<IActionResult> GetCourseProgress(int learnerId, int coursePackageId)
-        {
-            var response = await _courseProgressService.GetCourseProgressAsync(learnerId, coursePackageId);
-            return response.IsSucceed ? Ok(response) : BadRequest(response);
-        }
-
-        [HttpGet("learner/{learnerId}")]
-        public async Task<IActionResult> GetAllCourseProgressByLearner(int learnerId)
-        {
-            var response = await _courseProgressService.GetAllCourseProgressByLearnerAsync(learnerId);
-            return response.IsSucceed ? Ok(response) : BadRequest(response);
-        }
-
-        [HttpGet("course/{coursePackageId}")]
-        public async Task<IActionResult> GetAllLearnersForCourse(int coursePackageId)
-        {
-            var response = await _courseProgressService.GetAllLearnersForCourseAsync(coursePackageId);
-            return response.IsSucceed ? Ok(response) : BadRequest(response);
-        }
-
         [HttpPost("update-video-progress")]
         public async Task<IActionResult> UpdateVideoProgress(UpdateVideoProgressDTO updateDto)
         {
@@ -103,6 +82,27 @@ namespace InstruLearn_Application.Controllers
                     Message = $"Lỗi khi cập nhật tiến độ video: {ex.Message}"
                 });
             }
+        }
+
+        [HttpGet("{learnerId}/{coursePackageId}")]
+        public async Task<IActionResult> GetCourseProgress(int learnerId, int coursePackageId)
+        {
+            var response = await _courseProgressService.GetCourseProgressAsync(learnerId, coursePackageId);
+            return response.IsSucceed ? Ok(response) : BadRequest(response);
+        }
+
+        [HttpGet("learner/{learnerId}")]
+        public async Task<IActionResult> GetAllCourseProgressByLearner(int learnerId)
+        {
+            var response = await _courseProgressService.GetAllCourseProgressByLearnerAsync(learnerId);
+            return response.IsSucceed ? Ok(response) : BadRequest(response);
+        }
+
+        [HttpGet("course/{coursePackageId}")]
+        public async Task<IActionResult> GetAllLearnersForCourse(int coursePackageId)
+        {
+            var response = await _courseProgressService.GetAllLearnersForCourseAsync(coursePackageId);
+            return response.IsSucceed ? Ok(response) : BadRequest(response);
         }
 
         [HttpGet("video-progress/{learnerId}/{itemId}")]
