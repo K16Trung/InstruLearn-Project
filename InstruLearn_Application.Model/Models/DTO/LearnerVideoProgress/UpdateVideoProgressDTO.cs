@@ -9,7 +9,7 @@ namespace InstruLearn_Application.Model.Models.DTO.LearnerVideoProgress
     public class UpdateVideoProgressDTO
     {
         public int LearnerId { get; set; }
-        public int ContentItemId { get; set; }
+        public int ItemId { get; set; }
         public double WatchTimeInSeconds { get; set; }
         public double? TotalDuration { get; set; }
     }

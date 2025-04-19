@@ -84,7 +84,7 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
-        public async Task<ResponseDTO> UpdateContentItemProgressAsync(int learnerId, int contentItemId)
+        public async Task<ResponseDTO> UpdateContentItemProgressAsync(int learnerId, int itemId)
         {
             try
             {
@@ -100,7 +100,7 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                var contentItem = await _unitOfWork.CourseContentItemRepository.GetByIdAsync(contentItemId);
+                var contentItem = await _unitOfWork.CourseContentItemRepository.GetByIdAsync(itemId);
                 if (contentItem == null)
                 {
                     return new ResponseDTO
@@ -147,14 +147,14 @@ namespace InstruLearn_Application.BLL.Service
                 if (isDocument)
                 {
                     var contentProgress = await _unitOfWork.LearnerContentProgressRepository
-                        .GetByLearnerAndContentItemAsync(learnerId, contentItemId);
+                        .GetByLearnerAndContentItemAsync(learnerId, itemId);
 
                     if (contentProgress == null)
                     {
                         contentProgress = new Learner_Content_Progress
                         {
                             LearnerId = learnerId,
-                            ItemId = contentItemId,
+                            ItemId = itemId,
                             IsCompleted = true,
                             WatchTimeInSeconds = 0,
                             LastAccessDate = DateTime.Now
@@ -175,14 +175,14 @@ namespace InstruLearn_Application.BLL.Service
                 else if (isVideo)
                 {
                     var contentProgress = await _unitOfWork.LearnerContentProgressRepository
-                        .GetByLearnerAndContentItemAsync(learnerId, contentItemId);
+                        .GetByLearnerAndContentItemAsync(learnerId, itemId);
 
                     if (contentProgress == null)
                     {
                         contentProgress = new Learner_Content_Progress
                         {
                             LearnerId = learnerId,
-                            ItemId = contentItemId,
+                            ItemId = itemId,
                             IsCompleted = false,
                             WatchTimeInSeconds = 0.1,
                             LastAccessDate = DateTime.Now
@@ -247,7 +247,7 @@ namespace InstruLearn_Application.BLL.Service
                     Message = "Đã cập nhật tiến độ nội dung thành công.",
                     Data = new
                     {
-                        ContentItemId = contentItemId,
+                        ContentItemId = itemId,
                         IsCompleted = isCompleted,
                         CoursePackageId = courseContent.CoursePackageId,
                         IsDocument = isDocument,
@@ -463,7 +463,7 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                var contentItem = await _unitOfWork.CourseContentItemRepository.GetByIdAsync(updateDto.ContentItemId);
+                var contentItem = await _unitOfWork.CourseContentItemRepository.GetByIdAsync(updateDto.ItemId);
                 if (contentItem == null)
                 {
                     return new ResponseDTO
@@ -510,12 +510,12 @@ namespace InstruLearn_Application.BLL.Service
 
                 await _unitOfWork.LearnerContentProgressRepository.UpdateWatchTimeAsync(
                     updateDto.LearnerId,
-                    updateDto.ContentItemId,
+                    updateDto.ItemId,
                     updateDto.WatchTimeInSeconds,
                     isCompleted);
 
                 var contentProgress = await _unitOfWork.LearnerContentProgressRepository
-                    .GetByLearnerAndContentItemAsync(updateDto.LearnerId, updateDto.ContentItemId);
+                    .GetByLearnerAndContentItemAsync(updateDto.LearnerId, updateDto.ItemId);
 
                 double totalWatchTime = await _unitOfWork.LearnerContentProgressRepository
                     .GetTotalWatchTimeForCourseAsync(updateDto.LearnerId, courseContent.CoursePackageId);
@@ -537,7 +537,7 @@ namespace InstruLearn_Application.BLL.Service
                 var progressDTO = new VideoProgressDTO
                 {
                     LearnerId = updateDto.LearnerId,
-                    ContentItemId = updateDto.ContentItemId,
+                    ContentItemId = updateDto.ItemId,
                     WatchTimeInSeconds = contentProgress?.WatchTimeInSeconds ?? updateDto.WatchTimeInSeconds,
                     IsCompleted = isCompleted,
                     TotalDuration = contentDuration,
@@ -565,7 +565,7 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
-        public async Task<ResponseDTO> GetVideoProgressAsync(int learnerId, int contentItemId)
+        public async Task<ResponseDTO> GetVideoProgressAsync(int learnerId, int itemId)
         {
             try
             {
@@ -579,7 +579,7 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                var contentItem = await _unitOfWork.CourseContentItemRepository.GetByIdAsync(contentItemId);
+                var contentItem = await _unitOfWork.CourseContentItemRepository.GetByIdAsync(itemId);
                 if (contentItem == null)
                 {
                     return new ResponseDTO
@@ -590,12 +590,12 @@ namespace InstruLearn_Application.BLL.Service
                 }
 
                 var progress = await _unitOfWork.LearnerContentProgressRepository
-                    .GetByLearnerAndContentItemAsync(learnerId, contentItemId);
+                    .GetByLearnerAndContentItemAsync(learnerId, itemId);
 
                 var progressDTO = new VideoProgressDTO
                 {
                     LearnerId = learnerId,
-                    ContentItemId = contentItemId,
+                    ContentItemId = itemId,
                     WatchTimeInSeconds = progress?.WatchTimeInSeconds ?? 0,
                     IsCompleted = progress?.IsCompleted ?? false,
                     TotalDuration = contentItem.DurationInSeconds,
@@ -687,9 +687,9 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
-        public async Task<Course_Content_Item> GetContentItemAsync(int contentItemId)
+        public async Task<Course_Content_Item> GetContentItemAsync(int itemId)
         {
-            return await _unitOfWork.CourseContentItemRepository.GetByIdAsync(contentItemId);
+            return await _unitOfWork.CourseContentItemRepository.GetByIdAsync(itemId);
         }
 
         public async Task<ItemTypes> GetItemTypeAsync(int itemTypeId)
@@ -697,9 +697,9 @@ namespace InstruLearn_Application.BLL.Service
             return await _unitOfWork.ItemTypeRepository.GetByIdAsync(itemTypeId);
         }
 
-        public async Task<bool> UpdateContentItemDurationAsync(int contentItemId, double duration)
+        public async Task<bool> UpdateContentItemDurationAsync(int itemId, double duration)
         {
-            var contentItem = await _unitOfWork.CourseContentItemRepository.GetByIdAsync(contentItemId);
+            var contentItem = await _unitOfWork.CourseContentItemRepository.GetByIdAsync(itemId);
             if (contentItem == null || contentItem.DurationInSeconds.HasValue)
                 return false;
 

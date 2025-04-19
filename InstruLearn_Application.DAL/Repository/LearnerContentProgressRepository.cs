@@ -18,10 +18,10 @@ namespace InstruLearn_Application.DAL.Repository
             _appDbContext = appDbContext;
         }
 
-        public async Task<Learner_Content_Progress> GetByLearnerAndContentItemAsync(int learnerId, int contentItemId)
+        public async Task<Learner_Content_Progress> GetByLearnerAndContentItemAsync(int learnerId, int itemId)
         {
             return await _appDbContext.LearnerContentProgresses
-                .FirstOrDefaultAsync(lcp => lcp.LearnerId == learnerId && lcp.ItemId == contentItemId);
+                .FirstOrDefaultAsync(lcp => lcp.LearnerId == learnerId && lcp.ItemId == itemId);
         }
 
         public async Task<List<Learner_Content_Progress>> GetByLearnerAndCourseAsync(int learnerId, int coursePackageId)
@@ -34,16 +34,16 @@ namespace InstruLearn_Application.DAL.Repository
                 .ToListAsync();
         }
 
-        public async Task<bool> UpdateWatchTimeAsync(int learnerId, int contentItemId, double watchTimeInSeconds, bool isCompleted = false)
+        public async Task<bool> UpdateWatchTimeAsync(int learnerId, int itemId, double watchTimeInSeconds, bool isCompleted = false)
         {
-            var progress = await GetByLearnerAndContentItemAsync(learnerId, contentItemId);
+            var progress = await GetByLearnerAndContentItemAsync(learnerId, itemId);
 
             if (progress == null)
             {
                 progress = new Learner_Content_Progress
                 {
                     LearnerId = learnerId,
-                    ItemId = contentItemId,
+                    ItemId = itemId,
                     WatchTimeInSeconds = watchTimeInSeconds,
                     IsCompleted = isCompleted,
                     LastAccessDate = DateTime.Now

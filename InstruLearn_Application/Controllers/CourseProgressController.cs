@@ -26,9 +26,9 @@ namespace InstruLearn_Application.Controllers
         }
 
         [HttpPost("update-content-item")]
-        public async Task<IActionResult> UpdateContentItemProgress(int learnerId, int contentItemId)
+        public async Task<IActionResult> UpdateContentItemProgress(int learnerId, int itemId)
         {
-            var contentItem = await _courseProgressService.GetContentItemAsync(contentItemId);
+            var contentItem = await _courseProgressService.GetContentItemAsync(itemId);
             if (contentItem != null && contentItem.ItemTypeId > 0)
             {
                 var itemType = await _courseProgressService.GetItemTypeAsync(contentItem.ItemTypeId);
@@ -47,7 +47,7 @@ namespace InstruLearn_Application.Controllers
                 }
             }
 
-            var response = await _courseProgressService.UpdateContentItemProgressAsync(learnerId, contentItemId);
+            var response = await _courseProgressService.UpdateContentItemProgressAsync(learnerId, itemId);
             return response.IsSucceed ? Ok(response) : BadRequest(response);
         }
 
@@ -79,7 +79,7 @@ namespace InstruLearn_Application.Controllers
             {
                 if (!updateDto.TotalDuration.HasValue)
                 {
-                    var contentItem = await _courseProgressService.GetContentItemAsync(updateDto.ContentItemId);
+                    var contentItem = await _courseProgressService.GetContentItemAsync(updateDto.ItemId);
                     if (contentItem != null && contentItem.DurationInSeconds.HasValue)
                     {
                         updateDto.TotalDuration = contentItem.DurationInSeconds.Value;
@@ -89,7 +89,7 @@ namespace InstruLearn_Application.Controllers
                 if (updateDto.TotalDuration.HasValue && updateDto.TotalDuration.Value > 0)
                 {
                     await _courseProgressService.UpdateContentItemDurationAsync(
-                        updateDto.ContentItemId, updateDto.TotalDuration.Value);
+                        updateDto.ItemId, updateDto.TotalDuration.Value);
                 }
 
                 var response = await _courseProgressService.UpdateVideoProgressAsync(updateDto);
@@ -105,10 +105,10 @@ namespace InstruLearn_Application.Controllers
             }
         }
 
-        [HttpGet("video-progress/{learnerId}/{contentItemId}")]
-        public async Task<IActionResult> GetVideoProgress(int learnerId, int contentItemId)
+        [HttpGet("video-progress/{learnerId}/{itemId}")]
+        public async Task<IActionResult> GetVideoProgress(int learnerId, int itemId)
         {
-            var response = await _courseProgressService.GetVideoProgressAsync(learnerId, contentItemId);
+            var response = await _courseProgressService.GetVideoProgressAsync(learnerId, itemId);
             return response.IsSucceed ? Ok(response) : BadRequest(response);
         }
 

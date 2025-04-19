@@ -34,9 +34,9 @@ namespace InstruLearn_Application.DAL.Repository
                                      .FirstOrDefaultAsync(ci => ci.ItemId == itemId);
         }
 
-        public async Task<bool> UpdateContentItemDurationAsync(int contentItemId, double duration)
+        public async Task<bool> UpdateContentItemDurationAsync(int itemId, double duration)
         {
-            var contentItem = await GetByIdAsync(contentItemId);
+            var contentItem = await GetByIdAsync(itemId);
             if (contentItem == null)
                 return false;
 

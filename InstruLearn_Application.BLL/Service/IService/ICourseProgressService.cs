@@ -13,16 +13,16 @@ namespace InstruLearn_Application.BLL.Service.IService
     public interface ICourseProgressService
     {
         Task<ResponseDTO> UpdateCourseProgressAsync(UpdateLearnerCourseProgressDTO updateDto);
-        Task<ResponseDTO> UpdateContentItemProgressAsync(int learnerId, int contentItemId);
+        Task<ResponseDTO> UpdateContentItemProgressAsync(int learnerId, int itemId);
         Task<ResponseDTO> GetCourseProgressAsync(int learnerId, int coursePackageId);
         Task<ResponseDTO> GetAllCourseProgressByLearnerAsync(int learnerId);
         Task<ResponseDTO> GetAllLearnersForCourseAsync(int coursePackageId);
         Task<ResponseDTO> UpdateVideoProgressAsync(UpdateVideoProgressDTO updateDto);
-        Task<ResponseDTO> GetVideoProgressAsync(int learnerId, int contentItemId);
+        Task<ResponseDTO> GetVideoProgressAsync(int learnerId, int itemId);
         Task<ResponseDTO> GetCourseVideoProgressAsync(int learnerId, int coursePackageId);
-        Task<Course_Content_Item> GetContentItemAsync(int contentItemId);
+        Task<Course_Content_Item> GetContentItemAsync(int itemId);
         Task<ItemTypes> GetItemTypeAsync(int itemTypeId);
-        Task<bool> UpdateContentItemDurationAsync(int contentItemId, double duration);
+        Task<bool> UpdateContentItemDurationAsync(int itemId, double duration);
 
 
     }
