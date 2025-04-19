@@ -124,6 +124,7 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<ISyllabusContentRepository, SyllabusContentRepository>();
             builder.Services.AddScoped<ILearningPathSessionRepository, LearningPathSessionRepository>();
             builder.Services.AddScoped<ILearnerCourseRepository, LearnerCourseRepository>();
+            builder.Services.AddScoped<ILearnerContentProgressRepository, LearnerContentProgressRepository>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             builder.Services.AddScoped<IAuthService, AuthService>();
