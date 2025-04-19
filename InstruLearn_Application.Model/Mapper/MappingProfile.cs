@@ -18,6 +18,7 @@ using InstruLearn_Application.Model.Models.DTO.ItemTypes;
 using InstruLearn_Application.Model.Models.DTO.Learner;
 using InstruLearn_Application.Model.Models.DTO.LearnerClass;
 using InstruLearn_Application.Model.Models.DTO.LearnerCourse;
+using InstruLearn_Application.Model.Models.DTO.LearnerVideoProgress;
 using InstruLearn_Application.Model.Models.DTO.LearningPathSession;
 using InstruLearn_Application.Model.Models.DTO.LearningRegistration;
 using InstruLearn_Application.Model.Models.DTO.LearningRegistrationType;
@@ -636,7 +637,16 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.LearnerName, opt => opt.MapFrom(src => src.Learner.FullName))
                 .ForMember(dest => dest.CourseName, opt => opt.MapFrom(src => src.CoursePackage.CourseName));
 
+            // Learner Video Progress mapping
+            CreateMap<Learner_Content_Progress, VideoProgressDTO>()
+                .ForMember(dest => dest.TotalDuration, opt => opt.MapFrom(src => src.ContentItem.DurationInSeconds))
+                .ForMember(dest => dest.CompletionPercentage, opt => opt.MapFrom(src =>
+                    src.ContentItem.DurationInSeconds.HasValue && src.ContentItem.DurationInSeconds > 0
+                        ? Math.Min(100, (src.WatchTimeInSeconds / src.ContentItem.DurationInSeconds.Value) * 100)
+                        : 0));
 
+            CreateMap<UpdateVideoProgressDTO, Learner_Content_Progress>()
+                .ForMember(dest => dest.LastAccessDate, opt => opt.MapFrom(src => DateTime.Now));
 
         }
     }

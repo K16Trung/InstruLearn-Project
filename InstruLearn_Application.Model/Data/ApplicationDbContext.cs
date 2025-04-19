@@ -52,6 +52,8 @@ namespace InstruLearn_Application.Model.Data
         public DbSet<Syllabus_Content> Syllabus_Contents { get; set; }
         public DbSet<LearningPathSession> LearningPathSessions { get; set; }
         public DbSet<Learner_Course> LearnerCourses { get; set; }
+        public DbSet<Learner_Content_Progress> LearnerContentProgresses { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -471,6 +473,19 @@ namespace InstruLearn_Application.Model.Data
                 .HasOne(lc => lc.CoursePackage)
                 .WithMany(cp => cp.LearnerCourses)
                 .HasForeignKey(lc => lc.CoursePackageId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            //
+            modelBuilder.Entity<Learner_Content_Progress>()
+                .HasOne(lcp => lcp.Learner)
+                .WithMany(l => l.ContentProgresses)
+                .HasForeignKey(lcp => lcp.LearnerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Learner_Content_Progress>()
+                .HasOne(lcp => lcp.ContentItem)
+                .WithMany(ci => ci.LearnerProgresses)
+                .HasForeignKey(lcp => lcp.ItemId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

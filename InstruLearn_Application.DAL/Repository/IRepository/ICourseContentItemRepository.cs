@@ -9,5 +9,6 @@ namespace InstruLearn_Application.DAL.Repository.IRepository
 {
     public interface ICourseContentItemRepository : IGenericRepository<Course_Content_Item>
     {
+        Task<bool> UpdateContentItemDurationAsync(int contentItemId, double duration);
     }
 }

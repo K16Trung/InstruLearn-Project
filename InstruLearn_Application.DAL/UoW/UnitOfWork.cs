@@ -51,6 +51,7 @@ namespace InstruLearn_Application.DAL.UoW
         private readonly IResponseTypeRepository _responseTypeRepository;
         private readonly ISyllabusContentRepository _syllabusContentRepository;
         private readonly ILearnerCourseRepository _learnerCourseRepository;
+        private readonly ILearnerContentProgressRepository _learnerContentProgressRepository;
         private ILearningPathSessionRepository _learningPathSessionRepository;
         private readonly ApplicationDbContext _dbContext;
         private IDbContextTransaction? _transaction;
@@ -94,6 +95,7 @@ namespace InstruLearn_Application.DAL.UoW
         public ISyllabusContentRepository SyllabusContentRepository { get { return _syllabusContentRepository; } }
         public ILearningPathSessionRepository LearningPathSessionRepository { get { return _learningPathSessionRepository; } }
         public ILearnerCourseRepository LearnerCourseRepository { get { return _learnerCourseRepository; } }
+        public ILearnerContentProgressRepository LearnerContentProgressRepository { get { return _learnerContentProgressRepository; } }
 
         public ApplicationDbContext dbContext { get { return _dbContext; } }
 
@@ -101,7 +103,7 @@ namespace InstruLearn_Application.DAL.UoW
 
         public UnitOfWork(ApplicationDbContext dbContext, IAccountRepository accountRepository, IAdminRepository adminRepository, IManagerRepository managerRepository, IStaffRepository staffRepository, ILearnerRepository learnerRepository, ITeacherRepository teacherRepository, ICourseRepository courseRepository, ICourseTypeRepository courseTypeRepository, ICourseContentRepository courseContentRepository, IItemTypeRepository itemTypeRepository, ICourseContentItemRepository courseContentItemRepository, IFeedbackRepository feedbackRepository,
             IFeedbackRepliesRepository feedbackRepliesRepository, IQnARepository qnARepository, IQnARepliesRepository qnARepliesRepository, IWalletRepository walletRepository, IPaymentRepository paymentRepository, IWalletTransactionRepository walletTransactionRepository, IClassRepository classRepository, IClassDayRepository classDayRepository, IMajorRepository majorRepository, ILearningRegisRepository learningRegisRepository, ILearningRegisTypeRepository learningRegisTypeRepository, ISyllabusRepository syllabusRepository, ITestResultRepository testResultRepository,
-            IMajorTestRepository majorTestRepository, IPurchaseRepository purchaseRepository, IPurchaseItemRepository purchaseItemRepository, ILearningRegisDayRepository learningRegisDayRepository, ICertificationRepository certificationRepository, IScheduleRepository scheduleRepository, ITeacherMajorRepository teacherMajorRepository, ILevelAssignedRepository levelAssignedRepository, IResponseRepository responseRepository, IResponseTypeRepository responseTypeRepository, ISyllabusContentRepository syllabusContentRepository, ILearningPathSessionRepository learningPathSessionRepository, ILearnerCourseRepository learnerCourseRepository)
+            IMajorTestRepository majorTestRepository, IPurchaseRepository purchaseRepository, IPurchaseItemRepository purchaseItemRepository, ILearningRegisDayRepository learningRegisDayRepository, ICertificationRepository certificationRepository, IScheduleRepository scheduleRepository, ITeacherMajorRepository teacherMajorRepository, ILevelAssignedRepository levelAssignedRepository, IResponseRepository responseRepository, IResponseTypeRepository responseTypeRepository, ISyllabusContentRepository syllabusContentRepository, ILearningPathSessionRepository learningPathSessionRepository, ILearnerCourseRepository learnerCourseRepository, ILearnerContentProgressRepository learnerContentProgressRepository)
         {
             _dbContext = dbContext;
             _adminRepository = adminRepository;
@@ -142,6 +144,7 @@ namespace InstruLearn_Application.DAL.UoW
             _syllabusContentRepository = syllabusContentRepository;
             _learningPathSessionRepository = learningPathSessionRepository;
             _learnerCourseRepository = learnerCourseRepository;
+            _learnerContentProgressRepository = learnerContentProgressRepository;
         }
 
         protected virtual void Dispose(bool disposing)

@@ -18,5 +18,7 @@ namespace InstruLearn_Application.Model.Models
         public ItemTypes ItemType { get; set; }
         public string ItemDes { get; set; }
         public CourseContentItemStatus Status { get; set; }
+        public double? DurationInSeconds { get; set; }
+        public ICollection<Learner_Content_Progress> LearnerProgresses { get; set; }
     }
 }
