@@ -30,6 +30,12 @@ namespace InstruLearn_Application.Controllers
             var response = await _learningRegisService.GetLearningRegisByIdAsync(id);
             return Ok(response);
         }
+        [HttpGet("LearningRegis/{teacherId}")]
+        public async Task<IActionResult> GetLearningRegisByTeacherId(int teacherId)
+        {
+            var response = await _learningRegisService.GetRegistrationsByTeacherIdAsync(teacherId);
+            return Ok(response);
+        }
 
         [HttpPost("create")]
         public async Task<IActionResult> AddLearningRegis([FromBody] CreateLearningRegisDTO createLearningRegisDTO)

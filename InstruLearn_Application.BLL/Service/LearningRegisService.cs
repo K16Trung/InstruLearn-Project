@@ -71,6 +71,37 @@ namespace InstruLearn_Application.BLL.Service
             };
         }
 
+        public async Task<ResponseDTO> GetRegistrationsByTeacherIdAsync(int teacherId)
+        {
+            try
+            {
+                var allRegistrations = await _learningRegisRepository.GetRegistrationsByTeacherIdAsync(teacherId);
+
+                var filteredRegistrations = allRegistrations.Where(r =>
+                    r.RegisTypeId == 1 &&
+                    r.Status == LearningRegis.Accepted
+                ).ToList();
+
+                var registrationDtos = _mapper.Map<IEnumerable<OneOnOneRegisDTO>>(filteredRegistrations);
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = $"Filtered registrations for Teacher ID {teacherId} retrieved successfully.",
+                    Data = registrationDtos
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error retrieving registrations for teacher {teacherId}: {ex.Message}");
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Error retrieving registrations: {ex.Message}"
+                };
+            }
+        }
+
         public async Task<ResponseDTO> CreateLearningRegisAsync(CreateLearningRegisDTO createLearningRegisDTO)
         {
             try
