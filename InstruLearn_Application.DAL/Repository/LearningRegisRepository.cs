@@ -110,5 +110,21 @@ namespace InstruLearn_Application.DAL.Repository
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<Learning_Registration>> GetRegistrationsByTeacherIdAsync(int teacherId)
+        {
+            return await _appDbContext.Learning_Registrations
+                .Where(x => x.TeacherId == teacherId)
+                .Include(x => x.Learner)
+                .Include(x => x.Teacher)
+                .Include(l => l.Learner.Account)
+                .Include(x => x.Learning_Registration_Type)
+                .Include(x => x.Major)
+                .Include(l => l.Response)
+                .Include(l => l.Response.ResponseType)
+                .Include(l => l.LevelAssigned)
+                .Include(x => x.LearningRegistrationDay)
+                .ToListAsync();
+        }
+
     }
 }

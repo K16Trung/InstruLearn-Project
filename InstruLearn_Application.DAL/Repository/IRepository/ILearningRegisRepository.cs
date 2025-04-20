@@ -19,5 +19,6 @@ namespace InstruLearn_Application.DAL.Repository.IRepository
         Task<Learning_Registration?> GetFirstOrDefaultAsync(
         Expression<Func<Learning_Registration, bool>> predicate,
         Func<IQueryable<Learning_Registration>, IIncludableQueryable<Learning_Registration, object>>? include = null);
+        Task<IEnumerable<Learning_Registration>> GetRegistrationsByTeacherIdAsync(int teacherId);
     }
 }
