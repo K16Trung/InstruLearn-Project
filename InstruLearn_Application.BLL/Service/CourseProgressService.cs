@@ -302,6 +302,18 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
+                if (learnerCourse.CompletionPercentage < 0)
+                {
+                    double recalculatedPercentage = await RecalculateCourseCompletionPercentageAsync(
+                        learnerId, coursePackageId);
+
+                    await _unitOfWork.LearnerCourseRepository.UpdateProgressAsync(
+                        learnerId, coursePackageId, recalculatedPercentage);
+
+                    learnerCourse = await _unitOfWork.LearnerCourseRepository
+                        .GetByLearnerAndCourseAsync(learnerId, coursePackageId);
+                }
+
                 var course = await _unitOfWork.CourseRepository.GetByIdAsync(coursePackageId);
                 var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(learnerId);
 
@@ -713,7 +725,6 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                // Validate learner exists
                 var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(learnerId);
                 if (learner == null)
                 {
@@ -724,7 +735,6 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Get the specific course package
                 var course = await _unitOfWork.CourseRepository.GetByIdAsync(coursePackageId);
                 if (course == null)
                 {
@@ -737,7 +747,6 @@ namespace InstruLearn_Application.BLL.Service
 
                 var coursePackageDetailsList = new List<CoursePackageDetailsDTO>();
 
-                // Get all contents for the course package
                 var courseContents = await _unitOfWork.CourseContentRepository.GetQuery()
                     .Where(cc => cc.CoursePackageId == course.CoursePackageId)
                     .ToListAsync();
@@ -747,14 +756,12 @@ namespace InstruLearn_Application.BLL.Service
 
                 foreach (var content in courseContents)
                 {
-                    // Get all content items for each content
                     var contentItems = await _unitOfWork.CourseContentItemRepository.GetQuery()
                         .Where(cci => cci.ContentId == content.ContentId)
                         .ToListAsync();
 
                     totalContentItems += contentItems.Count;
 
-                    // Get progress information for each content item
                     var contentItemProgressList = new List<ContentItemProgressDTO>();
 
                     foreach (var item in contentItems)
@@ -767,14 +774,11 @@ namespace InstruLearn_Application.BLL.Service
                         double watchTime = progress?.WatchTimeInSeconds ?? 0;
                         double completionPercentage = 0;
 
-                        // If it's a video, calculate completion percentage
                         if (itemType != null && itemType.ItemTypeName.ToLower().Contains("video") && item.DurationInSeconds.HasValue && item.DurationInSeconds.Value > 0)
                         {
                             completionPercentage = Math.Min(100, (watchTime / item.DurationInSeconds.Value) * 100);
-                            // For videos, we consider it learned if watch time is at least 90% of duration
                             isLearned = watchTime >= (item.DurationInSeconds.Value * 0.9);
                         }
-                        // For documents, we rely on the IsCompleted flag
 
                         contentItemProgressList.Add(new ContentItemProgressDTO
                         {
@@ -799,7 +803,6 @@ namespace InstruLearn_Application.BLL.Service
                     });
                 }
 
-                // Get learner's specific course progress
                 var learnerCourse = await _unitOfWork.LearnerCourseRepository
                     .GetByLearnerAndCourseAsync(learnerId, course.CoursePackageId);
 
@@ -819,7 +822,7 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     IsSucceed = true,
                     Message = "Course package retrieved successfully.",
-                    Data = coursePackageDetailsList[0] // Return the single course package directly
+                    Data = coursePackageDetailsList[0]
                 };
             }
             catch (Exception ex)
@@ -831,8 +834,34 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
         }
+        public async Task<bool> RecalculateAllLearnersProgressForCourse(int coursePackageId)
+        {
+            try
+            {
+                var learnerCourses = await _unitOfWork.LearnerCourseRepository.GetByCoursePackageIdAsync(coursePackageId);
 
+                if (learnerCourses == null || !learnerCourses.Any())
+                    return true;
 
+                foreach (var learnerCourse in learnerCourses)
+                {
+                    double newPercentage = await CalculateTypeBasedCompletionPercentageAsync(
+                        learnerCourse.LearnerId,
+                        coursePackageId);
+
+                    await _unitOfWork.LearnerCourseRepository.UpdateProgressAsync(
+                        learnerCourse.LearnerId,
+                        coursePackageId,
+                        newPercentage);
+                }
+
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
 
         private async Task<double> CalculateTypeBasedCompletionPercentageAsync(int learnerId, int coursePackageId)
         {
@@ -902,7 +931,14 @@ namespace InstruLearn_Application.BLL.Service
                 var progress = await _unitOfWork.LearnerContentProgressRepository
                     .GetByLearnerAndContentItemAsync(learnerId, item.ItemId);
 
-                if (progress != null && progress.IsCompleted)
+                var itemType = await _unitOfWork.ItemTypeRepository.GetByIdAsync(item.ItemTypeId);
+                if (itemType != null && itemType.ItemTypeName.ToLower().Contains("video") &&
+                    progress != null && item.DurationInSeconds.HasValue && item.DurationInSeconds > 0)
+                {
+                    if (progress.WatchTimeInSeconds >= (item.DurationInSeconds.Value * 0.9))
+                        completedItems++;
+                }
+                else if (progress != null && progress.IsCompleted)
                 {
                     completedItems++;
                 }

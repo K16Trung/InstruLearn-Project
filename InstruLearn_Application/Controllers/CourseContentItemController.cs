@@ -12,6 +12,7 @@ namespace InstruLearn_Application.Controllers
     public class CourseContentItemController : ControllerBase
     {
         private readonly ICourseContentItemService _courseContentItemService;
+        private readonly ICourseProgressService _courseProgressService;
 
         public CourseContentItemController(ICourseContentItemService courseContentItemService)
         {
@@ -36,6 +37,18 @@ namespace InstruLearn_Application.Controllers
         public async Task<IActionResult> AddCourseContentItem([FromBody] CreateCourseContentItemDTO createDto)
         {
             var response = await _courseContentItemService.AddCourseContentItemAsync(createDto);
+
+            if (response.IsSucceed)
+            {
+                // Get the content to find its course package ID
+                var content = await _courseContentItemService.GetCourseContentItemByIdAsync(createDto.ContentId);
+                if (content.IsSucceed && content.Data != null)
+                {
+                    var courseContent = content.Data;
+                    await _courseProgressService.RecalculateAllLearnersProgressForCourse(courseContent.CoursePackageId);
+                }
+            }
+
             return Ok(response);
         }
 
