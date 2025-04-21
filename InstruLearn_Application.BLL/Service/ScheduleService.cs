@@ -475,7 +475,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Không tìm thấy lịch học của giáo viên.",
+                    Message = "Không tìm thấy lịch dạy của giáo viên.",
                 };
             }
 
