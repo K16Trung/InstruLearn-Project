@@ -53,6 +53,11 @@ namespace InstruLearn_Application.Model.Data
         public DbSet<LearningPathSession> LearningPathSessions { get; set; }
         public DbSet<Learner_Course> LearnerCourses { get; set; }
         public DbSet<Learner_Content_Progress> LearnerContentProgresses { get; set; }
+        public DbSet<LearningRegisFeedbackQuestion> LearningRegisFeedbackQuestions { get; set; }
+        public DbSet<LearningRegisFeedbackOption> LearningRegisFeedbackOptions { get; set; }
+        public DbSet<LearningRegisFeedback> LearningRegisFeedbacks { get; set; }
+        public DbSet<LearningRegisFeedbackAnswer> LearningRegisFeedbackAnswers { get; set; }
+
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -487,6 +492,63 @@ namespace InstruLearn_Application.Model.Data
                 .WithMany(ci => ci.LearnerProgresses)
                 .HasForeignKey(lcp => lcp.ItemId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure LearningRegisFeedbackQuestion entity
+            modelBuilder.Entity<LearningRegisFeedbackQuestion>()
+                .HasKey(q => q.QuestionId);
+
+            modelBuilder.Entity<LearningRegisFeedbackQuestion>()
+                .HasMany(q => q.Options)
+                .WithOne(o => o.Question)
+                .HasForeignKey(o => o.QuestionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure LearningRegisFeedbackOption entity
+            modelBuilder.Entity<LearningRegisFeedbackOption>()
+                .HasKey(o => o.OptionId);
+
+            // Configure LearningRegisFeedback entity
+            modelBuilder.Entity<LearningRegisFeedback>()
+                .HasKey(f => f.FeedbackId);
+
+            modelBuilder.Entity<LearningRegisFeedback>()
+                .HasOne(f => f.Learner)
+                .WithMany()
+                .HasForeignKey(f => f.LearnerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<LearningRegisFeedback>()
+                .HasOne(f => f.LearningRegistration)
+                .WithMany()
+                .HasForeignKey(f => f.LearningRegistrationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<LearningRegisFeedback>()
+                .HasMany(f => f.Answers)
+                .WithOne(a => a.Feedback)
+                .HasForeignKey(a => a.FeedbackId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<LearningRegisFeedback>()
+                .Property(f => f.Status)
+                .HasConversion<string>();
+
+            // Configure LearningRegisFeedbackAnswer entity
+            modelBuilder.Entity<LearningRegisFeedbackAnswer>()
+                .HasKey(a => a.AnswerId);
+
+            modelBuilder.Entity<LearningRegisFeedbackAnswer>()
+                .HasOne(a => a.Question)
+                .WithMany()
+                .HasForeignKey(a => a.QuestionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<LearningRegisFeedbackAnswer>()
+                .HasOne(a => a.SelectedOption)
+                .WithMany()
+                .HasForeignKey(a => a.SelectedOptionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
         }
     }
 }
