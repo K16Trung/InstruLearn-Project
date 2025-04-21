@@ -57,7 +57,7 @@ namespace InstruLearn_Application.Controllers
 
             if (!response.IsSucceed)
             {
-                return NotFound(response);
+                return Ok(response);
             }
 
             return Ok(response);
@@ -70,7 +70,7 @@ namespace InstruLearn_Application.Controllers
 
             if (!response.IsSucceed)
             {
-                return NotFound(response);
+                return Ok(response);
             }
 
             return Ok(response);
@@ -83,7 +83,7 @@ namespace InstruLearn_Application.Controllers
 
             if (!response.IsSucceed)
             {
-                return NotFound(response);
+                return Ok(response);
             }
 
             return Ok(response);
