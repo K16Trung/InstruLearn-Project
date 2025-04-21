@@ -50,6 +50,10 @@ namespace InstruLearn_Application.DAL.UoW.IUoW
         ILearningPathSessionRepository LearningPathSessionRepository { get; }
         ILearnerCourseRepository LearnerCourseRepository { get; }
         ILearnerContentProgressRepository LearnerContentProgressRepository { get; }
+        ILearningRegisFeedbackAnswerRepository LearningRegisFeedbackAnswerRepository { get; }
+        ILearningRegisFeedbackOptionRepository LearningRegisFeedbackOptionRepository { get; }
+        ILearningRegisFeedbackQuestionRepository LearningRegisFeedbackQuestionRepository { get; }
+        ILearningRegisFeedbackRepository LearningRegisFeedbackRepository { get; }
         ApplicationDbContext dbContext { get; }
         public Task<int> SaveChangeAsync();
         Task<IDbContextTransaction> BeginTransactionAsync();
