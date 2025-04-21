@@ -709,6 +709,131 @@ namespace InstruLearn_Application.BLL.Service
             return true;
         }
 
+        public async Task<ResponseDTO> GetAllCoursePackagesWithDetailsAsync(int learnerId, int coursePackageId)
+        {
+            try
+            {
+                // Validate learner exists
+                var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(learnerId);
+                if (learner == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Không tìm thấy học viên."
+                    };
+                }
+
+                // Get the specific course package
+                var course = await _unitOfWork.CourseRepository.GetByIdAsync(coursePackageId);
+                if (course == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Không tìm thấy khóa học."
+                    };
+                }
+
+                var coursePackageDetailsList = new List<CoursePackageDetailsDTO>();
+
+                // Get all contents for the course package
+                var courseContents = await _unitOfWork.CourseContentRepository.GetQuery()
+                    .Where(cc => cc.CoursePackageId == course.CoursePackageId)
+                    .ToListAsync();
+
+                var contentDetailsList = new List<CourseContentDetailsDTO>();
+                int totalContentItems = 0;
+
+                foreach (var content in courseContents)
+                {
+                    // Get all content items for each content
+                    var contentItems = await _unitOfWork.CourseContentItemRepository.GetQuery()
+                        .Where(cci => cci.ContentId == content.ContentId)
+                        .ToListAsync();
+
+                    totalContentItems += contentItems.Count;
+
+                    // Get progress information for each content item
+                    var contentItemProgressList = new List<ContentItemProgressDTO>();
+
+                    foreach (var item in contentItems)
+                    {
+                        var itemType = await _unitOfWork.ItemTypeRepository.GetByIdAsync(item.ItemTypeId);
+                        var progress = await _unitOfWork.LearnerContentProgressRepository
+                            .GetByLearnerAndContentItemAsync(learnerId, item.ItemId);
+
+                        bool isLearned = progress != null && progress.IsCompleted;
+                        double watchTime = progress?.WatchTimeInSeconds ?? 0;
+                        double completionPercentage = 0;
+
+                        // If it's a video, calculate completion percentage
+                        if (itemType != null && itemType.ItemTypeName.ToLower().Contains("video") && item.DurationInSeconds.HasValue && item.DurationInSeconds.Value > 0)
+                        {
+                            completionPercentage = Math.Min(100, (watchTime / item.DurationInSeconds.Value) * 100);
+                            // For videos, we consider it learned if watch time is at least 90% of duration
+                            isLearned = watchTime >= (item.DurationInSeconds.Value * 0.9);
+                        }
+                        // For documents, we rely on the IsCompleted flag
+
+                        contentItemProgressList.Add(new ContentItemProgressDTO
+                        {
+                            ItemId = item.ItemId,
+                            ItemDes = item.ItemDes,
+                            ItemTypeId = item.ItemTypeId,
+                            ItemTypeName = itemType?.ItemTypeName ?? "Unknown",
+                            IsLearned = isLearned,
+                            DurationInSeconds = item.DurationInSeconds,
+                            WatchTimeInSeconds = watchTime,
+                            CompletionPercentage = completionPercentage,
+                            LastAccessDate = progress?.LastAccessDate
+                        });
+                    }
+
+                    contentDetailsList.Add(new CourseContentDetailsDTO
+                    {
+                        ContentId = content.ContentId,
+                        Heading = content.Heading,
+                        TotalContentItems = contentItems.Count,
+                        ContentItems = contentItemProgressList
+                    });
+                }
+
+                // Get learner's specific course progress
+                var learnerCourse = await _unitOfWork.LearnerCourseRepository
+                    .GetByLearnerAndCourseAsync(learnerId, course.CoursePackageId);
+
+                double progressPercentage = learnerCourse?.CompletionPercentage ?? 0;
+
+                coursePackageDetailsList.Add(new CoursePackageDetailsDTO
+                {
+                    CoursePackageId = course.CoursePackageId,
+                    CourseName = course.CourseName,
+                    TotalContents = courseContents.Count,
+                    TotalContentItems = totalContentItems,
+                    OverallProgressPercentage = progressPercentage,
+                    Contents = contentDetailsList
+                });
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = "Course package retrieved successfully.",
+                    Data = coursePackageDetailsList[0] // Return the single course package directly
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Error retrieving course package: {ex.Message}"
+                };
+            }
+        }
+
+
+
         private async Task<double> CalculateTypeBasedCompletionPercentageAsync(int learnerId, int coursePackageId)
         {
             var allContentItems = await GetAllCourseContentItemsAsync(coursePackageId);
