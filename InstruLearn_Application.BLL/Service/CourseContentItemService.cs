@@ -88,8 +88,11 @@ namespace InstruLearn_Application.BLL.Service
                 };
 
                 await _unitOfWork.CourseContentItemRepository.AddAsync(courseContentItem);
-
                 await _unitOfWork.SaveChangeAsync();
+
+                int coursePackageId = courseContent.CoursePackageId;
+
+                await _unitOfWork.LearnerCourseRepository.RecalculateProgressForAllLearnersInCourseAsync(coursePackageId);
 
                 var responseDto = _mapper.Map<CourseContentItemDTO>(courseContentItem);
 
@@ -112,44 +115,96 @@ namespace InstruLearn_Application.BLL.Service
 
         public async Task<ResponseDTO> UpdateCourseContentItemAsync(int itemId, UpdateCourseContentItemDTO updateDto)
         {
-            var existingItem = await _unitOfWork.CourseContentItemRepository.GetByIdAsync(itemId);
-            if (existingItem == null)
+            try
+            {
+                var existingItem = await _unitOfWork.CourseContentItemRepository.GetByIdAsync(itemId);
+                if (existingItem == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Không tìm thấy nội dung khóa học."
+                    };
+                }
+
+                var courseContent = await _unitOfWork.CourseContentRepository.GetByIdAsync(existingItem.ContentId);
+                if (courseContent == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Không tìm thấy phần nội dung khóa học."
+                    };
+                }
+
+                _mapper.Map(updateDto, existingItem);
+                await _unitOfWork.CourseContentItemRepository.UpdateAsync(existingItem);
+                await _unitOfWork.SaveChangeAsync();
+
+                int coursePackageId = courseContent.CoursePackageId;
+                await _unitOfWork.LearnerCourseRepository.RecalculateProgressForAllLearnersInCourseAsync(coursePackageId);
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = "Nội dung khóa học đã được cập nhật thành công."
+                };
+            }
+            catch (Exception ex)
             {
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Không tìm thấy nội dung khóa học."
+                    Message = $"Lỗi khi cập nhật nội dung khóa học: {ex.Message}"
                 };
             }
-            _mapper.Map(updateDto, existingItem);
-            await _unitOfWork.CourseContentItemRepository.UpdateAsync(existingItem);
-            return new ResponseDTO
-            {
-                IsSucceed = true,
-                Message = "Nội dung khóa học đã được cập nhật thành công."
-            };
         }
 
         public async Task<ResponseDTO> DeleteCourseContentItemAsync(int itemId)
         {
-            var courseContentItem = await _unitOfWork.CourseContentItemRepository.GetByIdAsync(itemId);
-            if (courseContentItem == null)
+            try
+            {
+                var courseContentItem = await _unitOfWork.CourseContentItemRepository.GetByIdAsync(itemId);
+                if (courseContentItem == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Không tìm thấy nội dung khóa học."
+                    };
+                }
+
+                var courseContent = await _unitOfWork.CourseContentRepository.GetByIdAsync(courseContentItem.ContentId);
+                if (courseContent == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Không tìm thấy phần nội dung khóa học."
+                    };
+                }
+
+                int coursePackageId = courseContent.CoursePackageId;
+
+                await _unitOfWork.CourseContentItemRepository.DeleteAsync(itemId);
+                await _unitOfWork.SaveChangeAsync();
+
+                await _unitOfWork.LearnerCourseRepository.RecalculateProgressForAllLearnersInCourseAsync(coursePackageId);
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = "Đã xóa nội dung khóa học thành công."
+                };
+            }
+            catch (Exception ex)
             {
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Không tìm thấy nội dung khóa học."
+                    Message = $"Lỗi khi xóa nội dung khóa học: {ex.Message}"
                 };
             }
-            await _unitOfWork.CourseContentItemRepository.DeleteAsync(itemId);
-            return new ResponseDTO
-            {
-                IsSucceed = true,
-                Message = "Đã xóa nội dung khóa học thành công."
-            };
         }
     }
-
-
-
 }

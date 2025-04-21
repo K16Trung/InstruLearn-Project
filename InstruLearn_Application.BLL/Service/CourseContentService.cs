@@ -57,13 +57,28 @@ namespace InstruLearn_Application.BLL.Service
 
         public async Task<ResponseDTO> AddCourseContentAsync(CreateCourseContentDTO createDto)
         {
-            var courseContent = _mapper.Map<Course_Content>(createDto);
-            await _unitOfWork.CourseContentRepository.AddAsync(courseContent);
-            return new ResponseDTO
+            try
             {
-                IsSucceed = true,
-                Message = "Khóa học đã được thêm thành công.",
-            };
+                var courseContent = _mapper.Map<Course_Content>(createDto);
+                await _unitOfWork.CourseContentRepository.AddAsync(courseContent);
+                await _unitOfWork.SaveChangeAsync();
+
+                await _unitOfWork.LearnerCourseRepository.RecalculateProgressForAllLearnersInCourseAsync(createDto.CoursePackageId);
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = "Khóa học đã được thêm thành công.",
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Lỗi khi thêm khóa học: {ex.Message}"
+                };
+            }
         }
 
         public async Task<ResponseDTO> UpdateCourseContentAsync(int courseContentId, UpdateCourseContentDTO updateDto)
