@@ -12,6 +12,7 @@ namespace InstruLearn_Application.Controllers
     public class CourseContentController : ControllerBase
     {
         private readonly ICourseContentService _courseContentService;
+        private readonly ICourseProgressService _courseProgressService;
 
         public CourseContentController(ICourseContentService courseContentService)
         {
@@ -36,6 +37,12 @@ namespace InstruLearn_Application.Controllers
         public async Task<IActionResult> AddCourseContent([FromBody] CreateCourseContentDTO createDto)
         {
             var response = await _courseContentService.AddCourseContentAsync(createDto);
+
+            if (response.IsSucceed)
+            {
+                await _courseProgressService.RecalculateAllLearnersProgressForCourse(createDto.CoursePackageId);
+            }
+
             return Ok(response);
         }
 

@@ -13,5 +13,6 @@ namespace InstruLearn_Application.DAL.Repository.IRepository
         Task<List<Learner_Course>> GetByLearnerIdAsync(int learnerId);
         Task<List<Learner_Course>> GetByCoursePackageIdAsync(int coursePackageId);
         Task<bool> UpdateProgressAsync(int learnerId, int coursePackageId, double percentage);
+        Task RecalculateProgressForAllLearnersInCourseAsync(int coursePackageId);
     }
 }
