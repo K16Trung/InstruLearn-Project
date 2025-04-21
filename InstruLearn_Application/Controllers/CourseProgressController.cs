@@ -118,5 +118,13 @@ namespace InstruLearn_Application.Controllers
             var response = await _courseProgressService.GetCourseVideoProgressAsync(learnerId, coursePackageId);
             return response.IsSucceed ? Ok(response) : BadRequest(response);
         }
+
+        [HttpGet("all-course-packages/{learnerId}/{coursePackageId}")]
+        public async Task<IActionResult> GetAllCoursePackagesWithDetails(int learnerId, int coursePackageId)
+        {
+            var response = await _courseProgressService.GetAllCoursePackagesWithDetailsAsync(learnerId, coursePackageId);
+            return response.IsSucceed ? Ok(response) : BadRequest(response);
+        }
+
     }
 }

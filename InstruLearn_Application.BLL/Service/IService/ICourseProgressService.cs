@@ -23,6 +23,7 @@ namespace InstruLearn_Application.BLL.Service.IService
         Task<Course_Content_Item> GetContentItemAsync(int itemId);
         Task<ItemTypes> GetItemTypeAsync(int itemTypeId);
         Task<bool> UpdateContentItemDurationAsync(int itemId, double duration);
+        Task<ResponseDTO> GetAllCoursePackagesWithDetailsAsync(int learnerId, int coursePackageId);
 
 
     }
