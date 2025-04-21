@@ -10,7 +10,7 @@ namespace InstruLearn_Application.Model.Models.DTO.LearningRegisFeedback
     public class CreateLearningRegisFeedbackDTO
     {
         public int LearningRegistrationId { get; set; }
-        public string LearnerId { get; set; }
+        public int LearnerId { get; set; }
         public string AdditionalComments { get; set; }
         public List<CreateLearningRegisFeedbackAnswerDTO> Answers { get; set; }
     }

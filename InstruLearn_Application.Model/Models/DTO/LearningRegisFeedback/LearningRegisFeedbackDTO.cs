@@ -12,7 +12,7 @@ namespace InstruLearn_Application.Model.Models.DTO.LearningRegisFeedback
     {
         public int FeedbackId { get; set; }
         public int LearningRegistrationId { get; set; }
-        public string LearnerId { get; set; }
+        public int LearnerId { get; set; }
         public string LearnerName { get; set; }
         public int TeacherId { get; set; }
         public string TeacherName { get; set; }

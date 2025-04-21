@@ -28,7 +28,7 @@ namespace InstruLearn_Application.BLL.Service.IService
         Task<LearningRegisFeedbackDTO> GetFeedbackByIdAsync(int feedbackId);
         Task<LearningRegisFeedbackDTO> GetFeedbackByRegistrationIdAsync(int registrationId);
         Task<List<LearningRegisFeedbackDTO>> GetFeedbacksByTeacherIdAsync(int teacherId);
-        Task<List<LearningRegisFeedbackDTO>> GetFeedbacksByLearnerIdAsync(string learnerId);
+        Task<List<LearningRegisFeedbackDTO>> GetFeedbacksByLearnerIdAsync(int learnerId);
 
         // Analytics
         Task<TeacherFeedbackSummaryDTO> GetTeacherFeedbackSummaryAsync(int teacherId);

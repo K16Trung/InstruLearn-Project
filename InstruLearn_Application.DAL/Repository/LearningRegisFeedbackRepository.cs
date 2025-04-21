@@ -52,6 +52,8 @@ namespace InstruLearn_Application.DAL.Repository
             return await _context.LearningRegisFeedbacks
                 .Include(f => f.Learner)
                 .Include(f => f.LearningRegistration)
+                    .ThenInclude(lr => lr.Teacher)
+                        .ThenInclude(t => t.Account)
                 .Include(f => f.Answers)
                     .ThenInclude(a => a.Question)
                 .Include(f => f.Answers)
@@ -60,9 +62,10 @@ namespace InstruLearn_Application.DAL.Repository
                 .ToListAsync();
         }
 
-        public async Task<List<LearningRegisFeedback>> GetFeedbacksByLearnerIdAsync(string learnerId)
+        public async Task<List<LearningRegisFeedback>> GetFeedbacksByLearnerIdAsync(int learnerId)
         {
             return await _context.LearningRegisFeedbacks
+                .Include(f => f.Learner)
                 .Include(f => f.LearningRegistration)
                     .ThenInclude(lr => lr.Teacher)
                         .ThenInclude(t => t.Account)

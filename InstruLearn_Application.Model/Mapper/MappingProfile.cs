@@ -20,6 +20,10 @@ using InstruLearn_Application.Model.Models.DTO.LearnerClass;
 using InstruLearn_Application.Model.Models.DTO.LearnerCourse;
 using InstruLearn_Application.Model.Models.DTO.LearnerVideoProgress;
 using InstruLearn_Application.Model.Models.DTO.LearningPathSession;
+using InstruLearn_Application.Model.Models.DTO.LearningRegisFeedback;
+using InstruLearn_Application.Model.Models.DTO.LearningRegisFeedbackAnswer;
+using InstruLearn_Application.Model.Models.DTO.LearningRegisFeedbackOption;
+using InstruLearn_Application.Model.Models.DTO.LearningRegisFeedbackQuestion;
 using InstruLearn_Application.Model.Models.DTO.LearningRegistration;
 using InstruLearn_Application.Model.Models.DTO.LearningRegistrationType;
 using InstruLearn_Application.Model.Models.DTO.LevelAssigned;
@@ -648,6 +652,35 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<UpdateVideoProgressDTO, Learner_Content_Progress>()
                 .ForMember(dest => dest.LastAccessDate, opt => opt.MapFrom(src => DateTime.Now));
 
+            // Learning Registration Feedback Question mappings
+            CreateMap<LearningRegisFeedbackQuestion, LearningRegisFeedbackQuestionDTO>()
+                .ForMember(dest => dest.Options, opt => opt.MapFrom(src => src.Options));
+
+            CreateMap<LearningRegisFeedbackQuestionDTO, LearningRegisFeedbackQuestion>();
+
+            // Learning Registration Feedback Option mappings
+            CreateMap<LearningRegisFeedbackOption, LearningRegisFeedbackOptionDTO>();
+            CreateMap<LearningRegisFeedbackOptionDTO, LearningRegisFeedbackOption>();
+
+            // Learning Registration Feedback Answer mappings
+            CreateMap<LearningRegisFeedbackAnswer, LearningRegisFeedbackAnswerDTO>()
+                .ForMember(dest => dest.QuestionText, opt => opt.MapFrom(src => src.Question != null ? src.Question.QuestionText : "Unknown"))
+                .ForMember(dest => dest.Category, opt => opt.MapFrom(src => src.Question != null ? src.Question.Category : "General"))
+                .ForMember(dest => dest.SelectedOptionText, opt => opt.MapFrom(src => src.SelectedOption != null ? src.SelectedOption.OptionText : "Unknown"))
+                .ForMember(dest => dest.Value, opt => opt.MapFrom(src => src.SelectedOption != null ? src.SelectedOption.Value : 0));
+
+            CreateMap<LearningRegisFeedbackAnswerDTO, LearningRegisFeedbackAnswer>();
+            CreateMap<CreateLearningRegisFeedbackAnswerDTO, LearningRegisFeedbackAnswer>();
+
+            // Learning Registration Feedback mappings
+            CreateMap<LearningRegisFeedback, LearningRegisFeedbackDTO>()
+                .ForMember(dest => dest.LearnerName, opt => opt.MapFrom(src => src.Learner != null ? src.Learner.FullName : "Unknown"))
+                .ForMember(dest => dest.TeacherId, opt => opt.MapFrom(src => src.LearningRegistration != null ? src.LearningRegistration.TeacherId ?? 0 : 0))
+                .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.LearningRegistration != null && src.LearningRegistration.Teacher != null ? src.LearningRegistration.Teacher.Fullname : "Unknown"))
+                .ForMember(dest => dest.Answers, opt => opt.MapFrom(src => src.Answers))
+                .ForMember(dest => dest.AverageRating, opt => opt.Ignore()); // Calculate this after mapping
+
+            CreateMap<CreateLearningRegisFeedbackDTO, LearningRegisFeedback>();
         }
     }
 }

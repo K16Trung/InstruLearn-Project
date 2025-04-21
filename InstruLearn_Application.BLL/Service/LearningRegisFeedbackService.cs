@@ -13,10 +13,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using InstruLearn_Application.BLL.Service.IService;
 
 namespace InstruLearn_Application.BLL.Service
 {
-    public class LearningRegisFeedbackService
+    public class LearningRegisFeedbackService : ILearningRegisFeedbackService
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
@@ -26,8 +27,6 @@ namespace InstruLearn_Application.BLL.Service
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
-
-        #region Question Management
 
         public async Task<ResponseDTO> CreateQuestionAsync(LearningRegisFeedbackQuestionDTO questionDTO)
         {
@@ -228,10 +227,6 @@ namespace InstruLearn_Application.BLL.Service
             return questions.Select(MapToQuestionDTO).ToList();
         }
 
-        #endregion
-
-        #region Feedback Submission
-
         public async Task<ResponseDTO> SubmitFeedbackAsync(CreateLearningRegisFeedbackDTO createDTO)
         {
             // Validate learning registration
@@ -246,7 +241,7 @@ namespace InstruLearn_Application.BLL.Service
             }
 
             // Validate learner
-            var learner = await _unitOfWork.AccountRepository.GetByIdAsync(createDTO.LearnerId);
+            var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(createDTO.LearnerId);
             if (learner == null)
             {
                 return new ResponseDTO
@@ -269,6 +264,15 @@ namespace InstruLearn_Application.BLL.Service
 
             // Get all active questions to validate
             var activeQuestions = await _unitOfWork.LearningRegisFeedbackQuestionRepository.GetActiveQuestionsWithOptionsAsync();
+            if (activeQuestions == null || !activeQuestions.Any())
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Không tìm thấy câu hỏi đánh giá nào đang hoạt động"
+                };
+            }
+
             var requiredQuestionIds = activeQuestions.Where(q => q.IsRequired).Select(q => q.QuestionId).ToList();
             var answeredQuestionIds = createDTO.Answers.Select(a => a.QuestionId).ToList();
 
@@ -314,6 +318,16 @@ namespace InstruLearn_Application.BLL.Service
                 }
 
                 // Validate option belongs to the question
+                if (question.Options == null || !question.Options.Any())
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = $"Câu hỏi (ID: {answerDTO.QuestionId}) không có lựa chọn nào"
+                    };
+                }
+
+                // Validate option belongs to the question
                 var option = question.Options.FirstOrDefault(o => o.OptionId == answerDTO.SelectedOptionId);
                 if (option == null)
                 {
@@ -332,8 +346,26 @@ namespace InstruLearn_Application.BLL.Service
                 });
             }
 
-            await _unitOfWork.LearningRegisFeedbackRepository.AddAsync(feedback);
-            await _unitOfWork.SaveChangeAsync();
+            // Save to database
+            try
+            {
+                await _unitOfWork.LearningRegisFeedbackRepository.AddAsync(feedback);
+                await _unitOfWork.SaveChangeAsync();
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = "Gửi đánh giá thành công"
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Lỗi khi lưu đánh giá: {ex.Message}"
+                };
+            }
 
             return new ResponseDTO
             {
@@ -467,15 +499,11 @@ namespace InstruLearn_Application.BLL.Service
             return feedbacks.Select(MapToFeedbackDTO).ToList();
         }
 
-        public async Task<List<LearningRegisFeedbackDTO>> GetFeedbacksByLearnerIdAsync(string learnerId)
+        public async Task<List<LearningRegisFeedbackDTO>> GetFeedbacksByLearnerIdAsync(int learnerId)
         {
             var feedbacks = await _unitOfWork.LearningRegisFeedbackRepository.GetFeedbacksByLearnerIdAsync(learnerId);
             return feedbacks.Select(MapToFeedbackDTO).ToList();
         }
-
-        #endregion
-
-        #region Analytics
 
         public async Task<TeacherFeedbackSummaryDTO> GetTeacherFeedbackSummaryAsync(int teacherId)
         {
@@ -614,38 +642,9 @@ namespace InstruLearn_Application.BLL.Service
             var option = _unitOfWork.LearningRegisFeedbackOptionRepository.GetByIdAsync(optionId).Result;
             return option?.Value ?? 0;
         }
-
-        #endregion
-
-        #region Mapping Methods
-
         private LearningRegisFeedbackQuestionDTO MapToQuestionDTO(LearningRegisFeedbackQuestion question)
         {
-            var questionDTO = new LearningRegisFeedbackQuestionDTO
-            {
-                QuestionId = question.QuestionId,
-                QuestionText = question.QuestionText,
-                Category = question.Category,
-                DisplayOrder = question.DisplayOrder,
-                IsRequired = question.IsRequired,
-                Options = new List<LearningRegisFeedbackOptionDTO>()
-            };
-
-            if (question.Options != null)
-            {
-                foreach (var option in question.Options)
-                {
-                    questionDTO.Options.Add(new LearningRegisFeedbackOptionDTO
-                    {
-                        OptionId = option.OptionId,
-                        OptionText = option.OptionText,
-                        Value = option.Value,
-                        DisplayOrder = option.DisplayOrder
-                    });
-                }
-            }
-
-            return questionDTO;
+            return _mapper.Map<LearningRegisFeedbackQuestionDTO>(question);
         }
 
         private LearningRegisFeedbackDTO MapToFeedbackDTO(LearningRegisFeedback feedback)
@@ -653,21 +652,9 @@ namespace InstruLearn_Application.BLL.Service
             if (feedback == null)
                 return null;
 
-            var feedbackDTO = new LearningRegisFeedbackDTO
-            {
-                FeedbackId = feedback.FeedbackId,
-                LearningRegistrationId = feedback.LearningRegistrationId,
-                LearnerId = feedback.LearnerId,
-                LearnerName = feedback.Learner?.FullName ?? "Unknown",
-                TeacherId = feedback.LearningRegistration?.TeacherId ?? 0,
-                TeacherName = feedback.LearningRegistration?.Teacher?.Fullname ?? "Unknown",
-                CreatedAt = feedback.CreatedAt,
-                CompletedAt = feedback.CompletedAt,
-                AdditionalComments = feedback.AdditionalComments,
-                Status = feedback.Status,
-                Answers = new List<LearningRegisFeedbackAnswerDTO>()
-            };
+            var feedbackDTO = _mapper.Map<LearningRegisFeedbackDTO>(feedback);
 
+            // Calculate average rating (this is still needed since it's a calculated property)
             double totalRating = 0;
             int ratingCount = 0;
 
@@ -675,21 +662,8 @@ namespace InstruLearn_Application.BLL.Service
             {
                 foreach (var answer in feedback.Answers)
                 {
-                    var answerDTO = new LearningRegisFeedbackAnswerDTO
-                    {
-                        AnswerId = answer.AnswerId,
-                        QuestionId = answer.QuestionId,
-                        QuestionText = answer.Question?.QuestionText ?? "Unknown",
-                        Category = answer.Question?.Category ?? "General",
-                        SelectedOptionId = answer.SelectedOptionId,
-                        SelectedOptionText = answer.SelectedOption?.OptionText ?? "Unknown",
-                        Value = answer.SelectedOption?.Value ?? 0,
-                        Comment = answer.Comment
-                    };
-
-                    feedbackDTO.Answers.Add(answerDTO);
-
-                    totalRating += answerDTO.Value;
+                    int value = answer.SelectedOption?.Value ?? 0;
+                    totalRating += value;
                     ratingCount++;
                 }
             }
@@ -698,7 +672,5 @@ namespace InstruLearn_Application.BLL.Service
 
             return feedbackDTO;
         }
-
-        #endregion
     }
 }

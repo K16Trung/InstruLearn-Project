@@ -12,6 +12,6 @@ namespace InstruLearn_Application.DAL.Repository.IRepository
         Task<LearningRegisFeedback> GetFeedbackWithDetailsAsync(int feedbackId);
         Task<LearningRegisFeedback> GetFeedbackByRegistrationIdAsync(int learningRegistrationId);
         Task<List<LearningRegisFeedback>> GetFeedbacksByTeacherIdAsync(int teacherId);
-        Task<List<LearningRegisFeedback>> GetFeedbacksByLearnerIdAsync(string learnerId);
+        Task<List<LearningRegisFeedback>> GetFeedbacksByLearnerIdAsync(int learnerId);
     }
 }
