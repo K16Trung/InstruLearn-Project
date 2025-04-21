@@ -13,7 +13,7 @@ namespace InstruLearn_Application.Model.Models
         [Key]
         public int FeedbackId { get; set; }
         public int LearningRegistrationId { get; set; }
-        public string LearnerId { get; set; }
+        public int LearnerId { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? CompletedAt { get; set; }
         public string AdditionalComments { get; set; }
@@ -21,7 +21,7 @@ namespace InstruLearn_Application.Model.Models
 
         // Navigation properties
         public Learning_Registration LearningRegistration { get; set; }
-        public Account Learner { get; set; }
+        public Learner Learner { get; set; }
         public ICollection<LearningRegisFeedbackAnswer> Answers { get; set; }
     }
 }
