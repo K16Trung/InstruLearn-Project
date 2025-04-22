@@ -144,6 +144,13 @@ namespace InstruLearn_Application.Controllers
             return BadRequest(result);
         }
 
+        [HttpGet("attendance-stats/learner/{learnerId}")]
+        public async Task<IActionResult> GetLearnerAttendanceStats(int learnerId, [FromQuery] int? learningRegisId = null, [FromQuery] int? classId = null)
+        {
+            var result = await _scheduleService.GetLearnerAttendanceStatsAsync(learnerId, learningRegisId, classId);
+            return Ok(result);
+        }
+
 
 
     }
