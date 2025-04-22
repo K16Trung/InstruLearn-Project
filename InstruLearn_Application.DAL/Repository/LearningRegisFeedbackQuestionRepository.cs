@@ -22,7 +22,6 @@ namespace InstruLearn_Application.DAL.Repository
         public async Task<List<LearningRegisFeedbackQuestion>> GetActiveQuestionsWithOptionsAsync()
         {
             return await _context.LearningRegisFeedbackQuestions
-                .Where(q => q.IsActive)
                 .Include(q => q.Options.OrderBy(o => o.OptionId))
                 .OrderBy(q => q.DisplayOrder)
                 .ToListAsync();

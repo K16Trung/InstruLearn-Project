@@ -10,6 +10,5 @@ namespace InstruLearn_Application.Model.Models.DTO.LearningRegisFeedbackAnswer
     {
         public int QuestionId { get; set; }
         public int SelectedOptionId { get; set; }
-        public string Comment { get; set; }
     }
 }
