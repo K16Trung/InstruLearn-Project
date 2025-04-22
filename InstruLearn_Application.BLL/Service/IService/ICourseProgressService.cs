@@ -17,7 +17,8 @@ namespace InstruLearn_Application.BLL.Service.IService
         Task<ResponseDTO> GetCourseProgressAsync(int learnerId, int coursePackageId);
         Task<ResponseDTO> GetAllCourseProgressByLearnerAsync(int learnerId);
         Task<ResponseDTO> GetAllLearnersForCourseAsync(int coursePackageId);
-        Task<ResponseDTO> UpdateVideoProgressAsync(UpdateVideoProgressDTO updateDto);
+        Task<ResponseDTO> UpdateVideoWatchTimeAsync(UpdateVideoWatchTimeDTO updateDto);
+        Task<ResponseDTO> UpdateVideoDurationAsync(UpdateVideoDurationDTO updateDto);
         Task<ResponseDTO> GetVideoProgressAsync(int learnerId, int itemId);
         Task<ResponseDTO> GetCourseVideoProgressAsync(int learnerId, int coursePackageId);
         Task<Course_Content_Item> GetContentItemAsync(int itemId);
@@ -29,8 +30,5 @@ namespace InstruLearn_Application.BLL.Service.IService
         Task<Course_Content> GetContentByIdAsync(int contentId);
         Task<int> GetCoursePackageIdForContentItemAsync(int itemId);
         Task<bool> HasLearnerPurchasedCourseAsync(int learnerId, int coursePackageId);
-
-
-
     }
 }

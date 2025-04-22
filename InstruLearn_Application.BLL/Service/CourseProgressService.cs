@@ -476,10 +476,11 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
-        public async Task<ResponseDTO> UpdateVideoProgressAsync(UpdateVideoProgressDTO updateDto)
+        public async Task<ResponseDTO> UpdateVideoWatchTimeAsync(UpdateVideoWatchTimeDTO updateDto)
         {
             try
             {
+                // Basic validations
                 var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(updateDto.LearnerId);
                 if (learner == null)
                 {
@@ -500,6 +501,16 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
+                var itemType = await _unitOfWork.ItemTypeRepository.GetByIdAsync(contentItem.ItemTypeId);
+                if (itemType == null || !itemType.ItemTypeName.ToLower().Contains("video"))
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Nội dung này không phải là video."
+                    };
+                }
+
                 var courseContent = await _unitOfWork.CourseContentRepository.GetByIdAsync(contentItem.ContentId);
                 if (courseContent == null)
                 {
@@ -510,8 +521,41 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                double contentDuration = updateDto.TotalDuration ?? contentItem.DurationInSeconds ?? 0;
+                var contentProgress = await _unitOfWork.LearnerContentProgressRepository
+                    .GetByLearnerAndContentItemAsync(updateDto.LearnerId, updateDto.ItemId);
 
+                if (contentProgress != null)
+                {
+                    if (contentProgress.IsCompleted)
+                    {
+                        return new ResponseDTO
+                        {
+                            IsSucceed = false,
+                            Message = "Video đã hoàn thành. Thời gian xem chỉ có thể cập nhật một lần.",
+                            Data = new
+                            {
+                                IsCompleted = true,
+                                WatchTimeInSeconds = contentProgress.WatchTimeInSeconds
+                            }
+                        };
+                    }
+
+                    if (updateDto.WatchTimeInSeconds < contentProgress.WatchTimeInSeconds)
+                    {
+                        return new ResponseDTO
+                        {
+                            IsSucceed = false,
+                            Message = "Thời gian xem chỉ có thể tăng lên, không thể giảm xuống.",
+                            Data = new
+                            {
+                                CurrentWatchTime = contentProgress.WatchTimeInSeconds,
+                                AttemptedWatchTime = updateDto.WatchTimeInSeconds
+                            }
+                        };
+                    }
+                }
+
+                double contentDuration = contentItem.DurationInSeconds ?? 0;
                 bool isCompleted = false;
                 double completionPercentage = 0;
 
@@ -526,21 +570,13 @@ namespace InstruLearn_Application.BLL.Service
                     completionPercentage = isCompleted ? 100 : 0;
                 }
 
-                if (updateDto.TotalDuration.HasValue && updateDto.TotalDuration.Value > 0 &&
-                    (!contentItem.DurationInSeconds.HasValue || contentItem.DurationInSeconds.Value != updateDto.TotalDuration.Value))
-                {
-                    contentItem.DurationInSeconds = updateDto.TotalDuration.Value;
-                    await _unitOfWork.CourseContentItemRepository.UpdateAsync(contentItem);
-                    await _unitOfWork.SaveChangeAsync();
-                }
-
                 await _unitOfWork.LearnerContentProgressRepository.UpdateWatchTimeAsync(
                     updateDto.LearnerId,
                     updateDto.ItemId,
                     updateDto.WatchTimeInSeconds,
                     isCompleted);
 
-                var contentProgress = await _unitOfWork.LearnerContentProgressRepository
+                contentProgress = await _unitOfWork.LearnerContentProgressRepository
                     .GetByLearnerAndContentItemAsync(updateDto.LearnerId, updateDto.ItemId);
 
                 double overallCourseProgress = await CalculateTypeBasedCompletionPercentageAsync(
@@ -565,7 +601,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Đã cập nhật tiến độ xem video thành công.",
+                    Message = "Đã cập nhật thời gian xem video thành công.",
                     Data = new
                     {
                         VideoProgress = progressDTO,
@@ -578,7 +614,110 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Lỗi khi cập nhật tiến độ xem video: {ex.Message}"
+                    Message = $"Lỗi khi cập nhật thời gian xem video: {ex.Message}"
+                };
+            }
+        }
+
+        public async Task<ResponseDTO> UpdateVideoDurationAsync(UpdateVideoDurationDTO updateDto)
+        {
+            try
+            {
+                // Basic validations
+                var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(updateDto.LearnerId);
+                if (learner == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Không tìm thấy học viên."
+                    };
+                }
+
+                var contentItem = await _unitOfWork.CourseContentItemRepository.GetByIdAsync(updateDto.ItemId);
+                if (contentItem == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Không tìm thấy nội dung khóa học."
+                    };
+                }
+
+                // Verify this is a video item
+                var itemType = await _unitOfWork.ItemTypeRepository.GetByIdAsync(contentItem.ItemTypeId);
+                if (itemType == null || !itemType.ItemTypeName.ToLower().Contains("video"))
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Nội dung này không phải là video."
+                    };
+                }
+
+                var courseContent = await _unitOfWork.CourseContentRepository.GetByIdAsync(contentItem.ContentId);
+                if (courseContent == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Không tìm thấy phần nội dung khóa học."
+                    };
+                }
+
+                // Validate duration
+                if (updateDto.TotalDuration <= 0)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Thời lượng video phải lớn hơn 0."
+                    };
+                }
+
+                contentItem.DurationInSeconds = updateDto.TotalDuration;
+                await _unitOfWork.CourseContentItemRepository.UpdateAsync(contentItem);
+                await _unitOfWork.SaveChangeAsync();
+
+                var contentProgress = await _unitOfWork.LearnerContentProgressRepository
+                    .GetByLearnerAndContentItemAsync(updateDto.LearnerId, updateDto.ItemId);
+
+                if (contentProgress != null)
+                {
+                    bool isCompleted = contentProgress.WatchTimeInSeconds >= (updateDto.TotalDuration * 0.9);
+
+                    if (contentProgress.IsCompleted != isCompleted)
+                    {
+                        contentProgress.IsCompleted = isCompleted;
+                        await _unitOfWork.LearnerContentProgressRepository.UpdateAsync(contentProgress);
+                        await _unitOfWork.SaveChangeAsync();
+                    }
+
+                    double overallCourseProgress = await CalculateTypeBasedCompletionPercentageAsync(
+                        updateDto.LearnerId,
+                        courseContent.CoursePackageId);
+
+                    await _unitOfWork.LearnerCourseRepository.UpdateProgressAsync(
+                        updateDto.LearnerId,
+                        courseContent.CoursePackageId,
+                        overallCourseProgress);
+                }
+
+                var videoProgress = await GetVideoProgressAsync(updateDto.LearnerId, updateDto.ItemId);
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = "Đã cập nhật thời lượng video thành công.",
+                    Data = videoProgress.Data
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Lỗi khi cập nhật thời lượng video: {ex.Message}"
                 };
             }
         }

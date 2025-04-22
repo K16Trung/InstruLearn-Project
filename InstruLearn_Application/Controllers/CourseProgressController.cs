@@ -100,52 +100,7 @@ namespace InstruLearn_Application.Controllers
         {
             try
             {
-                var (isValid, errorResponse) = await ValidateContentAccessAsync(updateDto.LearnerId, updateDto.ItemId);
-                if (!isValid)
-                {
-                    return BadRequest(errorResponse);
-                }
-
-                var currentProgress = await _courseProgressService.GetVideoProgressAsync(updateDto.LearnerId, updateDto.ItemId);
-
-                if (currentProgress.IsSucceed && currentProgress.Data is VideoProgressDTO videoProgressData)
-                {
-                    double existingWatchTime = videoProgressData.WatchTimeInSeconds;
-
-                    if (videoProgressData.IsCompleted)
-                    {
-                        return BadRequest(new ResponseDTO
-                        {
-                            IsSucceed = false,
-                            Message = "Video already completed. Watch time can only be updated once."
-                        });
-                    }
-
-                    if (updateDto.WatchTimeInSeconds < existingWatchTime)
-                    {
-                        return BadRequest(new ResponseDTO
-                        {
-                            IsSucceed = false,
-                            Message = "Watch time can only be increased, not decreased."
-                        });
-                    }
-                }
-
-                var videoProgressDto = new UpdateVideoProgressDTO
-                {
-                    LearnerId = updateDto.LearnerId,
-                    ItemId = updateDto.ItemId,
-                    WatchTimeInSeconds = updateDto.WatchTimeInSeconds,
-                    TotalDuration = null
-                };
-
-                var contentItem = await _courseProgressService.GetContentItemAsync(updateDto.ItemId);
-                if (contentItem != null && contentItem.DurationInSeconds.HasValue)
-                {
-                    videoProgressDto.TotalDuration = contentItem.DurationInSeconds.Value;
-                }
-
-                var response = await _courseProgressService.UpdateVideoProgressAsync(videoProgressDto);
+                var response = await _courseProgressService.UpdateVideoWatchTimeAsync(updateDto);
                 return response.IsSucceed ? Ok(response) : BadRequest(response);
             }
             catch (Exception ex)
@@ -163,44 +118,8 @@ namespace InstruLearn_Application.Controllers
         {
             try
             {
-                var (isValid, errorResponse) = await ValidateContentAccessAsync(updateDto.LearnerId, updateDto.ItemId);
-                if (!isValid)
-                {
-                    return BadRequest(errorResponse);
-                }
-
-                if (updateDto.TotalDuration <= 0)
-                {
-                    return BadRequest(new ResponseDTO
-                    {
-                        IsSucceed = false,
-                        Message = "Thời lượng video phải lớn hơn 0."
-                    });
-                }
-
-                bool updated = await _courseProgressService.UpdateContentItemDurationAsync(
-                    updateDto.ItemId, updateDto.TotalDuration);
-
-                if (updated)
-                {
-                    var videoProgress = await _courseProgressService.GetVideoProgressAsync(
-                        updateDto.LearnerId, updateDto.ItemId);
-
-                    return Ok(new ResponseDTO
-                    {
-                        IsSucceed = true,
-                        Message = "Đã cập nhật thời lượng video thành công.",
-                        Data = videoProgress.Data
-                    });
-                }
-                else
-                {
-                    return BadRequest(new ResponseDTO
-                    {
-                        IsSucceed = false,
-                        Message = "Không thể cập nhật thời lượng video."
-                    });
-                }
+                var response = await _courseProgressService.UpdateVideoDurationAsync(updateDto);
+                return response.IsSucceed ? Ok(response) : BadRequest(response);
             }
             catch (Exception ex)
             {
