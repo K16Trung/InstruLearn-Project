@@ -12,7 +12,6 @@ namespace InstruLearn_Application.Model.Models
         [Key]
         public int QuestionId { get; set; }
         public string QuestionText { get; set; }
-        public string Category { get; set; } // Teaching, Communication, Content, etc.
         public int DisplayOrder { get; set; }
         public bool IsRequired { get; set; }
         public bool IsActive { get; set; }

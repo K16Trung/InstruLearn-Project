@@ -33,7 +33,6 @@ namespace InstruLearn_Application.BLL.Service
             var question = new LearningRegisFeedbackQuestion
             {
                 QuestionText = questionDTO.QuestionText,
-                Category = questionDTO.Category,
                 DisplayOrder = questionDTO.DisplayOrder,
                 IsRequired = questionDTO.IsRequired,
                 IsActive = true,
@@ -47,8 +46,6 @@ namespace InstruLearn_Application.BLL.Service
                     question.Options.Add(new LearningRegisFeedbackOption
                     {
                         OptionText = optionDTO.OptionText,
-                        Value = optionDTO.Value,
-                        DisplayOrder = optionDTO.DisplayOrder
                     });
                 }
             }
@@ -76,7 +73,6 @@ namespace InstruLearn_Application.BLL.Service
             }
 
             question.QuestionText = questionDTO.QuestionText;
-            question.Category = questionDTO.Category;
             question.DisplayOrder = questionDTO.DisplayOrder;
             question.IsRequired = questionDTO.IsRequired;
 
@@ -108,8 +104,6 @@ namespace InstruLearn_Application.BLL.Service
                         if (option != null)
                         {
                             option.OptionText = optionDTO.OptionText;
-                            option.Value = optionDTO.Value;
-                            option.DisplayOrder = optionDTO.DisplayOrder;
                             await _unitOfWork.LearningRegisFeedbackOptionRepository.UpdateAsync(option);
                         }
                     }
@@ -120,8 +114,6 @@ namespace InstruLearn_Application.BLL.Service
                         {
                             QuestionId = questionId,
                             OptionText = optionDTO.OptionText,
-                            Value = optionDTO.Value,
-                            DisplayOrder = optionDTO.DisplayOrder
                         };
                         await _unitOfWork.LearningRegisFeedbackOptionRepository.AddAsync(newOption);
                     }
@@ -342,7 +334,6 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     QuestionId = answerDTO.QuestionId,
                     SelectedOptionId = answerDTO.SelectedOptionId,
-                    Comment = answerDTO.Comment
                 });
             }
 
@@ -430,7 +421,6 @@ namespace InstruLearn_Application.BLL.Service
                     FeedbackId = feedbackId,
                     QuestionId = answerDTO.QuestionId,
                     SelectedOptionId = answerDTO.SelectedOptionId,
-                    Comment = answerDTO.Comment
                 };
 
                 await _unitOfWork.LearningRegisFeedbackAnswerRepository.AddAsync(newAnswer);
@@ -531,8 +521,9 @@ namespace InstruLearn_Application.BLL.Service
             double overallRatingSum = 0;
             int overallRatingCount = 0;
 
-            // Track category statistics
+            // Track category statistics - use a constant category since we don't have Category property
             var categoryRatings = new Dictionary<string, List<double>>();
+            const string defaultCategory = "General"; // Use a default category for all questions
 
             // Track question statistics
             var questionSummaries = new Dictionary<int, QuestionSummaryDTO>();
@@ -543,24 +534,23 @@ namespace InstruLearn_Application.BLL.Service
                 foreach (var answer in feedback.Answers)
                 {
                     var questionId = answer.QuestionId;
-                    var optionValue = answer.SelectedOption?.Value ?? 0;
+                    // Use position (order) instead of Value
+                    int optionValue = GetOptionPositionAsValue(answer.SelectedOptionId);
                     var question = answer.Question ?? allQuestions.FirstOrDefault(q => q.QuestionId == questionId);
 
                     if (question == null)
                         continue;
 
-                    var category = question.Category ?? "General";
-
                     // Add to overall rating
                     overallRatingSum += optionValue;
                     overallRatingCount++;
 
-                    // Add to category ratings
-                    if (!categoryRatings.ContainsKey(category))
+                    // Add to category ratings - use default category
+                    if (!categoryRatings.ContainsKey(defaultCategory))
                     {
-                        categoryRatings[category] = new List<double>();
+                        categoryRatings[defaultCategory] = new List<double>();
                     }
-                    categoryRatings[category].Add(optionValue);
+                    categoryRatings[defaultCategory].Add(optionValue);
 
                     // Process question statistics
                     if (!questionSummaries.ContainsKey(questionId))
@@ -569,7 +559,7 @@ namespace InstruLearn_Application.BLL.Service
                         {
                             QuestionId = questionId,
                             QuestionText = question.QuestionText,
-                            Category = category,
+                            Category = defaultCategory,
                             AverageRating = 0,
                             OptionCounts = new List<OptionCountDTO>()
                         };
@@ -621,7 +611,7 @@ namespace InstruLearn_Application.BLL.Service
 
                 // Calculate question average
                 summary.AverageRating = totalResponses > 0
-                    ? summary.OptionCounts.Sum(o => o.Count * GetOptionValue(o.OptionId)) / totalResponses
+                    ? summary.OptionCounts.Sum(o => o.Count * GetOptionPositionAsValue(o.OptionId)) / totalResponses
                     : 0;
             }
 
@@ -636,15 +626,27 @@ namespace InstruLearn_Application.BLL.Service
             };
         }
 
-        private int GetOptionValue(int optionId)
+        // Method to determine value based on option position
+        private int GetOptionPositionAsValue(int optionId)
         {
-            // Try to get the option value from the database
+            // Get the option and its question
             var option = _unitOfWork.LearningRegisFeedbackOptionRepository.GetByIdAsync(optionId).Result;
-            return option?.Value ?? 0;
-        }
-        private LearningRegisFeedbackQuestionDTO MapToQuestionDTO(LearningRegisFeedbackQuestion question)
-        {
-            return _mapper.Map<LearningRegisFeedbackQuestionDTO>(question);
+            if (option == null)
+                return 0;
+
+            // Get all options for the question
+            var options = _unitOfWork.LearningRegisFeedbackOptionRepository.GetOptionsByQuestionIdAsync(option.QuestionId).Result;
+            if (options == null || !options.Any())
+                return 0;
+
+            // Sort options by ID (natural ordering)
+            var sortedOptions = options.OrderBy(o => o.OptionId).ToList();
+
+            // Find the position (1-based index) of the current option
+            int position = sortedOptions.FindIndex(o => o.OptionId == optionId) + 1;
+
+            // Return position as the value (first option = 1, second = 2, etc.)
+            return position > 0 ? position : 1;
         }
 
         private LearningRegisFeedbackDTO MapToFeedbackDTO(LearningRegisFeedback feedback)
@@ -662,7 +664,8 @@ namespace InstruLearn_Application.BLL.Service
             {
                 foreach (var answer in feedback.Answers)
                 {
-                    int value = answer.SelectedOption?.Value ?? 0;
+                    // Use the position-based value instead of the direct Value property
+                    int value = GetOptionPositionAsValue(answer.SelectedOptionId);
                     totalRating += value;
                     ratingCount++;
                 }
@@ -671,6 +674,11 @@ namespace InstruLearn_Application.BLL.Service
             feedbackDTO.AverageRating = ratingCount > 0 ? totalRating / ratingCount : 0;
 
             return feedbackDTO;
+        }
+
+        private LearningRegisFeedbackQuestionDTO MapToQuestionDTO(LearningRegisFeedbackQuestion question)
+        {
+            return _mapper.Map<LearningRegisFeedbackQuestionDTO>(question);
         }
     }
 }

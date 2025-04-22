@@ -23,7 +23,7 @@ namespace InstruLearn_Application.DAL.Repository
         {
             return await _context.LearningRegisFeedbackOptions
                 .Where(o => o.QuestionId == questionId)
-                .OrderBy(o => o.DisplayOrder)
+                .OrderBy(o => o.OptionId)
                 .ToListAsync();
         }
     }
