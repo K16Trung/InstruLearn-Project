@@ -215,14 +215,10 @@ namespace InstruLearn_Application.BLL.Service
                         var nextLearningDay = nextLearningDays.First();
                         int daysToAdd = ((int)nextLearningDay.DayOfWeek - (int)currentDayOfWeek + 7) % 7;
 
-                        // If we are already on a learning day (daysToAdd would be 0), use that day
-                        // Otherwise, advance to the next scheduled day
                         DateOnly scheduleStartDate = currentDate.AddDays(daysToAdd);
 
-                        // Get existing schedule if one exists for this session
                         var existingSchedule = sessionCount < existingScheduleCount ? existingSchedules[sessionCount] : null;
 
-                        // Find corresponding learning path session for this session number
                         var sessionNumber = sessionCount + 1; // Session numbers typically start at 1
                         var learningPathSession = sortedSessions.FirstOrDefault(s => s.SessionNumber == sessionNumber);
 
@@ -378,25 +374,18 @@ namespace InstruLearn_Application.BLL.Service
                         if (!nextLearningDays.Any())
                             break;
 
-                        // Get the next closest learning day
                         var nextLearningDay = nextLearningDays.First();
                         int daysToAdd = ((int)nextLearningDay.DayOfWeek - (int)currentDayOfWeek + 7) % 7;
 
-                        // If we are already on a learning day (daysToAdd would be 0), use that day
-                        // Otherwise, advance to the next scheduled day
                         DateOnly scheduleStartDate = currentDate.AddDays(daysToAdd);
 
-                        // Get existing schedule if one exists for this session
                         var existingSchedule = sessionCount < existingScheduleCount ? existingSchedules[sessionCount] : null;
 
-                        // Find corresponding learning path session for this session number
-                        var sessionNumber = sessionCount + 1; // Session numbers typically start at 1
+                        var sessionNumber = sessionCount + 1;
                         var learningPathSession = sortedSessions.FirstOrDefault(s => s.SessionNumber == sessionNumber);
 
-                        // Create schedule if it doesn't already exist in our list for this date and learning registration
                         if (!schedules.Any(s => s.StartDay == scheduleStartDate && s.LearningRegisId == learningRegis.LearningRegisId))
                         {
-                            // Ensure LearningRegisId is set in the schedule
                             var scheduleDto = new ScheduleDTO
                             {
                                 ScheduleId = existingSchedule?.ScheduleId ?? 0,
