@@ -19,12 +19,8 @@ namespace InstruLearn_Application.Controllers
             _courseProgressService = courseProgressService;
         }
 
-        /// <summary>
-        /// Validates if the learner has access to a course content item
-        /// </summary>
         private async Task<(bool isValid, ResponseDTO errorResponse)> ValidateContentAccessAsync(int learnerId, int itemId)
         {
-            // Get the course package ID for this content item
             var coursePackageId = await _courseProgressService.GetCoursePackageIdForContentItemAsync(itemId);
             if (coursePackageId == 0)
             {
@@ -35,7 +31,6 @@ namespace InstruLearn_Application.Controllers
                 });
             }
 
-            // Check if the learner has purchased this course
             bool hasPurchased = await _courseProgressService.HasLearnerPurchasedCourseAsync(learnerId, coursePackageId);
             if (!hasPurchased)
             {
@@ -52,7 +47,6 @@ namespace InstruLearn_Application.Controllers
         [HttpPost("update")]
         public async Task<IActionResult> UpdateCourseProgress(UpdateLearnerCourseProgressDTO updateDto)
         {
-            // Validate if learner has purchased this course
             bool hasPurchased = await _courseProgressService.HasLearnerPurchasedCourseAsync(
                 updateDto.LearnerId, updateDto.CoursePackageId);
 
@@ -72,7 +66,6 @@ namespace InstruLearn_Application.Controllers
         [HttpPost("update-content-item")]
         public async Task<IActionResult> UpdateContentItemProgress(int learnerId, int itemId)
         {
-            // Validate learner's access to this content
             var (isValid, errorResponse) = await ValidateContentAccessAsync(learnerId, itemId);
             if (!isValid)
             {
@@ -107,20 +100,43 @@ namespace InstruLearn_Application.Controllers
         {
             try
             {
-                // Validate learner's access to this content
                 var (isValid, errorResponse) = await ValidateContentAccessAsync(updateDto.LearnerId, updateDto.ItemId);
                 if (!isValid)
                 {
                     return BadRequest(errorResponse);
                 }
 
-                // Map to the original DTO for backward compatibility
+                var currentProgress = await _courseProgressService.GetVideoProgressAsync(updateDto.LearnerId, updateDto.ItemId);
+
+                if (currentProgress.IsSucceed && currentProgress.Data is VideoProgressDTO videoProgressData)
+                {
+                    double existingWatchTime = videoProgressData.WatchTimeInSeconds;
+
+                    if (videoProgressData.IsCompleted)
+                    {
+                        return BadRequest(new ResponseDTO
+                        {
+                            IsSucceed = false,
+                            Message = "Video already completed. Watch time can only be updated once."
+                        });
+                    }
+
+                    if (updateDto.WatchTimeInSeconds < existingWatchTime)
+                    {
+                        return BadRequest(new ResponseDTO
+                        {
+                            IsSucceed = false,
+                            Message = "Watch time can only be increased, not decreased."
+                        });
+                    }
+                }
+
                 var videoProgressDto = new UpdateVideoProgressDTO
                 {
                     LearnerId = updateDto.LearnerId,
                     ItemId = updateDto.ItemId,
                     WatchTimeInSeconds = updateDto.WatchTimeInSeconds,
-                    TotalDuration = null // Will get from existing content item data
+                    TotalDuration = null
                 };
 
                 var contentItem = await _courseProgressService.GetContentItemAsync(updateDto.ItemId);
@@ -147,7 +163,6 @@ namespace InstruLearn_Application.Controllers
         {
             try
             {
-                // Validate learner's access to this content
                 var (isValid, errorResponse) = await ValidateContentAccessAsync(updateDto.LearnerId, updateDto.ItemId);
                 if (!isValid)
                 {
@@ -168,7 +183,6 @@ namespace InstruLearn_Application.Controllers
 
                 if (updated)
                 {
-                    // After updating duration, we need to refresh the progress
                     var videoProgress = await _courseProgressService.GetVideoProgressAsync(
                         updateDto.LearnerId, updateDto.ItemId);
 
@@ -201,7 +215,6 @@ namespace InstruLearn_Application.Controllers
         [HttpGet("{learnerId}/{coursePackageId}")]
         public async Task<IActionResult> GetCourseProgress(int learnerId, int coursePackageId)
         {
-            // Validate if learner has purchased this course
             bool hasPurchased = await _courseProgressService.HasLearnerPurchasedCourseAsync(
                 learnerId, coursePackageId);
 
@@ -235,7 +248,6 @@ namespace InstruLearn_Application.Controllers
         [HttpGet("video-progress/{learnerId}/{itemId}")]
         public async Task<IActionResult> GetVideoProgress(int learnerId, int itemId)
         {
-            // Validate learner's access to this content
             var (isValid, errorResponse) = await ValidateContentAccessAsync(learnerId, itemId);
             if (!isValid)
             {
@@ -249,7 +261,6 @@ namespace InstruLearn_Application.Controllers
         [HttpGet("course-video-progress/{learnerId}/{coursePackageId}")]
         public async Task<IActionResult> GetCourseVideoProgress(int learnerId, int coursePackageId)
         {
-            // Validate if learner has purchased this course
             bool hasPurchased = await _courseProgressService.HasLearnerPurchasedCourseAsync(
                 learnerId, coursePackageId);
 
@@ -269,7 +280,6 @@ namespace InstruLearn_Application.Controllers
         [HttpGet("all-course-packages/{learnerId}/{coursePackageId}")]
         public async Task<IActionResult> GetAllCoursePackagesWithDetails(int learnerId, int coursePackageId)
         {
-            // Validate if learner has purchased this course
             bool hasPurchased = await _courseProgressService.HasLearnerPurchasedCourseAsync(
                 learnerId, coursePackageId);
 

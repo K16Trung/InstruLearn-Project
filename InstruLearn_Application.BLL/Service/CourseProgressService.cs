@@ -221,7 +221,6 @@ namespace InstruLearn_Application.BLL.Service
                 }
                 else
                 {
-                    // Use the weighted calculation method for more accurate progress
                     double newPercentage = await CalculateTypeBasedCompletionPercentageAsync(
                         learnerId,
                         courseContent.CoursePackageId);
@@ -544,7 +543,6 @@ namespace InstruLearn_Application.BLL.Service
                 var contentProgress = await _unitOfWork.LearnerContentProgressRepository
                     .GetByLearnerAndContentItemAsync(updateDto.LearnerId, updateDto.ItemId);
 
-                // Calculate the overall course progress using the weighted method
                 double overallCourseProgress = await CalculateTypeBasedCompletionPercentageAsync(
                     updateDto.LearnerId,
                     courseContent.CoursePackageId);
@@ -685,17 +683,6 @@ namespace InstruLearn_Application.BLL.Service
                     TotalWatchTime = totalWatchTime,
                     CompletionPercentage = videoCompletionPercentage
                 };
-
-                // IMPORTANT: We remove this line to avoid overriding the overall course progress
-                // with only video progress. Instead, overall progress is calculated separately
-                // using the CalculateTypeBasedCompletionPercentageAsync method.
-
-                /* Don't update the overall progress here
-                await _unitOfWork.LearnerCourseRepository.UpdateProgressAsync(
-                    learnerId,
-                    coursePackageId,
-                    videoCompletionPercentage);
-                */
 
                 return new ResponseDTO
                 {
@@ -854,7 +841,6 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                // Mark all learner progress records for recalculation
                 await _unitOfWork.LearnerCourseRepository.RecalculateProgressForAllLearnersInCourseAsync(coursePackageId);
                 return true;
             }
@@ -906,7 +892,6 @@ namespace InstruLearn_Application.BLL.Service
                     return true;
                 }
             }
-
             return false;
         }
 
@@ -916,7 +901,6 @@ namespace InstruLearn_Application.BLL.Service
             if (allContentItems.Count == 0)
                 return 0;
 
-            // Group items by CourseContent (lesson) to calculate per-lesson progress
             var contentGroups = allContentItems.GroupBy(item => item.ContentId);
 
             double totalLessonPoints = 0;
@@ -950,7 +934,6 @@ namespace InstruLearn_Application.BLL.Service
                     }
                 }
 
-                // Calculate this lesson's completion percentage
                 double lessonProgress = lesson.Count() > 0
                     ? (double)completedItemsInLesson / lesson.Count()
                     : 0;
@@ -958,18 +941,11 @@ namespace InstruLearn_Application.BLL.Service
                 totalLessonPoints += lessonProgress;
             }
 
-            // Overall progress is the average of all lesson progresses
             double overallProgress = lessonCount > 0
                 ? (totalLessonPoints / lessonCount) * 100
                 : 0;
 
             return Math.Min(100, overallProgress);
-        }
-
-        private async Task<double> RecalculateCourseCompletionPercentageAsync(int learnerId, int coursePackageId)
-        {
-            // We'll use the weighted calculation method now
-            return await CalculateTypeBasedCompletionPercentageAsync(learnerId, coursePackageId);
         }
     }
 }
