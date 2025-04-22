@@ -475,7 +475,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Không tìm thấy lịch học của giáo viên.",
+                    Message = "Không tìm thấy lịch dạy của giáo viên.",
                 };
             }
 
@@ -484,7 +484,7 @@ namespace InstruLearn_Application.BLL.Service
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Lấy lịch học thành công.",
+                Message = "Lấy lịch dạy thành công.",
                 Data = scheduleDTOs
             };
         }
@@ -500,14 +500,14 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Không tìm thấy lịch học của giáo viên.",
+                        Message = "Không tìm thấy lịch dạy của giáo viên.",
                     };
                 }
 
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Lấy lịch học thành công.",
+                    Message = "Lấy lịch dạy thành công.",
                     Data = consolidatedSchedules
                 };
             }
@@ -516,7 +516,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Lỗi khi lấy lịch học: {ex.Message}"
+                    Message = $"Lỗi khi lấy lịch dạy: {ex.Message}"
                 };
             }
         }

@@ -46,7 +46,6 @@ namespace InstruLearn_Application.DAL.Repository
 
             if (learnerCourse == null)
             {
-                // Create a new entry if it doesn't exist
                 learnerCourse = new Learner_Course
                 {
                     LearnerId = learnerId,
@@ -61,7 +60,6 @@ namespace InstruLearn_Application.DAL.Repository
                 return true;
             }
 
-            // Update existing entry
             learnerCourse.CompletionPercentage = percentage;
             learnerCourse.LastAccessDate = DateTime.Now;
 
@@ -69,5 +67,21 @@ namespace InstruLearn_Application.DAL.Repository
             await _appDbContext.SaveChangesAsync();
             return true;
         }
+
+        public async Task RecalculateProgressForAllLearnersInCourseAsync(int coursePackageId)
+        {
+            var learnerCourses = await GetByCoursePackageIdAsync(coursePackageId);
+            if (learnerCourses == null || !learnerCourses.Any())
+                return;
+
+            foreach (var learnerCourse in learnerCourses)
+            {
+                learnerCourse.CompletionPercentage = -1;
+                _appDbContext.LearnerCourses.Update(learnerCourse);
+            }
+
+            await _appDbContext.SaveChangesAsync();
+        }
+
     }
 }

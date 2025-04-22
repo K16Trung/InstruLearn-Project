@@ -12,10 +12,17 @@ namespace InstruLearn_Application.Controllers
     public class CourseContentItemController : ControllerBase
     {
         private readonly ICourseContentItemService _courseContentItemService;
+        private readonly ICourseProgressService _courseProgressService;
+        private readonly ICourseContentService _courseContentService;
 
-        public CourseContentItemController(ICourseContentItemService courseContentItemService)
+        public CourseContentItemController(
+            ICourseContentItemService courseContentItemService,
+            ICourseProgressService courseProgressService,
+            ICourseContentService courseContentService)
         {
             _courseContentItemService = courseContentItemService;
+            _courseProgressService = courseProgressService;
+            _courseContentService = courseContentService;
         }
 
         [HttpGet("get-all")]
@@ -36,6 +43,19 @@ namespace InstruLearn_Application.Controllers
         public async Task<IActionResult> AddCourseContentItem([FromBody] CreateCourseContentItemDTO createDto)
         {
             var response = await _courseContentItemService.AddCourseContentItemAsync(createDto);
+
+            if (response.IsSucceed)
+            {
+                // Get the Course_Content using the ContentId to access CoursePackageId
+                var courseContentResponse = await _courseContentService.GetCourseContentByIdAsync(createDto.ContentId);
+                if (courseContentResponse.IsSucceed && courseContentResponse.Data != null)
+                {
+                    // Cast to CourseContentDTO to access the CoursePackageId
+                    var courseContent = (CourseContentDTO)courseContentResponse.Data;
+                    await _courseProgressService.RecalculateAllLearnersProgressForCourse(courseContent.CoursePackageId);
+                }
+            }
+
             return Ok(response);
         }
 
