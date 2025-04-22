@@ -130,27 +130,23 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Create new purchase
                 var purchase = new Purchase
                 {
                     LearnerId = createPurchaseItemsDTO.LearnerId,
                     PurchaseDate = DateTime.Now,
-                    Status = PurchaseStatus.Paid, // Explicitly set status to Paid (1) instead of default Processing (0)
+                    Status = PurchaseStatus.Paid,
                     Learner = learner
                 };
 
-                // Add purchase to repository
                 await _unitOfWork.PurchaseRepository.AddAsync(purchase);
-                await _unitOfWork.SaveChangeAsync(); // Save to get generated PurchaseId
+                await _unitOfWork.SaveChangeAsync();
 
                 decimal totalAmountToDeduct = 0;
                 List<Purchase_Items> purchaseItems = new List<Purchase_Items>();
                 List<string> courseNames = new List<string>();
 
-                // Process each course package in the request
                 foreach (var item in createPurchaseItemsDTO.CoursePackages)
                 {
-                    // Validate course package exists
                     var coursePackage = await _unitOfWork.CourseRepository.GetByIdAsync(item.CoursePackageId);
                     if (coursePackage == null)
                     {
@@ -161,17 +157,14 @@ namespace InstruLearn_Application.BLL.Service
                         };
                     }
 
-                    // Store course name for success message
                     courseNames.Add(coursePackage.CourseName);
 
-                    // Add course price to total
                     decimal itemAmount = coursePackage.Price ?? 0m;
                     totalAmountToDeduct += itemAmount;
 
-                    // Create purchase item
                     var purchaseItem = new Purchase_Items
                     {
-                        PurchaseId = purchase.PurchaseId, // Use the new purchase ID
+                        PurchaseId = purchase.PurchaseId,
                         CoursePackageId = item.CoursePackageId,
                         TotalAmount = itemAmount,
                         Purchase = purchase,
@@ -180,7 +173,6 @@ namespace InstruLearn_Application.BLL.Service
                     purchaseItems.Add(purchaseItem);
                 }
 
-                // Check if wallet has sufficient funds
                 if (wallet.Balance < totalAmountToDeduct)
                 {
                     return new ResponseDTO
@@ -190,13 +182,11 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Add all purchase items
                 foreach (var item in purchaseItems)
                 {
                     await _unitOfWork.PurchaseItemRepository.AddAsync(item);
                 }
 
-                // Create a new wallet transaction record
                 string transactionId = Guid.NewGuid().ToString();
                 var walletTransaction = new WalletTransaction
                 {
@@ -211,7 +201,6 @@ namespace InstruLearn_Application.BLL.Service
 
                 await _unitOfWork.WalletTransactionRepository.AddAsync(walletTransaction);
 
-                // Create a payment record linked to the transaction
                 var payment = new Payment
                 {
                     WalletId = wallet.WalletId,
@@ -226,14 +215,12 @@ namespace InstruLearn_Application.BLL.Service
 
                 await _unitOfWork.PaymentsRepository.AddAsync(payment);
 
-                // Update wallet balance
                 wallet.Balance -= totalAmountToDeduct;
                 wallet.UpdateAt = DateTime.Now;
 
                 await _unitOfWork.SaveChangeAsync();
                 await _unitOfWork.CommitTransactionAsync();
 
-                // Create detailed success message including learner information
                 string courseListString = string.Join(", ", courseNames);
                 string successMessage = $"Học viên {learner.FullName} đã mua thành công {purchaseItems.Count} gói học: {courseListString} với tổng số tiền là {totalAmountToDeduct:C}";
 
@@ -261,7 +248,6 @@ namespace InstruLearn_Application.BLL.Service
             }
             catch (Exception ex)
             {
-                // Rollback in case of any error
                 await _unitOfWork.RollbackTransactionAsync();
                 return new ResponseDTO
                 {
