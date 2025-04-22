@@ -135,6 +135,7 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     LearnerId = createPurchaseItemsDTO.LearnerId,
                     PurchaseDate = DateTime.Now,
+                    Status = PurchaseStatus.Paid, // Explicitly set status to Paid (1) instead of default Processing (0)
                     Learner = learner
                 };
 
