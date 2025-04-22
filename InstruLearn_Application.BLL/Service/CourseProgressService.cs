@@ -316,8 +316,6 @@ namespace InstruLearn_Application.BLL.Service
                     }
                 }
 
-                // If progress is marked for recalculation (CompletionPercentage < 0),
-                // recalculate it using the weighted method
                 if (learnerCourse.CompletionPercentage < 0)
                 {
                     double recalculatedPercentage = await CalculateTypeBasedCompletionPercentageAsync(
@@ -863,6 +861,31 @@ namespace InstruLearn_Application.BLL.Service
             {
                 return false;
             }
+        }
+
+        public async Task<Learner_Course> GetLearnerCourseAsync(int learnerId, int coursePackageId)
+        {
+            return await _unitOfWork.LearnerCourseRepository.GetByLearnerAndCourseAsync(learnerId, coursePackageId);
+        }
+
+        public async Task<Course_Content> GetContentByIdAsync(int contentId)
+        {
+            return await _unitOfWork.CourseContentRepository.GetByIdAsync(contentId);
+        }
+
+        public async Task<int> GetCoursePackageIdForContentItemAsync(int itemId)
+        {
+            var contentItem = await GetContentItemAsync(itemId);
+            if (contentItem == null) return 0;
+
+            var content = await GetContentByIdAsync(contentItem.ContentId);
+            return content?.CoursePackageId ?? 0;
+        }
+
+        public async Task<bool> HasLearnerPurchasedCourseAsync(int learnerId, int coursePackageId)
+        {
+            var learnerCourse = await GetLearnerCourseAsync(learnerId, coursePackageId);
+            return learnerCourse != null;
         }
 
         private async Task<double> CalculateTypeBasedCompletionPercentageAsync(int learnerId, int coursePackageId)
