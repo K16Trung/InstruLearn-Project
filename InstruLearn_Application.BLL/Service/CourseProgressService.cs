@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using InstruLearn_Application.BLL.Service.IService;
 using InstruLearn_Application.DAL.UoW.IUoW;
+using InstruLearn_Application.Model.Enum;
 using InstruLearn_Application.Model.Models;
 using InstruLearn_Application.Model.Models.DTO;
 using InstruLearn_Application.Model.Models.DTO.LearnerCourse;
@@ -316,8 +317,6 @@ namespace InstruLearn_Application.BLL.Service
                     }
                 }
 
-                // If progress is marked for recalculation (CompletionPercentage < 0),
-                // recalculate it using the weighted method
                 if (learnerCourse.CompletionPercentage < 0)
                 {
                     double recalculatedPercentage = await CalculateTypeBasedCompletionPercentageAsync(
@@ -863,6 +862,52 @@ namespace InstruLearn_Application.BLL.Service
             {
                 return false;
             }
+        }
+
+        public async Task<Learner_Course> GetLearnerCourseAsync(int learnerId, int coursePackageId)
+        {
+            return await _unitOfWork.LearnerCourseRepository.GetByLearnerAndCourseAsync(learnerId, coursePackageId);
+        }
+
+        public async Task<Course_Content> GetContentByIdAsync(int contentId)
+        {
+            return await _unitOfWork.CourseContentRepository.GetByIdAsync(contentId);
+        }
+
+        public async Task<int> GetCoursePackageIdForContentItemAsync(int itemId)
+        {
+            var contentItem = await GetContentItemAsync(itemId);
+            if (contentItem == null) return 0;
+
+            var content = await GetContentByIdAsync(contentItem.ContentId);
+            return content?.CoursePackageId ?? 0;
+        }
+
+        public async Task<bool> HasLearnerPurchasedCourseAsync(int learnerId, int coursePackageId)
+        {
+            var learnerCourse = await GetLearnerCourseAsync(learnerId, coursePackageId);
+            if (learnerCourse != null)
+                return true;
+
+            var purchaseItems = await _unitOfWork.PurchaseItemRepository.GetQuery()
+                .Include(pi => pi.Purchase)
+                .Where(pi => pi.CoursePackageId == coursePackageId && pi.Purchase.LearnerId == learnerId)
+                .FirstOrDefaultAsync();
+
+            if (purchaseItems != null)
+            {
+                if (purchaseItems.Purchase.Status != PurchaseStatus.Cancelled)
+                {
+                    await _unitOfWork.LearnerCourseRepository.UpdateProgressAsync(
+                        learnerId,
+                        coursePackageId,
+                        0.0
+                    );
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private async Task<double> CalculateTypeBasedCompletionPercentageAsync(int learnerId, int coursePackageId)

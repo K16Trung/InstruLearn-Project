@@ -14,7 +14,6 @@ namespace InstruLearn_Application.Model.Models
         public int FeedbackId { get; set; }
         public int QuestionId { get; set; }
         public int SelectedOptionId { get; set; }
-        public string Comment { get; set; }
 
         // Navigation properties
         public LearningRegisFeedback Feedback { get; set; }

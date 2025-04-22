@@ -13,8 +13,6 @@ namespace InstruLearn_Application.Model.Models
         public int OptionId { get; set; }
         public int QuestionId { get; set; }
         public string OptionText { get; set; }
-        public int Value { get; set; } // 1-5 for rating scale
-        public int DisplayOrder { get; set; }
 
         // Navigation property
         public LearningRegisFeedbackQuestion Question { get; set; }

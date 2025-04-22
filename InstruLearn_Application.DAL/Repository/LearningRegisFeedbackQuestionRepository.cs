@@ -23,7 +23,7 @@ namespace InstruLearn_Application.DAL.Repository
         {
             return await _context.LearningRegisFeedbackQuestions
                 .Where(q => q.IsActive)
-                .Include(q => q.Options.OrderBy(o => o.DisplayOrder))
+                .Include(q => q.Options.OrderBy(o => o.OptionId))
                 .OrderBy(q => q.DisplayOrder)
                 .ToListAsync();
         }
@@ -31,7 +31,7 @@ namespace InstruLearn_Application.DAL.Repository
         public async Task<LearningRegisFeedbackQuestion> GetQuestionWithOptionsAsync(int questionId)
         {
             return await _context.LearningRegisFeedbackQuestions
-                .Include(q => q.Options.OrderBy(o => o.DisplayOrder))
+                .Include(q => q.Options.OrderBy(o => o.OptionId))
                 .FirstOrDefaultAsync(q => q.QuestionId == questionId);
         }
     }

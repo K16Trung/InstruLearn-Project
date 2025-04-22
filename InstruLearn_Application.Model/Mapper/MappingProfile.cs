@@ -665,9 +665,7 @@ namespace InstruLearn_Application.Model.Mapper
             // Learning Registration Feedback Answer mappings
             CreateMap<LearningRegisFeedbackAnswer, LearningRegisFeedbackAnswerDTO>()
                 .ForMember(dest => dest.QuestionText, opt => opt.MapFrom(src => src.Question != null ? src.Question.QuestionText : "Unknown"))
-                .ForMember(dest => dest.Category, opt => opt.MapFrom(src => src.Question != null ? src.Question.Category : "General"))
-                .ForMember(dest => dest.SelectedOptionText, opt => opt.MapFrom(src => src.SelectedOption != null ? src.SelectedOption.OptionText : "Unknown"))
-                .ForMember(dest => dest.Value, opt => opt.MapFrom(src => src.SelectedOption != null ? src.SelectedOption.Value : 0));
+                .ForMember(dest => dest.SelectedOptionText, opt => opt.MapFrom(src => src.SelectedOption != null ? src.SelectedOption.OptionText : "Unknown"));
 
             CreateMap<LearningRegisFeedbackAnswerDTO, LearningRegisFeedbackAnswer>();
             CreateMap<CreateLearningRegisFeedbackAnswerDTO, LearningRegisFeedbackAnswer>();
