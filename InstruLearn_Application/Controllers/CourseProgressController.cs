@@ -102,47 +102,6 @@ namespace InstruLearn_Application.Controllers
             return response.IsSucceed ? Ok(response) : BadRequest(response);
         }
 
-        [HttpPost("update-video-progress")]
-        [Obsolete("This endpoint is deprecated. Use update-video-watchtime and update-video-duration instead.")]
-        public async Task<IActionResult> UpdateVideoProgress(UpdateVideoProgressDTO updateDto)
-        {
-            try
-            {
-                // Validate learner's access to this content
-                var (isValid, errorResponse) = await ValidateContentAccessAsync(updateDto.LearnerId, updateDto.ItemId);
-                if (!isValid)
-                {
-                    return BadRequest(errorResponse);
-                }
-
-                if (!updateDto.TotalDuration.HasValue)
-                {
-                    var contentItem = await _courseProgressService.GetContentItemAsync(updateDto.ItemId);
-                    if (contentItem != null && contentItem.DurationInSeconds.HasValue)
-                    {
-                        updateDto.TotalDuration = contentItem.DurationInSeconds.Value;
-                    }
-                }
-
-                if (updateDto.TotalDuration.HasValue && updateDto.TotalDuration.Value > 0)
-                {
-                    await _courseProgressService.UpdateContentItemDurationAsync(
-                        updateDto.ItemId, updateDto.TotalDuration.Value);
-                }
-
-                var response = await _courseProgressService.UpdateVideoProgressAsync(updateDto);
-                return response.IsSucceed ? Ok(response) : BadRequest(response);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ResponseDTO
-                {
-                    IsSucceed = false,
-                    Message = $"Lỗi khi cập nhật tiến độ video: {ex.Message}"
-                });
-            }
-        }
-
         [HttpPost("update-video-watchtime")]
         public async Task<IActionResult> UpdateVideoWatchTime(UpdateVideoWatchTimeDTO updateDto)
         {
