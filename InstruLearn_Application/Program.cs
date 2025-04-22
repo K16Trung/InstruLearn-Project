@@ -173,6 +173,7 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<ILearningRegisFeedbackService, LearningRegisFeedbackService>();
             builder.Services.AddHostedService<UnverifiedAccountCleanupService>();
             builder.Services.AddHostedService<PaymentDeadlineService>();
+            builder.Services.AddScoped<IFeedbackNotificationService, FeedbackNotificationService>();
             builder.Services.AddAutoMapper(typeof(MappingProfile));
             // Add after service registration in Program.cs
             builder.Services.AddHostedService<PayOSWebhookRegistrationService>();

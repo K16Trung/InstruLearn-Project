@@ -10,7 +10,5 @@ namespace InstruLearn_Application.Model.Models.DTO.LearningRegisFeedbackOption
     {
         public int OptionId { get; set; }
         public string OptionText { get; set; }
-        public int Value { get; set; }
-        public int DisplayOrder { get; set; }
     }
 }
