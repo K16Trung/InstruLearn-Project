@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using InstruLearn_Application.BLL.Service.IService;
 using InstruLearn_Application.DAL.UoW.IUoW;
+using InstruLearn_Application.Model.Enum;
 using InstruLearn_Application.Model.Models;
 using InstruLearn_Application.Model.Models.DTO;
 using InstruLearn_Application.Model.Models.DTO.LearnerCourse;
@@ -885,7 +886,28 @@ namespace InstruLearn_Application.BLL.Service
         public async Task<bool> HasLearnerPurchasedCourseAsync(int learnerId, int coursePackageId)
         {
             var learnerCourse = await GetLearnerCourseAsync(learnerId, coursePackageId);
-            return learnerCourse != null;
+            if (learnerCourse != null)
+                return true;
+
+            var purchaseItems = await _unitOfWork.PurchaseItemRepository.GetQuery()
+                .Include(pi => pi.Purchase)
+                .Where(pi => pi.CoursePackageId == coursePackageId && pi.Purchase.LearnerId == learnerId)
+                .FirstOrDefaultAsync();
+
+            if (purchaseItems != null)
+            {
+                if (purchaseItems.Purchase.Status != PurchaseStatus.Cancelled)
+                {
+                    await _unitOfWork.LearnerCourseRepository.UpdateProgressAsync(
+                        learnerId,
+                        coursePackageId,
+                        0.0
+                    );
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private async Task<double> CalculateTypeBasedCompletionPercentageAsync(int learnerId, int coursePackageId)
