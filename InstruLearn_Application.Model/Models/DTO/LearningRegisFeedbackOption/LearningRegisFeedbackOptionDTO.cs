@@ -11,7 +11,7 @@ namespace InstruLearn_Application.Model.Models.DTO.LearningRegisFeedbackOption
     {
         public int OptionId { get; set; }
         public string OptionText { get; set; }
-        public int QuestionId { get; set; }
+        //public int QuestionId { get; set; }
         [JsonIgnore]
         public LearningRegisFeedbackQuestion.LearningRegisFeedbackQuestionDTO Question { get; set; }
     }
