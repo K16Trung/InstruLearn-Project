@@ -19,12 +19,17 @@ namespace InstruLearn_Application.BLL.Service
         private readonly ICertificationRepository _certificationRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly IGoogleSheetsService _googleSheetsService;
 
-        public CertificationService(ICertificationRepository certificationRepository, IUnitOfWork unitOfWork, IMapper mapper)
+        public CertificationService(ICertificationRepository certificationRepository,
+                                   IUnitOfWork unitOfWork,
+                                   IMapper mapper,
+                                   IGoogleSheetsService googleSheetsService)
         {
             _certificationRepository = certificationRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _googleSheetsService = googleSheetsService;
         }
 
         public async Task<List<ResponseDTO>> GetAllCertificationAsync()
@@ -97,7 +102,6 @@ namespace InstruLearn_Application.BLL.Service
                             };
                         }
 
-                        // Use GettWithIncludesAsync to get a single result instead of a list
                         var registration = await _unitOfWork.LearningRegisRepository
                             .GettWithIncludesAsync(
                                 x => x.LearningRegisId == createCertificationDTO.LearningRegisId.Value,
@@ -113,7 +117,6 @@ namespace InstruLearn_Application.BLL.Service
                             };
                         }
 
-                        // Validate the learning registration belongs to this learner
                         if (registration.LearnerId != createCertificationDTO.LearnerId)
                         {
                             return new ResponseDTO
@@ -123,7 +126,6 @@ namespace InstruLearn_Application.BLL.Service
                             };
                         }
 
-                        // Check attendance for completion eligibility
                         var schedules = await _unitOfWork.ScheduleRepository
                             .GetWhereAsync(s => s.LearningRegisId == createCertificationDTO.LearningRegisId.Value &&
                                               s.LearnerId == createCertificationDTO.LearnerId);
@@ -132,7 +134,7 @@ namespace InstruLearn_Application.BLL.Service
                         int attendedSessions = schedules.Count(s => s.AttendanceStatus == AttendanceStatus.Present);
                         double attendanceRate = totalSessions > 0 ? (double)attendedSessions / totalSessions * 100 : 0;
 
-                        if (attendanceRate < 75) // 75% attendance minimum requirement
+                        if (attendanceRate < 75)
                         {
                             return new ResponseDTO
                             {
@@ -147,7 +149,6 @@ namespace InstruLearn_Application.BLL.Service
                             };
                         }
 
-                        // Set learning registration data
                         certificationObj.LearningRegistration = registration;
                         certificationObj.TeacherName = registration.Teacher?.Fullname;
                         certificationObj.Subject = registration.Major?.MajorName;
@@ -161,7 +162,7 @@ namespace InstruLearn_Application.BLL.Service
                         break;
 
                     default:
-                        // Error for other certificate types that are not supported
+
                         return new ResponseDTO
                         {
                             IsSucceed = false,
@@ -171,6 +172,20 @@ namespace InstruLearn_Application.BLL.Service
 
                 await _unitOfWork.CertificationRepository.AddAsync(certificationObj);
                 await _unitOfWork.SaveChangeAsync();
+
+                var certificateDataForSheets = new CertificationDataDTO
+                {
+                    CertificationId = certificationObj.CertificationId,
+                    LearnerName = learner.FullName,
+                    LearnerEmail = learner.Account?.Email,
+                    CertificationType = certificationObj.CertificationType.ToString(),
+                    CertificationName = certificationObj.CertificationName,
+                    IssueDate = certificationObj.IssueDate,
+                    TeacherName = certificationObj.TeacherName,
+                    Subject = certificationObj.Subject
+                };
+
+                await _googleSheetsService.SaveCertificationDataAsync(certificateDataForSheets);
 
                 var response = new ResponseDTO
                 {
