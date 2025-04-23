@@ -1045,6 +1045,79 @@ namespace InstruLearn_Application.BLL.Service
             return false;
         }
 
+        public async Task<ResponseDTO> GetCompletedCoursesForLearnerAsync(int learnerId)
+        {
+            try
+            {
+                double completionThreshold = 100;
+
+                var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(learnerId);
+                if (learner == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Không tìm thấy học viên."
+                    };
+                }
+
+                var learnerCourses = await _unitOfWork.LearnerCourseRepository.GetByLearnerIdAsync(learnerId);
+
+                var completedLearnerCourses = learnerCourses
+                    .Where(lc => lc.CompletionPercentage >= completionThreshold)
+                    .ToList();
+
+                if (!completedLearnerCourses.Any())
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = true,
+                        Message = "Học viên chưa hoàn thành bất kỳ khóa học nào.",
+                        Data = new List<LearnerCourseDTO>()
+                    };
+                }
+
+                var completedCourseDTOs = new List<LearnerCourseDTO>();
+
+                foreach (var lc in completedLearnerCourses)
+                {
+                    var course = await _unitOfWork.CourseRepository.GetByIdAsync(lc.CoursePackageId);
+                    if (course == null) continue;
+
+                    var allContentItems = await GetAllCourseContentItemsAsync(lc.CoursePackageId);
+                    int totalItems = allContentItems.Count;
+
+                    completedCourseDTOs.Add(new LearnerCourseDTO
+                    {
+                        LearnerCourseId = lc.LearnerCourseId,
+                        LearnerId = lc.LearnerId,
+                        LearnerName = learner.FullName,
+                        CoursePackageId = lc.CoursePackageId,
+                        CourseName = course.CourseName,
+                        CompletionPercentage = lc.CompletionPercentage,
+                        EnrollmentDate = lc.EnrollmentDate,
+                        LastAccessDate = lc.LastAccessDate,
+                        TotalContentItems = totalItems
+                    });
+                }
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = "Đã lấy danh sách khóa học đã hoàn thành thành công.",
+                    Data = completedCourseDTOs
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Lỗi khi lấy danh sách khóa học đã hoàn thành: {ex.Message}"
+                };
+            }
+        }
+
         private async Task<double> CalculateTypeBasedCompletionPercentageAsync(int learnerId, int coursePackageId)
         {
             var allContentItems = await GetAllCourseContentItemsAsync(coursePackageId);
