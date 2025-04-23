@@ -14,9 +14,11 @@ namespace InstruLearn_Application.Controllers
         private readonly ICourseContentService _courseContentService;
         private readonly ICourseProgressService _courseProgressService;
 
-        public CourseContentController(ICourseContentService courseContentService)
+        public CourseContentController(ICourseContentService courseContentService,
+                                       ICourseProgressService courseProgressService)
         {
             _courseContentService = courseContentService;
+            _courseProgressService = courseProgressService;
         }
 
         [HttpGet("get-all")]
