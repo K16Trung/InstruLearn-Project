@@ -668,8 +668,10 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<LearningRegisFeedbackQuestionDTO, LearningRegisFeedbackQuestion>();
 
             // Learning Registration Feedback Option mappings
-            CreateMap<LearningRegisFeedbackOption, LearningRegisFeedbackOptionDTO>();
-            CreateMap<LearningRegisFeedbackOptionDTO, LearningRegisFeedbackOption>();
+            CreateMap<LearningRegisFeedbackOption, LearningRegisFeedbackOptionDTO>()
+                .ForMember(dest => dest.Question, opt => opt.Ignore());
+            CreateMap<LearningRegisFeedbackOptionDTO, LearningRegisFeedbackOption>()
+                .ForMember(dest => dest.Question, opt => opt.Ignore());
 
             // Learning Registration Feedback Answer mappings
             CreateMap<LearningRegisFeedbackAnswer, LearningRegisFeedbackAnswerDTO>()

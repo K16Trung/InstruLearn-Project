@@ -39,19 +39,22 @@ namespace InstruLearn_Application.BLL.Service
                 Options = new List<LearningRegisFeedbackOption>()
             };
 
+            await _unitOfWork.LearningRegisFeedbackQuestionRepository.AddAsync(question);
+            await _unitOfWork.SaveChangeAsync();
+
             if (questionDTO.Options != null)
             {
                 foreach (var optionDTO in questionDTO.Options)
                 {
-                    question.Options.Add(new LearningRegisFeedbackOption
+                    var option = new LearningRegisFeedbackOption
                     {
-                        OptionText = optionDTO.OptionText,
-                    });
+                        QuestionId = question.QuestionId,
+                        OptionText = optionDTO.OptionText
+                    };
+                    await _unitOfWork.LearningRegisFeedbackOptionRepository.AddAsync(option);
                 }
+                await _unitOfWork.SaveChangeAsync();
             }
-
-            await _unitOfWork.LearningRegisFeedbackQuestionRepository.AddAsync(question);
-            await _unitOfWork.SaveChangeAsync();
 
             return new ResponseDTO
             {
@@ -59,6 +62,7 @@ namespace InstruLearn_Application.BLL.Service
                 Message = "Tạo câu hỏi đánh giá thành công"
             };
         }
+
 
         public async Task<ResponseDTO> UpdateQuestionAsync(int questionId, LearningRegisFeedbackQuestionDTO questionDTO)
         {

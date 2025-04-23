@@ -107,7 +107,7 @@ namespace InstruLearn_Application.Controllers
                 return BadRequest(ModelState);
             }
 
-            var result = await _learningRegisService.RejectLearningRegisAsync(learningRegisId, rejectDTO.RejectReason);
+            var result = await _learningRegisService.RejectLearningRegisAsync(learningRegisId, rejectDTO.ResponseId);
 
             if (!result.IsSucceed)
             {
