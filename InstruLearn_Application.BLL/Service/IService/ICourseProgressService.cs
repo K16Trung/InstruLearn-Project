@@ -30,5 +30,6 @@ namespace InstruLearn_Application.BLL.Service.IService
         Task<Course_Content> GetContentByIdAsync(int contentId);
         Task<int> GetCoursePackageIdForContentItemAsync(int itemId);
         Task<bool> HasLearnerPurchasedCourseAsync(int learnerId, int coursePackageId);
+        Task<ResponseDTO> GetCompletedCoursesForLearnerAsync(int learnerId);
     }
 }
