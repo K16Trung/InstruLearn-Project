@@ -23,11 +23,13 @@ namespace InstruLearn_Application.BLL.Service
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly IEmailService _emailService;
 
-        public ScheduleService(IUnitOfWork unitOfWork, IMapper mapper)
+        public ScheduleService(IUnitOfWork unitOfWork, IMapper mapper, IEmailService emailService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _emailService = emailService;
         }
 
         public async Task<List<ScheduleDTO>> GetSchedulesByLearningRegisIdAsync(int learningRegisId)
@@ -1114,6 +1116,107 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
         }
+
+        // Add to InstruLearn_Application.BLL/Service/ScheduleService.cs
+        public async Task<ResponseDTO> UpdateScheduleTeacherAsync(int scheduleId, int teacherId)
+        {
+            try
+            {
+                // Get the schedule by ID
+                var schedule = await _unitOfWork.ScheduleRepository.GetByIdAsync(scheduleId);
+
+                if (schedule == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Schedule not found."
+                    };
+                }
+
+                // Get the teacher to ensure they exist
+                var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(teacherId);
+                if (teacher == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Teacher not found."
+                    };
+                }
+
+                // Store the old teacher ID for notification message
+                var oldTeacherId = schedule.TeacherId;
+                var oldTeacherName = oldTeacherId.HasValue
+                    ? (await _unitOfWork.TeacherRepository.GetByIdAsync(oldTeacherId.Value))?.Fullname ?? "Unknown"
+                    : "No teacher";
+
+                // Update the schedule with the new teacher ID
+                schedule.TeacherId = teacherId;
+
+                await _unitOfWork.ScheduleRepository.UpdateAsync(schedule);
+                await _unitOfWork.SaveChangeAsync();
+
+                // If there's a learner associated with this schedule, send them a notification
+                if (schedule.LearnerId.HasValue)
+                {
+                    var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(schedule.LearnerId.Value);
+                    if (learner != null && learner.Account != null)
+                    {
+                        // Get the learner's email address
+                        var account = await _unitOfWork.AccountRepository.GetByIdAsync(learner.AccountId);
+                        if (account != null && !string.IsNullOrEmpty(account.Email))
+                        {
+                            // Format the date and time for better readability
+                            string formattedDate = schedule.StartDay.ToString("dd/MM/yyyy");
+                            string formattedStartTime = schedule.TimeStart.ToString("HH:mm");
+                            string formattedEndTime = schedule.TimeEnd.ToString("HH:mm");
+
+                            // Send a notification email to the learner
+                            string subject = "Your Schedule Has Been Updated";
+                            string body = $@"
+                        <html>
+                        <body>
+                            <h2>Thông báo cập nhật lịch học</h2>
+                            <p>Xin chào {learner.FullName},</p>
+                            <p>Chúng tôi muốn thông báo rằng lịch học của bạn ngày {formattedDate} từ {formattedStartTime} - {formattedEndTime} đã được thay đổi.</p>
+                            <p><strong>Thay đổi:</strong> Giáo viên hiện tại của bạn đã được thay thế từ {oldTeacherName} sang {teacher.Fullname}.</p>
+                            <p><strong>Lý do:</strong> Giáo viên {oldTeacherName} đang có việc đột xuất cần xử lí</p>
+                            <p>Nếu bạn có bất kì câu hỏi nào, vui lòng liên hệ với nhóm hỗ trợ của chúng tôi.</p>
+                            <p>Cảm ơn bạn đã sử dụng dịch vụ InstruLearn!</p>
+                            <p>Trân trọng,<br/>The InstruLearn Team</p>
+                        </body>
+                        </html>";
+
+                            await _emailService.SendEmailAsync(account.Email, subject, body);
+                        }
+                    }
+                }
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = "Schedule updated successfully. Notification sent to the learner.",
+                    Data = new
+                    {
+                        ScheduleId = schedule.ScheduleId,
+                        TeacherId = schedule.TeacherId,
+                        TeacherName = teacher.Fullname,
+                        PreviousTeacherId = oldTeacherId,
+                        PreviousTeacherName = oldTeacherName
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Failed to update schedule: {ex.Message}"
+                };
+            }
+        }
+
 
         private async Task<string> GetLearnerName(int learnerId)
         {

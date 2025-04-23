@@ -79,7 +79,7 @@ namespace InstruLearn_Application.BLL.Service
 
                 var filteredRegistrations = allRegistrations.Where(r =>
                     r.RegisTypeId == 1 &&
-                    r.Status == LearningRegis.Accepted
+                    r.Status == LearningRegis.Accepted || r.Status == LearningRegis.Fourty
                 ).ToList();
 
                 var registrationDtos = _mapper.Map<IEnumerable<OneOnOneRegisDTO>>(filteredRegistrations);
@@ -774,7 +774,7 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
-        public async Task<ResponseDTO> RejectLearningRegisAsync(int learningRegisId, string rejectReason)
+        public async Task<ResponseDTO> RejectLearningRegisAsync(int learningRegisId, int? responseId)
         {
             try
             {
@@ -810,10 +810,21 @@ namespace InstruLearn_Application.BLL.Service
                     // Update the registration status to rejected
                     learningRegis.Status = LearningRegis.Rejected;
 
-                    // Add reason for rejection if provided
-                    if (!string.IsNullOrEmpty(rejectReason))
+                    // Set the ResponseId if provided
+                    if (responseId.HasValue)
                     {
-                        learningRegis.LearningRequest = rejectReason; // Storing rejection reason in the LearningRequest field
+                        // Verify response exists
+                        var response = await _unitOfWork.ResponseRepository.GetByIdAsync(responseId.Value);
+                        if (response == null)
+                        {
+                            return new ResponseDTO
+                            {
+                                IsSucceed = false,
+                                Message = $"Response with ID {responseId.Value} not found."
+                            };
+                        }
+
+                        learningRegis.ResponseId = responseId.Value;
                     }
 
                     await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
@@ -831,17 +842,16 @@ namespace InstruLearn_Application.BLL.Service
                     // Commit the transaction
                     await _unitOfWork.CommitTransactionAsync();
 
-                    _logger.LogInformation($"Learning registration {learningRegisId} successfully rejected without refund");
+                    _logger.LogInformation($"Learning registration {learningRegisId} successfully rejected");
 
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "Learning Registration rejected successfully. No refund has been processed.",
+                        Message = "Learning Registration rejected successfully.",
                         Data = new
                         {
                             LearningRegisId = learningRegisId,
-                            LearnerId = learningRegis.LearnerId,
-                            Status = "Rejected"
+                            ResponseId = learningRegis.ResponseId
                         }
                     };
                 }

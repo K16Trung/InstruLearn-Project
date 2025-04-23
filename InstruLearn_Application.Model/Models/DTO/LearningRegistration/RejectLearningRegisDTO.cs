@@ -9,7 +9,6 @@ namespace InstruLearn_Application.Model.Models.DTO.LearningRegistration
 {
     public class RejectLearningRegisDTO
     {
-        [StringLength(500, ErrorMessage = "Rejection reason cannot exceed 500 characters")]
-        public string RejectReason { get; set; }
+        public int? ResponseId { get; set; }
     }
 }

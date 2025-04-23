@@ -1,5 +1,7 @@
 ﻿using InstruLearn_Application.BLL.Service.IService;
 using InstruLearn_Application.Model.Enum;
+using InstruLearn_Application.Model.Models.DTO.Schedules;
+using InstruLearn_Application.Model.Models.DTO;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -151,7 +153,26 @@ namespace InstruLearn_Application.Controllers
             return Ok(result);
         }
 
+        [HttpPut("update-teacher/{scheduleId}")]
+        public async Task<IActionResult> UpdateScheduleTeacher(int scheduleId, [FromBody] UpdateScheduleTeacherDTO model)
+        {
+            if (model == null || model.TeacherId <= 0)
+            {
+                return BadRequest(new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Invalid teacher ID."
+                });
+            }
 
+            var result = await _scheduleService.UpdateScheduleTeacherAsync(scheduleId, model.TeacherId);
 
+            if (result.IsSucceed)
+            {
+                return Ok(result);
+            }
+
+            return BadRequest(result);
+        }
     }
 }

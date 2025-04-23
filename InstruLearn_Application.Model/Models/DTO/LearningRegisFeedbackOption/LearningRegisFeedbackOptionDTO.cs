@@ -1,4 +1,6 @@
-﻿using System;
+﻿using InstruLearn_Application.Model.Models.DTO.LearningRegisFeedbackQuestion;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,6 +15,7 @@ namespace InstruLearn_Application.Model.Models.DTO.LearningRegisFeedbackOption
         public string OptionText { get; set; }
         //public int QuestionId { get; set; }
         [JsonIgnore]
-        public LearningRegisFeedbackQuestion.LearningRegisFeedbackQuestionDTO Question { get; set; }
+        [ValidateNever]
+        public LearningRegisFeedbackQuestionDTO Question { get; set; }
     }
 }
