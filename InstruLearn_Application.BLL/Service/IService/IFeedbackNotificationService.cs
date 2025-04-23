@@ -10,5 +10,8 @@ namespace InstruLearn_Application.BLL.Service.IService
     public interface IFeedbackNotificationService
     {
         Task<ResponseDTO> CheckLearnerFeedbackNotificationsAsync(int learnerId);
+        Task<ResponseDTO> ProcessFeedbackCompletionAsync(int feedbackId, bool continueStudying);
+        Task<ResponseDTO> AutoCheckAndCreateFeedbackNotificationsAsync();
+        Task SendTestFeedbackEmailNotification(string email, string learnerName, int feedbackId, string teacherName, decimal remainingPayment);
     }
 }

@@ -12,6 +12,8 @@ namespace InstruLearn_Application.Model.Enum
         Accepted,
         Fourty,
         Sixty,
-        Rejected
+        Rejected,
+        FourtyFeedbackDone,
+        Cancelled
     }
 }

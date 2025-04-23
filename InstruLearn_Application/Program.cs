@@ -175,8 +175,20 @@ namespace InstruLearn_Application
             builder.Services.AddHostedService<PaymentDeadlineService>();
             builder.Services.AddScoped<IFeedbackNotificationService, FeedbackNotificationService>();
             builder.Services.AddAutoMapper(typeof(MappingProfile));
-            // Add after service registration in Program.cs
             builder.Services.AddHostedService<PayOSWebhookRegistrationService>();
+
+            builder.Services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    // Handle circular references by ignoring cycles
+                    options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+
+                    // Set a more reasonable max depth
+                    options.JsonSerializerOptions.MaxDepth = 64;
+
+                    // Make property names case-sensitive
+                    options.JsonSerializerOptions.PropertyNameCaseInsensitive = false;
+                });
 
             // Add CORS
             builder.Services.AddCors(options =>
