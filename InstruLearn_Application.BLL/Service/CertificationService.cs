@@ -126,6 +126,18 @@ namespace InstruLearn_Application.BLL.Service
                             };
                         }
 
+                        bool certificateExists = await _unitOfWork.CertificationRepository
+                            .ExistsByLearningRegisIdAsync(createCertificationDTO.LearningRegisId.Value);
+
+                        if (certificateExists)
+                        {
+                            return new ResponseDTO
+                            {
+                                IsSucceed = false,
+                                Message = "A certificate already exists for this learning registration",
+                            };
+                        }
+
                         var schedules = await _unitOfWork.ScheduleRepository
                             .GetWhereAsync(s => s.LearningRegisId == createCertificationDTO.LearningRegisId.Value &&
                                               s.LearnerId == createCertificationDTO.LearnerId);
@@ -162,7 +174,6 @@ namespace InstruLearn_Application.BLL.Service
                         break;
 
                     default:
-
                         return new ResponseDTO
                         {
                             IsSucceed = false,
@@ -185,19 +196,52 @@ namespace InstruLearn_Application.BLL.Service
                     Subject = certificationObj.Subject
                 };
 
-                await _googleSheetsService.SaveCertificationDataAsync(certificateDataForSheets);
+                bool googleSheetsSuccess = false;
+                string googleSheetsMessage = "";
+
+                try
+                {
+                    Console.WriteLine($"Attempting to save certificate {certificationObj.CertificationId} to Google Sheets");
+                    googleSheetsSuccess = await _googleSheetsService.SaveCertificationDataAsync(certificateDataForSheets);
+
+                    if (googleSheetsSuccess)
+                    {
+                        Console.WriteLine($"Successfully saved certificate {certificationObj.CertificationId} to Google Sheets");
+                        googleSheetsMessage = "Certificate data was successfully recorded in Google Sheets.";
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Failed to save certificate {certificationObj.CertificationId} to Google Sheets - returned false");
+                        googleSheetsMessage = "Certificate was created but could not be recorded in Google Sheets.";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error saving certificate {certificationObj.CertificationId} to Google Sheets: {ex.Message}");
+                    googleSheetsMessage = $"Certificate was created but an error occurred when recording in Google Sheets: {ex.Message}";
+                }
 
                 var response = new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Certificate created successfully",
-                    Data = _mapper.Map<CertificationDTO>(certificationObj)
+                    Message = $"Certificate created successfully. {googleSheetsMessage}",
+                    Data = new
+                    {
+                        Certificate = _mapper.Map<CertificationDTO>(certificationObj),
+                        GoogleSheetsUpdated = googleSheetsSuccess
+                    }
                 };
 
                 return response;
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Error in CreateCertificationAsync: {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                }
+
                 return new ResponseDTO
                 {
                     IsSucceed = false,

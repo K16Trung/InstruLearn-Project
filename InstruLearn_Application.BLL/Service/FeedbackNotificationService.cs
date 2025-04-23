@@ -142,7 +142,7 @@ namespace InstruLearn_Application.BLL.Service
                             FeedbackStatus = existingFeedback.Status.ToString(),
                             CreatedAt = existingFeedback.CreatedAt,
                             Questions = questions,
-                            Message = $"You've paid 40% of your tuition. Please complete this feedback form to confirm you want to continue learning and make the remaining 60% payment."
+                            Message = $"Bạn đã thanh toán 40% học phí. Vui lòng hoàn thành phản hồi này để xác nhận bạn muốn tiếp tục học và thanh toán 60% còn lại."
                         });
                     }
                 }
@@ -414,7 +414,7 @@ namespace InstruLearn_Application.BLL.Service
                         
                         <p>Bạn đã đạt đến 40% hành trình học tập của mình và chúng tôi muốn nhận phản hồi của bạn trước khi bạn tiếp tục.</p>
                         
-                        <p>Vui lòng điền vào biểu mẫu phản hồi để cho chúng tôi biết nếu bạn muốn tiếp tục 60% còn lại của chương trình học.</p>
+                        <p>Vui lòng điền vào phản hồi này để cho chúng tôi biết nếu bạn muốn tiếp tục 60% còn lại của chương trình học.</p>
                         
                         <p>Thanh toán còn lại: {remainingPayment.ToString("N0")} VND</p>
                         

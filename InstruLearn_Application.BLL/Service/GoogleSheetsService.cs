@@ -11,7 +11,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace InstruLearn_Application.BLL.Service
@@ -22,12 +21,14 @@ namespace InstruLearn_Application.BLL.Service
         private readonly string _spreadsheetId;
         private readonly string _credentialsPath;
         private readonly ILogger<GoogleSheetsService> _logger;
+        private readonly bool _ignoreErrors;
 
         public GoogleSheetsService(IConfiguration configuration, ILogger<GoogleSheetsService> logger = null)
         {
             _configuration = configuration;
             _logger = logger;
             _spreadsheetId = _configuration["GoogleSheets:SpreadsheetId"];
+            _ignoreErrors = bool.TryParse(_configuration["GoogleSheets:IgnoreErrors"], out bool ignoreErrors) && ignoreErrors;
 
             string configPath = _configuration["GoogleSheets:CredentialsPath"];
 
@@ -41,8 +42,8 @@ namespace InstruLearn_Application.BLL.Service
                 Path.Combine(projectDirectory, configPath),
                 Path.Combine(baseDirectory, "Credentials", "credentials.json"),
                 Path.Combine(projectDirectory, "Credentials", "credentials.json"),
-                @"E:/credentials.json",
-                Path.Combine(Directory.GetParent(baseDirectory).FullName, "InstruLearn_Application.Model", "Credentials", "credentials.json")
+                Path.Combine(Directory.GetParent(baseDirectory)?.FullName ?? "", "Credentials", "credentials.json"),
+                Path.Combine(Directory.GetParent(baseDirectory)?.FullName ?? "", "InstruLearn_Application.Model", "Credentials", "credentials.json")
             };
 
             string foundPath = null;
@@ -60,6 +61,11 @@ namespace InstruLearn_Application.BLL.Service
                 _credentialsPath = foundPath;
                 LogInfo($"Using credentials path: {_credentialsPath}");
             }
+            else if (_ignoreErrors)
+            {
+                _credentialsPath = configPath;
+                LogWarning($"Credentials file not found at any path, but errors are ignored. Will use: {_credentialsPath}");
+            }
             else
             {
                 var errorMessage = $"Google credentials file not found. Tried paths: {string.Join(", ", possiblePaths.Where(p => !string.IsNullOrEmpty(p)))}";
@@ -70,36 +76,27 @@ namespace InstruLearn_Application.BLL.Service
 
         private void LogInfo(string message)
         {
-            if (_logger != null)
-            {
-                _logger.LogInformation(message);
-            }
-            else
-            {
-                Console.WriteLine($"INFO: {message}");
-            }
+            _logger?.LogInformation(message);
+            Console.WriteLine($"INFO: {message}");
+        }
+
+        private void LogWarning(string message)
+        {
+            _logger?.LogWarning(message);
+            Console.WriteLine($"WARNING: {message}");
         }
 
         private void LogError(string message, Exception ex = null)
         {
-            if (_logger != null)
+            if (ex != null)
             {
-                if (ex != null)
-                {
-                    _logger.LogError(ex, message);
-                }
-                else
-                {
-                    _logger.LogError(message);
-                }
+                _logger?.LogError(ex, message);
+                Console.WriteLine($"ERROR: {message}\nException: {ex}");
             }
             else
             {
+                _logger?.LogError(message);
                 Console.WriteLine($"ERROR: {message}");
-                if (ex != null)
-                {
-                    Console.WriteLine($"Exception: {ex}");
-                }
             }
         }
 
@@ -111,6 +108,12 @@ namespace InstruLearn_Application.BLL.Service
                 GoogleCredential credential;
                 try
                 {
+                    if (!File.Exists(_credentialsPath) && _ignoreErrors)
+                    {
+                        LogWarning($"Credentials file not found at {_credentialsPath}, but errors are ignored. Skipping Google Sheets update.");
+                        return true;
+                    }
+
                     LogInfo($"Loading credentials from: {_credentialsPath}");
                     using (var stream = new FileStream(_credentialsPath, FileMode.Open, FileAccess.Read))
                     {
@@ -122,6 +125,11 @@ namespace InstruLearn_Application.BLL.Service
                 catch (Exception ex)
                 {
                     LogError($"Error loading credentials file from {_credentialsPath}", ex);
+                    if (_ignoreErrors)
+                    {
+                        LogWarning("Ignoring credentials error as configured");
+                        return true;
+                    }
                     throw new Exception($"Failed to load Google credentials: {ex.Message}", ex);
                 }
 
@@ -142,10 +150,10 @@ namespace InstruLearn_Application.BLL.Service
                             new List<object>
                             {
                                 certificationData.CertificationId,
-                                certificationData.LearnerName,
-                                certificationData.LearnerEmail ?? "N/A",
-                                certificationData.CertificationType,
-                                certificationData.CertificationName,
+                                certificationData.LearnerName ?? "Unknown",
+                                certificationData.LearnerEmail ?? "Unknown",
+                                certificationData.CertificationType ?? "Unknown",
+                                certificationData.CertificationName ?? "Unknown",
                                 certificationData.IssueDate.ToString("yyyy-MM-dd HH:mm:ss"),
                                 certificationData.TeacherName ?? "N/A",
                                 certificationData.Subject ?? "N/A"
@@ -188,6 +196,11 @@ namespace InstruLearn_Application.BLL.Service
                     catch (Exception ex)
                     {
                         LogError("Error accessing spreadsheet or creating sheet", ex);
+                        if (_ignoreErrors)
+                        {
+                            LogWarning("Ignoring spreadsheet access error as configured");
+                            return true;
+                        }
                         throw new Exception($"Error accessing Google Sheets: {ex.Message}", ex);
                     }
 
@@ -231,6 +244,14 @@ namespace InstruLearn_Application.BLL.Service
                     catch (Exception ex)
                     {
                         LogError("Error checking/setting headers", ex);
+                        if (_ignoreErrors)
+                        {
+                            LogWarning("Ignoring headers error as configured");
+                        }
+                        else
+                        {
+                            throw;
+                        }
                     }
 
                     try
@@ -248,18 +269,28 @@ namespace InstruLearn_Application.BLL.Service
                         else
                         {
                             LogError("Append operation returned null response or null updates");
-                            return false;
+                            return !_ignoreErrors;
                         }
                     }
                     catch (Exception ex)
                     {
                         LogError("Error appending data to Google Sheets", ex);
+                        if (_ignoreErrors)
+                        {
+                            LogWarning("Ignoring append error as configured");
+                            return true;
+                        }
                         throw new Exception($"Failed to append data to Google Sheets: {ex.Message}", ex);
                     }
                 }
                 catch (Exception ex)
                 {
                     LogError("Error initializing Google Sheets service", ex);
+                    if (_ignoreErrors)
+                    {
+                        LogWarning("Ignoring service initialization error as configured");
+                        return true;
+                    }
                     throw new Exception($"Error initializing Google Sheets service: {ex.Message}", ex);
                 }
             }
@@ -270,6 +301,12 @@ namespace InstruLearn_Application.BLL.Service
                 if (ex.InnerException != null)
                 {
                     LogError($"Inner Exception: {ex.InnerException.Message}");
+                }
+
+                if (_ignoreErrors)
+                {
+                    LogWarning("Ignoring Google Sheets error as configured");
+                    return true;
                 }
                 return false;
             }
