@@ -171,6 +171,7 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<IEmailService, EmailService>();
             builder.Services.AddScoped<ICourseProgressService, CourseProgressService>();
             builder.Services.AddScoped<ILearningRegisFeedbackService, LearningRegisFeedbackService>();
+            builder.Services.AddScoped<IGoogleSheetsService, GoogleSheetsService>();
             builder.Services.AddHostedService<UnverifiedAccountCleanupService>();
             builder.Services.AddHostedService<PaymentDeadlineService>();
             builder.Services.AddScoped<IFeedbackNotificationService, FeedbackNotificationService>();
