@@ -221,7 +221,6 @@ namespace InstruLearn_Application.BLL.Service
                 }
                 else
                 {
-                    // Use the weighted calculation method for more accurate progress
                     double newPercentage = await CalculateTypeBasedCompletionPercentageAsync(
                         learnerId,
                         courseContent.CoursePackageId);
@@ -477,10 +476,11 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
-        public async Task<ResponseDTO> UpdateVideoProgressAsync(UpdateVideoProgressDTO updateDto)
+        public async Task<ResponseDTO> UpdateVideoWatchTimeAsync(UpdateVideoWatchTimeDTO updateDto)
         {
             try
             {
+                // Basic validations
                 var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(updateDto.LearnerId);
                 if (learner == null)
                 {
@@ -501,6 +501,16 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
+                var itemType = await _unitOfWork.ItemTypeRepository.GetByIdAsync(contentItem.ItemTypeId);
+                if (itemType == null || !itemType.ItemTypeName.ToLower().Contains("video"))
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Nội dung này không phải là video."
+                    };
+                }
+
                 var courseContent = await _unitOfWork.CourseContentRepository.GetByIdAsync(contentItem.ContentId);
                 if (courseContent == null)
                 {
@@ -511,8 +521,41 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                double contentDuration = updateDto.TotalDuration ?? contentItem.DurationInSeconds ?? 0;
+                var contentProgress = await _unitOfWork.LearnerContentProgressRepository
+                    .GetByLearnerAndContentItemAsync(updateDto.LearnerId, updateDto.ItemId);
 
+                if (contentProgress != null)
+                {
+                    if (contentProgress.IsCompleted)
+                    {
+                        return new ResponseDTO
+                        {
+                            IsSucceed = false,
+                            Message = "Video đã hoàn thành. Thời gian xem chỉ có thể cập nhật một lần.",
+                            Data = new
+                            {
+                                IsCompleted = true,
+                                WatchTimeInSeconds = contentProgress.WatchTimeInSeconds
+                            }
+                        };
+                    }
+
+                    if (updateDto.WatchTimeInSeconds < contentProgress.WatchTimeInSeconds)
+                    {
+                        return new ResponseDTO
+                        {
+                            IsSucceed = false,
+                            Message = "Thời gian xem chỉ có thể tăng lên, không thể giảm xuống.",
+                            Data = new
+                            {
+                                CurrentWatchTime = contentProgress.WatchTimeInSeconds,
+                                AttemptedWatchTime = updateDto.WatchTimeInSeconds
+                            }
+                        };
+                    }
+                }
+
+                double contentDuration = contentItem.DurationInSeconds ?? 0;
                 bool isCompleted = false;
                 double completionPercentage = 0;
 
@@ -527,24 +570,15 @@ namespace InstruLearn_Application.BLL.Service
                     completionPercentage = isCompleted ? 100 : 0;
                 }
 
-                if (updateDto.TotalDuration.HasValue && updateDto.TotalDuration.Value > 0 &&
-                    (!contentItem.DurationInSeconds.HasValue || contentItem.DurationInSeconds.Value != updateDto.TotalDuration.Value))
-                {
-                    contentItem.DurationInSeconds = updateDto.TotalDuration.Value;
-                    await _unitOfWork.CourseContentItemRepository.UpdateAsync(contentItem);
-                    await _unitOfWork.SaveChangeAsync();
-                }
-
                 await _unitOfWork.LearnerContentProgressRepository.UpdateWatchTimeAsync(
                     updateDto.LearnerId,
                     updateDto.ItemId,
                     updateDto.WatchTimeInSeconds,
                     isCompleted);
 
-                var contentProgress = await _unitOfWork.LearnerContentProgressRepository
+                contentProgress = await _unitOfWork.LearnerContentProgressRepository
                     .GetByLearnerAndContentItemAsync(updateDto.LearnerId, updateDto.ItemId);
 
-                // Calculate the overall course progress using the weighted method
                 double overallCourseProgress = await CalculateTypeBasedCompletionPercentageAsync(
                     updateDto.LearnerId,
                     courseContent.CoursePackageId);
@@ -567,7 +601,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Đã cập nhật tiến độ xem video thành công.",
+                    Message = "Đã cập nhật thời gian xem video thành công.",
                     Data = new
                     {
                         VideoProgress = progressDTO,
@@ -580,7 +614,110 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Lỗi khi cập nhật tiến độ xem video: {ex.Message}"
+                    Message = $"Lỗi khi cập nhật thời gian xem video: {ex.Message}"
+                };
+            }
+        }
+
+        public async Task<ResponseDTO> UpdateVideoDurationAsync(UpdateVideoDurationDTO updateDto)
+        {
+            try
+            {
+                // Basic validations
+                var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(updateDto.LearnerId);
+                if (learner == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Không tìm thấy học viên."
+                    };
+                }
+
+                var contentItem = await _unitOfWork.CourseContentItemRepository.GetByIdAsync(updateDto.ItemId);
+                if (contentItem == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Không tìm thấy nội dung khóa học."
+                    };
+                }
+
+                // Verify this is a video item
+                var itemType = await _unitOfWork.ItemTypeRepository.GetByIdAsync(contentItem.ItemTypeId);
+                if (itemType == null || !itemType.ItemTypeName.ToLower().Contains("video"))
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Nội dung này không phải là video."
+                    };
+                }
+
+                var courseContent = await _unitOfWork.CourseContentRepository.GetByIdAsync(contentItem.ContentId);
+                if (courseContent == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Không tìm thấy phần nội dung khóa học."
+                    };
+                }
+
+                // Validate duration
+                if (updateDto.TotalDuration <= 0)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Thời lượng video phải lớn hơn 0."
+                    };
+                }
+
+                contentItem.DurationInSeconds = updateDto.TotalDuration;
+                await _unitOfWork.CourseContentItemRepository.UpdateAsync(contentItem);
+                await _unitOfWork.SaveChangeAsync();
+
+                var contentProgress = await _unitOfWork.LearnerContentProgressRepository
+                    .GetByLearnerAndContentItemAsync(updateDto.LearnerId, updateDto.ItemId);
+
+                if (contentProgress != null)
+                {
+                    bool isCompleted = contentProgress.WatchTimeInSeconds >= (updateDto.TotalDuration * 0.9);
+
+                    if (contentProgress.IsCompleted != isCompleted)
+                    {
+                        contentProgress.IsCompleted = isCompleted;
+                        await _unitOfWork.LearnerContentProgressRepository.UpdateAsync(contentProgress);
+                        await _unitOfWork.SaveChangeAsync();
+                    }
+
+                    double overallCourseProgress = await CalculateTypeBasedCompletionPercentageAsync(
+                        updateDto.LearnerId,
+                        courseContent.CoursePackageId);
+
+                    await _unitOfWork.LearnerCourseRepository.UpdateProgressAsync(
+                        updateDto.LearnerId,
+                        courseContent.CoursePackageId,
+                        overallCourseProgress);
+                }
+
+                var videoProgress = await GetVideoProgressAsync(updateDto.LearnerId, updateDto.ItemId);
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = "Đã cập nhật thời lượng video thành công.",
+                    Data = videoProgress.Data
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Lỗi khi cập nhật thời lượng video: {ex.Message}"
                 };
             }
         }
@@ -685,17 +822,6 @@ namespace InstruLearn_Application.BLL.Service
                     TotalWatchTime = totalWatchTime,
                     CompletionPercentage = videoCompletionPercentage
                 };
-
-                // IMPORTANT: We remove this line to avoid overriding the overall course progress
-                // with only video progress. Instead, overall progress is calculated separately
-                // using the CalculateTypeBasedCompletionPercentageAsync method.
-
-                /* Don't update the overall progress here
-                await _unitOfWork.LearnerCourseRepository.UpdateProgressAsync(
-                    learnerId,
-                    coursePackageId,
-                    videoCompletionPercentage);
-                */
 
                 return new ResponseDTO
                 {
@@ -854,7 +980,6 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                // Mark all learner progress records for recalculation
                 await _unitOfWork.LearnerCourseRepository.RecalculateProgressForAllLearnersInCourseAsync(coursePackageId);
                 return true;
             }
@@ -906,7 +1031,6 @@ namespace InstruLearn_Application.BLL.Service
                     return true;
                 }
             }
-
             return false;
         }
 
@@ -916,7 +1040,6 @@ namespace InstruLearn_Application.BLL.Service
             if (allContentItems.Count == 0)
                 return 0;
 
-            // Group items by CourseContent (lesson) to calculate per-lesson progress
             var contentGroups = allContentItems.GroupBy(item => item.ContentId);
 
             double totalLessonPoints = 0;
@@ -950,7 +1073,6 @@ namespace InstruLearn_Application.BLL.Service
                     }
                 }
 
-                // Calculate this lesson's completion percentage
                 double lessonProgress = lesson.Count() > 0
                     ? (double)completedItemsInLesson / lesson.Count()
                     : 0;
@@ -958,18 +1080,11 @@ namespace InstruLearn_Application.BLL.Service
                 totalLessonPoints += lessonProgress;
             }
 
-            // Overall progress is the average of all lesson progresses
             double overallProgress = lessonCount > 0
                 ? (totalLessonPoints / lessonCount) * 100
                 : 0;
 
             return Math.Min(100, overallProgress);
-        }
-
-        private async Task<double> RecalculateCourseCompletionPercentageAsync(int learnerId, int coursePackageId)
-        {
-            // We'll use the weighted calculation method now
-            return await CalculateTypeBasedCompletionPercentageAsync(learnerId, coursePackageId);
         }
     }
 }

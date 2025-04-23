@@ -46,11 +46,9 @@ namespace InstruLearn_Application.Controllers
 
             if (response.IsSucceed)
             {
-                // Get the Course_Content using the ContentId to access CoursePackageId
                 var courseContentResponse = await _courseContentService.GetCourseContentByIdAsync(createDto.ContentId);
                 if (courseContentResponse.IsSucceed && courseContentResponse.Data != null)
                 {
-                    // Cast to CourseContentDTO to access the CoursePackageId
                     var courseContent = (CourseContentDTO)courseContentResponse.Data;
                     await _courseProgressService.RecalculateAllLearnersProgressForCourse(courseContent.CoursePackageId);
                 }
