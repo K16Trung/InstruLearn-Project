@@ -20,22 +20,43 @@ namespace InstruLearn_Application.DAL.Repository
             }
         }
 
-        public async Task<IEnumerable<Certification>> GetAllAsync()
+        public async Task<IEnumerable<Certification>> GetAllWithDetailsAsync()
         {
             return await _appDbContext.Certifications
                 .Include(c => c.Learner)
-                    .ThenInclude(l => l.Account)
-                .Include(c => c.CoursePackages)
+                .Include(c => c.LearningRegistration)
                 .ToListAsync();
         }
 
-        public async Task<Certification> GetByIdAsync(int id)
+        public async Task<Certification> GetByIdWithDetailsAsync(int id)
         {
             return await _appDbContext.Certifications
                 .Include(c => c.Learner)
-                    .ThenInclude(l => l.Account)
-                .Include(c => c.CoursePackages)
+                .Include(c => c.LearningRegistration)
                 .FirstOrDefaultAsync(c => c.CertificationId == id);
+        }
+
+        public async Task<IEnumerable<Certification>> GetByLearnerIdAsync(int learnerId)
+        {
+            return await _appDbContext.Certifications
+                .Include(c => c.Learner)
+                .Include(c => c.LearningRegistration)
+                .Where(c => c.LearnerId == learnerId)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Certification>> GetByLearningRegisIdAsync(int learningRegisId)
+        {
+            return await _appDbContext.Certifications
+                .Include(c => c.Learner)
+                .Include(c => c.LearningRegistration)
+                .Where(c => c.LearningRegisId == learningRegisId)
+                .ToListAsync();
+        }
+
+        public async Task<bool> ExistsByLearningRegisIdAsync(int learningRegisId)
+        {
+            return await _appDbContext.Certifications.AnyAsync(c => c.LearningRegisId == learningRegisId);
         }
     }
 }

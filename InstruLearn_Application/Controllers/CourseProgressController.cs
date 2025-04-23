@@ -131,6 +131,13 @@ namespace InstruLearn_Application.Controllers
             }
         }
 
+        [HttpGet("completed-courses/{learnerId}")]
+        public async Task<IActionResult> GetCompletedCoursesForLearner(int learnerId)
+        {
+            var response = await _courseProgressService.GetCompletedCoursesForLearnerAsync(learnerId);
+            return response.IsSucceed ? Ok(response) : BadRequest(response);
+        }
+
         [HttpGet("{learnerId}/{coursePackageId}")]
         public async Task<IActionResult> GetCourseProgress(int learnerId, int coursePackageId)
         {
