@@ -981,6 +981,17 @@ namespace InstruLearn_Application.BLL.Service
             try
             {
                 await _unitOfWork.LearnerCourseRepository.RecalculateProgressForAllLearnersInCourseAsync(coursePackageId);
+
+                var learnerCourses = await _unitOfWork.LearnerCourseRepository.GetByCoursePackageIdAsync(coursePackageId);
+
+                foreach (var learnerCourse in learnerCourses)
+                {
+                    double recalculatedPercentage = await CalculateTypeBasedCompletionPercentageAsync(
+                        learnerCourse.LearnerId, coursePackageId);
+
+                    await _unitOfWork.LearnerCourseRepository.UpdateProgressAsync(
+                        learnerCourse.LearnerId, coursePackageId, recalculatedPercentage);
+                }
                 return true;
             }
             catch (Exception)
