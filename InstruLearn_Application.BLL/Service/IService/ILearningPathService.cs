@@ -1,4 +1,5 @@
 ﻿using InstruLearn_Application.Model.Models.DTO;
+using InstruLearn_Application.Model.Models.DTO.LearningPathSession;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,5 +12,7 @@ namespace InstruLearn_Application.BLL.Service.IService
     {
         Task<ResponseDTO> GetLearningPathSessionsAsync(int learningRegisId);
         Task<ResponseDTO> UpdateSessionCompletionStatusAsync(int learningPathSessionId, bool isCompleted);
+        Task<ResponseDTO> UpdateLearningPathSessionAsync(UpdateLearningPathSessionDTO updateDTO);
+        Task<ResponseDTO> ConfirmLearningPathAsync(int learningRegisId);
     }
 }

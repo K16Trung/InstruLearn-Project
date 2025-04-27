@@ -28,14 +28,16 @@ namespace InstruLearn_Application.BLL.Service
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly IScheduleService _scheduleService;
+        private readonly IEmailService _emailService;
 
-        public LearningRegisService(ILearningRegisRepository learningRegisRepository, IUnitOfWork unitOfWork, IMapper mapper, ILogger<LearningRegisService> logger, IScheduleService scheduleService)
+        public LearningRegisService(ILearningRegisRepository learningRegisRepository, IUnitOfWork unitOfWork, IMapper mapper, ILogger<LearningRegisService> logger, IScheduleService scheduleService, IEmailService emailService)
         {
             _learningRegisRepository = learningRegisRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _logger = logger;
             _scheduleService = scheduleService;
+            _emailService = emailService;
         }
         public async Task<ResponseDTO> GetAllLearningRegisAsync()
         {
@@ -325,6 +327,9 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
+                // Store the original teacher ID to check if it's being changed
+                int? originalTeacherId = learningRegis.TeacherId;
+
                 using var transaction = await _unitOfWork.BeginTransactionAsync();
 
                 // Map other properties (excluding Price)
@@ -336,33 +341,122 @@ namespace InstruLearn_Application.BLL.Service
                 // Manually update status
                 learningRegis.Status = LearningRegis.Accepted;
                 learningRegis.AcceptedDate = DateTime.Now;
-                learningRegis.PaymentDeadline = DateTime.Now.AddDays(3);
 
                 learningRegis.LearningPath = levelAssigned.SyllabusLink;
 
                 await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
                 await _unitOfWork.SaveChangeAsync();
 
+                // Calculate total price
+                decimal totalPrice = learningRegis.Price.Value;
+
+                // Get learner information for sending email notification
+                var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(learningRegis.LearnerId);
+                var account = learner != null ? await _unitOfWork.AccountRepository.GetByIdAsync(learner.AccountId) : null;
+
+                // Determine if the teacher has been changed
+                bool teacherChanged = originalTeacherId != learningRegis.TeacherId;
+
+                // Get original teacher information (if there was one and it was changed)
+                Teacher originalTeacher = null;
+                if (teacherChanged && originalTeacherId.HasValue)
+                {
+                    originalTeacher = await _unitOfWork.TeacherRepository.GetByIdAsync(originalTeacherId.Value);
+                }
+
+                // Get current teacher information
+                var currentTeacher = learningRegis.TeacherId.HasValue
+                    ? await _unitOfWork.TeacherRepository.GetByIdAsync(learningRegis.TeacherId.Value)
+                    : null;
+
+                // Send notification to learner if email is available
+                if (account != null && !string.IsNullOrEmpty(account.Email))
+                {
+                    try
+                    {
+                        string subject = "Your Learning Registration Request has been Accepted";
+
+                        // Modify the email body based on whether the teacher has changed
+                        string teacherChangeNotice = "";
+                        if (teacherChanged)
+                        {
+                            string originalTeacherName = originalTeacher?.Fullname ?? "No teacher";
+                            string currentTeacherName = currentTeacher?.Fullname ?? "No teacher";
+
+                            teacherChangeNotice = $@"
+                    <div style='background-color: #fff3cd; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #ffc107;'>
+                        <h3 style='margin-top: 0; color: #856404;'>Thông báo thay đổi giáo viên</h3>
+                        <p>Giáo viên của bạn đã được thay đổi từ <strong>{originalTeacherName}</strong> sang <strong>{currentTeacherName}</strong>.</p>
+                    </div>";
+                        }
+
+                        string body = $@"
+                <html>
+                <body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
+                    <div style='background-color: #f7f7f7; padding: 20px; border-radius: 5px;'>
+                        <h2 style='color: #333;'>Xin chào {learner.FullName},</h2>
+                        
+                        <p>Chúng tôi vui mừng thông báo rằng yêu cầu đăng ký học tập của bạn đã được chấp nhận.</p>
+                        
+                        {teacherChangeNotice}
+                        
+                        <div style='background-color: #f0f0f0; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #4CAF50;'>
+                            <h3 style='margin-top: 0; color: #333;'>Thông tin đăng ký:</h3>
+                            <p><strong>Giáo viên:</strong> {(currentTeacher != null ? currentTeacher.Fullname : "Chưa phân công")}</p>
+                            <p><strong>Môn học:</strong> {learningRegis.Major?.MajorName ?? "N/A"}</p>
+                            <p><strong>Tổng số buổi học:</strong> {learningRegis.NumberOfSession}</p>
+                            <p><strong>Tổng học phí:</strong> {totalPrice:N0} VND</p>
+                        </div>
+                        
+                        <p>Giáo viên của bạn sẽ chuẩn bị một lộ trình học tập cho bạn. Bạn sẽ nhận được một thông báo khác khi lộ trình học tập của bạn sẵn sàng, bao gồm cả thông tin về thời hạn thanh toán.</p>
+                        
+                        <div style='background-color: #4CAF50; text-align: center; padding: 15px; margin: 20px 0; border-radius: 5px;'>
+                            <a href='https://instrulearn.com/learning-registrations/{learningRegis.LearningRegisId}' style='color: white; text-decoration: none; font-weight: bold; font-size: 16px;'>
+                                Xem Chi Tiết Đăng Ký
+                            </a>
+                        </div>
+                        
+                        <p>Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với chúng tôi.</p>
+                        
+                        <p>Trân trọng,<br>Nhóm InstruLearn</p>
+                    </div>
+                </body>
+                </html>";
+
+                        await _emailService.SendEmailAsync(
+                            account.Email,
+                            subject,
+                            body,
+                            isHtml: true
+                        );
+
+                        _logger.LogInformation($"Learning registration acceptance notification sent to {account.Email} for registration {learningRegis.LearningRegisId}");
+                        if (teacherChanged)
+                        {
+                            _logger.LogInformation($"Teacher changed notification sent to {account.Email} for registration {learningRegis.LearningRegisId}. Changed from {originalTeacherId} to {learningRegis.TeacherId}");
+                        }
+                    }
+                    catch (Exception emailEx)
+                    {
+                        // Log the error but continue - don't fail the update because of email issues
+                        _logger.LogError(emailEx, "Failed to send learning registration acceptance notification email");
+                    }
+                }
+
                 // Commit transaction
                 await _unitOfWork.CommitTransactionAsync();
-
-                // Calculate total price and payment amount (40%)
-                decimal totalPrice = learningRegis.Price.Value;
-                decimal paymentAmount = totalPrice * 0.4m;
-
-                var deadline = learningRegis.PaymentDeadline.Value.ToString("yyyy-MM-dd HH:mm");
 
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = $"Learning Registration updated successfully. Payment of {paymentAmount:F2} VND (40% of total {totalPrice:F2} VND) is required by {deadline}.",
+                    Message = $"Learning Registration updated successfully with total price {totalPrice:F2} VND. Notification email sent to learner.",
                     Data = new
                     {
                         LearningRegisId = learningRegis.LearningRegisId,
-                        PaymentAmount = paymentAmount,
                         TotalPrice = totalPrice,
-                        PaymentDeadline = deadline,
-                        SyllabusLink = levelAssigned.SyllabusLink
+                        SyllabusLink = levelAssigned.SyllabusLink,
+                        EmailSent = account != null && !string.IsNullOrEmpty(account.Email),
+                        TeacherChanged = teacherChanged
                     }
                 };
             }
@@ -376,6 +470,7 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
         }
+
 
         public async Task<ResponseDTO> JoinClassWithWalletPaymentAsync(LearnerClassPaymentDTO paymentDTO)
         {
@@ -937,10 +1032,16 @@ namespace InstruLearn_Application.BLL.Service
                     Title = lps.Title,
                     Description = lps.Description,
                     IsCompleted = lps.IsCompleted, // Use the value from the DTO
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.Now,
+                    IsVisible = false
                 }).ToList();
 
                 await _unitOfWork.LearningPathSessionRepository.AddRangeAsync(learningPathSessions);
+                await _unitOfWork.SaveChangeAsync();
+
+                // Update the learning registration to indicate it has pending sessions
+                learningRegis.HasPendingLearningPath = true;
+                await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
                 await _unitOfWork.SaveChangeAsync();
 
                 // Commit transaction
