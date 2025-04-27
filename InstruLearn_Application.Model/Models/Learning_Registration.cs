@@ -43,6 +43,7 @@ namespace InstruLearn_Application.Model.Models
 
         public DateTime? AcceptedDate { get; set; }
         public DateTime? PaymentDeadline { get; set; }
+        public bool HasPendingLearningPath { get; set; } = false;
 
         // Navigation properties
         public ICollection<Test_Result> Test_Results { get; set; }

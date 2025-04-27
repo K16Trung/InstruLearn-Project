@@ -27,5 +27,6 @@ namespace InstruLearn_Application.Model.Models
         public bool IsCompleted { get; set; }
 
         public DateTime CreatedAt { get; set; }
+        public bool IsVisible { get; set; } = false;
     }
 }
