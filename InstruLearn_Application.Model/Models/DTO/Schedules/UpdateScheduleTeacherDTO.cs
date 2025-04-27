@@ -9,5 +9,6 @@ namespace InstruLearn_Application.Model.Models.DTO.Schedules
     public class UpdateScheduleTeacherDTO
     {
         public int TeacherId { get; set; }
+        public string ChangeReason { get; set; }
     }
 }
