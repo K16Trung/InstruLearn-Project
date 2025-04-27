@@ -59,30 +59,24 @@ namespace InstruLearn_Application.BLL.Service
                 var schedules = new List<ScheduleDTO>();
                 int sessionCount = 0;
 
-                // Get the ordered learning days and start from the registration day's day of the week
                 var orderedLearningDays = learningRegis.LearningRegistrationDay.OrderBy(day => day.DayOfWeek).ToList();
 
-                // Find the first valid session day from the registrationStartDay's day of the week
                 var currentDayOfWeek = registrationStartDate.DayOfWeek;
                 var learningDaysStartingFromRegistration = orderedLearningDays
                     .Where(day => (DayOfWeek)day.DayOfWeek >= currentDayOfWeek) // Start from the first available learning day
                     .Concat(orderedLearningDays.Where(day => (DayOfWeek)day.DayOfWeek < currentDayOfWeek)) // Append remaining days
                     .ToList();
 
-                // Loop until the required number of sessions is generated
                 while (sessionCount < learningRegis.NumberOfSession)
                 {
                     foreach (var learningDay in learningDaysStartingFromRegistration)
                     {
-                        // Calculate the next session date matching the learning day of the week
                         var nextSessionDate = GetNextSessionDate(registrationStartDate, (DayOfWeek)learningDay.DayOfWeek);
 
-                        // Proceed only if the session count is within limit
                         if (sessionCount < learningRegis.NumberOfSession)
                         {
                             var existingSchedule = learningRegis.Schedules.ElementAtOrDefault(sessionCount);
 
-                            // Create a new schedule DTO
                             var schedule = new ScheduleDTO
                             {
                                 ScheduleId = existingSchedule?.ScheduleId ?? 0,
@@ -105,7 +99,6 @@ namespace InstruLearn_Application.BLL.Service
                             sessionCount++;  // Increment session count after adding a schedule
                         }
 
-                        // Move to the next day for the following iteration
                         registrationStartDate = nextSessionDate.AddDays(1);
                     }
                 }
@@ -127,7 +120,6 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
-        // Helper method to calculate the next session date based on a start date and day of the week
         private DateTime GetNextSessionDate(DateTime startDate, DayOfWeek dayOfWeek)
         {
             int daysUntilNextSession = ((int)dayOfWeek - (int)startDate.DayOfWeek + 7) % 7;
@@ -148,7 +140,6 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Fetch learning registrations for the learner with all necessary includes
                 var learningRegs = await _unitOfWork.LearningRegisRepository
                     .GetWithIncludesAsync(
                         x => x.LearnerId == learnerId && (x.Status == LearningRegis.Fourty || x.Status == LearningRegis.Sixty),
@@ -177,110 +168,80 @@ namespace InstruLearn_Application.BLL.Service
                         };
                     }
 
-                    // Get learning path sessions for this registration
                     var learningPathSessions = await _unitOfWork.LearningPathSessionRepository
                         .GetByLearningRegisIdAsync(learningRegis.LearningRegisId);
 
-                    // Sort by session number
                     var sortedSessions = learningPathSessions
                         .OrderBy(s => s.SessionNumber)
                         .ToList();
 
-                    // Use DateOnly instead of DateTime for the start date
-                    DateOnly registrationStartDate = learningRegis.StartDay.Value;
-                    var orderedLearningDays = learningRegis.LearningRegistrationDay
-                        .OrderBy(day => day.DayOfWeek)
-                        .ToList();
-
+                    // Get actual stored schedules instead of regenerating them
                     var existingSchedules = learningRegis.Schedules
                         .Where(s => s.Mode == ScheduleMode.OneOnOne)
                         .OrderBy(s => s.StartDay)
                         .ToList();
 
-                    int sessionCount = 0;
-                    int existingScheduleCount = existingSchedules.Count;
-                    DateOnly currentDate = registrationStartDate;
-
-                    // Generate schedules based on the number of sessions
-                    while (sessionCount < learningRegis.NumberOfSession)
+                    // Use the actual saved schedules and their session numbers
+                    for (int sessionNumber = 1; sessionNumber <= existingSchedules.Count; sessionNumber++)
                     {
-                        // Find the next valid learning day from the current date
-                        DayOfWeek currentDayOfWeek = currentDate.DayOfWeek;
-                        var nextLearningDays = orderedLearningDays
-                            .OrderBy(ld => ((int)ld.DayOfWeek - (int)currentDayOfWeek + 7) % 7)
-                            .ToList();
-
-                        if (!nextLearningDays.Any())
-                            break;
-
-                        // Get the next closest learning day
-                        var nextLearningDay = nextLearningDays.First();
-                        int daysToAdd = ((int)nextLearningDay.DayOfWeek - (int)currentDayOfWeek + 7) % 7;
-
-                        DateOnly scheduleStartDate = currentDate.AddDays(daysToAdd);
-
-                        var existingSchedule = sessionCount < existingScheduleCount ? existingSchedules[sessionCount] : null;
-
-                        var sessionNumber = sessionCount + 1; // Session numbers typically start at 1
+                        var existingSchedule = existingSchedules[sessionNumber - 1];
                         var learningPathSession = sortedSessions.FirstOrDefault(s => s.SessionNumber == sessionNumber);
 
-                        // Create schedule if it doesn't already exist in our list for this date and learning registration
-                        if (!schedules.Any(s => s.StartDay == scheduleStartDate && s.LearningRegisId == learningRegis.LearningRegisId))
+                        // Get the actual day and time from the saved schedule
+                        DateOnly scheduleStartDate = existingSchedule.StartDay;
+                        TimeOnly scheduleTimeStart = existingSchedule.TimeStart;
+                        TimeOnly scheduleTimeEnd = existingSchedule.TimeEnd;
+
+                        var orderedLearningDays = learningRegis.LearningRegistrationDay
+                            .OrderBy(day => day.DayOfWeek)
+                            .ToList();
+
+                        var scheduleTeacherId = existingSchedule.TeacherId ?? learningRegis.TeacherId;
+                        var scheduleTeacherName = existingSchedule.Teacher?.Fullname ??
+                                                  learningRegis.Teacher?.Fullname ?? "N/A";
+
+                        var scheduleDto = new ScheduleDTO
                         {
-                            // Use the teacher from the existing schedule if available, otherwise use the learning registration's teacher
-                            var scheduleTeacherId = existingSchedule?.TeacherId ?? learningRegis.TeacherId;
-                            var scheduleTeacherName = existingSchedule?.Teacher?.Fullname ??
-                                                      learningRegis.Teacher?.Fullname ?? "N/A";
-                            // Ensure LearningRegisId is set in the schedule
-                            var scheduleDto = new ScheduleDTO
+                            ScheduleId = existingSchedule.ScheduleId,
+                            Mode = existingSchedule.Mode,
+                            TimeStart = scheduleTimeStart.ToString("HH:mm"),
+                            TimeEnd = scheduleTimeEnd.ToString("HH:mm"),
+                            DayOfWeek = scheduleStartDate.DayOfWeek.ToString(),
+                            StartDay = scheduleStartDate,
+                            TeacherId = scheduleTeacherId,
+                            TeacherName = scheduleTeacherName,
+                            LearnerId = learningRegis.LearnerId,
+                            LearnerName = learningRegis.Learner?.FullName ?? "N/A",
+                            LearnerAddress = learningRegis.Learner?.Account?.Address ?? "N/A",
+                            ClassId = learningRegis.ClassId,
+                            ClassName = learningRegis.Classes?.ClassName ?? "N/A",
+                            RegistrationStartDay = learningRegis.StartDay,
+                            LearningRegisId = learningRegis.LearningRegisId,
+                            AttendanceStatus = existingSchedule.AttendanceStatus,
+                            ChangeReason = existingSchedule.ChangeReason,
+                            ScheduleDays = orderedLearningDays.Select(day => new ScheduleDaysDTO
                             {
-                                ScheduleId = existingSchedule?.ScheduleId ?? 0,
-                                Mode = existingSchedule?.Mode ?? ScheduleMode.OneOnOne,
-                                TimeStart = learningRegis.TimeStart.ToString("HH:mm"),
-                                TimeEnd = learningRegis.TimeStart.AddMinutes(learningRegis.TimeLearning).ToString("HH:mm"),
-                                DayOfWeek = scheduleStartDate.DayOfWeek.ToString(),
-                                StartDay = scheduleStartDate, // Store the DateOnly object
-                                TeacherId = scheduleTeacherId, // Use the correct teacher ID from the existing schedule
-                                TeacherName = scheduleTeacherName,
-                                LearnerId = learningRegis.LearnerId,
-                                LearnerName = learningRegis.Learner?.FullName ?? "N/A",
-                                LearnerAddress = learningRegis.Learner?.Account?.Address ?? "N/A",
-                                ClassId = learningRegis.ClassId,
-                                ClassName = learningRegis.Classes?.ClassName ?? "N/A",
-                                RegistrationStartDay = learningRegis.StartDay,
-                                LearningRegisId = learningRegis.LearningRegisId,
-                                AttendanceStatus = existingSchedule?.AttendanceStatus ?? 0,
-                                ScheduleDays = orderedLearningDays.Select(day => new ScheduleDaysDTO
-                                {
-                                    DayOfWeeks = (DayOfWeeks)day.DayOfWeek
-                                }).ToList()
-                            };
+                                DayOfWeeks = (DayOfWeeks)day.DayOfWeek
+                            }).ToList()
+                        };
 
-                            // Add learning path session information if available
-                            if (learningPathSession != null)
-                            {
-                                scheduleDto.LearningPathSessionId = learningPathSession.LearningPathSessionId;
-                                scheduleDto.SessionNumber = learningPathSession.SessionNumber;
-                                scheduleDto.SessionTitle = learningPathSession.Title;
-                                scheduleDto.SessionDescription = learningPathSession.Description;
-                                scheduleDto.IsSessionCompleted = learningPathSession.IsCompleted;
-                            }
-                            else
-                            {
-                                // Default values if no session is found
-                                scheduleDto.SessionNumber = sessionNumber;
-                                scheduleDto.SessionTitle = $"Session {sessionNumber}";
-                                scheduleDto.SessionDescription = "";
-                                scheduleDto.IsSessionCompleted = false;
-                            }
-
-                            schedules.Add(scheduleDto);
-
-                            sessionCount++;
+                        if (learningPathSession != null)
+                        {
+                            scheduleDto.LearningPathSessionId = learningPathSession.LearningPathSessionId;
+                            scheduleDto.SessionNumber = learningPathSession.SessionNumber;
+                            scheduleDto.SessionTitle = learningPathSession.Title;
+                            scheduleDto.SessionDescription = learningPathSession.Description;
+                            scheduleDto.IsSessionCompleted = learningPathSession.IsCompleted;
+                        }
+                        else
+                        {
+                            scheduleDto.SessionNumber = sessionNumber;
+                            scheduleDto.SessionTitle = $"Session {sessionNumber}";
+                            scheduleDto.SessionDescription = "";
+                            scheduleDto.IsSessionCompleted = false;
                         }
 
-                        // Move to the next day to find the next schedule
-                        currentDate = scheduleStartDate.AddDays(1);
+                        schedules.Add(scheduleDto);
                     }
                 }
 
@@ -301,6 +262,7 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
+
         // get correct
         public async Task<ResponseDTO> GetSchedulesByTeacherIdAsync(int teacherId)
         {
@@ -315,18 +277,15 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Get all schedules directly for this teacher
                 var teacherSchedules = await _unitOfWork.ScheduleRepository
                     .GetWhereAsync(s => s.TeacherId == teacherId && s.Mode == ScheduleMode.OneOnOne);
 
-                // Get all learning registrations related to these schedules
                 var learningRegisIds = teacherSchedules
                     .Where(s => s.LearningRegisId.HasValue)
                     .Select(s => s.LearningRegisId.Value)
                     .Distinct()
                     .ToList();
 
-                // Fetch learning registrations with all necessary includes
                 var learningRegs = await _unitOfWork.LearningRegisRepository
                     .GetWithIncludesAsync(
                         x => learningRegisIds.Contains(x.LearningRegisId) &&
@@ -349,46 +308,37 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     if (!learningRegis.StartDay.HasValue)
                     {
-                        continue; // Skip this learning registration instead of failing everything
+                        continue;
                     }
 
-                    // Get learning path sessions for this registration
                     var learningPathSessions = await _unitOfWork.LearningPathSessionRepository
                         .GetByLearningRegisIdAsync(learningRegis.LearningRegisId);
 
-                    // Sort by session number
                     var sortedSessions = learningPathSessions
                         .OrderBy(s => s.SessionNumber)
                         .ToList();
 
-                    // Get all existing schedules for this learning registration (regardless of teacher)
                     var allRegistrationSchedules = learningRegis.Schedules
                         .Where(s => s.Mode == ScheduleMode.OneOnOne)
                         .OrderBy(s => s.StartDay)
                         .ToList();
 
-                    // Get existing schedules for this teacher
                     var existingSchedules = learningRegis.Schedules
                         .Where(s => s.Mode == ScheduleMode.OneOnOne && s.TeacherId == teacherId)
                         .OrderBy(s => s.StartDay)
                         .ToList();
 
-                    // Process each existing schedule assigned to this teacher
                     foreach (var existingSchedule in existingSchedules)
                     {
                         DateOnly scheduleStartDate = existingSchedule.StartDay;
 
-                        // Find the session number based on the schedule's position in ALL schedules for this registration
-                        // This maintains the correct session even when teacher is changed
                         var allSchedulesPosition = allRegistrationSchedules
                             .FindIndex(s => s.ScheduleId == existingSchedule.ScheduleId);
 
                         var sessionNumber = allSchedulesPosition + 1;
 
-                        // Find the learning path session for this session number
                         var learningPathSession = sortedSessions.FirstOrDefault(s => s.SessionNumber == sessionNumber);
 
-                        // Create schedule if it doesn't already exist in our list for this date and learning registration
                         if (!schedules.Any(s => s.StartDay == scheduleStartDate &&
                                                 s.LearningRegisId == learningRegis.LearningRegisId))
                         {
@@ -414,13 +364,13 @@ namespace InstruLearn_Application.BLL.Service
                                 RegistrationStartDay = learningRegis.StartDay,
                                 LearningRegisId = learningRegis.LearningRegisId,
                                 AttendanceStatus = existingSchedule.AttendanceStatus,
+                                ChangeReason = existingSchedule.ChangeReason,
                                 ScheduleDays = orderedLearningDays.Select(day => new ScheduleDaysDTO
                                 {
                                     DayOfWeeks = (DayOfWeeks)day.DayOfWeek
                                 }).ToList()
                             };
 
-                            // Add learning path session information if available
                             if (learningPathSession != null)
                             {
                                 scheduleDto.LearningPathSessionId = learningPathSession.LearningPathSessionId;
@@ -431,7 +381,6 @@ namespace InstruLearn_Application.BLL.Service
                             }
                             else
                             {
-                                // Default values if no session is found
                                 scheduleDto.SessionNumber = sessionNumber;
                                 scheduleDto.SessionTitle = $"Session {sessionNumber}";
                                 scheduleDto.SessionDescription = "";
@@ -1291,6 +1240,199 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     IsSucceed = false,
                     Message = $"Failed to update schedule: {ex.Message}"
+                };
+            }
+        }
+
+        public async Task<ResponseDTO> UpdateScheduleForMakeupAsync(int scheduleId, DateOnly newDate, TimeOnly newTimeStart, int timeLearning, string changeReason)
+        {
+            try
+            {
+                var schedule = await _unitOfWork.ScheduleRepository.GetByIdAsync(scheduleId);
+
+                if (schedule == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Schedule not found."
+                    };
+                }
+
+                if (schedule.AttendanceStatus != AttendanceStatus.Absent)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Only schedules marked as 'Absent' can be changed for makeup classes."
+                    };
+                }
+
+                // Check if the new date has the same day of week as the old date
+                if (schedule.StartDay.DayOfWeek == newDate.DayOfWeek)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = $"Makeup class must be scheduled on a different day of the week. Original class was on {schedule.StartDay.DayOfWeek}."
+                    };
+                }
+
+                var learner = schedule.LearnerId.HasValue
+                    ? await _unitOfWork.LearnerRepository.GetByIdAsync(schedule.LearnerId.Value)
+                    : null;
+
+                var learnerName = learner?.FullName ?? "N/A";
+
+                if (schedule.LearnerId.HasValue)
+                {
+                    var conflictCheck = await CheckLearnerScheduleConflictAsync(
+                        schedule.LearnerId.Value,
+                        newDate,
+                        newTimeStart,
+                        timeLearning);
+
+                    if (!conflictCheck.IsSucceed)
+                    {
+                        return conflictCheck; // Return the conflict response
+                    }
+                }
+
+                var oldDate = schedule.StartDay;
+                var oldTimeStart = schedule.TimeStart;
+                var oldTimeEnd = schedule.TimeEnd;
+                var oldDayOfWeek = oldDate.DayOfWeek;
+
+                schedule.StartDay = newDate;
+                schedule.TimeStart = newTimeStart;
+                schedule.TimeEnd = newTimeStart.AddMinutes(timeLearning);
+                schedule.ChangeReason = changeReason;
+
+                // Set attendance status to NotYet for the makeup class
+                schedule.AttendanceStatus = AttendanceStatus.NotYet;
+
+                await _unitOfWork.ScheduleRepository.UpdateAsync(schedule);
+                await _unitOfWork.SaveChangeAsync();
+
+                string oldFormattedDate = oldDate.ToString("dd/MM/yyyy");
+                string oldFormattedTimeStart = oldTimeStart.ToString("HH:mm");
+                string oldFormattedTimeEnd = oldTimeEnd.ToString("HH:mm");
+
+                string newFormattedDate = newDate.ToString("dd/MM/yyyy");
+                string newFormattedTimeStart = newTimeStart.ToString("HH:mm");
+                string newFormattedTimeEnd = schedule.TimeEnd.ToString("HH:mm");
+
+                if (schedule.LearnerId.HasValue)
+                {
+                    var learnerAccount = learner?.Account;
+
+                    if (learnerAccount != null && !string.IsNullOrEmpty(learnerAccount.Email))
+                    {
+                        string subject = "Your Makeup Class Has Been Scheduled";
+                        string body = $@"
+                <html>
+                <body>
+                    <h2>Lịch học bù đã được xác nhận</h2>
+                    <p>Xin chào {learnerName},</p>
+                    <p>Chúng tôi xác nhận lịch học bù của bạn đã được thay đổi.</p>
+                    
+                    <div style='background-color: #f0f0f0; padding: 15px; margin: 20px 0; border-radius: 5px;'>
+                        <h3>Thông tin lịch học cũ:</h3>
+                        <p><strong>Ngày:</strong> {oldFormattedDate} ({oldDayOfWeek})</p>
+                        <p><strong>Thời gian:</strong> {oldFormattedTimeStart} - {oldFormattedTimeEnd}</p>
+                    </div>
+                    
+                    <div style='background-color: #e8f5e9; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #4CAF50;'>
+                        <h3>Thông tin lịch học mới:</h3>
+                        <p><strong>Ngày:</strong> {newFormattedDate} ({newDate.DayOfWeek})</p>
+                        <p><strong>Thời gian:</strong> {newFormattedTimeStart} - {newFormattedTimeEnd}</p>
+                        <p><strong>Thời gian học:</strong> {timeLearning} phút</p>
+                        <p><strong>Lý do thay đổi:</strong> {changeReason}</p>
+                    </div>
+                    
+                    <p>Vui lòng đảm bảo bạn có mặt đúng giờ cho buổi học bù này.</p>
+                    <p>Nếu bạn có bất kì câu hỏi nào, vui lòng liên hệ với nhóm hỗ trợ của chúng tôi.</p>
+                    <p>Cảm ơn bạn đã sử dụng dịch vụ InstruLearn!</p>
+                    <p>Trân trọng,<br/>The InstruLearn Team</p>
+                </body>
+                </html>";
+
+                        await _emailService.SendEmailAsync(learnerAccount.Email, subject, body);
+                    }
+                }
+
+                if (schedule.TeacherId.HasValue)
+                {
+                    var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(schedule.TeacherId.Value);
+
+                    if (teacher != null && teacher.AccountId != null)
+                    {
+                        var teacherAccount = await _unitOfWork.AccountRepository.GetByIdAsync(teacher.AccountId);
+
+                        if (teacherAccount != null && !string.IsNullOrEmpty(teacherAccount.Email))
+                        {
+                            string subject = "Makeup Class Schedule Update";
+                            string body = $@"
+                    <html>
+                    <body>
+                        <h2>Thông báo lịch dạy bù</h2>
+                        <p>Xin chào {teacher.Fullname},</p>
+                        <p>Lịch dạy bù của bạn đã được cập nhật như sau:</p>
+                        
+                        <div style='background-color: #f0f0f0; padding: 15px; margin: 20px 0; border-radius: 5px;'>
+                            <h3>Thông tin lịch dạy cũ:</h3>
+                            <p><strong>Ngày:</strong> {oldFormattedDate} ({oldDayOfWeek})</p>
+                            <p><strong>Thời gian:</strong> {oldFormattedTimeStart} - {oldFormattedTimeEnd}</p>
+                            <p><strong>Học viên:</strong> {learnerName}</p>
+                        </div>
+                        
+                        <div style='background-color: #e8f5e9; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #4CAF50;'>
+                            <h3>Thông tin lịch dạy mới:</h3>
+                            <p><strong>Ngày:</strong> {newFormattedDate} ({newDate.DayOfWeek})</p>
+                            <p><strong>Thời gian:</strong> {newFormattedTimeStart} - {newFormattedTimeEnd}</p>
+                            <p><strong>Thời gian dạy:</strong> {timeLearning} phút</p>
+                            <p><strong>Học viên:</strong> {learnerName}</p>
+                            <p><strong>Lý do thay đổi:</strong> {changeReason}</p>
+                        </div>
+                        
+                        <p>Vui lòng đảm bảo bạn có mặt đúng giờ cho buổi dạy bù này.</p>
+                        <p>Nếu bạn có bất kì câu hỏi nào, vui lòng liên hệ với quản trị viên.</p>
+                        <p>Trân trọng,<br/>The InstruLearn Team</p>
+                    </body>
+                    </html>";
+
+                            await _emailService.SendEmailAsync(teacherAccount.Email, subject, body);
+                        }
+                    }
+                }
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = "Makeup class schedule updated successfully. Notifications sent to the learner and teacher.",
+                    Data = new
+                    {
+                        ScheduleId = schedule.ScheduleId,
+                        OldDate = oldDate,
+                        OldDayOfWeek = oldDayOfWeek.ToString(),
+                        OldTimeStart = oldTimeStart.ToString("HH:mm"),
+                        OldTimeEnd = oldTimeEnd.ToString("HH:mm"),
+                        NewDate = newDate,
+                        NewDayOfWeek = newDate.DayOfWeek.ToString(),
+                        NewTimeStart = newTimeStart.ToString("HH:mm"),
+                        NewTimeEnd = schedule.TimeEnd.ToString("HH:mm"),
+                        TimeLearning = timeLearning,
+                        ChangeReason = changeReason,
+                        AttendanceStatus = AttendanceStatus.NotYet.ToString()
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Failed to update makeup class schedule: {ex.Message}"
                 };
             }
         }

@@ -174,5 +174,47 @@ namespace InstruLearn_Application.Controllers
 
             return BadRequest(result);
         }
+
+        // Add to InstruLearn_Application/Controllers/SchedulesController.cs
+        [HttpPut("makeup/{scheduleId}")]
+        public async Task<IActionResult> UpdateScheduleForMakeup(int scheduleId, [FromBody] UpdateScheduleMakeupDTO model)
+        {
+            if (model == null)
+            {
+                return BadRequest(new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Invalid request data."
+                });
+            }
+
+            if (string.IsNullOrEmpty(model.ChangeReason))
+            {
+                return BadRequest(new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Change reason is required."
+                });
+            }
+
+            if (model.TimeLearning <= 0)
+            {
+                return BadRequest(new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Time learning must be greater than 0 minutes."
+                });
+            }
+
+            var result = await _scheduleService.UpdateScheduleForMakeupAsync(scheduleId, model.NewDate, model.NewTimeStart, model.TimeLearning, model.ChangeReason);
+
+            if (result.IsSucceed)
+            {
+                return Ok(result);
+            }
+
+            return BadRequest(result);
+        }
+
     }
 }
