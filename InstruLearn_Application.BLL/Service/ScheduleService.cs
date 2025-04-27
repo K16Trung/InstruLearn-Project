@@ -1147,6 +1147,19 @@ namespace InstruLearn_Application.BLL.Service
                 await _unitOfWork.ScheduleRepository.UpdateAsync(schedule);
                 await _unitOfWork.SaveChangeAsync();
 
+                // Get learner information if available
+                string learnerName = "N/A";
+                if (schedule.LearnerId.HasValue)
+                {
+                    var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(schedule.LearnerId.Value);
+                    learnerName = learner?.FullName ?? "N/A";
+                }
+
+                // Format the date and time for better readability
+                string formattedDate = schedule.StartDay.ToString("dd/MM/yyyy");
+                string formattedStartTime = schedule.TimeStart.ToString("HH:mm");
+                string formattedEndTime = schedule.TimeEnd.ToString("HH:mm");
+
                 // If there's a learner associated with this schedule, send them a notification
                 if (schedule.LearnerId.HasValue)
                 {
@@ -1157,11 +1170,6 @@ namespace InstruLearn_Application.BLL.Service
                         var account = await _unitOfWork.AccountRepository.GetByIdAsync(learner.AccountId);
                         if (account != null && !string.IsNullOrEmpty(account.Email))
                         {
-                            // Format the date and time for better readability
-                            string formattedDate = schedule.StartDay.ToString("dd/MM/yyyy");
-                            string formattedStartTime = schedule.TimeStart.ToString("HH:mm");
-                            string formattedEndTime = schedule.TimeEnd.ToString("HH:mm");
-
                             // Send a notification email to the learner
                             string subject = "Your Schedule Has Been Updated";
                             string body = $@"
@@ -1179,6 +1187,69 @@ namespace InstruLearn_Application.BLL.Service
                         </html>";
 
                             await _emailService.SendEmailAsync(account.Email, subject, body);
+                        }
+                    }
+                }
+
+                // Send notification to the new teacher
+                if (teacher.AccountId != null) // Check if AccountId is not null
+                {
+                    var teacherAccount = await _unitOfWork.AccountRepository.GetByIdAsync(teacher.AccountId);
+                    if (teacherAccount != null && !string.IsNullOrEmpty(teacherAccount.Email))
+                    {
+                        string subject = "New Schedule Assignment";
+                        string body = $@"
+                <html>
+                <body>
+                    <h2>Thông báo lịch dạy mới</h2>
+                    <p>Xin chào {teacher.Fullname},</p>
+                    <p>Bạn đã được phân công một lịch dạy mới như sau:</p>
+                    <div style='background-color: #f0f0f0; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #4CAF50;'>
+                        <h3 style='margin-top: 0; color: #333;'>Chi tiết lịch học:</h3>
+                        <p><strong>Ngày:</strong> {formattedDate}</p>
+                        <p><strong>Thời gian:</strong> {formattedStartTime} - {formattedEndTime}</p>
+                        <p><strong>Học viên:</strong> {learnerName}</p>
+                    </div>
+                    <p>Vui lòng kiểm tra hệ thống để biết thêm chi tiết về lịch dạy của bạn.</p>
+                    <p>Nếu bạn có bất kì câu hỏi nào, vui lòng liên hệ với quản trị viên.</p>
+                    <p>Trân trọng,<br/>The InstruLearn Team</p>
+                </body>
+                </html>";
+
+                        await _emailService.SendEmailAsync(teacherAccount.Email, subject, body);
+                    }
+                }
+
+                // Check if we need to notify the old teacher too
+                if (oldTeacherId.HasValue && oldTeacherId.Value != teacherId)
+                {
+                    var oldTeacher = await _unitOfWork.TeacherRepository.GetByIdAsync(oldTeacherId.Value);
+                    if (oldTeacher != null && oldTeacher.AccountId != null) // Check if AccountId is not null
+                    {
+                        var oldTeacherAccount = await _unitOfWork.AccountRepository.GetByIdAsync(oldTeacher.AccountId);
+                        if (oldTeacherAccount != null && !string.IsNullOrEmpty(oldTeacherAccount.Email))
+                        {
+                            string subject = "Schedule Assignment Change";
+                            string body = $@"
+                    <html>
+                    <body>
+                        <h2>Thông báo thay đổi lịch dạy</h2>
+                        <p>Xin chào {oldTeacher.Fullname},</p>
+                        <p>Một lịch dạy của bạn đã được chuyển cho giáo viên khác:</p>
+                        <div style='background-color: #f0f0f0; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #ff9800;'>
+                            <h3 style='margin-top: 0; color: #333;'>Chi tiết lịch học bị thay đổi:</h3>
+                            <p><strong>Ngày:</strong> {formattedDate}</p>
+                            <p><strong>Thời gian:</strong> {formattedStartTime} - {formattedEndTime}</p>
+                            <p><strong>Học viên:</strong> {learnerName}</p>
+                            <p><strong>Giáo viên mới:</strong> {teacher.Fullname}</p>
+                        </div>
+                        <p>Vui lòng kiểm tra hệ thống để cập nhật lịch dạy mới của bạn.</p>
+                        <p>Nếu bạn có bất kì câu hỏi nào, vui lòng liên hệ với quản trị viên.</p>
+                        <p>Trân trọng,<br/>The InstruLearn Team</p>
+                    </body>
+                    </html>";
+
+                            await _emailService.SendEmailAsync(oldTeacherAccount.Email, subject, body);
                         }
                     }
                 }
