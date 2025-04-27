@@ -361,7 +361,13 @@ namespace InstruLearn_Application.BLL.Service
                         .OrderBy(s => s.SessionNumber)
                         .ToList();
 
-                    // Get existing schedules for this learning registration
+                    // Get all existing schedules for this learning registration (regardless of teacher)
+                    var allRegistrationSchedules = learningRegis.Schedules
+                        .Where(s => s.Mode == ScheduleMode.OneOnOne)
+                        .OrderBy(s => s.StartDay)
+                        .ToList();
+
+                    // Get existing schedules for this teacher
                     var existingSchedules = learningRegis.Schedules
                         .Where(s => s.Mode == ScheduleMode.OneOnOne && s.TeacherId == teacherId)
                         .OrderBy(s => s.StartDay)
@@ -371,7 +377,15 @@ namespace InstruLearn_Application.BLL.Service
                     foreach (var existingSchedule in existingSchedules)
                     {
                         DateOnly scheduleStartDate = existingSchedule.StartDay;
-                        var sessionNumber = existingSchedules.IndexOf(existingSchedule) + 1;
+
+                        // Find the session number based on the schedule's position in ALL schedules for this registration
+                        // This maintains the correct session even when teacher is changed
+                        var allSchedulesPosition = allRegistrationSchedules
+                            .FindIndex(s => s.ScheduleId == existingSchedule.ScheduleId);
+
+                        var sessionNumber = allSchedulesPosition + 1;
+
+                        // Find the learning path session for this session number
                         var learningPathSession = sortedSessions.FirstOrDefault(s => s.SessionNumber == sessionNumber);
 
                         // Create schedule if it doesn't already exist in our list for this date and learning registration
@@ -445,7 +459,6 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
         }
-
 
         public async Task<ResponseDTO> GetClassSchedulesByTeacherIdAsync(int teacherId)
         {
@@ -1108,7 +1121,7 @@ namespace InstruLearn_Application.BLL.Service
         }
 
         // Add to InstruLearn_Application.BLL/Service/ScheduleService.cs
-        public async Task<ResponseDTO> UpdateScheduleTeacherAsync(int scheduleId, int teacherId)
+        public async Task<ResponseDTO> UpdateScheduleTeacherAsync(int scheduleId, int teacherId, string changeReason)
         {
             try
             {
@@ -1141,8 +1154,9 @@ namespace InstruLearn_Application.BLL.Service
                     ? (await _unitOfWork.TeacherRepository.GetByIdAsync(oldTeacherId.Value))?.Fullname ?? "Unknown"
                     : "No teacher";
 
-                // Update the schedule with the new teacher ID
+                // Update the schedule with the new teacher ID and change reason
                 schedule.TeacherId = teacherId;
+                schedule.ChangeReason = changeReason; // Store the reason for this change
 
                 await _unitOfWork.ScheduleRepository.UpdateAsync(schedule);
                 await _unitOfWork.SaveChangeAsync();
@@ -1173,18 +1187,18 @@ namespace InstruLearn_Application.BLL.Service
                             // Send a notification email to the learner
                             string subject = "Your Schedule Has Been Updated";
                             string body = $@"
-                        <html>
-                        <body>
-                            <h2>Thông báo cập nhật lịch học</h2>
-                            <p>Xin chào {learner.FullName},</p>
-                            <p>Chúng tôi muốn thông báo rằng lịch học của bạn ngày {formattedDate} từ {formattedStartTime} - {formattedEndTime} đã được thay đổi.</p>
-                            <p><strong>Thay đổi:</strong> Giáo viên hiện tại của bạn đã được thay thế từ {oldTeacherName} sang {teacher.Fullname}.</p>
-                            <p><strong>Lý do:</strong> Giáo viên {oldTeacherName} đang có việc đột xuất cần xử lí</p>
-                            <p>Nếu bạn có bất kì câu hỏi nào, vui lòng liên hệ với nhóm hỗ trợ của chúng tôi.</p>
-                            <p>Cảm ơn bạn đã sử dụng dịch vụ InstruLearn!</p>
-                            <p>Trân trọng,<br/>The InstruLearn Team</p>
-                        </body>
-                        </html>";
+                <html>
+                <body>
+                    <h2>Thông báo cập nhật lịch học</h2>
+                    <p>Xin chào {learner.FullName},</p>
+                    <p>Chúng tôi muốn thông báo rằng lịch học của bạn ngày {formattedDate} từ {formattedStartTime} - {formattedEndTime} đã được thay đổi.</p>
+                    <p><strong>Thay đổi:</strong> Giáo viên hiện tại của bạn đã được thay thế từ {oldTeacherName} sang {teacher.Fullname}.</p>
+                    <p><strong>Lý do:</strong> {changeReason}</p>
+                    <p>Nếu bạn có bất kì câu hỏi nào, vui lòng liên hệ với nhóm hỗ trợ của chúng tôi.</p>
+                    <p>Cảm ơn bạn đã sử dụng dịch vụ InstruLearn!</p>
+                    <p>Trân trọng,<br/>The InstruLearn Team</p>
+                </body>
+                </html>";
 
                             await _emailService.SendEmailAsync(account.Email, subject, body);
                         }
@@ -1209,6 +1223,7 @@ namespace InstruLearn_Application.BLL.Service
                         <p><strong>Ngày:</strong> {formattedDate}</p>
                         <p><strong>Thời gian:</strong> {formattedStartTime} - {formattedEndTime}</p>
                         <p><strong>Học viên:</strong> {learnerName}</p>
+                        <p><strong>Lý do được phân công:</strong> {changeReason}</p>
                     </div>
                     <p>Vui lòng kiểm tra hệ thống để biết thêm chi tiết về lịch dạy của bạn.</p>
                     <p>Nếu bạn có bất kì câu hỏi nào, vui lòng liên hệ với quản trị viên.</p>
@@ -1242,6 +1257,7 @@ namespace InstruLearn_Application.BLL.Service
                             <p><strong>Thời gian:</strong> {formattedStartTime} - {formattedEndTime}</p>
                             <p><strong>Học viên:</strong> {learnerName}</p>
                             <p><strong>Giáo viên mới:</strong> {teacher.Fullname}</p>
+                            <p><strong>Lý do thay đổi:</strong> {changeReason}</p>
                         </div>
                         <p>Vui lòng kiểm tra hệ thống để cập nhật lịch dạy mới của bạn.</p>
                         <p>Nếu bạn có bất kì câu hỏi nào, vui lòng liên hệ với quản trị viên.</p>
@@ -1257,14 +1273,15 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Schedule updated successfully. Notification sent to the learner.",
+                    Message = "Schedule updated successfully. Notifications sent to the learner and teachers.",
                     Data = new
                     {
                         ScheduleId = schedule.ScheduleId,
                         TeacherId = schedule.TeacherId,
                         TeacherName = teacher.Fullname,
                         PreviousTeacherId = oldTeacherId,
-                        PreviousTeacherName = oldTeacherName
+                        PreviousTeacherName = oldTeacherName,
+                        ChangeReason = changeReason
                     }
                 };
             }
