@@ -165,7 +165,7 @@ namespace InstruLearn_Application.Controllers
                 });
             }
 
-            var result = await _scheduleService.UpdateScheduleTeacherAsync(scheduleId, model.TeacherId);
+            var result = await _scheduleService.UpdateScheduleTeacherAsync(scheduleId, model.TeacherId, model.ChangeReason);
 
             if (result.IsSucceed)
             {

@@ -27,7 +27,7 @@ namespace InstruLearn_Application.BLL.Service.IService
         Task<ResponseDTO> CheckLearnerScheduleConflictAsync(int learnerId, DateOnly startDay, TimeOnly timeStart, int durationMinutes);
         Task<ResponseDTO> CheckLearnerClassScheduleConflictAsync(int learnerId, int classId);
         Task<ResponseDTO> GetLearnerAttendanceStatsAsync(int learnerId, int? learningRegisId = null, int? classId = null);
-        Task<ResponseDTO> UpdateScheduleTeacherAsync(int scheduleId, int teacherId);
+        Task<ResponseDTO> UpdateScheduleTeacherAsync(int scheduleId, int teacherId, string changeReason);
 
     }
 }
