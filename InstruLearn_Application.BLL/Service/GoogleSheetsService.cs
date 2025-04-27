@@ -10,7 +10,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 
 namespace InstruLearn_Application.BLL.Service
@@ -20,6 +19,8 @@ namespace InstruLearn_Application.BLL.Service
         private readonly IConfiguration _configuration;
         private readonly string _spreadsheetId;
         private readonly string _credentialsPath;
+        private readonly string _applicationName;
+        private readonly string _sheetName;
         private readonly ILogger<GoogleSheetsService> _logger;
         private readonly bool _ignoreErrors;
 
@@ -27,13 +28,40 @@ namespace InstruLearn_Application.BLL.Service
         {
             _configuration = configuration;
             _logger = logger;
-            _spreadsheetId = _configuration["GoogleSheets:SpreadsheetId"];
+
+            var configSpreadsheetId = _configuration["GoogleSheets:SpreadsheetId"];
+            if (configSpreadsheetId != null && configSpreadsheetId.Contains("spreadsheets/d/"))
+            {
+                var parts = configSpreadsheetId.Split(new[] { "spreadsheets/d/" }, StringSplitOptions.None);
+                if (parts.Length > 1)
+                {
+                    var idPart = parts[1];
+                    _spreadsheetId = idPart.Split('/')[0];
+                }
+                else
+                {
+                    _spreadsheetId = configSpreadsheetId;
+                }
+            }
+            else
+            {
+                _spreadsheetId = configSpreadsheetId;
+            }
+
+            LogInfo($"Using spreadsheet ID: {_spreadsheetId}");
+
             _ignoreErrors = bool.TryParse(_configuration["GoogleSheets:IgnoreErrors"], out bool ignoreErrors) && ignoreErrors;
+            _applicationName = _configuration["GoogleSheets:ApplicationName"] ?? "InstruLearn Certificate Tracking";
+            _sheetName = _configuration["GoogleSheets:SheetName"] ?? "Certificates";
 
             string configPath = _configuration["GoogleSheets:CredentialsPath"];
 
             string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
             string projectDirectory = Directory.GetCurrentDirectory();
+
+            LogInfo($"Base Directory: {baseDirectory}");
+            LogInfo($"Project Directory: {projectDirectory}");
+            LogInfo($"Config Path: {configPath}");
 
             var possiblePaths = new List<string>
             {
@@ -45,6 +73,8 @@ namespace InstruLearn_Application.BLL.Service
                 Path.Combine(Directory.GetParent(baseDirectory)?.FullName ?? "", "Credentials", "credentials.json"),
                 Path.Combine(Directory.GetParent(baseDirectory)?.FullName ?? "", "InstruLearn_Application.Model", "Credentials", "credentials.json")
             };
+
+            LogInfo($"Searching for credentials file in the following locations: {string.Join(", ", possiblePaths)}");
 
             string foundPath = null;
             foreach (var path in possiblePaths)
@@ -72,6 +102,8 @@ namespace InstruLearn_Application.BLL.Service
                 LogError(errorMessage);
                 throw new FileNotFoundException(errorMessage);
             }
+
+            LogInfo($"GoogleSheetsService initialized with SpreadsheetId: {_spreadsheetId}, ApplicationName: {_applicationName}, IgnoreErrors: {_ignoreErrors}");
         }
 
         private void LogInfo(string message)
@@ -92,6 +124,16 @@ namespace InstruLearn_Application.BLL.Service
             {
                 _logger?.LogError(ex, message);
                 Console.WriteLine($"ERROR: {message}\nException: {ex}");
+
+                if (ex is Google.GoogleApiException apiEx)
+                {
+                    Console.WriteLine($"Google API Error: Code={apiEx.Error?.Code}, Message={apiEx.Error?.Message}");
+                }
+
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+                }
             }
             else
             {
@@ -103,6 +145,9 @@ namespace InstruLearn_Application.BLL.Service
         public async Task<bool> SaveCertificationDataAsync(CertificationDataDTO certificationData)
         {
             LogInfo($"Starting to save certification data for ID {certificationData.CertificationId}");
+            LogInfo($"Using spreadsheet ID: {_spreadsheetId}");
+            LogInfo($"Credentials path: {_credentialsPath}, Exists: {File.Exists(_credentialsPath)}");
+
             try
             {
                 GoogleCredential credential;
@@ -139,7 +184,7 @@ namespace InstruLearn_Application.BLL.Service
                     var service = new SheetsService(new BaseClientService.Initializer()
                     {
                         HttpClientInitializer = credential,
-                        ApplicationName = "InstruLearn Certificate Tracking"
+                        ApplicationName = _applicationName
                     });
 
                     var range = "Certificates!A:H";
@@ -257,6 +302,10 @@ namespace InstruLearn_Application.BLL.Service
                     try
                     {
                         LogInfo("Appending certification data...");
+
+                        LogInfo($"DEBUG: About to execute append operation for spreadsheetId={_spreadsheetId}, range={range}");
+                        LogInfo($"DEBUG: Data being written: ID={certificationData.CertificationId}, Name={certificationData.LearnerName}");
+
                         var appendRequest = service.Spreadsheets.Values.Append(valueRange, _spreadsheetId, range);
                         appendRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.USERENTERED;
                         var appendResponse = await appendRequest.ExecuteAsync();
@@ -271,6 +320,16 @@ namespace InstruLearn_Application.BLL.Service
                             LogError("Append operation returned null response or null updates");
                             return !_ignoreErrors;
                         }
+                    }
+                    catch (Google.GoogleApiException gex)
+                    {
+                        LogError($"Google API Error during append: Code={gex.Error?.Code}, Message={gex.Error?.Message}", gex);
+                        if (_ignoreErrors)
+                        {
+                            LogWarning("Ignoring Google API error as configured");
+                            return true;
+                        }
+                        throw;
                     }
                     catch (Exception ex)
                     {
@@ -309,6 +368,56 @@ namespace InstruLearn_Application.BLL.Service
                     return true;
                 }
                 return false;
+            }
+        }
+
+        public async Task<Dictionary<string, object>> TestGoogleSheetsConnectionAsync()
+        {
+            var result = new Dictionary<string, object>
+            {
+                ["SpreadsheetId"] = _spreadsheetId,
+                ["CredentialsPath"] = _credentialsPath,
+                ["CredentialsFileExists"] = File.Exists(_credentialsPath),
+                ["Success"] = false
+            };
+
+            try
+            {
+                GoogleCredential credential;
+                using (var stream = new FileStream(_credentialsPath, FileMode.Open, FileAccess.Read))
+                {
+                    credential = GoogleCredential.FromStream(stream)
+                        .CreateScoped(SheetsService.Scope.Spreadsheets);
+                }
+                result["CredentialsLoaded"] = true;
+
+                var service = new SheetsService(new BaseClientService.Initializer()
+                {
+                    HttpClientInitializer = credential,
+                    ApplicationName = _applicationName
+                });
+                result["ServiceCreated"] = true;
+
+                var spreadsheet = await service.Spreadsheets.Get(_spreadsheetId).ExecuteAsync();
+                result["SpreadsheetTitle"] = spreadsheet.Properties.Title;
+                result["SheetCount"] = spreadsheet.Sheets.Count;
+                result["Sheets"] = string.Join(", ", spreadsheet.Sheets.Select(s => s.Properties.Title));
+                result["Success"] = true;
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                result["Error"] = ex.Message;
+                result["ErrorType"] = ex.GetType().Name;
+
+                if (ex is Google.GoogleApiException apiEx)
+                {
+                    result["ApiErrorCode"] = apiEx.Error?.Code;
+                    result["ApiErrorMessage"] = apiEx.Error?.Message;
+                }
+
+                return result;
             }
         }
     }
