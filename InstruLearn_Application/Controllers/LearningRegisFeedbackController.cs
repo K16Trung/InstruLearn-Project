@@ -19,7 +19,7 @@ namespace InstruLearn_Application.Controllers
 
         #region Question Management
 
-        [HttpGet("questions")]
+        [HttpGet("GetActiveQuestions")]
         public async Task<IActionResult> GetActiveQuestions()
         {
             var questions = await _feedbackService.GetAllActiveQuestionsAsync();
@@ -36,21 +36,21 @@ namespace InstruLearn_Application.Controllers
             return Ok(question);
         }
 
-        [HttpPost("questions")]
+        [HttpPost("CreateQuestion")]
         public async Task<IActionResult> CreateQuestion([FromBody] LearningRegisFeedbackQuestionDTO questionDTO)
         {
             var response = await _feedbackService.CreateQuestionAsync(questionDTO);
             return Ok(response);
         }
 
-        [HttpPut("questions/{questionId}")]
+        [HttpPut("UpdateQuestion/{questionId}")]
         public async Task<IActionResult> UpdateQuestion(int questionId, [FromBody] LearningRegisFeedbackQuestionDTO questionDTO)
         {
             var response = await _feedbackService.UpdateQuestionAsync(questionId, questionDTO);
             return Ok(response);
         }
 
-        [HttpDelete("questions/{questionId}")]
+        [HttpDelete("DeleteQuestion/{questionId}")]
         public async Task<IActionResult> DeleteQuestion(int questionId)
         {
             var response = await _feedbackService.DeleteQuestionAsync(questionId);
@@ -75,14 +75,14 @@ namespace InstruLearn_Application.Controllers
 
         #region Feedback Submission
 
-        [HttpPost("submit")]
+        [HttpPost("SubmitFeedback")]
         public async Task<IActionResult> SubmitFeedback([FromBody] CreateLearningRegisFeedbackDTO createDTO)
         {
             var response = await _feedbackService.SubmitFeedbackAsync(createDTO);
             return Ok(response);
         }
 
-        [HttpGet("{feedbackId}")]
+        [HttpGet("Feedback/{feedbackId}")]
         public async Task<IActionResult> GetFeedback(int feedbackId)
         {
             var feedback = await _feedbackService.GetFeedbackByIdAsync(feedbackId);
@@ -116,14 +116,14 @@ namespace InstruLearn_Application.Controllers
             return Ok(feedbacks);
         }
 
-        [HttpPut("{feedbackId}")]
+        [HttpPut("UpdateFeedback/{feedbackId}")]
         public async Task<IActionResult> UpdateFeedback(int feedbackId, [FromBody] UpdateLearningRegisFeedbackDTO updateDTO)
         {
             var response = await _feedbackService.UpdateFeedbackAsync(feedbackId, updateDTO);
             return Ok(response);
         }
 
-        [HttpDelete("{feedbackId}")]
+        [HttpDelete("DeleteFeedback/{feedbackId}")]
         public async Task<IActionResult> DeleteFeedback(int feedbackId)
         {
             var response = await _feedbackService.DeleteFeedbackAsync(feedbackId);
