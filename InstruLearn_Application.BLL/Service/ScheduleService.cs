@@ -821,7 +821,7 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
-        public async Task<ResponseDTO> GetLearnerAttendanceStatsAsync(int learnerId, int? learningRegisId = null, int? classId = null)
+        public async Task<ResponseDTO> GetLearnerAttendanceStatsAsync(int learnerId)
         {
             try
             {
@@ -834,236 +834,100 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // For tracking individual registration attendance
-                if (learningRegisId.HasValue)
+                // Get all 1-1 registrations
+                var oneOnOneRegistrations = await _unitOfWork.LearningRegisRepository
+                    .GetWithIncludesAsync(
+                        lr => lr.LearnerId == learnerId &&
+                             lr.ClassId == null &&
+                             (lr.Status == LearningRegis.Fourty ||
+                              lr.Status == LearningRegis.Sixty ||
+                              lr.Status == LearningRegis.FourtyFeedbackDone),
+                        "Teacher,Major");
+
+                // Get all class enrollments
+                var classEnrollments = await _unitOfWork.LearningRegisRepository
+                    .GetWithIncludesAsync(
+                        lr => lr.LearnerId == learnerId &&
+                             lr.ClassId != null &&
+                             (lr.Status == LearningRegis.Accepted),
+                        "Classes,Classes.Teacher,Major");
+
+                var registrationStats = new List<object>();
+
+                // Process one-on-one registrations individually
+                foreach (var regis in oneOnOneRegistrations)
                 {
-                    var learningRegis = await _unitOfWork.LearningRegisRepository
-                        .GetByIdAsync(learningRegisId.Value);
-
-                    if (learningRegis == null)
-                    {
-                        return new ResponseDTO
-                        {
-                            IsSucceed = false,
-                            Message = "Learning registration not found."
-                        };
-                    }
-
-                    if (learningRegis.LearnerId != learnerId)
-                    {
-                        return new ResponseDTO
-                        {
-                            IsSucceed = false,
-                            Message = "This learning registration does not belong to the specified learner."
-                        };
-                    }
-
-                    var oneOnOneSchedules = await _unitOfWork.ScheduleRepository
-                        .GetWhereAsync(s => s.LearningRegisId == learningRegisId.Value &&
+                    var schedules = await _unitOfWork.ScheduleRepository
+                        .GetWhereAsync(s => s.LearningRegisId == regis.LearningRegisId &&
                                            s.LearnerId == learnerId &&
                                            s.Mode == ScheduleMode.OneOnOne);
 
-                    int totalSessions = learningRegis.NumberOfSession;
-                    int attendedSessions = oneOnOneSchedules.Count(s => s.AttendanceStatus == AttendanceStatus.Present);
-                    int absentSessions = oneOnOneSchedules.Count(s => s.AttendanceStatus == AttendanceStatus.Absent);
+                    int totalSessions = regis.NumberOfSession;
+                    int attendedSessions = schedules.Count(s => s.AttendanceStatus == AttendanceStatus.Present);
+                    int absentSessions = schedules.Count(s => s.AttendanceStatus == AttendanceStatus.Absent);
                     int pendingSessions = totalSessions - attendedSessions - absentSessions;
                     double attendanceRate = totalSessions > 0 ? (double)attendedSessions / totalSessions * 100 : 0;
 
-                    return new ResponseDTO
+                    registrationStats.Add(new
                     {
-                        IsSucceed = true,
-                        Message = "Attendance statistics retrieved successfully.",
-                        Data = new
-                        {
-                            LearningRegisId = learningRegis.LearningRegisId,
-                            LearnerName = learningRegis.Learner?.FullName ?? "N/A",
-                            TeacherName = learningRegis.Teacher?.Fullname ?? "N/A",
-                            TotalSessions = totalSessions,
-                            AttendedSessions = attendedSessions,
-                            AbsentSessions = absentSessions,
-                            PendingSessions = pendingSessions,
-                            AttendanceRate = Math.Round(attendanceRate, 2),
-                            RegistrationType = "One-on-One"
-                        }
-                    };
+                        RegistrationId = regis.LearningRegisId,
+                        TeacherName = regis.Teacher?.Fullname ?? "N/A",
+                        MajorName = regis.Major?.MajorName ?? "N/A",
+                        TotalSessions = totalSessions,
+                        AttendedSessions = attendedSessions,
+                        AbsentSessions = absentSessions,
+                        PendingSessions = pendingSessions,
+                        AttendanceRate = Math.Round(attendanceRate, 2),
+                        LearningRequest = regis.LearningRequest,
+                        Status = regis.Status.ToString(),
+                        Type = "One-on-One"
+                    });
                 }
-                // For tracking class attendance
-                else if (classId.HasValue)
+
+                // Process class enrollments individually
+                foreach (var enrollment in classEnrollments)
                 {
-                    var classEntity = await _unitOfWork.ClassRepository
-                        .GetByIdAsync(classId.Value);
-
-                    if (classEntity == null)
+                    if (enrollment.ClassId.HasValue && enrollment.Classes != null)
                     {
-                        return new ResponseDTO
+                        var classSchedules = await _unitOfWork.ScheduleRepository
+                            .GetWhereAsync(s => s.ClassId == enrollment.ClassId.Value &&
+                                               s.LearnerId == learnerId &&
+                                               s.Mode == ScheduleMode.Center);
+
+                        int totalDays = enrollment.Classes.totalDays;
+                        int attendedDays = classSchedules.Count(s => s.AttendanceStatus == AttendanceStatus.Present);
+                        int absentDays = classSchedules.Count(s => s.AttendanceStatus == AttendanceStatus.Absent);
+                        int pendingDays = totalDays - attendedDays - absentDays;
+                        double attendanceRate = totalDays > 0 ? (double)attendedDays / totalDays * 100 : 0;
+
+                        registrationStats.Add(new
                         {
-                            IsSucceed = false,
-                            Message = "Class not found."
-                        };
-                    }
-
-                    // Check if learner is enrolled in this class
-                    var isEnrolled = await _unitOfWork.LearningRegisRepository
-                        .AnyAsync(lr => lr.LearnerId == learnerId &&
-                                       lr.ClassId == classId.Value &&
-                                       (lr.Status == LearningRegis.Accepted));
-
-                    if (!isEnrolled)
-                    {
-                        return new ResponseDTO
-                        {
-                            IsSucceed = false,
-                            Message = "The learner is not enrolled in this class."
-                        };
-                    }
-
-                    var classSchedules = await _unitOfWork.ScheduleRepository
-                        .GetWhereAsync(s => s.ClassId == classId.Value &&
-                                           s.LearnerId == learnerId &&
-                                           s.Mode == ScheduleMode.Center);
-
-                    int totalDays = classEntity.totalDays;
-                    int attendedDays = classSchedules.Count(s => s.AttendanceStatus == AttendanceStatus.Present);
-                    int absentDays = classSchedules.Count(s => s.AttendanceStatus == AttendanceStatus.Absent);
-                    int pendingDays = totalDays - attendedDays - absentDays;
-                    double attendanceRate = totalDays > 0 ? (double)attendedDays / totalDays * 100 : 0;
-
-                    return new ResponseDTO
-                    {
-                        IsSucceed = true,
-                        Message = "Attendance statistics retrieved successfully.",
-                        Data = new
-                        {
-                            ClassId = classEntity.ClassId,
-                            ClassName = classEntity.ClassName,
-                            LearnerName = await GetLearnerName(learnerId),
-                            TeacherName = classEntity.Teacher?.Fullname ?? "N/A",
+                            ClassId = enrollment.ClassId.Value,
+                            ClassName = enrollment.Classes.ClassName,
+                            TeacherName = enrollment.Classes.Teacher?.Fullname ?? "N/A",
+                            MajorName = enrollment.Major?.MajorName ?? "N/A",
                             TotalDays = totalDays,
                             AttendedDays = attendedDays,
                             AbsentDays = absentDays,
                             PendingDays = pendingDays,
                             AttendanceRate = Math.Round(attendanceRate, 2),
-                            RegistrationType = "Class"
-                        }
-                    };
-                }
-                // If no specific registration or class is specified, return summary for all
-                else
-                {
-                    // Get all 1-1 registrations
-                    var oneOnOneRegistrations = await _unitOfWork.LearningRegisRepository
-                        .GetWithIncludesAsync(
-                            lr => lr.LearnerId == learnerId &&
-                                 lr.ClassId == null &&
-                                 (lr.Status == LearningRegis.Fourty || lr.Status == LearningRegis.Sixty),
-                            "Teacher");
-
-                    // Get all class enrollments
-                    var classEnrollments = await _unitOfWork.LearningRegisRepository
-                        .GetWithIncludesAsync(
-                            lr => lr.LearnerId == learnerId &&
-                                 lr.ClassId != null &&
-                                 (lr.Status == LearningRegis.Accepted),
-                            "Classes,Classes.Teacher");
-
-                    var registrationStats = new List<object>();
-
-                    // Process one-on-one registrations
-                    foreach (var regis in oneOnOneRegistrations)
-                    {
-                        var schedules = await _unitOfWork.ScheduleRepository
-                            .GetWhereAsync(s => s.LearningRegisId == regis.LearningRegisId &&
-                                               s.LearnerId == learnerId &&
-                                               s.Mode == ScheduleMode.OneOnOne);
-
-                        int totalSessions = regis.NumberOfSession;
-                        int attendedSessions = schedules.Count(s => s.AttendanceStatus == AttendanceStatus.Present);
-                        int absentSessions = schedules.Count(s => s.AttendanceStatus == AttendanceStatus.Absent);
-                        int pendingSessions = totalSessions - attendedSessions - absentSessions;
-                        double attendanceRate = totalSessions > 0 ? (double)attendedSessions / totalSessions * 100 : 0;
-
-                        registrationStats.Add(new
-                        {
-                            RegistrationId = regis.LearningRegisId,
-                            TeacherName = regis.Teacher?.Fullname ?? "N/A",
-                            TotalSessions = totalSessions,
-                            AttendedSessions = attendedSessions,
-                            AbsentSessions = absentSessions,
-                            PendingSessions = pendingSessions,
-                            AttendanceRate = Math.Round(attendanceRate, 2),
-                            Type = "One-on-One"
+                            LearningRequest = enrollment.LearningRequest,
+                            Status = enrollment.Status.ToString(),
+                            Type = "Class"
                         });
                     }
-
-                    // Process class enrollments
-                    foreach (var enrollment in classEnrollments)
-                    {
-                        if (enrollment.ClassId.HasValue && enrollment.Classes != null)
-                        {
-                            var classSchedules = await _unitOfWork.ScheduleRepository
-                                .GetWhereAsync(s => s.ClassId == enrollment.ClassId.Value &&
-                                                   s.LearnerId == learnerId &&
-                                                   s.Mode == ScheduleMode.Center);
-
-                            int totalDays = enrollment.Classes.totalDays;
-                            int attendedDays = classSchedules.Count(s => s.AttendanceStatus == AttendanceStatus.Present);
-                            int absentDays = classSchedules.Count(s => s.AttendanceStatus == AttendanceStatus.Absent);
-                            int pendingDays = totalDays - attendedDays - absentDays;
-                            double attendanceRate = totalDays > 0 ? (double)attendedDays / totalDays * 100 : 0;
-
-                            registrationStats.Add(new
-                            {
-                                ClassId = enrollment.ClassId.Value,
-                                ClassName = enrollment.Classes.ClassName,
-                                TeacherName = enrollment.Classes.Teacher?.Fullname ?? "N/A",
-                                TotalDays = totalDays,
-                                AttendedDays = attendedDays,
-                                AbsentDays = absentDays,
-                                PendingDays = pendingDays,
-                                AttendanceRate = Math.Round(attendanceRate, 2),
-                                Type = "Class"
-                            });
-                        }
-                    }
-
-                    // Calculate overall statistics
-                    int totalRegistrationDays = registrationStats.Sum(item =>
-                        ((dynamic)item).Type == "One-on-One"
-                            ? ((dynamic)item).TotalSessions
-                            : ((dynamic)item).TotalDays);
-
-                    int totalAttended = registrationStats.Sum(item =>
-                        ((dynamic)item).Type == "One-on-One"
-                            ? ((dynamic)item).AttendedSessions
-                            : ((dynamic)item).AttendedDays);
-
-                    int totalAbsent = registrationStats.Sum(item =>
-                        ((dynamic)item).Type == "One-on-One"
-                            ? ((dynamic)item).AbsentSessions
-                            : ((dynamic)item).AbsentDays);
-
-                    double overallAttendanceRate = totalRegistrationDays > 0
-                        ? (double)totalAttended / totalRegistrationDays * 100
-                        : 0;
-
-                    return new ResponseDTO
-                    {
-                        IsSucceed = true,
-                        Message = "Attendance statistics retrieved successfully.",
-                        Data = new
-                        {
-                            LearnerName = await GetLearnerName(learnerId),
-                            OverallStatistics = new
-                            {
-                                TotalDays = totalRegistrationDays,
-                                TotalAttended = totalAttended,
-                                TotalAbsent = totalAbsent,
-                                OverallAttendanceRate = Math.Round(overallAttendanceRate, 2)
-                            },
-                            DetailedStatistics = registrationStats
-                        }
-                    };
                 }
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = "Attendance statistics retrieved successfully.",
+                    Data = new
+                    {
+                        LearnerName = await GetLearnerName(learnerId),
+                        RegistrationStatistics = registrationStats
+                    }
+                };
             }
             catch (Exception ex)
             {
@@ -1074,6 +938,7 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
         }
+
 
         // Add to InstruLearn_Application.BLL/Service/ScheduleService.cs
         public async Task<ResponseDTO> UpdateScheduleTeacherAsync(int scheduleId, int teacherId, string changeReason)
