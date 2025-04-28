@@ -142,7 +142,7 @@ namespace InstruLearn_Application.BLL.Service
 
                 var learningRegs = await _unitOfWork.LearningRegisRepository
                     .GetWithIncludesAsync(
-                        x => x.LearnerId == learnerId && (x.Status == LearningRegis.Fourty || x.Status == LearningRegis.Sixty),
+                        x => x.LearnerId == learnerId && (x.Status == LearningRegis.Fourty || x.Status == LearningRegis.Sixty || x.Status == LearningRegis.FourtyFeedbackDone),
                         "Teacher,Learner.Account,LearningRegistrationDay,Schedules.Teacher"
                     );
 
@@ -289,7 +289,7 @@ namespace InstruLearn_Application.BLL.Service
                 var learningRegs = await _unitOfWork.LearningRegisRepository
                     .GetWithIncludesAsync(
                         x => learningRegisIds.Contains(x.LearningRegisId) &&
-                             (x.Status == LearningRegis.Fourty || x.Status == LearningRegis.Sixty),
+                             (x.Status == LearningRegis.Fourty || x.Status == LearningRegis.Sixty || x.Status == LearningRegis.FourtyFeedbackDone),
                         "Teacher,Learner.Account,LearningRegistrationDay,Schedules.Teacher"
                     );
 
