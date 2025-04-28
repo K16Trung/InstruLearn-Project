@@ -1,4 +1,5 @@
-﻿using InstruLearn_Application.Model.Models.DTO;
+﻿// InstruLearn_Application.BLL/Service/IService/ILevelAssignedService.cs
+using InstruLearn_Application.Model.Models.DTO;
 using InstruLearn_Application.Model.Models.DTO.LevelAssigned;
 using System;
 using System.Collections.Generic;
@@ -14,6 +15,7 @@ namespace InstruLearn_Application.BLL.Service.IService
         Task<ResponseDTO> GetLevelAssignedById(int levelAssignedId);
         Task<ResponseDTO> CreateLevelAssigned(CreateLevelAssignedDTO createLevelAssignedDTO);
         Task<ResponseDTO> UpdateLevelAssigned(int levelAssignedId, UpdateLevelAssignedDTO createLevelAssignedDTO);
+        Task<ResponseDTO> UpdateSyllabusLink(int levelAssignedId, UpdateSyllabusLinkDTO updateSyllabusLinkDTO);
         Task<ResponseDTO> DeleteLevelAssigned(int levelAssignedId);
     }
 }

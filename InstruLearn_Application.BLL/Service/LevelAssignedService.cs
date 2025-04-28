@@ -68,6 +68,7 @@ namespace InstruLearn_Application.BLL.Service
         public async Task<ResponseDTO> CreateLevelAssigned(CreateLevelAssignedDTO createLevelAssignedDTO)
         {
             var levelAssigned = _mapper.Map<LevelAssigned>(createLevelAssignedDTO);
+            levelAssigned.SyllabusLink = null;
             await _unitOfWork.LevelAssignedRepository.AddAsync(levelAssigned);
             await _unitOfWork.SaveChangeAsync();
 
@@ -98,6 +99,34 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     IsSucceed = false,
                     Message = "Level assigned update failed!"
+                };
+            }
+            return new ResponseDTO
+            {
+                IsSucceed = false,
+                Message = "Level assigned not found!"
+            };
+        }
+
+        public async Task<ResponseDTO> UpdateSyllabusLink(int levelAssignedId, UpdateSyllabusLinkDTO updateSyllabusLinkDTO)
+        {
+            var levelAssigned = await _unitOfWork.LevelAssignedRepository.GetByIdAsync(levelAssignedId);
+            if (levelAssigned != null)
+            {
+                levelAssigned.SyllabusLink = updateSyllabusLinkDTO.SyllabusLink;
+                var updateResult = await _unitOfWork.LevelAssignedRepository.UpdateAsync(levelAssigned);
+                if (updateResult)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = true,
+                        Message = "Syllabus link updated successfully!"
+                    };
+                }
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Syllabus link update failed!"
                 };
             }
             return new ResponseDTO

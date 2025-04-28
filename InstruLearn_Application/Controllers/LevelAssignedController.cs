@@ -44,6 +44,13 @@ namespace InstruLearn_Application.Controllers
             return Ok(result);
         }
 
+        [HttpPut("update-syllabus-link/{id}")]
+        public async Task<IActionResult> UpdateSyllabusLink(int id, UpdateSyllabusLinkDTO updateSyllabusLinkDTO)
+        {
+            var result = await _levelAssignedService.UpdateSyllabusLink(id, updateSyllabusLinkDTO);
+            return Ok(result);
+        }
+
         [HttpDelete("delete/{id}")]
         public async Task<IActionResult> DeleteLevelAssigned(int id)
         {
