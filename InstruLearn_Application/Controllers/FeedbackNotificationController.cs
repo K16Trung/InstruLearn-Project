@@ -20,7 +20,6 @@ namespace InstruLearn_Application.Controllers
         }
 
         [HttpGet("check-notifications/{learnerId}")]
-        //[Authorize(Roles = "Learner")]
         public async Task<ActionResult<ResponseDTO>> CheckNotifications(int learnerId)
         {
             var result = await _feedbackNotificationService.CheckLearnerFeedbackNotificationsAsync(learnerId);
@@ -34,7 +33,6 @@ namespace InstruLearn_Application.Controllers
         }
 
         [HttpPost("complete-feedback")]
-        //[Authorize(Roles = "Learner")]
         public async Task<ActionResult<ResponseDTO>> CompleteFeedback([FromBody] CompleteFeedbackDTO model)
         {
             if (model.FeedbackId <= 0)
@@ -57,6 +55,14 @@ namespace InstruLearn_Application.Controllers
 
             return BadRequest(result);
         }
+
+        [HttpPost("check-learning-progress")]
+        public async Task<IActionResult> CheckLearningProgress()
+        {
+            var result = await _feedbackNotificationService.CheckAndUpdateLearnerProgressAsync();
+            return Ok(result);
+        }
+
 
         [HttpPost("run-auto-check")]
         //[Authorize(Roles = "Admin,Staff,Manager")]

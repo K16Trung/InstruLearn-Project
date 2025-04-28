@@ -249,12 +249,14 @@ namespace InstruLearn_Application.BLL.Service
 
             // Check if feedback already exists
             var existingFeedback = await _unitOfWork.LearningRegisFeedbackRepository.GetFeedbackByRegistrationIdAsync(createDTO.LearningRegistrationId);
-            if (existingFeedback != null)
+
+            // Modified logic: Allow submission if feedback exists but is not completed yet
+            if (existingFeedback != null && existingFeedback.Status == FeedbackStatus.Completed)
             {
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Đã tồn tại đánh giá cho đăng ký học này"
+                    Message = "Đã tồn tại đánh giá đã hoàn thành cho đăng ký học này"
                 };
             }
 
@@ -287,65 +289,131 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
-            // Create feedback
-            var feedback = new LearningRegisFeedback
-            {
-                LearningRegistrationId = createDTO.LearningRegistrationId,
-                LearnerId = createDTO.LearnerId,
-                AdditionalComments = createDTO.AdditionalComments,
-                CreatedAt = DateTime.Now,
-                CompletedAt = DateTime.Now,
-                Status = FeedbackStatus.Completed,
-                Answers = new List<LearningRegisFeedbackAnswer>()
-            };
-
-            // Add answers
-            foreach (var answerDTO in createDTO.Answers)
-            {
-                // Validate question exists and is active
-                var question = activeQuestions.FirstOrDefault(q => q.QuestionId == answerDTO.QuestionId);
-                if (question == null)
-                {
-                    return new ResponseDTO
-                    {
-                        IsSucceed = false,
-                        Message = $"Câu hỏi không hợp lệ (ID: {answerDTO.QuestionId})"
-                    };
-                }
-
-                // Validate option belongs to the question
-                if (question.Options == null || !question.Options.Any())
-                {
-                    return new ResponseDTO
-                    {
-                        IsSucceed = false,
-                        Message = $"Câu hỏi (ID: {answerDTO.QuestionId}) không có lựa chọn nào"
-                    };
-                }
-
-                // Validate option belongs to the question
-                var option = question.Options.FirstOrDefault(o => o.OptionId == answerDTO.SelectedOptionId);
-                if (option == null)
-                {
-                    return new ResponseDTO
-                    {
-                        IsSucceed = false,
-                        Message = $"Lựa chọn không hợp lệ cho câu hỏi (ID: {answerDTO.QuestionId})"
-                    };
-                }
-
-                feedback.Answers.Add(new LearningRegisFeedbackAnswer
-                {
-                    QuestionId = answerDTO.QuestionId,
-                    SelectedOptionId = answerDTO.SelectedOptionId,
-                });
-            }
-
-            // Save to database
             try
             {
-                await _unitOfWork.LearningRegisFeedbackRepository.AddAsync(feedback);
-                await _unitOfWork.SaveChangeAsync();
+                if (existingFeedback != null)
+                {
+                    // Update existing feedback
+                    existingFeedback.AdditionalComments = createDTO.AdditionalComments;
+                    existingFeedback.CompletedAt = DateTime.Now;
+                    existingFeedback.Status = FeedbackStatus.Completed;
+
+                    // Delete existing answers if any
+                    var existingAnswers = await _unitOfWork.LearningRegisFeedbackAnswerRepository
+                        .GetAnswersByFeedbackIdAsync(existingFeedback.FeedbackId);
+
+                    foreach (var answer in existingAnswers)
+                    {
+                        await _unitOfWork.LearningRegisFeedbackAnswerRepository.DeleteAsync(answer.AnswerId);
+                    }
+
+                    // Add new answers
+                    foreach (var answerDTO in createDTO.Answers)
+                    {
+                        // Validate question exists and is active
+                        var question = activeQuestions.FirstOrDefault(q => q.QuestionId == answerDTO.QuestionId);
+                        if (question == null)
+                        {
+                            return new ResponseDTO
+                            {
+                                IsSucceed = false,
+                                Message = $"Câu hỏi không hợp lệ (ID: {answerDTO.QuestionId})"
+                            };
+                        }
+
+                        // Validate option belongs to the question
+                        if (question.Options == null || !question.Options.Any())
+                        {
+                            return new ResponseDTO
+                            {
+                                IsSucceed = false,
+                                Message = $"Câu hỏi (ID: {answerDTO.QuestionId}) không có lựa chọn nào"
+                            };
+                        }
+
+                        // Validate option belongs to the question
+                        var option = question.Options.FirstOrDefault(o => o.OptionId == answerDTO.SelectedOptionId);
+                        if (option == null)
+                        {
+                            return new ResponseDTO
+                            {
+                                IsSucceed = false,
+                                Message = $"Lựa chọn không hợp lệ cho câu hỏi (ID: {answerDTO.QuestionId})"
+                            };
+                        }
+
+                        var newAnswer = new LearningRegisFeedbackAnswer
+                        {
+                            FeedbackId = existingFeedback.FeedbackId,
+                            QuestionId = answerDTO.QuestionId,
+                            SelectedOptionId = answerDTO.SelectedOptionId,
+                        };
+
+                        await _unitOfWork.LearningRegisFeedbackAnswerRepository.AddAsync(newAnswer);
+                    }
+
+                    await _unitOfWork.LearningRegisFeedbackRepository.UpdateAsync(existingFeedback);
+                    await _unitOfWork.SaveChangeAsync();
+                }
+                else
+                {
+                    // Create new feedback
+                    var feedback = new LearningRegisFeedback
+                    {
+                        LearningRegistrationId = createDTO.LearningRegistrationId,
+                        LearnerId = createDTO.LearnerId,
+                        AdditionalComments = createDTO.AdditionalComments,
+                        CreatedAt = DateTime.Now,
+                        CompletedAt = DateTime.Now,
+                        Status = FeedbackStatus.Completed,
+                        Answers = new List<LearningRegisFeedbackAnswer>()
+                    };
+
+                    // Add answers
+                    foreach (var answerDTO in createDTO.Answers)
+                    {
+                        // Validate question exists and is active
+                        var question = activeQuestions.FirstOrDefault(q => q.QuestionId == answerDTO.QuestionId);
+                        if (question == null)
+                        {
+                            return new ResponseDTO
+                            {
+                                IsSucceed = false,
+                                Message = $"Câu hỏi không hợp lệ (ID: {answerDTO.QuestionId})"
+                            };
+                        }
+
+                        // Validate option belongs to the question
+                        if (question.Options == null || !question.Options.Any())
+                        {
+                            return new ResponseDTO
+                            {
+                                IsSucceed = false,
+                                Message = $"Câu hỏi (ID: {answerDTO.QuestionId}) không có lựa chọn nào"
+                            };
+                        }
+
+                        // Validate option belongs to the question
+                        var option = question.Options.FirstOrDefault(o => o.OptionId == answerDTO.SelectedOptionId);
+                        if (option == null)
+                        {
+                            return new ResponseDTO
+                            {
+                                IsSucceed = false,
+                                Message = $"Lựa chọn không hợp lệ cho câu hỏi (ID: {answerDTO.QuestionId})"
+                            };
+                        }
+
+                        feedback.Answers.Add(new LearningRegisFeedbackAnswer
+                        {
+                            QuestionId = answerDTO.QuestionId,
+                            SelectedOptionId = answerDTO.SelectedOptionId,
+                        });
+                    }
+
+                    await _unitOfWork.LearningRegisFeedbackRepository.AddAsync(feedback);
+                    await _unitOfWork.SaveChangeAsync();
+                }
 
                 return new ResponseDTO
                 {
@@ -361,13 +429,8 @@ namespace InstruLearn_Application.BLL.Service
                     Message = $"Lỗi khi lưu đánh giá: {ex.Message}"
                 };
             }
-
-            return new ResponseDTO
-            {
-                IsSucceed = true,
-                Message = "Gửi đánh giá thành công"
-            };
         }
+
 
         public async Task<ResponseDTO> UpdateFeedbackAsync(int feedbackId, UpdateLearningRegisFeedbackDTO updateDTO)
         {

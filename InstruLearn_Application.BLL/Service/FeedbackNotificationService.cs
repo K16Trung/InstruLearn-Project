@@ -400,6 +400,165 @@ namespace InstruLearn_Application.BLL.Service
             _logger.LogInformation($"Test email notification sent successfully to {email}");
         }
 
+        public async Task<ResponseDTO> CheckAndUpdateLearnerProgressAsync()
+        {
+            try
+            {
+                _logger.LogInformation("Starting progress check for learners with Fourty status");
+
+                // Get learning registrations with Fourty status - these are learners who have paid 40% and are learning
+                var fortyStatusRegistrations = await _unitOfWork.LearningRegisRepository
+                    .GetWithIncludesAsync(
+                        x => x.Status == LearningRegis.Fourty,
+                        "Teacher,Learner,Learner.Account,Schedules"
+                    );
+
+                if (fortyStatusRegistrations == null || !fortyStatusRegistrations.Any())
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = true,
+                        Message = "No learning registrations with Fourty status found."
+                    };
+                }
+
+                int notificationCount = 0;
+                var results = new List<object>();
+
+                // Process each registration
+                foreach (var regis in fortyStatusRegistrations)
+                {
+                    try
+                    {
+                        // Get completed sessions count (sessions marked as Present or Absent)
+                        var completedSessions = regis.Schedules
+                            .Count(s => s.AttendanceStatus == AttendanceStatus.Present ||
+                                      s.AttendanceStatus == AttendanceStatus.Absent);
+
+                        // Total number of sessions
+                        int totalSessions = regis.NumberOfSession;
+
+                        // Skip if no sessions or total sessions is invalid
+                        if (totalSessions <= 0 || completedSessions <= 0)
+                        {
+                            continue;
+                        }
+
+                        // Calculate the 40% threshold of total learning sessions (round up)
+                        int fortyPercentThreshold = (int)Math.Ceiling(totalSessions * 0.4);
+
+                        // Calculate progress percentage
+                        double progressPercentage = (double)completedSessions / totalSessions * 100;
+
+                        _logger.LogInformation($"Checking learner {regis.LearnerId} progress: {completedSessions}/{totalSessions} sessions " +
+                                               $"({progressPercentage:F1}%), threshold: {fortyPercentThreshold} sessions");
+
+                        // Check if the learner has completed at least 40% of their learning sessions
+                        if (completedSessions >= fortyPercentThreshold)
+                        {
+                            _logger.LogInformation($"Learner {regis.LearnerId} has completed {completedSessions} out of {totalSessions} " +
+                                                   $"sessions ({progressPercentage:F1}%), sending feedback notification");
+
+                            // Check if feedback already exists for this registration
+                            var existingFeedback = await _unitOfWork.LearningRegisFeedbackRepository
+                                .GetFeedbackByRegistrationIdAsync(regis.LearningRegisId);
+
+                            // If no feedback exists, create one
+                            if (existingFeedback == null)
+                            {
+                                var newFeedback = new LearningRegisFeedback
+                                {
+                                    LearningRegistrationId = regis.LearningRegisId,
+                                    LearnerId = regis.LearnerId,
+                                    CreatedAt = DateTime.Now,
+                                    Status = FeedbackStatus.NotStarted,
+                                    AdditionalComments = ""
+                                };
+
+                                await _unitOfWork.LearningRegisFeedbackRepository.AddAsync(newFeedback);
+                                await _unitOfWork.SaveChangeAsync();
+
+                                // Retrieve the created feedback with its ID
+                                existingFeedback = await _unitOfWork.LearningRegisFeedbackRepository
+                                    .GetFeedbackByRegistrationIdAsync(regis.LearningRegisId);
+
+                                _logger.LogInformation($"Created new feedback record with ID {existingFeedback.FeedbackId} for registration {regis.LearningRegisId}");
+                            }
+
+                            // Send notification if feedback is not completed yet
+                            if (existingFeedback != null &&
+                                (existingFeedback.Status == FeedbackStatus.NotStarted ||
+                                 existingFeedback.Status == FeedbackStatus.InProgress))
+                            {
+                                // If the learner has an email, send a notification email
+                                if (regis.Learner?.Account?.Email != null)
+                                {
+                                    var learnerEmail = regis.Learner.Account.Email;
+                                    var learnerName = regis.Learner.FullName;
+
+                                    // Calculate remaining payment (60% of total)
+                                    decimal remainingPayment = regis.Price.HasValue ? regis.Price.Value * 0.6m : 0;
+
+                                    // Send email notification
+                                    await SendFeedbackEmailNotification(
+                                        learnerEmail,
+                                        learnerName,
+                                        existingFeedback.FeedbackId,
+                                        regis.Teacher?.Fullname ?? "your teacher",
+                                        remainingPayment
+                                    );
+
+                                    notificationCount++;
+
+                                    results.Add(new
+                                    {
+                                        LearningRegisId = regis.LearningRegisId,
+                                        LearnerId = regis.LearnerId,
+                                        LearnerName = regis.Learner.FullName,
+                                        FeedbackId = existingFeedback.FeedbackId,
+                                        TeacherName = regis.Teacher?.Fullname ?? "N/A",
+                                        CompletedSessions = completedSessions,
+                                        TotalSessions = totalSessions,
+                                        ProgressPercentage = Math.Round(progressPercentage, 2),
+                                        RemainingPayment = remainingPayment,
+                                        EmailSent = true
+                                    });
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error processing progress check for registration {LearningRegisId}", regis.LearningRegisId);
+                        results.Add(new
+                        {
+                            LearningRegisId = regis.LearningRegisId,
+                            LearnerId = regis.LearnerId,
+                            Error = ex.Message,
+                            NotificationSent = false
+                        });
+                    }
+                }
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = $"Processed {fortyStatusRegistrations.Count} registrations with Fourty status. Sent {notificationCount} feedback notifications.",
+                    Data = results
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in learner progress check process");
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Error in learner progress check process: {ex.Message}"
+                };
+            }
+        }
+
+
         private async Task SendFeedbackEmailNotification(string email, string learnerName, int feedbackId, string teacherName, decimal remainingPayment)
         {
             string subject = "Feedback Required: Continue Your Learning Journey";
