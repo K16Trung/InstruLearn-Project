@@ -12,6 +12,8 @@ namespace InstruLearn_Application.BLL.Service.IService
 {
     public interface ILearningRegisFeedbackService
     {
+        Task<List<LearningRegisFeedbackDTO>> GetAllFeedbackAsync();
+
         // Question management
         Task<ResponseDTO> CreateQuestionAsync(LearningRegisFeedbackQuestionDTO questionDTO);
         Task<ResponseDTO> UpdateQuestionAsync(int questionId, LearningRegisFeedbackQuestionDTO questionDTO);

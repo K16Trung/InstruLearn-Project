@@ -1,4 +1,6 @@
-﻿using InstruLearn_Application.BLL.Service.IService;
+﻿using InstruLearn_Application.BLL.Service;
+using InstruLearn_Application.BLL.Service.IService;
+using InstruLearn_Application.Model.Models.DTO;
 using InstruLearn_Application.Model.Models.DTO.LearningRegisFeedback;
 using InstruLearn_Application.Model.Models.DTO.LearningRegisFeedbackQuestion;
 using Microsoft.AspNetCore.Http;
@@ -16,6 +18,30 @@ namespace InstruLearn_Application.Controllers
         {
             _feedbackService = feedbackService;
         }
+
+        [HttpGet("get-all")]
+        public async Task<IActionResult> GetAllFeedback()
+        {
+            try
+            {
+                var feedbacks = await _feedbackService.GetAllFeedbackAsync();
+                return Ok(new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = "Retrieved all learning registration feedback successfully",
+                    Data = feedbacks
+                });
+            }
+            catch (Exception ex)
+            {
+                return Ok(new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Failed to retrieve learning registration feedback: {ex.Message}"
+                });
+            }
+        }
+
 
         #region Question Management
 
