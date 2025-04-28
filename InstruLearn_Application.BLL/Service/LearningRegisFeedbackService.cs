@@ -28,6 +28,21 @@ namespace InstruLearn_Application.BLL.Service
             _mapper = mapper;
         }
 
+        public async Task<List<LearningRegisFeedbackDTO>> GetAllFeedbackAsync()
+        {
+            try
+            {
+                var feedbacks = await _unitOfWork.LearningRegisFeedbackRepository.GetAllWithDetailsAsync();
+
+                return feedbacks.Select(MapToFeedbackDTO).ToList();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error retrieving all feedback: {ex.Message}", ex);
+            }
+        }
+
+
         public async Task<ResponseDTO> CreateQuestionAsync(LearningRegisFeedbackQuestionDTO questionDTO)
         {
             var question = new LearningRegisFeedbackQuestion

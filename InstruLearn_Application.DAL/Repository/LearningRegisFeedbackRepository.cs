@@ -76,5 +76,20 @@ namespace InstruLearn_Application.DAL.Repository
                 .Where(f => f.LearnerId == learnerId)
                 .ToListAsync();
         }
+
+        public async Task<List<LearningRegisFeedback>> GetAllWithDetailsAsync()
+        {
+            return await _context.LearningRegisFeedbacks
+                .Include(f => f.Learner)
+                    .ThenInclude(l => l.Account)
+                .Include(f => f.LearningRegistration)
+                    .ThenInclude(lr => lr.Teacher)
+                .Include(f => f.Answers)
+                    .ThenInclude(a => a.Question)
+                .Include(f => f.Answers)
+                    .ThenInclude(a => a.SelectedOption)
+                .ToListAsync();
+        }
+
     }
 }
