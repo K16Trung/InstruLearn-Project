@@ -143,7 +143,7 @@ namespace InstruLearn_Application.BLL.Service
                 var learningRegs = await _unitOfWork.LearningRegisRepository
                     .GetWithIncludesAsync(
                         x => x.LearnerId == learnerId && (x.Status == LearningRegis.Fourty || x.Status == LearningRegis.Sixty || x.Status == LearningRegis.FourtyFeedbackDone),
-                        "Teacher,Learner.Account,LearningRegistrationDay,Schedules.Teacher"
+                        "Teacher,Learner.Account,LearningRegistrationDay,Schedules.Teacher,Major"
                     );
 
                 if (learningRegs == null || !learningRegs.Any())
@@ -219,6 +219,9 @@ namespace InstruLearn_Application.BLL.Service
                             LearningRegisId = learningRegis.LearningRegisId,
                             AttendanceStatus = existingSchedule.AttendanceStatus,
                             ChangeReason = existingSchedule.ChangeReason,
+                            MajorId = learningRegis.MajorId,
+                            MajorName = learningRegis.Major?.MajorName ?? "N/A",
+                            TimeLearning = learningRegis.TimeLearning,
                             ScheduleDays = orderedLearningDays.Select(day => new ScheduleDaysDTO
                             {
                                 DayOfWeeks = (DayOfWeeks)day.DayOfWeek
@@ -290,7 +293,7 @@ namespace InstruLearn_Application.BLL.Service
                     .GetWithIncludesAsync(
                         x => learningRegisIds.Contains(x.LearningRegisId) &&
                              (x.Status == LearningRegis.Fourty || x.Status == LearningRegis.Sixty || x.Status == LearningRegis.FourtyFeedbackDone),
-                        "Teacher,Learner.Account,LearningRegistrationDay,Schedules.Teacher"
+                        "Teacher,Learner.Account,LearningRegistrationDay,Schedules.Teacher,Major"
                     );
 
                 if (!learningRegs.Any())
@@ -365,6 +368,9 @@ namespace InstruLearn_Application.BLL.Service
                                 LearningRegisId = learningRegis.LearningRegisId,
                                 AttendanceStatus = existingSchedule.AttendanceStatus,
                                 ChangeReason = existingSchedule.ChangeReason,
+                                MajorId = learningRegis.MajorId,
+                                MajorName = learningRegis.Major?.MajorName ?? "N/A",
+                                TimeLearning = learningRegis.TimeLearning,
                                 ScheduleDays = orderedLearningDays.Select(day => new ScheduleDaysDTO
                                 {
                                     DayOfWeeks = (DayOfWeeks)day.DayOfWeek

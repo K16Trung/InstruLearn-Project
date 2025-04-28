@@ -41,5 +41,8 @@ namespace InstruLearn_Application.Model.Models.DTO.Schedules
         public string SessionTitle { get; set; }
         public string SessionDescription { get; set; }
         public bool IsSessionCompleted { get; set; }
+        public int MajorId { get; set; }
+        public string MajorName { get; set; }
+        public int TimeLearning { get; set; }
     }
 }
