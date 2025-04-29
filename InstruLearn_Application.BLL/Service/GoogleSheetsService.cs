@@ -153,10 +153,10 @@ namespace InstruLearn_Application.BLL.Service
                 GoogleCredential credential;
                 try
                 {
-                    if (!File.Exists(_credentialsPath) && _ignoreErrors)
+                    if (!File.Exists(_credentialsPath))
                     {
-                        LogWarning($"Credentials file not found at {_credentialsPath}, but errors are ignored. Skipping Google Sheets update.");
-                        return true;
+                        LogError($"Credentials file not found at {_credentialsPath}");
+                        return false;
                     }
 
                     LogInfo($"Loading credentials from: {_credentialsPath}");
@@ -170,12 +170,7 @@ namespace InstruLearn_Application.BLL.Service
                 catch (Exception ex)
                 {
                     LogError($"Error loading credentials file from {_credentialsPath}", ex);
-                    if (_ignoreErrors)
-                    {
-                        LogWarning("Ignoring credentials error as configured");
-                        return true;
-                    }
-                    throw new Exception($"Failed to load Google credentials: {ex.Message}", ex);
+                    return false;
                 }
 
                 try
@@ -187,23 +182,23 @@ namespace InstruLearn_Application.BLL.Service
                         ApplicationName = _applicationName
                     });
 
-                    var range = "Certificates!A:H";
+                    var range = $"{_sheetName}!A:H";
                     var valueRange = new ValueRange
                     {
                         Values = new List<IList<object>>
-                        {
-                            new List<object>
-                            {
-                                certificationData.CertificationId,
-                                certificationData.LearnerName ?? "Unknown",
-                                certificationData.LearnerEmail ?? "Unknown",
-                                certificationData.CertificationType ?? "Unknown",
-                                certificationData.CertificationName ?? "Unknown",
-                                certificationData.IssueDate.ToString("yyyy-MM-dd HH:mm:ss"),
-                                certificationData.TeacherName ?? "N/A",
-                                certificationData.Subject ?? "N/A"
-                            }
-                        }
+                {
+                    new List<object>
+                    {
+                        certificationData.CertificationId,
+                        certificationData.LearnerName ?? "Unknown",
+                        certificationData.LearnerEmail ?? "Unknown",
+                        certificationData.CertificationType ?? "Unknown",
+                        certificationData.CertificationName ?? "Unknown",
+                        certificationData.IssueDate.ToString("yyyy-MM-dd HH:mm:ss"),
+                        certificationData.TeacherName ?? "N/A",
+                        certificationData.Subject ?? "N/A"
+                    }
+                }
                     };
 
                     LogInfo($"Checking if spreadsheet with ID {_spreadsheetId} exists...");
@@ -213,18 +208,18 @@ namespace InstruLearn_Application.BLL.Service
                         var spreadsheet = await service.Spreadsheets.Get(_spreadsheetId).ExecuteAsync();
                         LogInfo($"Successfully connected to spreadsheet: {spreadsheet.Properties.Title}");
 
-                        bool sheetExists = spreadsheet.Sheets.Any(s => s.Properties.Title == "Certificates");
+                        bool sheetExists = spreadsheet.Sheets.Any(s => s.Properties.Title == _sheetName);
 
                         if (!sheetExists)
                         {
-                            LogInfo("Certificates sheet not found, creating it...");
+                            LogInfo($"{_sheetName} sheet not found, creating it...");
                             var addSheetRequest = new Request
                             {
                                 AddSheet = new AddSheetRequest
                                 {
                                     Properties = new SheetProperties
                                     {
-                                        Title = "Certificates"
+                                        Title = _sheetName
                                     }
                                 }
                             };
@@ -235,24 +230,23 @@ namespace InstruLearn_Application.BLL.Service
                             };
 
                             await service.Spreadsheets.BatchUpdate(batchUpdateRequest, _spreadsheetId).ExecuteAsync();
-                            LogInfo("Created 'Certificates' sheet");
+                            LogInfo($"Created '{_sheetName}' sheet");
                         }
                     }
                     catch (Exception ex)
                     {
                         LogError("Error accessing spreadsheet or creating sheet", ex);
-                        if (_ignoreErrors)
+                        if (ex is Google.GoogleApiException gex && gex.Error?.Code == 404)
                         {
-                            LogWarning("Ignoring spreadsheet access error as configured");
-                            return true;
+                            LogError($"Spreadsheet with ID {_spreadsheetId} not found. Please check your configuration.");
                         }
-                        throw new Exception($"Error accessing Google Sheets: {ex.Message}", ex);
+                        return false;
                     }
 
                     try
                     {
                         LogInfo("Checking for headers...");
-                        var getRequest = service.Spreadsheets.Values.Get(_spreadsheetId, "Certificates!A1:H1");
+                        var getRequest = service.Spreadsheets.Values.Get(_spreadsheetId, $"{_sheetName}!A1:H1");
                         ValueRange getResponse = await getRequest.ExecuteAsync();
 
                         if (getResponse.Values == null || getResponse.Values.Count == 0)
@@ -261,22 +255,22 @@ namespace InstruLearn_Application.BLL.Service
                             var headerRange = new ValueRange
                             {
                                 Values = new List<IList<object>>
-                                {
-                                    new List<object>
-                                    {
-                                        "Certificate ID",
-                                        "Learner Name",
-                                        "Learner Email",
-                                        "Certificate Type",
-                                        "Certificate Name",
-                                        "Issue Date",
-                                        "Teacher Name",
-                                        "Subject"
-                                    }
-                                }
+                        {
+                            new List<object>
+                            {
+                                "Certificate ID",
+                                "Learner Name",
+                                "Learner Email",
+                                "Certificate Type",
+                                "Certificate Name",
+                                "Issue Date",
+                                "Teacher Name",
+                                "Subject"
+                            }
+                        }
                             };
 
-                            var headerUpdateRequest = service.Spreadsheets.Values.Update(headerRange, _spreadsheetId, "Certificates!A1:H1");
+                            var headerUpdateRequest = service.Spreadsheets.Values.Update(headerRange, _spreadsheetId, $"{_sheetName}!A1:H1");
                             headerUpdateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
                             var headerResponse = await headerUpdateRequest.ExecuteAsync();
                             LogInfo($"Headers created successfully, updated {headerResponse.UpdatedCells} cells");
@@ -289,24 +283,17 @@ namespace InstruLearn_Application.BLL.Service
                     catch (Exception ex)
                     {
                         LogError("Error checking/setting headers", ex);
-                        if (_ignoreErrors)
-                        {
-                            LogWarning("Ignoring headers error as configured");
-                        }
-                        else
-                        {
-                            throw;
-                        }
+                        return false;
                     }
 
                     try
                     {
                         LogInfo("Appending certification data...");
-
                         LogInfo($"DEBUG: About to execute append operation for spreadsheetId={_spreadsheetId}, range={range}");
                         LogInfo($"DEBUG: Data being written: ID={certificationData.CertificationId}, Name={certificationData.LearnerName}");
 
                         var appendRequest = service.Spreadsheets.Values.Append(valueRange, _spreadsheetId, range);
+                        appendRequest.InsertDataOption = SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum.INSERTROWS;
                         appendRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.USERENTERED;
                         var appendResponse = await appendRequest.ExecuteAsync();
 
@@ -318,54 +305,32 @@ namespace InstruLearn_Application.BLL.Service
                         else
                         {
                             LogError("Append operation returned null response or null updates");
-                            return !_ignoreErrors;
+                            return false;
                         }
                     }
                     catch (Google.GoogleApiException gex)
                     {
                         LogError($"Google API Error during append: Code={gex.Error?.Code}, Message={gex.Error?.Message}", gex);
-                        if (_ignoreErrors)
-                        {
-                            LogWarning("Ignoring Google API error as configured");
-                            return true;
-                        }
-                        throw;
+                        return false;
                     }
                     catch (Exception ex)
                     {
                         LogError("Error appending data to Google Sheets", ex);
-                        if (_ignoreErrors)
-                        {
-                            LogWarning("Ignoring append error as configured");
-                            return true;
-                        }
-                        throw new Exception($"Failed to append data to Google Sheets: {ex.Message}", ex);
+                        return false;
                     }
                 }
                 catch (Exception ex)
                 {
                     LogError("Error initializing Google Sheets service", ex);
-                    if (_ignoreErrors)
-                    {
-                        LogWarning("Ignoring service initialization error as configured");
-                        return true;
-                    }
-                    throw new Exception($"Error initializing Google Sheets service: {ex.Message}", ex);
+                    return false;
                 }
             }
             catch (Exception ex)
             {
                 LogError("Error saving to Google Sheets", ex);
-
                 if (ex.InnerException != null)
                 {
                     LogError($"Inner Exception: {ex.InnerException.Message}");
-                }
-
-                if (_ignoreErrors)
-                {
-                    LogWarning("Ignoring Google Sheets error as configured");
-                    return true;
                 }
                 return false;
             }
@@ -373,50 +338,150 @@ namespace InstruLearn_Application.BLL.Service
 
         public async Task<Dictionary<string, object>> TestGoogleSheetsConnectionAsync()
         {
+            LogInfo("Starting Google Sheets connection test");
+
             var result = new Dictionary<string, object>
             {
                 ["SpreadsheetId"] = _spreadsheetId,
                 ["CredentialsPath"] = _credentialsPath,
                 ["CredentialsFileExists"] = File.Exists(_credentialsPath),
-                ["Success"] = false
+                ["SheetName"] = _sheetName,
+                ["AppName"] = _applicationName,
+                ["Success"] = false,
+                ["BaseDirectory"] = AppDomain.CurrentDomain.BaseDirectory,
+                ["CurrentDirectory"] = Directory.GetCurrentDirectory()
             };
 
             try
             {
-                GoogleCredential credential;
-                using (var stream = new FileStream(_credentialsPath, FileMode.Open, FileAccess.Read))
+                if (!File.Exists(_credentialsPath))
                 {
-                    credential = GoogleCredential.FromStream(stream)
-                        .CreateScoped(SheetsService.Scope.Spreadsheets);
+                    result["Error"] = $"Credentials file not found at {_credentialsPath}";
+                    LogError((string)result["Error"]);
+                    return result;
                 }
-                result["CredentialsLoaded"] = true;
 
-                var service = new SheetsService(new BaseClientService.Initializer()
+                GoogleCredential credential;
+                try
                 {
-                    HttpClientInitializer = credential,
-                    ApplicationName = _applicationName
-                });
-                result["ServiceCreated"] = true;
+                    LogInfo($"Loading credentials from {_credentialsPath}");
+                    using (var stream = new FileStream(_credentialsPath, FileMode.Open, FileAccess.Read))
+                    {
+                        credential = GoogleCredential.FromStream(stream)
+                            .CreateScoped(SheetsService.Scope.Spreadsheets);
+                    }
+                    result["CredentialsLoaded"] = true;
+                    LogInfo("Credentials loaded successfully");
+                }
+                catch (Exception ex)
+                {
+                    result["Error"] = $"Failed to load credentials: {ex.Message}";
+                    LogError((string)result["Error"], ex);
+                    return result;
+                }
 
-                var spreadsheet = await service.Spreadsheets.Get(_spreadsheetId).ExecuteAsync();
-                result["SpreadsheetTitle"] = spreadsheet.Properties.Title;
-                result["SheetCount"] = spreadsheet.Sheets.Count;
-                result["Sheets"] = string.Join(", ", spreadsheet.Sheets.Select(s => s.Properties.Title));
-                result["Success"] = true;
+                try
+                {
+                    LogInfo("Creating Google Sheets service");
+                    var service = new SheetsService(new BaseClientService.Initializer()
+                    {
+                        HttpClientInitializer = credential,
+                        ApplicationName = _applicationName
+                    });
+                    result["ServiceCreated"] = true;
+                    LogInfo("Google Sheets service created successfully");
 
-                return result;
+                    LogInfo($"Attempting to access spreadsheet with ID: {_spreadsheetId}");
+                    var spreadsheet = await service.Spreadsheets.Get(_spreadsheetId).ExecuteAsync();
+
+                    result["SpreadsheetTitle"] = spreadsheet.Properties.Title;
+                    result["SheetCount"] = spreadsheet.Sheets.Count;
+                    result["Sheets"] = string.Join(", ", spreadsheet.Sheets.Select(s => s.Properties.Title));
+                    result["Success"] = true;
+
+                    LogInfo($"Successfully connected to spreadsheet: {spreadsheet.Properties.Title}");
+                    LogInfo($"Sheets found: {result["Sheets"]}");
+
+                    try
+                    {
+                        LogInfo("Testing write permission...");
+                        var testRange = $"{_sheetName}!A1:A1";
+
+                        try
+                        {
+                            var readRequest = service.Spreadsheets.Values.Get(_spreadsheetId, testRange);
+                            await readRequest.ExecuteAsync();
+                        }
+                        catch (Google.GoogleApiException gex) when (gex.Error?.Message?.Contains("Unable to parse range") == true)
+                        {
+                            LogInfo($"Sheet '{_sheetName}' not found, creating it");
+                            var addSheetRequest = new Request
+                            {
+                                AddSheet = new AddSheetRequest
+                                {
+                                    Properties = new SheetProperties
+                                    {
+                                        Title = _sheetName
+                                    }
+                                }
+                            };
+
+                            var batchUpdateRequest = new BatchUpdateSpreadsheetRequest
+                            {
+                                Requests = new List<Request> { addSheetRequest }
+                            };
+
+                            await service.Spreadsheets.BatchUpdate(batchUpdateRequest, _spreadsheetId).ExecuteAsync();
+                        }
+
+                        var testValue = new ValueRange
+                        {
+                            Values = new List<IList<object>>
+                    {
+                        new List<object> { "Test Cell - " + DateTime.Now.ToString() }
+                    }
+                        };
+
+                        var updateRequest = service.Spreadsheets.Values.Update(testValue, _spreadsheetId, testRange);
+                        updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
+                        await updateRequest.ExecuteAsync();
+
+                        result["WritePermissionTest"] = "Success";
+                        LogInfo("Write permission test successful");
+                    }
+                    catch (Exception ex)
+                    {
+                        result["WritePermissionTest"] = $"Failed: {ex.Message}";
+                        LogError("Write permission test failed", ex);
+                    }
+
+                    return result;
+                }
+                catch (Google.GoogleApiException gex)
+                {
+                    result["Error"] = gex.Message;
+                    result["ErrorType"] = "GoogleApiException";
+                    result["ApiErrorCode"] = gex.Error?.Code;
+                    result["ApiErrorMessage"] = gex.Error?.Message;
+
+                    LogError($"Google API Error: Code={gex.Error?.Code}, Message={gex.Error?.Message}", gex);
+
+                    return result;
+                }
+                catch (Exception ex)
+                {
+                    result["Error"] = ex.Message;
+                    result["ErrorType"] = ex.GetType().Name;
+                    LogError("Error testing Google Sheets connection", ex);
+                    return result;
+                }
             }
             catch (Exception ex)
             {
                 result["Error"] = ex.Message;
                 result["ErrorType"] = ex.GetType().Name;
-
-                if (ex is Google.GoogleApiException apiEx)
-                {
-                    result["ApiErrorCode"] = apiEx.Error?.Code;
-                    result["ApiErrorMessage"] = apiEx.Error?.Message;
-                }
-
+                result["StackTrace"] = ex.StackTrace;
+                LogError("Unexpected error during Google Sheets test", ex);
                 return result;
             }
         }

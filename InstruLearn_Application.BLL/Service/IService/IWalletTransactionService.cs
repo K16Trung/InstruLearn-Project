@@ -1,4 +1,6 @@
-﻿using InstruLearn_Application.Model.Models.DTO.WalletTransaction;
+﻿using InstruLearn_Application.Model.Enum;
+using InstruLearn_Application.Model.Models.DTO;
+using InstruLearn_Application.Model.Models.DTO.WalletTransaction;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,5 +13,6 @@ namespace InstruLearn_Application.BLL.Service.IService
     {
         Task<List<WalletTransactionDTO>> GetAllTransactionsAsync();
         Task<List<WalletTransactionDTO>> GetTransactionsByWalletIdAsync(int walletId);
+        Task<List<WalletTransactionDTO>> GetTransactionsByLearnerIdAsync(int learnerId);
     }
 }

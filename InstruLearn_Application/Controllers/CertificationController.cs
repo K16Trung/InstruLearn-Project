@@ -58,6 +58,26 @@ namespace InstruLearn_Application.Controllers
             return Ok(response);
         }
 
+        [HttpGet("test-google-sheets-connection")]
+        public async Task<IActionResult> TestGoogleSheetsConnection()
+        {
+            try
+            {
+                var googleSheetsService = HttpContext.RequestServices.GetRequiredService<IGoogleSheetsService>();
+                var result = await googleSheetsService.TestGoogleSheetsConnectionAsync();
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Error testing Google Sheets connection: {ex.Message}",
+                    Data = null
+                });
+            }
+        }
+
         [HttpDelete("delete/{id}")]
         public async Task<IActionResult> DeleteCertification(int id)
         {
