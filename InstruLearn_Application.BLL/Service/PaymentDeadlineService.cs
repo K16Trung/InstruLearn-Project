@@ -81,7 +81,7 @@ namespace InstruLearn_Application.BLL.Service
                         // Update status to rejected or cancelled based on current state
                         if (registration.Status == LearningRegis.Accepted)
                         {
-                            registration.Status = LearningRegis.Rejected;
+                            registration.Status = LearningRegis.Cancelled;
                             registration.LearningRequest = "Automatically rejected due to non-payment within deadline.";
                         }
                         else if (registration.Status == LearningRegis.FourtyFeedbackDone)
@@ -119,7 +119,7 @@ namespace InstruLearn_Application.BLL.Service
                         {
                             try
                             {
-                                string status = registration.Status == LearningRegis.Rejected ? "Đã từ chối" : "Đã hủy";
+                                string status = registration.Status == LearningRegis.Cancelled ? "Đã từ chối" : "Đã hủy";
                                 string subject = $"Đăng ký học của bạn đã bị {status} do hết hạn thanh toán";
                                 string body = $@"
                         <html>
