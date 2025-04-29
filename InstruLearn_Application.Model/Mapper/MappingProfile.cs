@@ -40,6 +40,7 @@ using InstruLearn_Application.Model.Models.DTO.ResponseType;
 using InstruLearn_Application.Model.Models.DTO.ScheduleDays;
 using InstruLearn_Application.Model.Models.DTO.Schedules;
 using InstruLearn_Application.Model.Models.DTO.Staff;
+using InstruLearn_Application.Model.Models.DTO.StaffNotification;
 using InstruLearn_Application.Model.Models.DTO.Syllabus;
 using InstruLearn_Application.Model.Models.DTO.SyllbusContent;
 using InstruLearn_Application.Model.Models.DTO.Teacher;
@@ -690,6 +691,22 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.AverageRating, opt => opt.Ignore()); // Calculate this after mapping
 
             CreateMap<CreateLearningRegisFeedbackDTO, LearningRegisFeedback>();
+
+            // StaffNotification mappings
+            CreateMap<StaffNotification, StaffNotificationDTO>()
+                .ForMember(dest => dest.NotificationId, opt => opt.MapFrom(src => src.NotificationId))
+                .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.Title))
+                .ForMember(dest => dest.Message, opt => opt.MapFrom(src => src.Message))
+                .ForMember(dest => dest.LearningRegisId, opt => opt.MapFrom(src => src.LearningRegisId))
+                .ForMember(dest => dest.LearnerId, opt => opt.MapFrom(src => src.LearnerId))
+                .ForMember(dest => dest.LearnerName, opt => opt.MapFrom(src => src.Learner != null ? src.Learner.FullName : "Unknown"))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
+                .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Type))
+                .ReverseMap()
+                .ForMember(dest => dest.Learner, opt => opt.Ignore())
+                .ForMember(dest => dest.LearningRegistration, opt => opt.Ignore());
+
         }
     }
 }

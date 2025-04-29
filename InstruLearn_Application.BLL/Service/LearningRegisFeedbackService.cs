@@ -456,7 +456,7 @@ namespace InstruLearn_Application.BLL.Service
                     }
 
                     // Create a notification for staff to handle the teacher change request
-                    /*var teacherChangeNotification = new StaffNotification
+                    var teacherChangeNotification = new StaffNotification
                     {
                         Title = "Yêu cầu thay đổi giáo viên",
                         Message = $"Học viên {learner.FullName} (ID: {learner.LearnerId}) muốn tiếp tục học nhưng thay đổi giáo viên cho đăng ký học ID: {learningRegis.LearningRegisId}",
@@ -468,7 +468,7 @@ namespace InstruLearn_Application.BLL.Service
                     };
 
                     await _unitOfWork.StaffNotificationRepository.AddAsync(teacherChangeNotification);
-                    await _unitOfWork.SaveChangeAsync();*/
+                    await _unitOfWork.SaveChangeAsync();
 
                     // Send email notification to learner about the payment deadline
                     if (learner != null && !string.IsNullOrEmpty(learner.AccountId))
