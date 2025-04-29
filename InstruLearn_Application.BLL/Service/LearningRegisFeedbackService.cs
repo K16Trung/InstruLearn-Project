@@ -21,11 +21,13 @@ namespace InstruLearn_Application.BLL.Service
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly IEmailService _emailService;
 
-        public LearningRegisFeedbackService(IUnitOfWork unitOfWork, IMapper mapper)
+        public LearningRegisFeedbackService(IUnitOfWork unitOfWork, IMapper mapper, IEmailService emailService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _emailService = emailService;
         }
 
         public async Task<List<LearningRegisFeedbackDTO>> GetAllFeedbackAsync()
@@ -306,6 +308,8 @@ namespace InstruLearn_Application.BLL.Service
 
             try
             {
+                int feedbackId;
+
                 if (existingFeedback != null)
                 {
                     // Update existing feedback
@@ -369,6 +373,8 @@ namespace InstruLearn_Application.BLL.Service
 
                     await _unitOfWork.LearningRegisFeedbackRepository.UpdateAsync(existingFeedback);
                     await _unitOfWork.SaveChangeAsync();
+
+                    feedbackId = existingFeedback.FeedbackId;
                 }
                 else
                 {
@@ -428,13 +434,115 @@ namespace InstruLearn_Application.BLL.Service
 
                     await _unitOfWork.LearningRegisFeedbackRepository.AddAsync(feedback);
                     await _unitOfWork.SaveChangeAsync();
+
+                    // Get the feedback ID of the newly created feedback
+                    var newFeedback = await _unitOfWork.LearningRegisFeedbackRepository
+                        .GetFeedbackByRegistrationIdAsync(createDTO.LearningRegistrationId);
+                    feedbackId = newFeedback.FeedbackId;
                 }
 
-                return new ResponseDTO
+                // Now implement the ProcessFeedbackCompletionAsync functionality
+
+                // If the learner wants to continue studying
+                if (createDTO.ContinueStudying)
                 {
-                    IsSucceed = true,
-                    Message = "Gửi đánh giá thành công"
-                };
+                    // Update learning registration status to indicate readiness for 60% payment
+                    if (learningRegis.Status == LearningRegis.Fourty)
+                    {
+                        learningRegis.Status = LearningRegis.FourtyFeedbackDone;
+                        await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
+                        await _unitOfWork.SaveChangeAsync();
+                    }
+
+                    return new ResponseDTO
+                    {
+                        IsSucceed = true,
+                        Message = "Gửi đánh giá thành công. Đăng ký học của bạn đã sẵn sàng cho khoản thanh toán 60% còn lại để tiếp tục học.",
+                        Data = new
+                        {
+                            FeedbackId = feedbackId,
+                            LearningRegisId = learningRegis.LearningRegisId,
+                            Status = learningRegis.Status.ToString(),
+                            RemainingPayment = learningRegis.Price.HasValue ? learningRegis.Price.Value * 0.6m : 0
+                        }
+                    };
+                }
+                else
+                {
+                    // Learner doesn't want to continue
+                    learningRegis.Status = LearningRegis.Cancelled;
+                    await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
+
+                    // Get all schedules associated with this learning registration
+                    var learningRegisSchedules = await _unitOfWork.ScheduleRepository.GetSchedulesByLearningRegisIdAsync(learningRegis.LearningRegisId);
+
+                    // Get teacher ID for notification
+                    int? teacherId = null;
+                    if (learningRegisSchedules.Any() && learningRegisSchedules.First().TeacherId.HasValue)
+                    {
+                        teacherId = learningRegisSchedules.First().TeacherId;
+                    }
+                    else if (learningRegis.TeacherId.HasValue)
+                    {
+                        teacherId = learningRegis.TeacherId;
+                    }
+
+                    // Delete all schedules for this learning registration
+                    foreach (var schedule in learningRegisSchedules)
+                    {
+                        await _unitOfWork.ScheduleRepository.DeleteAsync(schedule.ScheduleId);
+                    }
+
+                    await _unitOfWork.SaveChangeAsync();
+
+                    // Send notification to teacher if applicable
+                    if (teacherId.HasValue)
+                    {
+                        var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(teacherId.Value);
+                        if (teacher != null && !string.IsNullOrEmpty(teacher.AccountId))
+                        {
+                            var teacherAccount = await _unitOfWork.AccountRepository.GetByIdAsync(teacher.AccountId);
+                            if (teacherAccount != null && !string.IsNullOrEmpty(teacherAccount.Email))
+                            {
+                                try
+                                {
+                                    string subject = "Learning Registration Cancelled";
+                                    string body = $@"
+                            <html>
+                            <body>
+                                <h2>Thông báo hủy đăng ký học</h2>
+                                <p>Xin chào {teacher.Fullname},</p>
+                                <p>Học viên {learner.FullName} đã quyết định không tiếp tục khóa học.</p>
+                                <p>Tất cả lịch học liên quan đến đăng ký học này đã bị hủy.</p>
+                                <p>Vui lòng kiểm tra hệ thống để cập nhật lịch dạy của bạn.</p>
+                                <p>Trân trọng,<br/>The InstruLearn Team</p>
+                            </body>
+                            </html>";
+
+                                    await _emailService.SendEmailAsync(teacherAccount.Email, subject, body);
+                                }
+                                catch (Exception emailEx)
+                                {
+                                    // Log the error but don't fail the operation
+                                    // _logger.LogError(emailEx, "Failed to send email notification to teacher");
+                                }
+                            }
+                        }
+                    }
+
+                    return new ResponseDTO
+                    {
+                        IsSucceed = true,
+                        Message = "Gửi đánh giá thành công. Đăng ký học của bạn đã bị hủy theo yêu cầu và tất cả lịch học đã được xóa.",
+                        Data = new
+                        {
+                            FeedbackId = feedbackId,
+                            LearningRegisId = learningRegis.LearningRegisId,
+                            Status = learningRegis.Status.ToString(),
+                            SchedulesRemoved = learningRegisSchedules.Count
+                        }
+                    };
+                }
             }
             catch (Exception ex)
             {
@@ -445,7 +553,6 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
         }
-
 
         public async Task<ResponseDTO> UpdateFeedbackAsync(int feedbackId, UpdateLearningRegisFeedbackDTO updateDTO)
         {
