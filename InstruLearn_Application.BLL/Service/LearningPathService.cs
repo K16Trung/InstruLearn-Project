@@ -183,6 +183,7 @@ namespace InstruLearn_Application.BLL.Service
                     foreach (var session in sessions)
                     {
                         session.IsVisible = true;
+                        session.IsCompleted = true;
                         await _unitOfWork.LearningPathSessionRepository.UpdateAsync(session);
                     }
 
