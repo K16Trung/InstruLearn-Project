@@ -10,9 +10,9 @@ namespace InstruLearn_Application.Model.Models.DTO.Certification
     public class CreateCertificationDTO
     {
         public int LearnerId { get; set; }
+        public int? ClassId { get; set; }
         public string CertificationName { get; set; }
         public CertificationType CertificationType { get; set; }
-        public int? LearningRegisId { get; set; }
         public ScheduleMode? LearningMode { get; set; }
         public string? TeacherName { get; set; }
         public string? Subject { get; set; }

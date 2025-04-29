@@ -6,6 +6,7 @@ using InstruLearn_Application.Model.Enum;
 using InstruLearn_Application.Model.Models;
 using InstruLearn_Application.Model.Models.DTO;
 using InstruLearn_Application.Model.Models.DTO.Certification;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -94,72 +95,80 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                var certificationObj = _mapper.Map<Certification>(createCertificationDTO);
-                certificationObj.Learner = learner;
-                certificationObj.IssueDate = DateTime.Now;
-
-                if (!createCertificationDTO.LearningRegisId.HasValue)
+                var certificationObj = new Certification
                 {
-                    return new ResponseDTO
+                    LearnerId = createCertificationDTO.LearnerId,
+                    Learner = learner,
+                    CertificationType = CertificationType.CenterLearning,
+                    IssueDate = DateTime.Now,
+                    CertificationName = createCertificationDTO.CertificationName,
+                    LearningMode = ScheduleMode.Center
+                };
+
+                string teacherName = null;
+                string subjectName = null;
+
+                if (createCertificationDTO.ClassId.HasValue)
+                {
+                    var classId = createCertificationDTO.ClassId.Value;
+
+                    var classInfo = await _unitOfWork.ClassRepository.GetWithIncludesAsync(
+                        c => c.ClassId == classId,
+                        "Teacher,Major");
+
+                    var classDetail = classInfo.FirstOrDefault();
+
+                    if (classDetail != null)
                     {
-                        IsSucceed = false,
-                        Message = "Learning registration ID is required for center learning certificates",
-                    };
+                        teacherName = classDetail.Teacher?.Fullname;
+                        subjectName = classDetail.Major?.MajorName;
+
+                        Console.WriteLine($"Class found: {classId}, Teacher: {teacherName}, Subject: {subjectName}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Class with ID {classId} not found or has no teacher/major information");
+                    }
+                }
+                else
+                {
+                    try
+                    {
+                        var learnerClass = await _unitOfWork.dbContext.Learner_Classes
+                            .Where(lc => lc.LearnerId == createCertificationDTO.LearnerId)
+                            .Include(lc => lc.Classes)
+                                .ThenInclude(c => c.Teacher)
+                            .Include(lc => lc.Classes)
+                                .ThenInclude(c => c.Major)
+                            .FirstOrDefaultAsync();
+
+                        if (learnerClass != null)
+                        {
+                            teacherName = learnerClass.Classes.Teacher?.Fullname;
+                            subjectName = learnerClass.Classes.Major?.MajorName;
+                        }
+                        else
+                        {
+                            Console.WriteLine($"No class found for learner ID: {createCertificationDTO.LearnerId}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error retrieving learner class information: {ex.Message}");
+                    }
                 }
 
-                var registration = await _unitOfWork.LearningRegisRepository
-                    .GettWithIncludesAsync(
-                        x => x.LearningRegisId == createCertificationDTO.LearningRegisId.Value,
-                        "Teacher,Learner,Major"
-                    );
+                certificationObj.TeacherName = !string.IsNullOrEmpty(createCertificationDTO.TeacherName)
+                    ? createCertificationDTO.TeacherName
+                    : teacherName ?? "Unknown Teacher";
 
-                if (registration == null)
-                {
-                    return new ResponseDTO
-                    {
-                        IsSucceed = false,
-                        Message = "Learning registration not found",
-                    };
-                }
-
-                if (registration.LearnerId != createCertificationDTO.LearnerId)
-                {
-                    return new ResponseDTO
-                    {
-                        IsSucceed = false,
-                        Message = "The learning registration doesn't belong to this learner",
-                    };
-                }
-
-                if (registration.ClassId == null)
-                {
-                    return new ResponseDTO
-                    {
-                        IsSucceed = false,
-                        Message = "The provided registration is for one-on-one learning, not center learning",
-                    };
-                }
-
-                bool certificateExists = await _unitOfWork.CertificationRepository
-                    .ExistsByLearningRegisIdAsync(createCertificationDTO.LearningRegisId.Value);
-
-                if (certificateExists)
-                {
-                    return new ResponseDTO
-                    {
-                        IsSucceed = false,
-                        Message = "A certificate already exists for this learning registration",
-                    };
-                }
-
-                certificationObj.LearningRegistration = registration;
-                certificationObj.TeacherName = registration.Teacher?.Fullname;
-                certificationObj.Subject = registration.Major?.MajorName;
-                certificationObj.LearningMode = ScheduleMode.Center;
+                certificationObj.Subject = !string.IsNullOrEmpty(createCertificationDTO.Subject)
+                    ? createCertificationDTO.Subject
+                    : subjectName ?? "Unknown Subject";
 
                 if (string.IsNullOrEmpty(certificationObj.CertificationName))
                 {
-                    certificationObj.CertificationName = $"Center Learning Certificate - {registration.Major?.MajorName}";
+                    certificationObj.CertificationName = $"Center Learning Certificate - {certificationObj.Subject}";
                 }
 
                 await _unitOfWork.CertificationRepository.AddAsync(certificationObj);
@@ -174,7 +183,9 @@ namespace InstruLearn_Application.BLL.Service
                     CertificationName = certificationObj.CertificationName,
                     IssueDate = certificationObj.IssueDate,
                     TeacherName = certificationObj.TeacherName,
-                    Subject = certificationObj.Subject
+                    Subject = certificationObj.Subject,
+                    FileStatus = "N/A",
+                    FileLink = "N/A"
                 };
 
                 bool googleSheetsSuccess = false;
@@ -322,85 +333,83 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                switch (certificationType)
+                // Only support CenterLearning certificates
+                if (certificationType != CertificationType.CenterLearning)
                 {
-                    case CertificationType.OneOnOne:
-                    case CertificationType.CenterLearning:
-                        if (!learningRegisId.HasValue)
-                        {
-                            return new ResponseDTO
-                            {
-                                IsSucceed = false,
-                                Message = "Learning registration ID is required for learning certificate eligibility check"
-                            };
-                        }
-
-                        var registration = await _unitOfWork.LearningRegisRepository
-                            .GettWithIncludesAsync(
-                                x => x.LearningRegisId == learningRegisId.Value && x.LearnerId == learnerId,
-                                "Teacher,Learner,Schedules"
-                            );
-
-                        if (registration == null)
-                        {
-                            return new ResponseDTO
-                            {
-                                IsSucceed = false,
-                                Message = "Learning registration not found for this learner",
-                                Data = new { IsEligible = false }
-                            };
-                        }
-
-                        bool isOneOnOne = registration.ClassId == null;
-                        if ((certificationType == CertificationType.OneOnOne && !isOneOnOne) ||
-                            (certificationType == CertificationType.CenterLearning && isOneOnOne))
-                        {
-                            return new ResponseDTO
-                            {
-                                IsSucceed = false,
-                                Message = "Certificate type doesn't match learning registration type",
-                                Data = new { IsEligible = false }
-                            };
-                        }
-
-                        var schedules = await _unitOfWork.ScheduleRepository
-                            .GetWhereAsync(s => s.LearningRegisId == learningRegisId.Value &&
-                                              s.LearnerId == learnerId);
-
-                        int totalSessions = registration.NumberOfSession;
-                        int attendedSessions = schedules.Count(s => s.AttendanceStatus == AttendanceStatus.Present);
-                        double attendanceRate = totalSessions > 0 ? (double)attendedSessions / totalSessions * 100 : 0;
-
-                        bool attendanceEligible = attendanceRate >= 75;
-
-                        bool certificateExists = await _unitOfWork.CertificationRepository
-                            .ExistsByLearningRegisIdAsync(learningRegisId.Value);
-
-                        return new ResponseDTO
-                        {
-                            IsSucceed = true,
-                            Message = attendanceEligible ?
-                                (certificateExists ? "Certificate already exists for this registration" : "Learner is eligible for certificate") :
-                                "Insufficient attendance for certificate",
-                            Data = new
-                            {
-                                IsEligible = attendanceEligible && !certificateExists,
-                                AttendanceRate = attendanceRate,
-                                RequiredAttendanceRate = 75,
-                                CertificateExists = certificateExists,
-                                TotalSessions = totalSessions,
-                                AttendedSessions = attendedSessions
-                            }
-                        };
-
-                    default:
-                        return new ResponseDTO
-                        {
-                            IsSucceed = false,
-                            Message = "Only OneOnOne and CenterLearning certificate types are supported.",
-                            Data = new { IsEligible = false }
-                        };
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Only CenterLearning certificate type is supported.",
+                        Data = new { IsEligible = false }
+                    };
                 }
+
+                if (!learningRegisId.HasValue)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Learning registration ID is required for center learning certificate eligibility check",
+                        Data = new { IsEligible = false }
+                    };
+                }
+
+                var registration = await _unitOfWork.LearningRegisRepository
+                    .GettWithIncludesAsync(
+                        x => x.LearningRegisId == learningRegisId.Value && x.LearnerId == learnerId,
+                        "Teacher,Learner,Schedules"
+                    );
+
+                if (registration == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Learning registration not found for this learner",
+                        Data = new { IsEligible = false }
+                    };
+                }
+
+                // Check if this is a center learning registration
+                if (registration.ClassId == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "The provided registration is for one-on-one learning, not center learning",
+                        Data = new { IsEligible = false }
+                    };
+                }
+
+                var schedules = await _unitOfWork.ScheduleRepository
+                    .GetWhereAsync(s => s.LearningRegisId == learningRegisId.Value &&
+                                      s.LearnerId == learnerId);
+
+                int totalSessions = registration.NumberOfSession;
+                int attendedSessions = schedules.Count(s => s.AttendanceStatus == AttendanceStatus.Present);
+                double attendanceRate = totalSessions > 0 ? (double)attendedSessions / totalSessions * 100 : 0;
+
+                bool attendanceEligible = attendanceRate >= 75;
+
+                bool certificateExists = await _unitOfWork.CertificationRepository
+                    .ExistsByLearningRegisIdAsync(learningRegisId.Value);
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = attendanceEligible ?
+                        (certificateExists ? "Certificate already exists for this registration" : "Learner is eligible for certificate") :
+                        "Insufficient attendance for certificate",
+                    Data = new
+                    {
+                        IsEligible = attendanceEligible && !certificateExists,
+                        AttendanceRate = attendanceRate,
+                        RequiredAttendanceRate = 75,
+                        CertificateExists = certificateExists,
+                        TotalSessions = totalSessions,
+                        AttendedSessions = attendedSessions
+                    }
+                };
             }
             catch (Exception ex)
             {
