@@ -182,7 +182,7 @@ namespace InstruLearn_Application.BLL.Service
                         ApplicationName = _applicationName
                     });
 
-                    var range = $"{_sheetName}!A:H";
+                    var range = $"{_sheetName}!A:J";
                     var valueRange = new ValueRange
                     {
                         Values = new List<IList<object>>
@@ -196,7 +196,9 @@ namespace InstruLearn_Application.BLL.Service
                         certificationData.CertificationName ?? "Unknown",
                         certificationData.IssueDate.ToString("yyyy-MM-dd HH:mm:ss"),
                         certificationData.TeacherName ?? "N/A",
-                        certificationData.Subject ?? "N/A"
+                        certificationData.Subject ?? "N/A",
+                        certificationData.FileStatus ?? "N/A",
+                        certificationData.FileLink ?? "N/A"
                     }
                 }
                     };
@@ -246,7 +248,7 @@ namespace InstruLearn_Application.BLL.Service
                     try
                     {
                         LogInfo("Checking for headers...");
-                        var getRequest = service.Spreadsheets.Values.Get(_spreadsheetId, $"{_sheetName}!A1:H1");
+                        var getRequest = service.Spreadsheets.Values.Get(_spreadsheetId, $"{_sheetName}!A1:J1");
                         ValueRange getResponse = await getRequest.ExecuteAsync();
 
                         if (getResponse.Values == null || getResponse.Values.Count == 0)
@@ -265,12 +267,14 @@ namespace InstruLearn_Application.BLL.Service
                                 "Certificate Name",
                                 "Issue Date",
                                 "Teacher Name",
-                                "Subject"
+                                "Subject",
+                                "File Status",
+                                "File Link"
                             }
                         }
-                            };
+                    };
 
-                            var headerUpdateRequest = service.Spreadsheets.Values.Update(headerRange, _spreadsheetId, $"{_sheetName}!A1:H1");
+                            var headerUpdateRequest = service.Spreadsheets.Values.Update(headerRange, _spreadsheetId, $"{_sheetName}!A1:J1");
                             headerUpdateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
                             var headerResponse = await headerUpdateRequest.ExecuteAsync();
                             LogInfo($"Headers created successfully, updated {headerResponse.UpdatedCells} cells");
@@ -485,5 +489,133 @@ namespace InstruLearn_Application.BLL.Service
                 return result;
             }
         }
+
+        public async Task<List<CertificationDataDTO>> GetAllCertificatesAsync()
+        {
+            LogInfo("Starting to fetch all certificates from Google Sheets");
+            var certificates = new List<CertificationDataDTO>();
+
+            try
+            {
+                GoogleCredential credential;
+                try
+                {
+                    if (!File.Exists(_credentialsPath))
+                    {
+                        LogError($"Credentials file not found at {_credentialsPath}");
+                        return certificates;
+                    }
+
+                    LogInfo($"Loading credentials from: {_credentialsPath}");
+                    using (var stream = new FileStream(_credentialsPath, FileMode.Open, FileAccess.Read))
+                    {
+                        credential = GoogleCredential.FromStream(stream)
+                            .CreateScoped(SheetsService.Scope.Spreadsheets);
+                    }
+                    LogInfo("Credentials loaded successfully");
+                }
+                catch (Exception ex)
+                {
+                    LogError($"Error loading credentials file from {_credentialsPath}", ex);
+                    return certificates;
+                }
+
+                try
+                {
+                    LogInfo("Creating Google Sheets service...");
+                    var service = new SheetsService(new BaseClientService.Initializer()
+                    {
+                        HttpClientInitializer = credential,
+                        ApplicationName = _applicationName
+                    });
+
+                    var range = $"{_sheetName}!A2:J"; // Start from row 2 to skip headers
+                    LogInfo($"Fetching data from range: {range}");
+
+                    var request = service.Spreadsheets.Values.Get(_spreadsheetId, range);
+                    var response = await request.ExecuteAsync();
+
+                    if (response == null || response.Values == null || response.Values.Count == 0)
+                    {
+                        LogInfo("No certificate data found in the spreadsheet");
+                        return certificates;
+                    }
+
+                    LogInfo($"Found {response.Values.Count} certificates in the spreadsheet");
+
+                    foreach (var row in response.Values)
+                    {
+                        try
+                        {
+                            // Ensure the row has enough columns
+                            if (row.Count < 8)
+                            {
+                                LogWarning($"Row has insufficient columns: {row.Count}. Expected at least 8 columns.");
+                                continue;
+                            }
+
+                            // Parse certificate ID
+                            if (!int.TryParse(row[0]?.ToString(), out int certId))
+                            {
+                                LogWarning($"Could not parse Certificate ID: {row[0]}");
+                                continue;
+                            }
+
+                            // Parse issue date
+                            DateTime issueDate;
+                            if (!DateTime.TryParse(row[5]?.ToString(), out issueDate))
+                            {
+                                LogWarning($"Could not parse Issue Date: {row[5]}");
+                                issueDate = DateTime.MinValue; // Default value
+                            }
+
+                            var certificate = new CertificationDataDTO
+                            {
+                                CertificationId = certId,
+                                LearnerName = row[1]?.ToString() ?? "Unknown",
+                                LearnerEmail = row[2]?.ToString() ?? "Unknown",
+                                CertificationType = row[3]?.ToString() ?? "Unknown",
+                                CertificationName = row[4]?.ToString() ?? "Unknown",
+                                IssueDate = issueDate,
+                                TeacherName = row[6]?.ToString() ?? "N/A",
+                                Subject = row[7]?.ToString() ?? "N/A",
+                                FileStatus = row.Count > 8 ? row[8]?.ToString() ?? "N/A" : "N/A",
+                                FileLink = row.Count > 9 ? row[9]?.ToString() ?? "N/A" : "N/A"
+                            };
+
+                            certificates.Add(certificate);
+                        }
+                        catch (Exception ex)
+                        {
+                            LogError($"Error parsing certificate row: {ex.Message}", ex);
+                            // Continue to next row
+                        }
+                    }
+
+                    LogInfo($"Successfully parsed {certificates.Count} certificates");
+                    return certificates;
+                }
+                catch (Google.GoogleApiException gex)
+                {
+                    LogError($"Google API Error during fetch: Code={gex.Error?.Code}, Message={gex.Error?.Message}", gex);
+                    return certificates;
+                }
+                catch (Exception ex)
+                {
+                    LogError("Error fetching data from Google Sheets", ex);
+                    return certificates;
+                }
+            }
+            catch (Exception ex)
+            {
+                LogError("Error getting certificates from Google Sheets", ex);
+                if (ex.InnerException != null)
+                {
+                    LogError($"Inner Exception: {ex.InnerException.Message}");
+                }
+                return certificates;
+            }
+        }
+
     }
 }
