@@ -18,8 +18,6 @@ namespace InstruLearn_Application.Model.Models
         public string CertificationName { get; set; }
         public DateTime IssueDate { get; set; } = DateTime.Now;
         public CertificationType CertificationType { get; set; }
-        public int? LearningRegisId { get; set; }
-        public Learning_Registration? LearningRegistration { get; set; }
         public ScheduleMode? LearningMode { get; set; }
         public string? TeacherName { get; set; }
         public string? Subject { get; set; }

@@ -16,7 +16,7 @@ namespace InstruLearn_Application.Model.Models.DTO.Certification
         public DateTime IssueDate { get; set; }
         public string TeacherName { get; set; }
         public string Subject { get; set; }
-        public string FileStatus { get; set; }
-        public string FileLink { get; set; }
+        public string? FileStatus { get; set; }
+        public string? FileLink { get; set; }
     }
 }

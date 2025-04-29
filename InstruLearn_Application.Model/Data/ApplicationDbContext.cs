@@ -426,11 +426,6 @@ namespace InstruLearn_Application.Model.Data
                .HasForeignKey(c => c.LearnerId)
                .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<Certification>()
-               .HasOne(c => c.LearningRegistration)
-               .WithMany()
-               .HasForeignKey(c => c.LearningRegisId)
-               .OnDelete(DeleteBehavior.Restrict);
             //
             modelBuilder.Entity<LevelAssigned>()
                .HasOne(la => la.Major)

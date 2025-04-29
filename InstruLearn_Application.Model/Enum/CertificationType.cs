@@ -8,7 +8,6 @@ namespace InstruLearn_Application.Model.Enum
 {
     public enum CertificationType
     {
-        OneOnOne = 0,
-        CenterLearning = 1
+        CenterLearning = 0
     }
 }
