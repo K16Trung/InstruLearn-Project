@@ -578,7 +578,7 @@ namespace InstruLearn_Application.BLL.Service
                         <p>Thanh toán còn lại: {remainingPayment.ToString("N0")} VND</p>
                         
                         <div style='background-color: #4CAF50; text-align: center; padding: 15px; margin: 20px 0; border-radius: 5px;'>
-                            <a href='https://instrulearn.com/feedback/{feedbackId}' style='color: white; text-decoration: none; font-weight: bold; font-size: 16px;'>
+                            <a href='http://localhost:3000/notification' style='color: white; text-decoration: none; font-weight: bold; font-size: 16px;'>
                                 Hoàn thành Biểu mẫu phản hồi
                             </a>
                         </div>
