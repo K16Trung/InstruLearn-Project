@@ -57,8 +57,7 @@ namespace InstruLearn_Application.Model.Data
         public DbSet<LearningRegisFeedbackOption> LearningRegisFeedbackOptions { get; set; }
         public DbSet<LearningRegisFeedback> LearningRegisFeedbacks { get; set; }
         public DbSet<LearningRegisFeedbackAnswer> LearningRegisFeedbackAnswers { get; set; }
-
-
+        public DbSet<StaffNotification> StaffNotifications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -549,6 +548,30 @@ namespace InstruLearn_Application.Model.Data
                 .WithMany()
                 .HasForeignKey(a => a.SelectedOptionId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Configure StaffNotification entity
+            modelBuilder.Entity<StaffNotification>()
+                .HasKey(n => n.NotificationId);
+
+            modelBuilder.Entity<StaffNotification>()
+                .HasOne(n => n.LearningRegistration)
+                .WithMany()
+                .HasForeignKey(n => n.LearningRegisId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<StaffNotification>()
+                .HasOne(n => n.Learner)
+                .WithMany()
+                .HasForeignKey(n => n.LearnerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<StaffNotification>()
+                .Property(n => n.Status)
+                .HasConversion<string>();
+
+            modelBuilder.Entity<StaffNotification>()
+                .Property(n => n.Type)
+                .HasConversion<string>();
 
         }
     }

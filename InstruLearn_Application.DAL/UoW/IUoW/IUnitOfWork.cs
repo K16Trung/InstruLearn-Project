@@ -54,6 +54,7 @@ namespace InstruLearn_Application.DAL.UoW.IUoW
         ILearningRegisFeedbackOptionRepository LearningRegisFeedbackOptionRepository { get; }
         ILearningRegisFeedbackQuestionRepository LearningRegisFeedbackQuestionRepository { get; }
         ILearningRegisFeedbackRepository LearningRegisFeedbackRepository { get; }
+        IStaffNotificationRepository StaffNotificationRepository { get; }
         ApplicationDbContext dbContext { get; }
         public Task<int> SaveChangeAsync();
         Task<IDbContextTransaction> BeginTransactionAsync();

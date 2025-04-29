@@ -4,6 +4,7 @@ using InstruLearn_Application.Model.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InstruLearn_Application.Model.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250429150900_notification_db")]
+    partial class notification_db
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -140,6 +143,9 @@ namespace InstruLearn_Application.Model.Migrations
                     b.Property<int?>("LearningMode")
                         .HasColumnType("int");
 
+                    b.Property<int?>("LearningRegisId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Subject")
                         .HasColumnType("nvarchar(max)");
 
@@ -149,6 +155,8 @@ namespace InstruLearn_Application.Model.Migrations
                     b.HasKey("CertificationId");
 
                     b.HasIndex("LearnerId");
+
+                    b.HasIndex("LearningRegisId");
 
                     b.ToTable("Certifications");
                 });
@@ -1461,7 +1469,14 @@ namespace InstruLearn_Application.Model.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("InstruLearn_Application.Model.Models.Learning_Registration", "LearningRegistration")
+                        .WithMany()
+                        .HasForeignKey("LearningRegisId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Learner");
+
+                    b.Navigation("LearningRegistration");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Class", b =>
