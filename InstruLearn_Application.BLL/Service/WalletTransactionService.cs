@@ -82,35 +82,45 @@ namespace InstruLearn_Application.BLL.Service
                     .Where(p => transactionIds.Contains(p.TransactionId))
                     .ToListAsync();
 
-                var learningRegisPaymentIds = payments
-                    .Where(p => p.PaymentFor == PaymentFor.LearningRegistration)
-                    .Select(p => p.PaymentId)
-                    .ToList();
-
-                Dictionary<int, Model.Models.Learning_Registration> learningRegistrations = new();
-
-                if (learningRegisPaymentIds.Any())
-                {
-                    var registrationList = await _unitOfWork.LearningRegisRepository
-                        .GetQuery()
-                        .Where(lr => learningRegisPaymentIds.Contains(lr.LearningRegisId))
-                        .ToListAsync();
-
-                    learningRegistrations = registrationList.ToDictionary(lr => lr.LearningRegisId, lr => lr);
-                }
+                var learningRegistrations = await _unitOfWork.LearningRegisRepository
+                    .GetQuery()
+                    .Where(lr => lr.Price.HasValue)
+                    .ToListAsync();
 
                 foreach (var dto in transactionDtos)
                 {
                     var payment = payments.FirstOrDefault(p => p.TransactionId == dto.TransactionId);
+
                     if (payment != null)
                     {
                         if (payment.PaymentFor == PaymentFor.LearningRegistration)
                         {
-                            if (learningRegistrations.TryGetValue(payment.PaymentId, out var registration))
+                            var matchingRegistration = learningRegistrations
+                                .FirstOrDefault(lr =>
+                                    lr.Price.HasValue &&
+                                    (Math.Abs(payment.AmountPaid - lr.Price.Value * 0.4m) < 0.1m ||
+                                     Math.Abs(payment.AmountPaid - lr.Price.Value * 0.6m) < 0.1m));
+
+                            if (matchingRegistration != null)
                             {
-                                dto.PaymentType = registration.ClassId == null
-                                    ? PaymentType.OneOnOne.ToString()
-                                    : PaymentType.Center.ToString();
+                                decimal totalPrice = matchingRegistration.Price.Value;
+                                decimal fortyPercent = Math.Round(totalPrice * 0.4m, 2);
+                                decimal sixtyPercent = Math.Round(totalPrice * 0.6m, 2);
+
+                                if (Math.Abs(payment.AmountPaid - fortyPercent) < 0.1m)
+                                {
+                                    dto.PaymentType = "Thanh toán 40% học phí";
+                                }
+                                else if (Math.Abs(payment.AmountPaid - sixtyPercent) < 0.1m)
+                                {
+                                    dto.PaymentType = "Thanh toán 60% học phí";
+                                }
+                                else
+                                {
+                                    dto.PaymentType = matchingRegistration.ClassId == null
+                                        ? PaymentType.OneOnOne.ToString()
+                                        : PaymentType.Center.ToString();
+                                }
                             }
                             else
                             {
@@ -136,17 +146,24 @@ namespace InstruLearn_Application.BLL.Service
                     }
                     else
                     {
-                        switch (dto.TransactionType?.ToLower())
+                        if (dto.TransactionType?.ToLower() == "payment" && Math.Abs(dto.Amount - 50000) < 0.1m)
                         {
-                            case "addfunds":
-                                dto.PaymentType = "AddFunds";
-                                break;
-                            case "payment":
-                                dto.PaymentType = "Payment";
-                                break;
-                            default:
-                                dto.PaymentType = dto.TransactionType ?? "Unknown";
-                                break;
+                            dto.PaymentType = PaymentType.ApplicationFee.ToString();
+                        }
+                        else
+                        {
+                            switch (dto.TransactionType?.ToLower())
+                            {
+                                case "addfunds":
+                                    dto.PaymentType = "AddFunds";
+                                    break;
+                                case "payment":
+                                    dto.PaymentType = "Payment";
+                                    break;
+                                default:
+                                    dto.PaymentType = dto.TransactionType ?? "Unknown";
+                                    break;
+                            }
                         }
                     }
                 }
