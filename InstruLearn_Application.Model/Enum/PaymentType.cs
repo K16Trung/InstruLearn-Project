@@ -10,6 +10,7 @@ namespace InstruLearn_Application.Model.Enum
     {
         OneOnOne,
         Center,
-        OnlineCourse
+        OnlineCourse,
+        ApplicationFee
     }
 }

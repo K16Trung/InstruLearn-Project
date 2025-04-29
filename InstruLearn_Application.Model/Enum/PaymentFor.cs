@@ -10,6 +10,7 @@ namespace InstruLearn_Application.Model.Enum
     {
         AddFuns,
         Online_Course,
-        LearningRegistration
+        LearningRegistration,
+        ApplicationFee
     }
 }

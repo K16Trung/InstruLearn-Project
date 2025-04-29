@@ -76,25 +76,21 @@ namespace InstruLearn_Application.BLL.Service
 
             try
             {
-                // Get all related payment information
                 var transactionIds = transactions.Select(t => t.TransactionId).ToList();
                 var payments = await _unitOfWork.PaymentsRepository
                     .GetQuery()
                     .Where(p => transactionIds.Contains(p.TransactionId))
                     .ToListAsync();
 
-                // Extract learning registration IDs
                 var learningRegisPaymentIds = payments
                     .Where(p => p.PaymentFor == PaymentFor.LearningRegistration)
                     .Select(p => p.PaymentId)
                     .ToList();
 
-                // Load all learning registrations directly
                 Dictionary<int, Model.Models.Learning_Registration> learningRegistrations = new();
 
                 if (learningRegisPaymentIds.Any())
                 {
-                    // Get all learning registrations in one query
                     var registrationList = await _unitOfWork.LearningRegisRepository
                         .GetQuery()
                         .Where(lr => learningRegisPaymentIds.Contains(lr.LearningRegisId))
@@ -103,30 +99,22 @@ namespace InstruLearn_Application.BLL.Service
                     learningRegistrations = registrationList.ToDictionary(lr => lr.LearningRegisId, lr => lr);
                 }
 
-                // Enrich the DTOs with payment information
                 foreach (var dto in transactionDtos)
                 {
-                    // Find the corresponding payment
                     var payment = payments.FirstOrDefault(p => p.TransactionId == dto.TransactionId);
                     if (payment != null)
                     {
-                        // Set the PaymentFor field
-                        dto.PaymentFor = payment.PaymentFor.ToString();
-
-                        // Determine the specific payment type
                         if (payment.PaymentFor == PaymentFor.LearningRegistration)
                         {
                             if (learningRegistrations.TryGetValue(payment.PaymentId, out var registration))
                             {
-                                // Determine if it's OneOnOne or Center based on ClassId
                                 dto.PaymentType = registration.ClassId == null
                                     ? PaymentType.OneOnOne.ToString()
                                     : PaymentType.Center.ToString();
                             }
                             else
                             {
-                                // Learning registration not found - set better default
-                                dto.PaymentType = "Learning Registration";
+                                dto.PaymentType = "LearningRegistration";
                             }
                         }
                         else if (payment.PaymentFor == PaymentFor.Online_Course)
@@ -137,29 +125,27 @@ namespace InstruLearn_Application.BLL.Service
                         {
                             dto.PaymentType = "AddFunds";
                         }
+                        else if (payment.PaymentFor == PaymentFor.ApplicationFee)
+                        {
+                            dto.PaymentType = PaymentType.ApplicationFee.ToString();
+                        }
                         else
                         {
-                            // Handle other payment types to ensure not null
                             dto.PaymentType = payment.PaymentFor.ToString();
                         }
                     }
                     else
                     {
-                        // If no payment record, it's likely an AddFunds transaction or something else
-                        // Set default values to ensure not null
                         switch (dto.TransactionType?.ToLower())
                         {
                             case "addfunds":
                                 dto.PaymentType = "AddFunds";
-                                dto.PaymentFor = "AddFunds";
                                 break;
                             case "payment":
                                 dto.PaymentType = "Payment";
-                                dto.PaymentFor = "Payment";
                                 break;
                             default:
                                 dto.PaymentType = dto.TransactionType ?? "Unknown";
-                                dto.PaymentFor = dto.TransactionType ?? "Unknown";
                                 break;
                         }
                     }
@@ -171,16 +157,11 @@ namespace InstruLearn_Application.BLL.Service
             {
                 Console.WriteLine($"Error enriching transactions: {ex.Message}");
 
-                // Still return the transactions, but without payment info
                 foreach (var dto in transactionDtos)
                 {
                     if (string.IsNullOrEmpty(dto.PaymentType))
                     {
                         dto.PaymentType = dto.TransactionType ?? "Unknown";
-                    }
-                    if (string.IsNullOrEmpty(dto.PaymentFor))
-                    {
-                        dto.PaymentFor = dto.TransactionType ?? "Unknown";
                     }
                 }
 
