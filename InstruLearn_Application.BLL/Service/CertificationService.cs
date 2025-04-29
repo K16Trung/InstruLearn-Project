@@ -165,6 +165,9 @@ namespace InstruLearn_Application.BLL.Service
                         certificationObj.TeacherName = registration.Teacher?.Fullname;
                         certificationObj.Subject = registration.Major?.MajorName;
 
+                        bool isOneOnOne = registration.ClassId == null;
+                        certificationObj.LearningMode = isOneOnOne ? ScheduleMode.OneOnOne : ScheduleMode.Center;
+
                         if (string.IsNullOrEmpty(certificationObj.CertificationName))
                         {
                             string mode = createCertificationDTO.CertificationType == CertificationType.OneOnOne ?
@@ -354,7 +357,6 @@ namespace InstruLearn_Application.BLL.Service
                             };
                         }
 
-                        // Use GettWithIncludesAsync to get a single result
                         var registration = await _unitOfWork.LearningRegisRepository
                             .GettWithIncludesAsync(
                                 x => x.LearningRegisId == learningRegisId.Value && x.LearnerId == learnerId,
@@ -371,7 +373,6 @@ namespace InstruLearn_Application.BLL.Service
                             };
                         }
 
-                        // Check if the chosen certificate type matches the registration's actual type
                         bool isOneOnOne = registration.ClassId == null;
                         if ((certificationType == CertificationType.OneOnOne && !isOneOnOne) ||
                             (certificationType == CertificationType.CenterLearning && isOneOnOne))
@@ -384,13 +385,9 @@ namespace InstruLearn_Application.BLL.Service
                             };
                         }
 
-                        var scheduleMode = certificationType == CertificationType.OneOnOne ?
-                            ScheduleMode.OneOnOne : ScheduleMode.Center;
-
                         var schedules = await _unitOfWork.ScheduleRepository
                             .GetWhereAsync(s => s.LearningRegisId == learningRegisId.Value &&
-                                              s.LearnerId == learnerId &&
-                                              s.Mode == scheduleMode);
+                                              s.LearnerId == learnerId);
 
                         int totalSessions = registration.NumberOfSession;
                         int attendedSessions = schedules.Count(s => s.AttendanceStatus == AttendanceStatus.Present);
@@ -398,7 +395,6 @@ namespace InstruLearn_Application.BLL.Service
 
                         bool attendanceEligible = attendanceRate >= 75;
 
-                        // Check for existing certificate
                         bool certificateExists = await _unitOfWork.CertificationRepository
                             .ExistsByLearningRegisIdAsync(learningRegisId.Value);
 

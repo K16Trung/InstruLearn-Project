@@ -1,4 +1,5 @@
 ﻿using InstruLearn_Application.BLL.Service.IService;
+using InstruLearn_Application.Model.Enum;
 using InstruLearn_Application.Model.Models.DTO.WalletTransaction;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -16,15 +17,13 @@ namespace InstruLearn_Application.Controllers
             _walletTransactionService = walletTransactionService;
         }
 
-        // GET: api/WalletTransactions
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<WalletTransactionDTO>>> GetAllTransactions()
+        public async Task<IActionResult> GetAllTransactions()
         {
-            var transactions = await _walletTransactionService.GetAllTransactionsAsync();
-            return Ok(transactions);
+            var result = await _walletTransactionService.GetAllTransactionsAsync();
+            return Ok(result);
         }
 
-        // GET: api/WalletTransactions/wallet/5
         [HttpGet("wallet/{walletId}")]
         public async Task<ActionResult<IEnumerable<WalletTransactionDTO>>> GetTransactionsByWalletId(int walletId)
         {

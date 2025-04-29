@@ -16,5 +16,7 @@ namespace InstruLearn_Application.Model.Models.DTO.WalletTransaction
         public string Status { get; set; }
         public DateTime TransactionDate { get; set; }
         public decimal SignedAmount { get; set; }
+        public string PaymentFor { get; set; }
+        public string PaymentType { get; set; }
     }
 }

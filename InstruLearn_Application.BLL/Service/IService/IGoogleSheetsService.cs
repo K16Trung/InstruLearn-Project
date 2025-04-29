@@ -9,6 +9,7 @@ namespace InstruLearn_Application.BLL.Service.IService
 {
     public interface IGoogleSheetsService
     {
+        Task<Dictionary<string, object>> TestGoogleSheetsConnectionAsync();
         Task<bool> SaveCertificationDataAsync(CertificationDataDTO certificationData);
     }
 }
