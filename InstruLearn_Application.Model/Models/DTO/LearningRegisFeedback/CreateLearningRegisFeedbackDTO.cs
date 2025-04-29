@@ -14,5 +14,6 @@ namespace InstruLearn_Application.Model.Models.DTO.LearningRegisFeedback
         public string AdditionalComments { get; set; }
         public List<CreateLearningRegisFeedbackAnswerDTO> Answers { get; set; }
         public bool ContinueStudying { get; set; }
+        public bool ChangeTeacher { get; set; } = false;
     }
 }

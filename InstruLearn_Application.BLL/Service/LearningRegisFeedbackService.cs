@@ -443,6 +443,107 @@ namespace InstruLearn_Application.BLL.Service
 
                 // Now implement the ProcessFeedbackCompletionAsync functionality
 
+                // If the learner wants to continue studying but change the teacher
+                if (createDTO.ContinueStudying && createDTO.ChangeTeacher)
+                {
+                    // Update learning registration status to indicate readiness for 60% payment
+                    if (learningRegis.Status == LearningRegis.Fourty)
+                    {
+                        learningRegis.Status = LearningRegis.FourtyFeedbackDone;
+                        learningRegis.PaymentDeadline = DateTime.Now.AddDays(1);
+                        await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
+                        await _unitOfWork.SaveChangeAsync();
+                    }
+
+                    // Create a notification for staff to handle the teacher change request
+                    var teacherChangeNotification = new StaffNotification
+                    {
+                        Title = "Yêu cầu thay đổi giáo viên",
+                        Message = $"Học viên {learner.FullName} (ID: {learner.LearnerId}) muốn tiếp tục học nhưng thay đổi giáo viên cho đăng ký học ID: {learningRegis.LearningRegisId}",
+                        LearningRegisId = learningRegis.LearningRegisId,
+                        LearnerId = learner.LearnerId,
+                        CreatedAt = DateTime.Now,
+                        Status = NotificationStatus.Unread,
+                        Type = NotificationType.TeacherChangeRequest
+                    };
+
+                    await _unitOfWork.StaffNotificationRepository.AddAsync(teacherChangeNotification);
+                    await _unitOfWork.SaveChangeAsync();
+
+                    // Send email notification to learner about the payment deadline
+                    if (learner != null && !string.IsNullOrEmpty(learner.AccountId))
+                    {
+                        var learnerAccount = await _unitOfWork.AccountRepository.GetByIdAsync(learner.AccountId);
+                        if (learnerAccount != null && !string.IsNullOrEmpty(learnerAccount.Email))
+                        {
+                            try
+                            {
+                                decimal remainingPayment = learningRegis.Price.HasValue ? learningRegis.Price.Value * 0.6m : 0;
+                                string deadlineFormatted = learningRegis.PaymentDeadline?.ToString("dd/MM/yyyy HH:mm") ?? "N/A";
+
+                                string subject = "Thanh toán học phí còn lại - Hạn chót 1 ngày";
+                                string body = $@"
+                <html>
+                <body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
+                    <div style='background-color: #f7f7f7; padding: 20px; border-radius: 5px;'>
+                        <h2 style='color: #333;'>Xin chào {learner.FullName},</h2>
+                        
+                        <p>Cảm ơn bạn đã hoàn thành đánh giá và quyết định tiếp tục học với giáo viên khác.</p>
+                        
+                        <p>Nhân viên của chúng tôi sẽ liên hệ với bạn để sắp xếp giáo viên mới.</p>
+                        
+                        <p><strong>Bạn có 1 ngày để thanh toán 60% học phí còn lại.</strong></p>
+                        
+                        <div style='background-color: #f0f0f0; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #ff9800;'>
+                            <h3 style='margin-top: 0; color: #333;'>Thông tin thanh toán:</h3>
+                            <p><strong>Số tiền cần thanh toán:</strong> {remainingPayment:N0} VND</p>
+                            <p><strong>Hạn thanh toán:</strong> {deadlineFormatted}</p>
+                            <p><strong>ID đăng ký học:</strong> {learningRegis.LearningRegisId}</p>
+                        </div>
+                        
+                        <p>Nếu không thanh toán trước hạn, đăng ký học của bạn sẽ bị hủy tự động.</p>
+                        
+                        <div style='background-color: #4CAF50; text-align: center; padding: 15px; margin: 20px 0; border-radius: 5px;'>
+                            <a href='https://instrulearn.com/payment/{learningRegis.LearningRegisId}' style='color: white; text-decoration: none; font-weight: bold; font-size: 16px;'>
+                                Thanh Toán Ngay
+                            </a>
+                        </div>
+                        
+                        <p>Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với đội ngũ hỗ trợ của chúng tôi.</p>
+                        
+                        <p>Trân trọng,<br>Đội ngũ InstruLearn</p>
+                    </div>
+                </body>
+                </html>";
+
+                                await _emailService.SendEmailAsync(learnerAccount.Email, subject, body, true);
+                            }
+                            catch (Exception emailEx)
+                            {
+                            }
+                        }
+                    }
+
+                    string paymentDeadlineStr = learningRegis.PaymentDeadline?.ToString("yyyy-MM-dd HH:mm:ss") ?? "N/A";
+
+                    return new ResponseDTO
+                    {
+                        IsSucceed = true,
+                        Message = "Gửi đánh giá thành công. Yêu cầu thay đổi giáo viên của bạn đã được ghi nhận. Đăng ký học của bạn đã sẵn sàng cho khoản thanh toán 60% còn lại để tiếp tục học.",
+                        Data = new
+                        {
+                            FeedbackId = feedbackId,
+                            LearningRegisId = learningRegis.LearningRegisId,
+                            Status = learningRegis.Status.ToString(),
+                            RemainingPayment = learningRegis.Price.HasValue ? learningRegis.Price.Value * 0.6m : 0,
+                            PaymentDeadline = paymentDeadlineStr,
+                            PaymentDeadlineUnix = learningRegis.PaymentDeadline.HasValue ?
+                        new DateTimeOffset(learningRegis.PaymentDeadline.Value).ToUnixTimeSeconds() : 0,
+                            TeacherChangeRequested = true
+                        }
+                    };
+                }
+
                 // If the learner wants to continue studying
                 if (createDTO.ContinueStudying)
                 {
