@@ -12,17 +12,42 @@ namespace InstruLearn_Application.Controllers
     public class CertificationController : ControllerBase
     {
         private readonly ICertificationService _certificationService;
+        private readonly IGoogleSheetsService _googleSheetsService;
+        private readonly ILogger<CertificationController> _logger;
 
-        public CertificationController(ICertificationService certificationService)
+        public CertificationController(ICertificationService certificationService, IGoogleSheetsService googleSheetsService, ILogger<CertificationController> logger)
         {
             _certificationService = certificationService;
+            _googleSheetsService = googleSheetsService;
+            _logger = logger;
         }
 
-        [HttpGet("get-all")]
-        public async Task<IActionResult> GetAllCertification()
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAllCertificates()
         {
-            var response = await _certificationService.GetAllCertificationAsync();
-            return Ok(response);
+            try
+            {
+                _logger.LogInformation("Received request to get all certificates");
+
+                var certificates = await _googleSheetsService.GetAllCertificatesAsync();
+
+                return Ok(new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = $"Successfully retrieved {certificates.Count} certificates",
+                    Data = certificates
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting all certificates");
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Failed to retrieve certificates: {ex.Message}"
+                });
+            }
         }
 
         [HttpGet("{id}")]

@@ -11,5 +11,6 @@ namespace InstruLearn_Application.BLL.Service.IService
     {
         Task<Dictionary<string, object>> TestGoogleSheetsConnectionAsync();
         Task<bool> SaveCertificationDataAsync(CertificationDataDTO certificationData);
+        Task<List<CertificationDataDTO>> GetAllCertificatesAsync();
     }
 }
