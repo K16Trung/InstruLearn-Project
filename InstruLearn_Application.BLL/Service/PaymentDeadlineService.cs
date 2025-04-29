@@ -82,12 +82,12 @@ namespace InstruLearn_Application.BLL.Service
                         if (registration.Status == LearningRegis.Accepted)
                         {
                             registration.Status = LearningRegis.Cancelled;
-                            registration.LearningRequest = "Automatically rejected due to non-payment within deadline.";
+                            registration.LearningRequest = "Quá hạn thanh toán";
                         }
                         else if (registration.Status == LearningRegis.FourtyFeedbackDone)
                         {
                             registration.Status = LearningRegis.Cancelled;
-                            registration.LearningRequest = "Automatically cancelled due to non-payment of remaining 60% within deadline.";
+                            registration.LearningRequest = "Quá hạn thanh toán 60%";
 
                             // Get all schedules associated with this learning registration
                             var schedules = registration.Schedules?.ToList() ??
