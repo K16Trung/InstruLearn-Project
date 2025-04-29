@@ -85,103 +85,81 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
+                if (createCertificationDTO.CertificationType != CertificationType.CenterLearning)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Only CenterLearning certificate type is supported.",
+                    };
+                }
+
                 var certificationObj = _mapper.Map<Certification>(createCertificationDTO);
                 certificationObj.Learner = learner;
                 certificationObj.IssueDate = DateTime.Now;
 
-                switch (createCertificationDTO.CertificationType)
+                if (!createCertificationDTO.LearningRegisId.HasValue)
                 {
-                    case CertificationType.OneOnOne:
-                    case CertificationType.CenterLearning:
-                        if (!createCertificationDTO.LearningRegisId.HasValue)
-                        {
-                            return new ResponseDTO
-                            {
-                                IsSucceed = false,
-                                Message = "Learning registration ID is required for 1-1 or center learning certificates",
-                            };
-                        }
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Learning registration ID is required for center learning certificates",
+                    };
+                }
 
-                        var registration = await _unitOfWork.LearningRegisRepository
-                            .GettWithIncludesAsync(
-                                x => x.LearningRegisId == createCertificationDTO.LearningRegisId.Value,
-                                "Teacher,Learner,Major"
-                            );
+                var registration = await _unitOfWork.LearningRegisRepository
+                    .GettWithIncludesAsync(
+                        x => x.LearningRegisId == createCertificationDTO.LearningRegisId.Value,
+                        "Teacher,Learner,Major"
+                    );
 
-                        if (registration == null)
-                        {
-                            return new ResponseDTO
-                            {
-                                IsSucceed = false,
-                                Message = "Learning registration not found",
-                            };
-                        }
+                if (registration == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Learning registration not found",
+                    };
+                }
 
-                        if (registration.LearnerId != createCertificationDTO.LearnerId)
-                        {
-                            return new ResponseDTO
-                            {
-                                IsSucceed = false,
-                                Message = "The learning registration doesn't belong to this learner",
-                            };
-                        }
+                if (registration.LearnerId != createCertificationDTO.LearnerId)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "The learning registration doesn't belong to this learner",
+                    };
+                }
 
-                        bool certificateExists = await _unitOfWork.CertificationRepository
-                            .ExistsByLearningRegisIdAsync(createCertificationDTO.LearningRegisId.Value);
+                if (registration.ClassId == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "The provided registration is for one-on-one learning, not center learning",
+                    };
+                }
 
-                        if (certificateExists)
-                        {
-                            return new ResponseDTO
-                            {
-                                IsSucceed = false,
-                                Message = "A certificate already exists for this learning registration",
-                            };
-                        }
+                bool certificateExists = await _unitOfWork.CertificationRepository
+                    .ExistsByLearningRegisIdAsync(createCertificationDTO.LearningRegisId.Value);
 
-                        var schedules = await _unitOfWork.ScheduleRepository
-                            .GetWhereAsync(s => s.LearningRegisId == createCertificationDTO.LearningRegisId.Value &&
-                                              s.LearnerId == createCertificationDTO.LearnerId);
+                if (certificateExists)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "A certificate already exists for this learning registration",
+                    };
+                }
 
-                        int totalSessions = registration.NumberOfSession;
-                        int attendedSessions = schedules.Count(s => s.AttendanceStatus == AttendanceStatus.Present);
-                        double attendanceRate = totalSessions > 0 ? (double)attendedSessions / totalSessions * 100 : 0;
+                certificationObj.LearningRegistration = registration;
+                certificationObj.TeacherName = registration.Teacher?.Fullname;
+                certificationObj.Subject = registration.Major?.MajorName;
+                certificationObj.LearningMode = ScheduleMode.Center;
 
-                        if (attendanceRate < 75)
-                        {
-                            return new ResponseDTO
-                            {
-                                IsSucceed = false,
-                                Message = "The learner's attendance rate is below 75%, cannot issue certificate.",
-                                Data = new
-                                {
-                                    AttendanceRate = attendanceRate,
-                                    TotalSessions = totalSessions,
-                                    AttendedSessions = attendedSessions
-                                }
-                            };
-                        }
-
-                        certificationObj.LearningRegistration = registration;
-                        certificationObj.TeacherName = registration.Teacher?.Fullname;
-                        certificationObj.Subject = registration.Major?.MajorName;
-
-                        bool isOneOnOne = registration.ClassId == null;
-                        certificationObj.LearningMode = isOneOnOne ? ScheduleMode.OneOnOne : ScheduleMode.Center;
-
-                        if (string.IsNullOrEmpty(certificationObj.CertificationName))
-                        {
-                            string mode = createCertificationDTO.CertificationType == CertificationType.OneOnOne ?
-                                "One-on-One" : "Center";
-                            certificationObj.CertificationName = $"{mode} Learning Certificate - {registration.Major?.MajorName}";
-                        }
-                        break;
-
-                    default:
-                        return new ResponseDTO
-                        {
-                            IsSucceed = false,
-                            Message = "Only OneOnOne and CenterLearning certificate types are supported.",
-                        };
+                if (string.IsNullOrEmpty(certificationObj.CertificationName))
+                {
+                    certificationObj.CertificationName = $"Center Learning Certificate - {registration.Major?.MajorName}";
                 }
 
                 await _unitOfWork.CertificationRepository.AddAsync(certificationObj);

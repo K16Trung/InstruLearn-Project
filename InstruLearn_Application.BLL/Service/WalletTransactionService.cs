@@ -109,11 +109,11 @@ namespace InstruLearn_Application.BLL.Service
 
                                 if (Math.Abs(payment.AmountPaid - fortyPercent) < 0.1m)
                                 {
-                                    dto.PaymentType = "Thanh toán 40% học phí";
+                                    dto.PaymentType = "Successful payment 40% tution";
                                 }
                                 else if (Math.Abs(payment.AmountPaid - sixtyPercent) < 0.1m)
                                 {
-                                    dto.PaymentType = "Thanh toán 60% học phí";
+                                    dto.PaymentType = "Successful payment 60% tution";
                                 }
                                 else
                                 {
