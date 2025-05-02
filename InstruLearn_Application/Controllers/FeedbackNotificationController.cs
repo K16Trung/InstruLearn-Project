@@ -29,7 +29,7 @@ namespace InstruLearn_Application.Controllers
                 return Ok(result);
             }
 
-            return NotFound(result);
+            return Ok(result);
         }
 
         [HttpPost("complete-feedback")]
