@@ -1,5 +1,6 @@
 ﻿using InstruLearn_Application.BLL.Service.IService;
 using InstruLearn_Application.Model.Models.DTO;
+using InstruLearn_Application.Model.Models.DTO.StaffNotification;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,7 +18,6 @@ namespace InstruLearn_Application.Controllers
         }
 
         [HttpGet("teacher-change-requests")]
-        //[Authorize(Roles = "Admin,Staff,Manager")]
         public async Task<ActionResult<ResponseDTO>> GetTeacherChangeRequests()
         {
             var result = await _staffNotificationService.GetAllTeacherChangeRequestsAsync();
@@ -31,7 +31,6 @@ namespace InstruLearn_Application.Controllers
         }
 
         [HttpGet("GetLearningRegis-ChangeTeacher")]
-        //[Authorize(Roles = "Admin,Staff,Manager")]
         public async Task<ActionResult<ResponseDTO>> GetTeacherChangeLearningRegistrations()
         {
             var result = await _staffNotificationService.GetTeacherChangeRequestLearningRegistrationsAsync();
@@ -46,7 +45,6 @@ namespace InstruLearn_Application.Controllers
 
 
         [HttpPut("mark-as-read/{notificationId}")]
-        //[Authorize(Roles = "Admin,Staff,Manager")]
         public async Task<ActionResult<ResponseDTO>> MarkAsRead(int notificationId)
         {
             var result = await _staffNotificationService.MarkNotificationAsReadAsync(notificationId);
@@ -60,7 +58,6 @@ namespace InstruLearn_Application.Controllers
         }
 
         [HttpPut("mark-as-resolved/{notificationId}")]
-        //[Authorize(Roles = "Admin,Staff,Manager")]
         public async Task<ActionResult<ResponseDTO>> MarkAsResolved(int notificationId)
         {
             var result = await _staffNotificationService.MarkNotificationAsResolvedAsync(notificationId);
@@ -72,5 +69,28 @@ namespace InstruLearn_Application.Controllers
 
             return BadRequest(result);
         }
+
+        [HttpPut("changeTeacher")]
+        public async Task<IActionResult> ChangeTeacher([FromBody] ChangeTeacherRequestDTO request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var result = await _staffNotificationService.ChangeTeacherForLearningRegistrationAsync(
+                request.NotificationId,
+                request.LearningRegisId,
+                request.NewTeacherId,
+                request.ChangeReason);
+
+            if (result.IsSucceed)
+            {
+                return Ok(result);
+            }
+
+            return BadRequest(result);
+        }
+
     }
 }
