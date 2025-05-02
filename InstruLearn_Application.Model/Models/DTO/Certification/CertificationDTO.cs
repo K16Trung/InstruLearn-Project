@@ -16,7 +16,6 @@ namespace InstruLearn_Application.Model.Models.DTO.Certification
         public string CertificationName { get; set; }
         public DateTime IssueDate { get; set; }
         public CertificationType CertificationType { get; set; }
-        public ScheduleMode? LearningMode { get; set; }
         public string? TeacherName { get; set; }
         public string? Subject { get; set; }
     }

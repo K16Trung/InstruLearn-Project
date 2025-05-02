@@ -102,7 +102,6 @@ namespace InstruLearn_Application.BLL.Service
                     CertificationType = CertificationType.CenterLearning,
                     IssueDate = DateTime.Now,
                     CertificationName = createCertificationDTO.CertificationName,
-                    LearningMode = ScheduleMode.Center
                 };
 
                 string teacherName = null;
@@ -223,8 +222,8 @@ namespace InstruLearn_Application.BLL.Service
                     IssueDate = certificationObj.IssueDate,
                     TeacherName = certificationObj.TeacherName,
                     Subject = certificationObj.Subject,
-                    FileStatus = "N/A",
-                    FileLink = "N/A"
+                    FileStatus = string.Empty,
+                    FileLink = string.Empty
                 };
 
                 bool googleSheetsSuccess = false;
