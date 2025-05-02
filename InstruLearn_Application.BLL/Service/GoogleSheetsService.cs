@@ -197,8 +197,8 @@ namespace InstruLearn_Application.BLL.Service
                         certificationData.IssueDate.ToString("yyyy-MM-dd HH:mm:ss"),
                         certificationData.TeacherName ?? "N/A",
                         certificationData.Subject ?? "N/A",
-                        certificationData.FileStatus ?? "N/A",
-                        certificationData.FileLink ?? "N/A"
+                        certificationData.FileStatus ?? string.Empty,
+                        certificationData.FileLink ?? string.Empty
                     }
                 }
                     };
@@ -579,8 +579,8 @@ namespace InstruLearn_Application.BLL.Service
                                 IssueDate = issueDate,
                                 TeacherName = row[6]?.ToString() ?? "N/A",
                                 Subject = row[7]?.ToString() ?? "N/A",
-                                FileStatus = row.Count > 8 ? row[8]?.ToString() ?? "N/A" : "N/A",
-                                FileLink = row.Count > 9 ? row[9]?.ToString() ?? "N/A" : "N/A"
+                                FileStatus = row.Count > 8 ? row[8]?.ToString() ?? string.Empty : string.Empty,
+                                FileLink = row.Count > 9 ? row[9]?.ToString() ?? string.Empty : string.Empty
                             };
 
                             certificates.Add(certificate);
