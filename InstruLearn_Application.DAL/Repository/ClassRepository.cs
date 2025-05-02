@@ -31,11 +31,48 @@ namespace InstruLearn_Application.DAL.Repository
         // Override GetByIdAsync to include navigation properties
         public async Task<Class> GetByIdAsync(int classId)
         {
-            return await _appDbContext.Classes
+            var classEntity = await _appDbContext.Classes
                 .Include(c => c.Teacher)
                 .Include(c => c.Major)
                 .Include(c => c.ClassDays)
                 .FirstOrDefaultAsync(c => c.ClassId == classId);
+
+            if (classEntity != null)
+            {
+                // Explicit loading for Teacher if it's still null
+                if (classEntity.Teacher == null && classEntity.TeacherId > 0)
+                {
+                    Console.WriteLine($"Teacher not loaded with Include. Attempting explicit loading for TeacherId: {classEntity.TeacherId}");
+
+                    // Load Teacher explicitly
+                    var teacher = await _appDbContext.Teachers
+                        .FirstOrDefaultAsync(t => t.TeacherId == classEntity.TeacherId);
+
+                    if (teacher != null)
+                    {
+                        classEntity.Teacher = teacher;
+                        Console.WriteLine($"Teacher loaded explicitly: {teacher.Fullname}");
+                    }
+                }
+
+                // Explicit loading for Major if it's still null
+                if (classEntity.Major == null && classEntity.MajorId > 0)
+                {
+                    Console.WriteLine($"Major not loaded with Include. Attempting explicit loading for MajorId: {classEntity.MajorId}");
+
+                    // Load Major explicitly
+                    var major = await _appDbContext.Majors
+                        .FirstOrDefaultAsync(m => m.MajorId == classEntity.MajorId);
+
+                    if (major != null)
+                    {
+                        classEntity.Major = major;
+                        Console.WriteLine($"Major loaded explicitly: {major.MajorName}");
+                    }
+                }
+            }
+
+            return classEntity;
         }
 
         public async Task<List<Class>> GetClassesByMajorIdAsync(int majorId)

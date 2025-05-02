@@ -456,6 +456,8 @@ namespace InstruLearn_Application.Model.Mapper
             //🔹Certification mapping
             CreateMap<Certification, CertificationDTO>()
                 .ForMember(dest => dest.Learner, opt => opt.MapFrom(src => src.Learner))
+                .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.TeacherName))
+                .ForMember(dest => dest.Subject, opt => opt.MapFrom(src => src.Subject))
                 .ReverseMap();
 
             CreateMap<Learner, LearnerCertificationDTO>()
