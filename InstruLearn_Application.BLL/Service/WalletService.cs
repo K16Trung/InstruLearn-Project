@@ -54,13 +54,11 @@ namespace InstruLearn_Application.BLL.Service
 
             string transactionId = Guid.NewGuid().ToString();
 
-            // Create a wallet transaction
             var transaction = new WalletTransaction
             {
                 WalletId = wallet.WalletId,
                 Amount = amount,
                 TransactionId = transactionId,
-                //OrderCode = orderCode,
                 TransactionType = TransactionType.AddFuns,
                 Status = TransactionStatus.Pending,
                 TransactionDate = DateTime.Now
@@ -69,7 +67,6 @@ namespace InstruLearn_Application.BLL.Service
             await _unitOfWork.WalletTransactionRepository.AddAsync(transaction);
             await _unitOfWork.SaveChangeAsync();
 
-            // Use PayOS to generate a payment link
             PayOS payOS = new PayOS(_payOSSettings.ClientId, _payOSSettings.ApiKey, _payOSSettings.ChecksumKey);
             List<ItemData> items = new List<ItemData>
             {
@@ -106,8 +103,6 @@ namespace InstruLearn_Application.BLL.Service
                 }
                 catch (Exception ex)
                 {
-                    // Log but don't throw
-                    // _logger.LogError(ex, $"Error polling transaction status: {ex.Message}");
                 }
             });
 
@@ -468,35 +463,28 @@ namespace InstruLearn_Application.BLL.Service
 
         private async Task PollTransactionStatusAsync(string transactionId, long orderCode)
         {
-            // First poll after 2 minutes
             await Task.Delay(TimeSpan.FromMinutes(2));
 
-            // Create PayOS instance
             PayOS payOS = new PayOS(_payOSSettings.ClientId, _payOSSettings.ApiKey, _payOSSettings.ChecksumKey);
 
-            // Total number of attempts (checking every 5 mins for 30 mins)
             int maxAttempts = 6;
 
             for (int i = 0; i < maxAttempts; i++)
             {
                 try
                 {
-                    // Get transaction from database first to check if it's already processed
                     var transaction = await _unitOfWork.WalletTransactionRepository.GetTransactionWithWalletAsync(transactionId);
 
-                    // If transaction is already in final state, no need to continue polling
                     if (transaction != null && (transaction.Status == TransactionStatus.Complete ||
                                                transaction.Status == TransactionStatus.Failed))
                     {
                         return;
                     }
 
-                    // Get payment status from PayOS
                     var paymentInfo = await payOS.getPaymentLinkInformation(orderCode);
 
                     if (paymentInfo.status == "PAID")
                     {
-                        // Update wallet balance
                         await UpdatePaymentStatusAsync(transactionId);
                         return;
                     }
@@ -508,10 +496,8 @@ namespace InstruLearn_Application.BLL.Service
                 }
                 catch
                 {
-                    // Ignore errors and continue polling
                 }
 
-                // Wait 5 minutes before next check
                 await Task.Delay(TimeSpan.FromMinutes(5));
             }
         }

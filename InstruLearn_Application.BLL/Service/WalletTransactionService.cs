@@ -178,6 +178,7 @@ namespace InstruLearn_Application.BLL.Service
                                 case "addfunds":
                                 case "addfun":
                                 case "addfund":
+                                case "addfuns":
                                     dto.PaymentType = "Nạp tiền";
                                     break;
                                 case "payment":
@@ -188,6 +189,11 @@ namespace InstruLearn_Application.BLL.Service
                                     break;
                             }
                         }
+                    }
+
+                    if (dto.PaymentType == "AddFuns")
+                    {
+                        dto.PaymentType = "Nạp tiền";
                     }
                 }
 
@@ -202,6 +208,11 @@ namespace InstruLearn_Application.BLL.Service
                     if (string.IsNullOrEmpty(dto.PaymentType))
                     {
                         dto.PaymentType = dto.TransactionType ?? "Không xác định";
+                    }
+
+                    if (dto.PaymentType == "AddFuns")
+                    {
+                        dto.PaymentType = "Nạp tiền";
                     }
                 }
 
