@@ -65,5 +65,18 @@ namespace InstruLearn_Application.DAL.Repository
                 await UpdateAsync(notification);
             }
         }
+
+        public async Task<List<StaffNotification>> GetNotificationsByTeacherIdAsync(int teacherId, NotificationType[] notificationTypes)
+        {
+            return await _context.StaffNotifications
+                .Include(n => n.Learner)
+                .Include(n => n.LearningRegistration)
+                    .ThenInclude(lr => lr.Teacher)
+                .Where(n => n.LearningRegistration.TeacherId == teacherId &&
+                            notificationTypes.Contains(n.Type))
+                .OrderByDescending(n => n.CreatedAt)
+                .ToListAsync();
+        }
+
     }
 }

@@ -95,6 +95,30 @@ namespace InstruLearn_Application.BLL.Service
                 var schedules = DateTimeHelper.GenerateOneOnOneSchedules(learningRegis);
                 await _unitOfWork.ScheduleRepository.AddRangeAsync(schedules);
 
+                // Create notification for teacher about schedules being updated
+                if (learningRegis.TeacherId.HasValue)
+                {
+                    var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(learningRegis.TeacherId.Value);
+                    var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(learningRegis.LearnerId);
+
+                    if (teacher != null && learner != null)
+                    {
+                        var staffNotification = new StaffNotification
+                        {
+                            Title = "Schedules Created - Payment Received",
+                            Message = $"Student {learner.FullName} has made 40% payment for learning registration ID: {learningRegis.LearningRegisId}. " +
+                                      $"Your teaching schedules have been created and are now available in your calendar.",
+                            LearningRegisId = learningRegis.LearningRegisId,
+                            LearnerId = learningRegis.LearnerId,
+                            CreatedAt = DateTime.Now,
+                            Status = NotificationStatus.Unread,
+                            Type = NotificationType.SchedulesCreated
+                        };
+
+                        await _unitOfWork.StaffNotificationRepository.AddAsync(staffNotification);
+                    }
+                }
+
                 await _unitOfWork.SaveChangeAsync();
                 await _unitOfWork.CommitTransactionAsync();
 

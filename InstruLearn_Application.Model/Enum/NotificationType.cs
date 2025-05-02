@@ -8,6 +8,8 @@ namespace InstruLearn_Application.Model.Enum
 {
     public enum NotificationType
     {
-        TeacherChangeRequest
+        TeacherChangeRequest,
+        CreateLearningPath,
+        SchedulesCreated
     }
 }

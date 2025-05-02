@@ -14,5 +14,6 @@ namespace InstruLearn_Application.BLL.Service.IService
         Task<ResponseDTO> MarkNotificationAsResolvedAsync(int notificationId);
         Task<ResponseDTO> GetTeacherChangeRequestLearningRegistrationsAsync();
         Task<ResponseDTO> ChangeTeacherForLearningRegistrationAsync(int notificationId, int learningRegisId, int newTeacherId, string changeReason);
+        Task<ResponseDTO> GetTeacherNotificationsAsync(int teacherId);
     }
 }

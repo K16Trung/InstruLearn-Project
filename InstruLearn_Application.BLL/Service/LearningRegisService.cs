@@ -369,6 +369,25 @@ namespace InstruLearn_Application.BLL.Service
                     ? await _unitOfWork.TeacherRepository.GetByIdAsync(learningRegis.TeacherId.Value)
                     : null;
 
+                // Create notification for teacher to create learning path
+                if (currentTeacher != null)
+                {
+                    var teacherNotification = new StaffNotification
+                    {
+                        Title = "Create Learning Path Required",
+                        Message = $"Learning registration #{learningRegis.LearningRegisId} for student {learner?.FullName ?? "Unknown"} " +
+                                 $"has been accepted. Please create a learning path for this student.",
+                        LearningRegisId = learningRegis.LearningRegisId,
+                        LearnerId = learningRegis.LearnerId,
+                        CreatedAt = DateTime.Now,
+                        Status = NotificationStatus.Unread,
+                        Type = NotificationType.CreateLearningPath
+                    };
+
+                    await _unitOfWork.StaffNotificationRepository.AddAsync(teacherNotification);
+                    await _unitOfWork.SaveChangeAsync();
+                }
+
                 // Send notification to learner if email is available
                 if (account != null && !string.IsNullOrEmpty(account.Email))
                 {

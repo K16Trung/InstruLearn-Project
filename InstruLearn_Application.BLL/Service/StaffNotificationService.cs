@@ -337,6 +337,54 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
+        public async Task<ResponseDTO> GetTeacherNotificationsAsync(int teacherId)
+        {
+            try
+            {
+                _logger.LogInformation($"Retrieving notifications for teacher ID: {teacherId}");
+
+                // Specify the notification types we want to filter by
+                var notificationTypes = new[] {
+            NotificationType.CreateLearningPath,
+            NotificationType.SchedulesCreated
+        };
+
+                // Get notifications for this teacher with the specified types
+                var notifications = await _unitOfWork.StaffNotificationRepository.GetNotificationsByTeacherIdAsync(
+                    teacherId, notificationTypes);
+
+                if (notifications == null || !notifications.Any())
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = true,
+                        Message = "No notifications found for this teacher.",
+                        Data = new List<StaffNotificationDTO>()
+                    };
+                }
+
+                // Map to DTOs
+                var notificationDTOs = _mapper.Map<List<StaffNotificationDTO>>(notifications);
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = $"Retrieved {notifications.Count} notifications for teacher ID: {teacherId}",
+                    Data = notificationDTOs
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error retrieving notifications for teacher ID: {teacherId}");
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Error retrieving notifications: {ex.Message}"
+                };
+            }
+        }
+
+
         private async Task SendTeacherChangeNotifications(
             Learning_Registration registration,
             Teacher newTeacher,
