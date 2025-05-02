@@ -112,59 +112,98 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     var classId = createCertificationDTO.ClassId.Value;
 
-                    var classInfo = await _unitOfWork.ClassRepository.GetWithIncludesAsync(
-                        c => c.ClassId == classId,
-                        "Teacher,Major");
-
-                    var classDetail = classInfo.FirstOrDefault();
-
-                    if (classDetail != null)
-                    {
-                        teacherName = classDetail.Teacher?.Fullname;
-                        subjectName = classDetail.Major?.MajorName;
-
-                        Console.WriteLine($"Class found: {classId}, Teacher: {teacherName}, Subject: {subjectName}");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Class with ID {classId} not found or has no teacher/major information");
-                    }
-                }
-                else
-                {
                     try
                     {
-                        var learnerClass = await _unitOfWork.dbContext.Learner_Classes
-                            .Where(lc => lc.LearnerId == createCertificationDTO.LearnerId)
-                            .Include(lc => lc.Classes)
-                                .ThenInclude(c => c.Teacher)
-                            .Include(lc => lc.Classes)
-                                .ThenInclude(c => c.Major)
-                            .FirstOrDefaultAsync();
+                        Console.WriteLine($"Attempting to get class with ID: {classId}");
 
-                        if (learnerClass != null)
+                        var classDetail = await _unitOfWork.ClassRepository.GetByIdAsync(classId);
+
+                        if (classDetail != null)
                         {
-                            teacherName = learnerClass.Classes.Teacher?.Fullname;
-                            subjectName = learnerClass.Classes.Major?.MajorName;
+                            Console.WriteLine($"Class found with ID: {classId}, ClassName: {classDetail.ClassName}, TeacherId: {classDetail.TeacherId}, MajorId: {classDetail.MajorId}");
+
+                            if (classDetail.Teacher != null)
+                            {
+                                teacherName = classDetail.Teacher.Fullname;
+                                Console.WriteLine($"Teacher navigation property loaded successfully. TeacherId: {classDetail.TeacherId}, Name: {teacherName}");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Teacher navigation property is null despite having TeacherId: {classDetail.TeacherId}. Loading teacher separately...");
+                                var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(classDetail.TeacherId);
+                                if (teacher != null)
+                                {
+                                    teacherName = teacher.Fullname;
+                                    Console.WriteLine($"Teacher loaded separately: ID={teacher.TeacherId}, Name={teacherName}");
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"Failed to load teacher with ID: {classDetail.TeacherId}");
+                                }
+                            }
+
+                            if (classDetail.Major != null)
+                            {
+                                subjectName = classDetail.Major.MajorName;
+                                Console.WriteLine($"Major navigation property loaded successfully. MajorId: {classDetail.MajorId}, Name: {subjectName}");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Major navigation property is null despite having MajorId: {classDetail.MajorId}. Loading major separately...");
+                                var major = await _unitOfWork.MajorRepository.GetByIdAsync(classDetail.MajorId);
+                                if (major != null)
+                                {
+                                    subjectName = major.MajorName;
+                                    Console.WriteLine($"Major loaded separately: ID={major.MajorId}, Name={subjectName}");
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"Failed to load major with ID: {classDetail.MajorId}");
+                                }
+                            }
+
+                            certificationObj.TeacherName = teacherName ?? "Unknown Teacher";
+                            certificationObj.Subject = subjectName ?? "Unknown Subject";
                         }
                         else
                         {
-                            Console.WriteLine($"No class found for learner ID: {createCertificationDTO.LearnerId}");
+                            Console.WriteLine($"Class with ID {classId} not found");
+                            certificationObj.TeacherName = !string.IsNullOrEmpty(createCertificationDTO.TeacherName)
+                                ? createCertificationDTO.TeacherName
+                                : "Unknown Teacher";
+
+                            certificationObj.Subject = !string.IsNullOrEmpty(createCertificationDTO.Subject)
+                                ? createCertificationDTO.Subject
+                                : "Unknown Subject";
                         }
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"Error retrieving learner class information: {ex.Message}");
+                        Console.WriteLine($"Error while retrieving class information: {ex.Message}");
+                        if (ex.InnerException != null)
+                        {
+                            Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                        }
+
+                        certificationObj.TeacherName = !string.IsNullOrEmpty(createCertificationDTO.TeacherName)
+                            ? createCertificationDTO.TeacherName
+                            : "Unknown Teacher";
+
+                        certificationObj.Subject = !string.IsNullOrEmpty(createCertificationDTO.Subject)
+                            ? createCertificationDTO.Subject
+                            : "Unknown Subject";
                     }
                 }
+                else
+                {
+                    certificationObj.TeacherName = !string.IsNullOrEmpty(createCertificationDTO.TeacherName)
+                        ? createCertificationDTO.TeacherName
+                        : "Unknown Teacher";
 
-                certificationObj.TeacherName = !string.IsNullOrEmpty(createCertificationDTO.TeacherName)
-                    ? createCertificationDTO.TeacherName
-                    : teacherName ?? "Unknown Teacher";
-
-                certificationObj.Subject = !string.IsNullOrEmpty(createCertificationDTO.Subject)
-                    ? createCertificationDTO.Subject
-                    : subjectName ?? "Unknown Subject";
+                    certificationObj.Subject = !string.IsNullOrEmpty(createCertificationDTO.Subject)
+                        ? createCertificationDTO.Subject
+                        : "Unknown Subject";
+                }
 
                 if (string.IsNullOrEmpty(certificationObj.CertificationName))
                 {
@@ -333,7 +372,6 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                // Only support CenterLearning certificates
                 if (certificationType != CertificationType.CenterLearning)
                 {
                     return new ResponseDTO
@@ -370,7 +408,6 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Check if this is a center learning registration
                 if (registration.ClassId == null)
                 {
                     return new ResponseDTO
