@@ -92,5 +92,24 @@ namespace InstruLearn_Application.Controllers
             return BadRequest(result);
         }
 
+        [HttpGet("teacher/{teacherId}")]
+        public async Task<IActionResult> GetTeacherNotifications(int teacherId)
+        {
+            if (teacherId <= 0)
+            {
+                return BadRequest("Invalid teacher ID");
+            }
+
+            var result = await _staffNotificationService.GetTeacherNotificationsAsync(teacherId);
+
+            if (result.IsSucceed)
+            {
+                return Ok(result);
+            }
+
+            return BadRequest(result);
+        }
+
+
     }
 }
