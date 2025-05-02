@@ -30,6 +30,21 @@ namespace InstruLearn_Application.Controllers
             return BadRequest(result);
         }
 
+        [HttpGet("GetLearningRegis-ChangeTeacher")]
+        //[Authorize(Roles = "Admin,Staff,Manager")]
+        public async Task<ActionResult<ResponseDTO>> GetTeacherChangeLearningRegistrations()
+        {
+            var result = await _staffNotificationService.GetTeacherChangeRequestLearningRegistrationsAsync();
+
+            if (result.IsSucceed)
+            {
+                return Ok(result);
+            }
+
+            return BadRequest(result);
+        }
+
+
         [HttpPut("mark-as-read/{notificationId}")]
         //[Authorize(Roles = "Admin,Staff,Manager")]
         public async Task<ActionResult<ResponseDTO>> MarkAsRead(int notificationId)
