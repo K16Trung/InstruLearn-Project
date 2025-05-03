@@ -374,9 +374,9 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     var teacherNotification = new StaffNotification
                     {
-                        Title = "Create Learning Path Required",
-                        Message = $"Learning registration #{learningRegis.LearningRegisId} for student {learner?.FullName ?? "Unknown"} " +
-                                 $"has been accepted. Please create a learning path for this student.",
+                        Title = "Yêu cầu tạo lộ trình học tập",
+                        Message = $"Đơn đăng ký học mã số #{learningRegis.LearningRegisId} for student {learner?.FullName ?? "không xác định"} " +
+                                 $"đã được phê duyệt. Vui lòng tạo lộ trình cho học viên này.",
                         LearningRegisId = learningRegis.LearningRegisId,
                         LearnerId = learningRegis.LearnerId,
                         CreatedAt = DateTime.Now,
@@ -393,14 +393,14 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     try
                     {
-                        string subject = "Your Learning Registration Request has been Accepted";
+                        string subject = "Yêu cầu đăng ký học của bạn đã được phê duyệt";
 
                         // Modify the email body based on whether the teacher has changed
                         string teacherChangeNotice = "";
                         if (teacherChanged)
                         {
-                            string originalTeacherName = originalTeacher?.Fullname ?? "No teacher";
-                            string currentTeacherName = currentTeacher?.Fullname ?? "No teacher";
+                            string originalTeacherName = originalTeacher?.Fullname ?? "Không có giáo viên";
+                            string currentTeacherName = currentTeacher?.Fullname ?? "Không có giáo viên";
 
                             teacherChangeNotice = $@"
                     <div style='background-color: #fff3cd; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #ffc107;'>
@@ -449,16 +449,16 @@ namespace InstruLearn_Application.BLL.Service
                             isHtml: true
                         );
 
-                        _logger.LogInformation($"Learning registration acceptance notification sent to {account.Email} for registration {learningRegis.LearningRegisId}");
+                        _logger.LogInformation($"Thông báo về việc phê duyệt đăng ký học đã được gửi đến địa chỉ email {account.Email} cho đơn đăng ký mã số {learningRegis.LearningRegisId}");
                         if (teacherChanged)
                         {
-                            _logger.LogInformation($"Teacher changed notification sent to {account.Email} for registration {learningRegis.LearningRegisId}. Changed from {originalTeacherId} to {learningRegis.TeacherId}");
+                            _logger.LogInformation($"Thông báo về việc thay đổi giáo viên đã được gửi đến địa chỉ email {account.Email} cho đơn đăng ký học mã số {learningRegis.LearningRegisId}. Giáo viên đã được thay đổi từ mã {originalTeacherId} sang {learningRegis.TeacherId}");
                         }
                     }
                     catch (Exception emailEx)
                     {
                         // Log the error but continue - don't fail the update because of email issues
-                        _logger.LogError(emailEx, "Failed to send learning registration acceptance notification email");
+                        _logger.LogError(emailEx, "Gửi email thông báo phê duyệt đăng ký học không thành công");
                     }
                 }
 

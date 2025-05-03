@@ -480,7 +480,6 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                // Basic validations
                 var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(updateDto.LearnerId);
                 if (learner == null)
                 {
@@ -526,19 +525,6 @@ namespace InstruLearn_Application.BLL.Service
 
                 if (contentProgress != null)
                 {
-                    if (contentProgress.IsCompleted)
-                    {
-                        return new ResponseDTO
-                        {
-                            IsSucceed = false,
-                            Message = "Video đã hoàn thành. Thời gian xem chỉ có thể cập nhật một lần.",
-                            Data = new
-                            {
-                                IsCompleted = true,
-                                WatchTimeInSeconds = contentProgress.WatchTimeInSeconds
-                            }
-                        };
-                    }
 
                     if (updateDto.WatchTimeInSeconds < contentProgress.WatchTimeInSeconds)
                     {
@@ -623,7 +609,6 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                // Basic validations
                 var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(updateDto.LearnerId);
                 if (learner == null)
                 {
