@@ -105,9 +105,9 @@ namespace InstruLearn_Application.BLL.Service
                     {
                         var staffNotification = new StaffNotification
                         {
-                            Title = "Schedules Created - Payment Received",
-                            Message = $"Student {learner.FullName} has made 40% payment for learning registration ID: {learningRegis.LearningRegisId}. " +
-                                      $"Your teaching schedules have been created and are now available in your calendar.",
+                            Title = "Lịch trình đã tạo - Thanh toán đã nhận",
+                            Message = $"Học viên {learner.FullName} đã thanh toán 40% cho đơn đăng kí: {learningRegis.LearningRegisId}. " +
+                                      $"Lịch trình giảng dạy của bạn đã được tạo và hiện có trong lịch của bạn.",
                             LearningRegisId = learningRegis.LearningRegisId,
                             LearnerId = learningRegis.LearnerId,
                             CreatedAt = DateTime.Now,

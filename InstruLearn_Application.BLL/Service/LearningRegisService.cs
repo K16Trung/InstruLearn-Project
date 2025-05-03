@@ -375,7 +375,7 @@ namespace InstruLearn_Application.BLL.Service
                     var teacherNotification = new StaffNotification
                     {
                         Title = "Yêu cầu tạo lộ trình học tập",
-                        Message = $"Đơn đăng ký học mã số #{learningRegis.LearningRegisId} của học viên {learner?.FullName ?? "không xác định"} " +
+                        Message = $"Đơn đăng ký học mã số #{learningRegis.LearningRegisId} cho học viên {learner?.FullName ?? "không xác định"} " +
                                  $"đã được phê duyệt. Vui lòng tạo lộ trình cho học viên này.",
                         LearningRegisId = learningRegis.LearningRegisId,
                         LearnerId = learningRegis.LearnerId,
