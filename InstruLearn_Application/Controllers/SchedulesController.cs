@@ -216,5 +216,11 @@ namespace InstruLearn_Application.Controllers
             return BadRequest(result);
         }
 
+        [HttpPost("auto-update-attendance")]
+        public async Task<IActionResult> AutoUpdateAttendance()
+        {
+            var result = await _scheduleService.AutoUpdateAttendanceStatusAsync();
+            return Ok(result);
+        }
     }
 }

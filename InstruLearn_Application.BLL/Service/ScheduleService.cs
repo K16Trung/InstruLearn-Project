@@ -1308,6 +1308,124 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
+        public async Task<ResponseDTO> AutoUpdateAttendanceStatusAsync()
+        {
+            try
+            {
+                // Get current date as DateOnly
+                DateOnly today = DateOnly.FromDateTime(DateTime.Now);
+
+                // Get schedules for which attendance status is still NotYet and the date is before today
+                var overdueSchedules = await _unitOfWork.ScheduleRepository
+                    .GetWhereAsync(s => s.AttendanceStatus == AttendanceStatus.NotYet &&
+                                       s.StartDay < today);
+
+                if (!overdueSchedules.Any())
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = true,
+                        Message = "No overdue schedules found that need updating.",
+                        Data = new { UpdatedCount = 0 }
+                    };
+                }
+
+                int updatedCount = 0;
+                var notificationsSent = new List<object>();
+
+                foreach (var schedule in overdueSchedules)
+                {
+                    // Update the attendance status to Absent
+                    schedule.AttendanceStatus = AttendanceStatus.Absent;
+                    await _unitOfWork.ScheduleRepository.UpdateAsync(schedule);
+                    updatedCount++;
+
+                    // Get learner information if available to send email notification
+                    if (schedule.LearnerId.HasValue)
+                    {
+                        var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(schedule.LearnerId.Value);
+
+                        if (learner != null && learner.Account != null && !string.IsNullOrEmpty(learner.Account.Email))
+                        {
+                            // Get teacher information if available
+                            string teacherName = "Your teacher";
+                            if (schedule.TeacherId.HasValue)
+                            {
+                                var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(schedule.TeacherId.Value);
+                                teacherName = teacher?.Fullname ?? "Your teacher";
+                            }
+
+                            // Format the date and time for better readability
+                            string formattedDate = schedule.StartDay.ToString("dd/MM/yyyy");
+                            string formattedStartTime = schedule.TimeStart.ToString("HH:mm");
+                            string formattedEndTime = schedule.TimeEnd.ToString("HH:mm");
+
+                            // Send notification email to the learner
+                            string subject = "Missed Class Notification";
+                            string body = $@"
+                <html>
+                <body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
+                    <div style='background-color: #f7f7f7; padding: 20px; border-radius: 5px;'>
+                        <h2 style='color: #333;'>Thông báo vắng mặt</h2>
+                        
+                        <p>Xin chào {learner.FullName},</p>
+                        
+                        <p>Chúng tôi thấy rằng bạn đã bỏ lỡ buổi học lên lịch vào {formattedDate} từ {formattedStartTime} đến {formattedEndTime} với {teacherName}.</p>
+                        
+                        <div style='background-color: #f8d7da; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #dc3545;'>
+                            <h3 style='margin-top: 0; color: #333;'>Chi tiết buổi học:</h3>
+                            <p><strong>Ngày:</strong> {formattedDate}</p>
+                            <p><strong>Thời gian:</strong> {formattedStartTime} - {formattedEndTime}</p>
+                            <p><strong>Giáo viên:</strong> {teacherName}</p>
+                            <p><strong>Trạng thái:</strong> Vắng mặt</p>
+                        </div>
+                        
+                        <p>Nếu bạn muốn đặt lịch cho buổi học bù, vui lòng liên hệ với nhóm hỗ trợ của chúng tôi sớm nhất có thể.</p>
+                        <p>Cảm ơn bạn đã sử dụng dịch vụ InstruLearn!</p>
+                        <p>Trân trọng,<br/>The InstruLearn Team</p>
+                    </div>
+                </body>
+                </html>";
+
+                            await _emailService.SendEmailAsync(learner.Account.Email, subject, body);
+
+                            notificationsSent.Add(new
+                            {
+                                ScheduleId = schedule.ScheduleId,
+                                LearnerId = schedule.LearnerId.Value,
+                                LearnerName = learner.FullName,
+                                LearnerEmail = learner.Account.Email,
+                                Date = schedule.StartDay.ToString("yyyy-MM-dd"),
+                                Time = $"{schedule.TimeStart:HH:mm} - {schedule.TimeEnd:HH:mm}"
+                            });
+                        }
+                    }
+                }
+
+                await _unitOfWork.SaveChangeAsync();
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = $"Successfully updated {updatedCount} overdue schedules to Absent status. Sent {notificationsSent.Count} email notifications.",
+                    Data = new
+                    {
+                        UpdatedCount = updatedCount,
+                        NotificationsSent = notificationsSent
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Failed to update attendance status automatically: {ex.Message}"
+                };
+            }
+        }
+
+
 
         private async Task<string> GetLearnerName(int learnerId)
         {
