@@ -18,6 +18,8 @@ using InstruLearn_Application.Model.Models.DTO.ScheduleDays;
 using InstruLearn_Application.Model.Models.DTO.Schedules;
 using InstruLearn_Application.Model.Models.DTO.LearnerClass;
 using Microsoft.EntityFrameworkCore;
+using InstruLearn_Application.Model.Models.DTO.Certification;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace InstruLearn_Application.BLL.Service
 {
@@ -29,8 +31,9 @@ namespace InstruLearn_Application.BLL.Service
         private readonly IMapper _mapper;
         private readonly IScheduleService _scheduleService;
         private readonly IEmailService _emailService;
+        private readonly IServiceProvider _serviceProvider;
 
-        public LearningRegisService(ILearningRegisRepository learningRegisRepository, IUnitOfWork unitOfWork, IMapper mapper, ILogger<LearningRegisService> logger, IScheduleService scheduleService, IEmailService emailService)
+        public LearningRegisService(ILearningRegisRepository learningRegisRepository, IUnitOfWork unitOfWork, IMapper mapper, ILogger<LearningRegisService> logger, IScheduleService scheduleService, IEmailService emailService, IServiceProvider serviceProvider)
         {
             _learningRegisRepository = learningRegisRepository;
             _unitOfWork = unitOfWork;
@@ -38,6 +41,7 @@ namespace InstruLearn_Application.BLL.Service
             _logger = logger;
             _scheduleService = scheduleService;
             _emailService = emailService;
+            _serviceProvider = serviceProvider;
         }
         public async Task<ResponseDTO> GetAllLearningRegisAsync()
         {
@@ -395,7 +399,6 @@ namespace InstruLearn_Application.BLL.Service
                     {
                         string subject = "Yêu cầu đăng ký học của bạn đã được phê duyệt";
 
-                        // Modify the email body based on whether the teacher has changed
                         string teacherChangeNotice = "";
                         if (teacherChanged)
                         {
@@ -489,7 +492,6 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
         }
-
 
         public async Task<ResponseDTO> JoinClassWithWalletPaymentAsync(LearnerClassPaymentDTO paymentDTO)
         {
@@ -692,6 +694,98 @@ namespace InstruLearn_Application.BLL.Service
                     await _unitOfWork.TestResultRepository.AddAsync(testResult);
                     await _unitOfWork.SaveChangeAsync();
 
+                    // NEW CODE: Create a notification to generate the certificate on the class start date
+                    // Current date to check if class has already started
+                    DateOnly today = DateOnly.FromDateTime(DateTime.Now);
+
+                    // Check if the class has already started or starts today
+                    if (classEntity.StartDate <= today)
+                    {
+                        // If class has already started, create certificate now
+                        _logger.LogInformation($"Class has already started. Creating certificate immediately for learner {paymentDTO.LearnerId} in class {paymentDTO.ClassId}");
+
+                        try
+                        {
+                            // Get information for certificate
+                            string teacherName = "Unknown Teacher";
+                            if (classEntity.Teacher != null)
+                            {
+                                teacherName = classEntity.Teacher.Fullname;
+                            }
+                            else
+                            {
+                                var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(classEntity.TeacherId);
+                                if (teacher != null)
+                                {
+                                    teacherName = teacher.Fullname;
+                                }
+                            }
+
+                            string majorName = "Unknown Subject";
+                            if (classEntity.Major != null)
+                            {
+                                majorName = classEntity.Major.MajorName;
+                            }
+                            else
+                            {
+                                var major = await _unitOfWork.MajorRepository.GetByIdAsync(classEntity.MajorId);
+                                if (major != null)
+                                {
+                                    majorName = major.MajorName;
+                                }
+                            }
+
+                            // Create certificate
+                            var createCertificationDTO = new CreateCertificationDTO
+                            {
+                                LearnerId = paymentDTO.LearnerId,
+                                ClassId = paymentDTO.ClassId,
+                                CertificationType = CertificationType.CenterLearning,
+                                CertificationName = $"Center Learning Certificate - {classEntity.ClassName}",
+                                TeacherName = teacherName,
+                                Subject = majorName
+                            };
+
+                            // Use the ICertificationService to create the certificate
+                            var certificationService = _serviceProvider.GetRequiredService<ICertificationService>();
+                            var certResult = await certificationService.CreateCertificationAsync(createCertificationDTO);
+
+                            if (certResult.IsSucceed)
+                            {
+                                _logger.LogInformation($"Certificate created successfully for learner {paymentDTO.LearnerId} in class {paymentDTO.ClassId}");
+                            }
+                            else
+                            {
+                                _logger.LogWarning($"Failed to create certificate: {certResult.Message}");
+                            }
+                        }
+                        catch (Exception certEx)
+                        {
+                            // Log error but don't fail the enrollment process
+                            _logger.LogError(certEx, $"Error creating certificate for learner {paymentDTO.LearnerId} in class {paymentDTO.ClassId}");
+                        }
+                    }
+                    else
+                    {
+                        // If class hasn't started yet, create a notification for future certificate creation
+                        _logger.LogInformation($"Class starts on {classEntity.StartDate}. Creating notification for future certificate creation");
+
+                        var staffNotification = new StaffNotification
+                        {
+                            Title = "Certificate Creation Scheduled",
+                            Message = $"Create certificate for learner {learner.FullName} (ID: {paymentDTO.LearnerId}) in class {classEntity.ClassName} (ID: {paymentDTO.ClassId}) on start date {classEntity.StartDate}",
+                            LearnerId = paymentDTO.LearnerId,
+                            CreatedAt = DateTime.Now,
+                            Status = NotificationStatus.Unread,
+                            Type = NotificationType.Certificate
+                        };
+
+                        await _unitOfWork.StaffNotificationRepository.AddAsync(staffNotification);
+                        await _unitOfWork.SaveChangeAsync();
+
+                        _logger.LogInformation($"Certificate creation scheduled for class start date: {classEntity.StartDate}");
+                    }
+
                     // 12. REVISED APPROACH: Find existing schedules for other learners in this class to use as a template
                     // This ensures that all learners get the exact same schedule pattern
                     var existingLearnerSchedules = await _unitOfWork.ScheduleRepository.GetQuery()
@@ -812,7 +906,6 @@ namespace InstruLearn_Application.BLL.Service
                                     weekMultiplier++;
                                 }
 
-                                // Create schedules in order of dates
                                 foreach (var scheduleDay in scheduleDays.OrderBy(d => d))
                                 {
                                     var learnerSchedule = new Schedules
@@ -844,7 +937,6 @@ namespace InstruLearn_Application.BLL.Service
                         }
                     }
 
-                    // Commit the transaction
                     await _unitOfWork.CommitTransactionAsync();
 
                     _logger.LogInformation($"Learner {paymentDTO.LearnerId} successfully enrolled in class {paymentDTO.ClassId} with payment of {paymentAmount} (10% of total {totalClassPrice})");
@@ -859,7 +951,8 @@ namespace InstruLearn_Application.BLL.Service
                             LearnerId = paymentDTO.LearnerId,
                             ClassId = paymentDTO.ClassId,
                             AmountPaid = paymentAmount,
-                            TotalClassPrice = totalClassPrice
+                            TotalClassPrice = totalClassPrice,
+                            CertificateStatus = classEntity.StartDate <= today ? "Created" : $"Scheduled for {classEntity.StartDate}"
                         }
                     };
                 }
@@ -894,7 +987,6 @@ namespace InstruLearn_Application.BLL.Service
             {
                 _logger.LogInformation($"Starting learning registration rejection process for registration ID: {learningRegisId}");
 
-                // Find the registration
                 var learningRegis = await _unitOfWork.LearningRegisRepository.GetByIdAsync(learningRegisId);
                 if (learningRegis == null)
                 {
@@ -906,7 +998,6 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Verify it's in a "Pending" state - only pending registrations can be rejected
                 if (learningRegis.Status != LearningRegis.Pending)
                 {
                     _logger.LogWarning($"Cannot reject registration {learningRegisId} with status {learningRegis.Status}. Only pending registrations can be rejected.");
@@ -917,17 +1008,13 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Start a transaction to ensure atomic operations
                 using var transaction = await _unitOfWork.BeginTransactionAsync();
                 try
                 {
-                    // Update the registration status to rejected
                     learningRegis.Status = LearningRegis.Rejected;
 
-                    // Set the ResponseId if provided
                     if (responseId.HasValue)
                     {
-                        // Verify response exists
                         var response = await _unitOfWork.ResponseRepository.GetByIdAsync(responseId.Value);
                         if (response == null)
                         {
@@ -944,7 +1031,6 @@ namespace InstruLearn_Application.BLL.Service
                     await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
                     await _unitOfWork.SaveChangeAsync();
 
-                    // Update associated test result if it exists
                     var testResult = await _unitOfWork.TestResultRepository.GetByLearningRegisIdAsync(learningRegisId);
                     if (testResult != null)
                     {
@@ -953,7 +1039,6 @@ namespace InstruLearn_Application.BLL.Service
                         await _unitOfWork.SaveChangeAsync();
                     }
 
-                    // Commit the transaction
                     await _unitOfWork.CommitTransactionAsync();
 
                     _logger.LogInformation($"Learning registration {learningRegisId} successfully rejected");
@@ -1001,7 +1086,6 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Check if number of sessions is valid
                 if (createDTO.LearningPathSessions.Count > learningRegis.NumberOfSession)
                 {
                     return new ResponseDTO
@@ -1011,7 +1095,6 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // First, check for duplicate session numbers in the payload
                 var distinctSessionCount = createDTO.LearningPathSessions
                     .Select(s => s.SessionNumber)
                     .Distinct()
@@ -1028,11 +1111,9 @@ namespace InstruLearn_Application.BLL.Service
 
                 using var transaction = await _unitOfWork.BeginTransactionAsync();
 
-                // Get existing learning path sessions for this registration
                 var existingSessions = await _unitOfWork.LearningPathSessionRepository
                     .GetByLearningRegisIdAsync(createDTO.LearningRegisId);
 
-                // Delete existing sessions if we're doing a complete replacement
                 if (existingSessions.Any())
                 {
                     foreach (var session in existingSessions)
@@ -1043,14 +1124,13 @@ namespace InstruLearn_Application.BLL.Service
                     await _unitOfWork.SaveChangeAsync();
                 }
 
-                // Create new learning path sessions
                 var learningPathSessions = createDTO.LearningPathSessions.Select(lps => new LearningPathSession
                 {
                     LearningRegisId = learningRegis.LearningRegisId,
                     SessionNumber = lps.SessionNumber,
                     Title = lps.Title,
                     Description = lps.Description,
-                    IsCompleted = lps.IsCompleted, // Use the value from the DTO
+                    IsCompleted = lps.IsCompleted,
                     CreatedAt = DateTime.Now,
                     IsVisible = false
                 }).ToList();
@@ -1058,12 +1138,10 @@ namespace InstruLearn_Application.BLL.Service
                 await _unitOfWork.LearningPathSessionRepository.AddRangeAsync(learningPathSessions);
                 await _unitOfWork.SaveChangeAsync();
 
-                // Update the learning registration to indicate it has pending sessions
                 learningRegis.HasPendingLearningPath = true;
                 await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
                 await _unitOfWork.SaveChangeAsync();
 
-                // Commit transaction
                 await _unitOfWork.CommitTransactionAsync();
 
                 return new ResponseDTO
@@ -1084,11 +1162,9 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
-        // Helper method to get the next occurrence of a specific day of week
         private DateOnly GetNextDayOfWeek(DateOnly startDate, DayOfWeeks dayOfWeek)
         {
             int daysToAdd = ((int)dayOfWeek - (int)startDate.DayOfWeek + 7) % 7;
-            // If today is the day we want but we want to find the next occurrence, add 7 days
             if (daysToAdd == 0)
                 daysToAdd = 7;
 
@@ -1097,10 +1173,8 @@ namespace InstruLearn_Application.BLL.Service
 
         private DateOnly GetDateForDayOfWeek(DateOnly startDay, DayOfWeeks targetDay, int weekMultiplier = 0)
         {
-            // Find the first occurrence of the target day on or after the start date
             int daysToAdd = ((int)targetDay - (int)startDay.DayOfWeek + 7) % 7;
 
-            // Add weeks based on the multiplier
             daysToAdd += (weekMultiplier * 7);
 
             return startDay.AddDays(daysToAdd);
