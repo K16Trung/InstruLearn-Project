@@ -177,6 +177,7 @@ namespace InstruLearn_Application
             builder.Services.AddHostedService<PaymentDeadlineService>();
             builder.Services.AddScoped<IFeedbackNotificationService, FeedbackNotificationService>();
             builder.Services.AddScoped<IStaffNotificationService, StaffNotificationService>();
+            builder.Services.AddHostedService<CertificateCreationBackgroundService>();
             builder.Services.AddHostedService<AttendanceStatusBackgroundService>();
             builder.Services.AddAutoMapper(typeof(MappingProfile));
             builder.Services.AddHostedService<PayOSWebhookRegistrationService>();

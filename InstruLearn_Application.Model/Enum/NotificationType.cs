@@ -10,6 +10,7 @@ namespace InstruLearn_Application.Model.Enum
     {
         TeacherChangeRequest,
         CreateLearningPath,
-        SchedulesCreated
+        SchedulesCreated,
+        Certificate
     }
 }
