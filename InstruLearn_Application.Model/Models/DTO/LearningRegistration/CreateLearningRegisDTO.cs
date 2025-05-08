@@ -20,6 +20,7 @@ namespace InstruLearn_Application.Model.Models.DTO.LearningRegistration
         public DateTime RequestDate { get; set; }
         public int NumberOfSession { get; set; }
         public string LearningRequest { get; set; }
+        public string SelfAssessment { get; set; }
         public List<DayOfWeeks> LearningDays { get; set; }
     }
 }

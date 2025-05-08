@@ -118,10 +118,9 @@ namespace InstruLearn_Application.BLL.Service
 
                 if (!scheduleConflict.IsSucceed)
                 {
-                    return scheduleConflict; // Return the conflict response
+                    return scheduleConflict;
                 }
 
-                // Check for duplicate registrations - prevent spam registrations
                 var existingRegistrations = await _unitOfWork.LearningRegisRepository
                     .GetQuery()
                     .Where(r =>
@@ -141,7 +140,6 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Start EF Core transaction instead of TransactionScope
                 using (var transaction = await _unitOfWork.BeginTransactionAsync())
                 {
                     var wallet = await _unitOfWork.WalletRepository.GetFirstOrDefaultAsync(w => w.LearnerId == createLearningRegisDTO.LearnerId);
@@ -168,29 +166,29 @@ namespace InstruLearn_Application.BLL.Service
                         };
                     }
 
-                    // Deduct the balance
                     wallet.Balance -= 50000;
                     await _unitOfWork.WalletRepository.UpdateAsync(wallet);
 
-                    // Validate learning duration (30, 60, 90 or 120 minutes)
                     if (createLearningRegisDTO.TimeLearning != 45 && createLearningRegisDTO.TimeLearning != 60 && createLearningRegisDTO.TimeLearning != 90 && createLearningRegisDTO.TimeLearning != 120)
                     {
                         return new ResponseDTO
                         {
                             IsSucceed = false,
-                            Message = "Invalid learning duration. Please select 30, 60, 90 or 120 minutes."
+                            Message = "Invalid learning duration. Please select 45, 60, 90 or 120 minutes."
                         };
                     }
 
-                    // Map DTO to entity
                     var learningRegis = _mapper.Map<Learning_Registration>(createLearningRegisDTO);
                     learningRegis.Status = LearningRegis.Pending;
 
-                    // Add learning registration
+                    if (!string.IsNullOrEmpty(createLearningRegisDTO.SelfAssessment))
+                    {
+                        learningRegis.SelfAssessment = createLearningRegisDTO.SelfAssessment;
+                    }
+
                     await _unitOfWork.LearningRegisRepository.AddAsync(learningRegis);
                     await _unitOfWork.SaveChangeAsync();
 
-                    // Add learning registration days
                     if (createLearningRegisDTO.LearningDays != null && createLearningRegisDTO.LearningDays.Any())
                     {
                         var learningDays = createLearningRegisDTO.LearningDays.Select(day => new LearningRegistrationDay
@@ -203,7 +201,6 @@ namespace InstruLearn_Application.BLL.Service
                         await _unitOfWork.SaveChangeAsync();
                     }
 
-                    // Create Test_Result and associate it with the Learning_Registration
                     var testResult = new Test_Result
                     {
                         LearnerId = createLearningRegisDTO.LearnerId,
@@ -211,17 +208,15 @@ namespace InstruLearn_Application.BLL.Service
                         MajorId = createLearningRegisDTO.MajorId,
                         LearningRegisId = learningRegis.LearningRegisId,
                         ResultType = TestResultType.OneOnOne,
-                        Status = TestResultStatus.Pending,        
-                        LearningRegistration = learningRegis     
+                        Status = TestResultStatus.Pending,
+                        LearningRegistration = learningRegis
                     };
 
-                    // Add the Video URL in Test_Result (stored indirectly)
                     testResult.LearningRegistration.VideoUrl = createLearningRegisDTO.VideoUrl;
 
                     await _unitOfWork.TestResultRepository.AddAsync(testResult);
                     await _unitOfWork.SaveChangeAsync();
 
-                    // Create a wallet transaction
                     var walletTransaction = new WalletTransaction
                     {
                         TransactionId = Guid.NewGuid().ToString(),
@@ -235,19 +230,22 @@ namespace InstruLearn_Application.BLL.Service
                     await _unitOfWork.WalletTransactionRepository.AddAsync(walletTransaction);
                     await _unitOfWork.SaveChangeAsync();
 
-                    // Commit the transaction
                     await transaction.CommitAsync();
 
                     _logger.LogInformation("Learning registration added successfully. Wallet balance updated.");
 
-                    // Calculate TimeEnd dynamically (without saving it)
                     var timeEnd = learningRegis.TimeStart.AddMinutes(createLearningRegisDTO.TimeLearning);
                     var timeEndFormatted = timeEnd.ToString("HH:mm");
 
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "Learning Registration added successfully. Wallet balance updated. Status set to Pending."
+                        Message = "Learning Registration added successfully. Wallet balance updated. Status set to Pending.",
+                        Data = new
+                        {
+                            LearningRegisId = learningRegis.LearningRegisId,
+                            HasSelfAssessment = !string.IsNullOrEmpty(createLearningRegisDTO.SelfAssessment)
+                        }
                     };
                 }
             }
