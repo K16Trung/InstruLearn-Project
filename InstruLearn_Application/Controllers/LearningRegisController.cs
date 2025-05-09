@@ -12,24 +12,34 @@ namespace InstruLearn_Application.Controllers
     public class LearningRegisController : ControllerBase
     {
         private readonly ILearningRegisService _learningRegisService;
+        private readonly IPaymentInfoService _paymentInfoService;
 
-        public LearningRegisController(ILearningRegisService learningRegisService)
+        public LearningRegisController(ILearningRegisService learningRegisService, IPaymentInfoService paymentInfoService)
         {
             _learningRegisService = learningRegisService;
+            _paymentInfoService = paymentInfoService;
         }
+
         [HttpGet("get-all")]
         public async Task<IActionResult> GetAllLearningRegis()
         {
             var response = await _learningRegisService.GetAllLearningRegisAsync();
-            return Ok(response);
+
+            var enrichedResponse = await _paymentInfoService.EnrichLearningRegisWithPaymentInfoAsync(response);
+
+            return Ok(enrichedResponse);
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetLearningRegisById(int id)
         {
             var response = await _learningRegisService.GetLearningRegisByIdAsync(id);
-            return Ok(response);
+
+            var enrichedResponse = await _paymentInfoService.EnrichSingleLearningRegisWithPaymentInfoAsync(id, response);
+
+            return Ok(enrichedResponse);
         }
+
         [HttpGet("LearningRegis/{teacherId}")]
         public async Task<IActionResult> GetLearningRegisByTeacherId(int teacherId)
         {
@@ -134,7 +144,5 @@ namespace InstruLearn_Application.Controllers
 
             return Ok(result);
         }
-
-
     }
 }
