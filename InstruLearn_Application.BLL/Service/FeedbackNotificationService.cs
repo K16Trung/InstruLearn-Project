@@ -263,11 +263,10 @@ namespace InstruLearn_Application.BLL.Service
             {
                 _logger.LogInformation("Starting automatic feedback notification check");
 
-                // Get all learning registrations with 40% status 
                 var learnersWithFortyStatus = await _unitOfWork.LearningRegisRepository
                     .GetWithIncludesAsync(
                         x => x.Status == LearningRegis.Fourty,
-                        "Teacher,Learner,Learner.Account"
+                        "Teacher,Learner,Learner.Account,Schedules"
                     );
 
                 if (learnersWithFortyStatus == null || !learnersWithFortyStatus.Any())
@@ -282,20 +281,28 @@ namespace InstruLearn_Application.BLL.Service
                 int notificationsSent = 0;
                 var results = new List<object>();
 
-                // Get all active feedback questions
                 var feedbackQuestions = await _unitOfWork.LearningRegisFeedbackQuestionRepository
                     .GetActiveQuestionsWithOptionsAsync();
 
-                // Process each registration
                 foreach (var regis in learnersWithFortyStatus)
                 {
                     try
                     {
-                        // Check if there's already a feedback form for this registration
+                        int totalSessions = regis.NumberOfSession;
+                        int fortyPercentThreshold = (int)Math.Ceiling(totalSessions * 0.4);
+
+                        var completedSessions = regis.Schedules
+                            ?.Count(s => s.AttendanceStatus == AttendanceStatus.Present ||
+                                      s.AttendanceStatus == AttendanceStatus.Absent) ?? 0;
+
+                        if (completedSessions < fortyPercentThreshold)
+                        {
+                            continue;
+                        }
+
                         var existingFeedback = await _unitOfWork.LearningRegisFeedbackRepository
                             .GetFeedbackByRegistrationIdAsync(regis.LearningRegisId);
 
-                        // If no feedback exists, create one
                         if (existingFeedback == null)
                         {
                             var newFeedback = new LearningRegisFeedback
@@ -310,28 +317,23 @@ namespace InstruLearn_Application.BLL.Service
                             await _unitOfWork.LearningRegisFeedbackRepository.AddAsync(newFeedback);
                             await _unitOfWork.SaveChangeAsync();
 
-                            // Now retrieve the created feedback with its ID
                             existingFeedback = await _unitOfWork.LearningRegisFeedbackRepository
                                 .GetFeedbackByRegistrationIdAsync(regis.LearningRegisId);
 
                             _logger.LogInformation($"Created new feedback record with ID {existingFeedback.FeedbackId} for learning registration {regis.LearningRegisId}");
                         }
 
-                        // Only send notifications for forms that are not completed
                         if (existingFeedback != null &&
                             (existingFeedback.Status == FeedbackStatus.NotStarted ||
                              existingFeedback.Status == FeedbackStatus.InProgress))
                         {
-                            // If the learner has an email, send a notification email
                             if (regis.Learner != null && regis.Learner.Account != null && !string.IsNullOrEmpty(regis.Learner.Account.Email))
                             {
                                 var learnerEmail = regis.Learner.Account.Email;
                                 var learnerName = regis.Learner.FullName;
 
-                                // Calculate remaining payment
                                 decimal remainingPayment = regis.Price.HasValue ? regis.Price.Value * 0.6m : 0;
 
-                                // Send email notification
                                 await SendFeedbackEmailNotification(
                                     learnerEmail,
                                     learnerName,
@@ -348,6 +350,8 @@ namespace InstruLearn_Application.BLL.Service
                                     LearnerId = regis.LearnerId,
                                     LearnerName = regis.Learner.FullName,
                                     FeedbackId = existingFeedback.FeedbackId,
+                                    CompletedSessions = completedSessions,
+                                    TotalSessions = totalSessions,
                                     EmailSent = true
                                 });
                             }
@@ -383,6 +387,7 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
         }
+
 
         public async Task SendTestFeedbackEmailNotification(string email, string learnerName, int feedbackId, string teacherName, decimal remainingPayment)
         {
