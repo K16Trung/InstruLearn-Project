@@ -113,9 +113,22 @@ namespace InstruLearn_Application.Controllers
         }
 
         [HttpPut("update-attendance/{scheduleId}")]
-        public async Task<IActionResult> UpdateAttendance(int scheduleId, [FromBody] AttendanceStatus status)
+        public async Task<IActionResult> UpdateAttendance(int scheduleId, [FromBody] UpdateAttendanceDTO model)
         {
-            var result = await _scheduleService.UpdateAttendanceAsync(scheduleId, status);
+            if (model == null)
+            {
+                return BadRequest(new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Invalid request data."
+                });
+            }
+
+            var result = await _scheduleService.UpdateAttendanceAsync(
+                scheduleId,
+                model.Status,
+                model.PreferenceStatus);
+
             return Ok(result);
         }
 

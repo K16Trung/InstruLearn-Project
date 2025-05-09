@@ -175,19 +175,29 @@ namespace InstruLearn_Application.BLL.Service
                         .OrderBy(s => s.SessionNumber)
                         .ToList();
 
-                    // Get actual stored schedules instead of regenerating them
+                    // Get ALL schedules for this learner, including makeup classes and changed teachers
                     var existingSchedules = learningRegis.Schedules
                         .Where(s => s.Mode == ScheduleMode.OneOnOne)
                         .OrderBy(s => s.StartDay)
                         .ToList();
 
-                    // Use the actual saved schedules and their session numbers
-                    for (int sessionNumber = 1; sessionNumber <= existingSchedules.Count; sessionNumber++)
+                    // Map each schedule to a DTO
+                    foreach (var existingSchedule in existingSchedules)
                     {
-                        var existingSchedule = existingSchedules[sessionNumber - 1];
+                        // Find the right session number based on the original schedule order
+                        var sessionPosition = existingSchedule.PreferenceStatus == PreferenceStatus.MakeupClass
+                            ? existingSchedules.Where(s => s.PreferenceStatus != PreferenceStatus.MakeupClass)
+                                .OrderBy(s => s.StartDay)
+                                .TakeWhile(s => s.StartDay < existingSchedule.StartDay)
+                                .Count() + 1
+                            : existingSchedules.Where(s => s.PreferenceStatus != PreferenceStatus.MakeupClass)
+                                .OrderBy(s => s.StartDay)
+                                .ToList()
+                                .IndexOf(existingSchedule) + 1;
+
+                        var sessionNumber = Math.Max(1, sessionPosition);
                         var learningPathSession = sortedSessions.FirstOrDefault(s => s.SessionNumber == sessionNumber);
 
-                        // Get the actual day and time from the saved schedule
                         DateOnly scheduleStartDate = existingSchedule.StartDay;
                         TimeOnly scheduleTimeStart = existingSchedule.TimeStart;
                         TimeOnly scheduleTimeEnd = existingSchedule.TimeEnd;
@@ -219,6 +229,7 @@ namespace InstruLearn_Application.BLL.Service
                             LearningRegisId = learningRegis.LearningRegisId,
                             AttendanceStatus = existingSchedule.AttendanceStatus,
                             ChangeReason = existingSchedule.ChangeReason,
+                            PreferenceStatus = existingSchedule.PreferenceStatus, // Include preference status
                             MajorId = learningRegis.MajorId,
                             MajorName = learningRegis.Major?.MajorName ?? "N/A",
                             TimeLearning = learningRegis.TimeLearning,
@@ -242,6 +253,12 @@ namespace InstruLearn_Application.BLL.Service
                             scheduleDto.SessionTitle = $"Session {sessionNumber}";
                             scheduleDto.SessionDescription = "";
                             scheduleDto.IsSessionCompleted = false;
+                        }
+
+                        // Add additional info for makeup classes
+                        if (existingSchedule.PreferenceStatus == PreferenceStatus.MakeupClass)
+                        {
+                            scheduleDto.IsMakeupClass = true;
                         }
 
                         schedules.Add(scheduleDto);
@@ -280,6 +297,7 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
+                // Get all schedules for this teacher, including makeup classes
                 var teacherSchedules = await _unitOfWork.ScheduleRepository
                     .GetWhereAsync(s => s.TeacherId == teacherId && s.Mode == ScheduleMode.OneOnOne);
 
@@ -326,6 +344,7 @@ namespace InstruLearn_Application.BLL.Service
                         .OrderBy(s => s.StartDay)
                         .ToList();
 
+                    // Get all schedules for this teacher, including all preference statuses
                     var existingSchedules = learningRegis.Schedules
                         .Where(s => s.Mode == ScheduleMode.OneOnOne && s.TeacherId == teacherId)
                         .OrderBy(s => s.StartDay)
@@ -335,15 +354,26 @@ namespace InstruLearn_Application.BLL.Service
                     {
                         DateOnly scheduleStartDate = existingSchedule.StartDay;
 
-                        var allSchedulesPosition = allRegistrationSchedules
-                            .FindIndex(s => s.ScheduleId == existingSchedule.ScheduleId);
+                        // Calculate session number based on the original schedule order
+                        var allSchedulesPosition = existingSchedule.PreferenceStatus == PreferenceStatus.MakeupClass
+                            ? allRegistrationSchedules.Where(s => s.PreferenceStatus != PreferenceStatus.MakeupClass)
+                                .OrderBy(s => s.StartDay)
+                                .TakeWhile(s => s.StartDay < existingSchedule.StartDay)
+                                .Count()
+                            : allRegistrationSchedules
+                                .FindIndex(s => s.ScheduleId == existingSchedule.ScheduleId);
 
-                        var sessionNumber = allSchedulesPosition + 1;
-
+                        var sessionNumber = Math.Max(1, allSchedulesPosition + 1);
                         var learningPathSession = sortedSessions.FirstOrDefault(s => s.SessionNumber == sessionNumber);
 
-                        if (!schedules.Any(s => s.StartDay == scheduleStartDate &&
-                                                s.LearningRegisId == learningRegis.LearningRegisId))
+                        // Only add schedule if it doesn't already exist for this day and registration
+                        // This was causing the duplicate issue - but we want to include makeup classes
+                        var scheduleExists = schedules.Any(s =>
+                            s.StartDay == scheduleStartDate &&
+                            s.LearningRegisId == learningRegis.LearningRegisId &&
+                            s.ScheduleId == existingSchedule.ScheduleId);
+
+                        if (!scheduleExists)
                         {
                             var orderedLearningDays = learningRegis.LearningRegistrationDay
                                 .OrderBy(day => day.DayOfWeek)
@@ -353,8 +383,8 @@ namespace InstruLearn_Application.BLL.Service
                             {
                                 ScheduleId = existingSchedule.ScheduleId,
                                 Mode = existingSchedule.Mode,
-                                TimeStart = learningRegis.TimeStart.ToString("HH:mm"),
-                                TimeEnd = learningRegis.TimeStart.AddMinutes(learningRegis.TimeLearning).ToString("HH:mm"),
+                                TimeStart = existingSchedule.TimeStart.ToString("HH:mm"),
+                                TimeEnd = existingSchedule.TimeEnd.ToString("HH:mm"),
                                 DayOfWeek = scheduleStartDate.DayOfWeek.ToString(),
                                 StartDay = scheduleStartDate,
                                 TeacherId = teacherId,
@@ -368,6 +398,7 @@ namespace InstruLearn_Application.BLL.Service
                                 LearningRegisId = learningRegis.LearningRegisId,
                                 AttendanceStatus = existingSchedule.AttendanceStatus,
                                 ChangeReason = existingSchedule.ChangeReason,
+                                PreferenceStatus = existingSchedule.PreferenceStatus, // Include preference status
                                 MajorId = learningRegis.MajorId,
                                 MajorName = learningRegis.Major?.MajorName ?? "N/A",
                                 TimeLearning = learningRegis.TimeLearning,
@@ -393,6 +424,12 @@ namespace InstruLearn_Application.BLL.Service
                                 scheduleDto.IsSessionCompleted = false;
                             }
 
+                            // Add additional info for makeup classes
+                            if (existingSchedule.PreferenceStatus == PreferenceStatus.MakeupClass)
+                            {
+                                scheduleDto.IsMakeupClass = true;
+                            }
+
                             schedules.Add(scheduleDto);
                         }
                     }
@@ -414,7 +451,6 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
         }
-
         public async Task<ResponseDTO> GetClassSchedulesByTeacherIdAsync(int teacherId)
         {
             var schedules = await _unitOfWork.ScheduleRepository.GetClassSchedulesByTeacherIdAsync(teacherId);
@@ -624,7 +660,7 @@ namespace InstruLearn_Application.BLL.Service
         }
 
 
-        public async Task<ResponseDTO> UpdateAttendanceAsync(int scheduleId, AttendanceStatus status)
+        public async Task<ResponseDTO> UpdateAttendanceAsync(int scheduleId, AttendanceStatus status, PreferenceStatus preferenceStatus)
         {
             var schedule = await _unitOfWork.ScheduleRepository.GetByIdAsync(scheduleId);
 
@@ -651,6 +687,7 @@ namespace InstruLearn_Application.BLL.Service
             }
 
             schedule.AttendanceStatus = status;
+            schedule.PreferenceStatus = preferenceStatus;
             await _unitOfWork.ScheduleRepository.UpdateAsync(schedule);
             await _unitOfWork.SaveChangeAsync();
 
@@ -977,6 +1014,7 @@ namespace InstruLearn_Application.BLL.Service
                 // Update the schedule with the new teacher ID and change reason
                 schedule.TeacherId = teacherId;
                 schedule.ChangeReason = changeReason; // Store the reason for this change
+                schedule.PreferenceStatus = PreferenceStatus.ChangeTeacher;
 
                 await _unitOfWork.ScheduleRepository.UpdateAsync(schedule);
                 await _unitOfWork.SaveChangeAsync();
@@ -1119,9 +1157,9 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                var schedule = await _unitOfWork.ScheduleRepository.GetByIdAsync(scheduleId);
+                var originalSchedule = await _unitOfWork.ScheduleRepository.GetByIdAsync(scheduleId);
 
-                if (schedule == null)
+                if (originalSchedule == null)
                 {
                     return new ResponseDTO
                     {
@@ -1130,7 +1168,7 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                if (schedule.AttendanceStatus != AttendanceStatus.Absent)
+                if (originalSchedule.AttendanceStatus != AttendanceStatus.Absent)
                 {
                     return new ResponseDTO
                     {
@@ -1140,25 +1178,25 @@ namespace InstruLearn_Application.BLL.Service
                 }
 
                 // Check if the new date has the same day of week as the old date
-                if (schedule.StartDay.DayOfWeek == newDate.DayOfWeek)
+                if (originalSchedule.StartDay.DayOfWeek == newDate.DayOfWeek)
                 {
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = $"Makeup class must be scheduled on a different day of the week. Original class was on {schedule.StartDay.DayOfWeek}."
+                        Message = $"Makeup class must be scheduled on a different day of the week. Original class was on {originalSchedule.StartDay.DayOfWeek}."
                     };
                 }
 
-                var learner = schedule.LearnerId.HasValue
-                    ? await _unitOfWork.LearnerRepository.GetByIdAsync(schedule.LearnerId.Value)
+                var learner = originalSchedule.LearnerId.HasValue
+                    ? await _unitOfWork.LearnerRepository.GetByIdAsync(originalSchedule.LearnerId.Value)
                     : null;
 
                 var learnerName = learner?.FullName ?? "N/A";
 
-                if (schedule.LearnerId.HasValue)
+                if (originalSchedule.LearnerId.HasValue)
                 {
                     var conflictCheck = await CheckLearnerScheduleConflictAsync(
-                        schedule.LearnerId.Value,
+                        originalSchedule.LearnerId.Value,
                         newDate,
                         newTimeStart,
                         timeLearning);
@@ -1169,20 +1207,33 @@ namespace InstruLearn_Application.BLL.Service
                     }
                 }
 
-                var oldDate = schedule.StartDay;
-                var oldTimeStart = schedule.TimeStart;
-                var oldTimeEnd = schedule.TimeEnd;
+                var oldDate = originalSchedule.StartDay;
+                var oldTimeStart = originalSchedule.TimeStart;
+                var oldTimeEnd = originalSchedule.TimeEnd;
                 var oldDayOfWeek = oldDate.DayOfWeek;
 
-                schedule.StartDay = newDate;
-                schedule.TimeStart = newTimeStart;
-                schedule.TimeEnd = newTimeStart.AddMinutes(timeLearning);
-                schedule.ChangeReason = changeReason;
+                // Create a new schedule for makeup class instead of modifying the original one
+                var makeupSchedule = new Schedules
+                {
+                    TeacherId = originalSchedule.TeacherId,
+                    LearnerId = originalSchedule.LearnerId,
+                    LearningRegisId = originalSchedule.LearningRegisId,
+                    ClassId = originalSchedule.ClassId,
+                    StartDay = newDate,
+                    TimeStart = newTimeStart,
+                    TimeEnd = newTimeStart.AddMinutes(timeLearning),
+                    Mode = originalSchedule.Mode,
+                    AttendanceStatus = AttendanceStatus.NotYet,
+                    ChangeReason = changeReason,
+                    PreferenceStatus = PreferenceStatus.MakeupClass
+                };
 
-                // Set attendance status to NotYet for the makeup class
-                schedule.AttendanceStatus = AttendanceStatus.NotYet;
+                // Mark the original schedule as having a makeup class
+                originalSchedule.PreferenceStatus = PreferenceStatus.MakeupClass;
 
-                await _unitOfWork.ScheduleRepository.UpdateAsync(schedule);
+                // Add the new schedule and update the original
+                await _unitOfWork.ScheduleRepository.UpdateAsync(originalSchedule);
+                await _unitOfWork.ScheduleRepository.AddAsync(makeupSchedule);
                 await _unitOfWork.SaveChangeAsync();
 
                 string oldFormattedDate = oldDate.ToString("dd/MM/yyyy");
@@ -1191,9 +1242,10 @@ namespace InstruLearn_Application.BLL.Service
 
                 string newFormattedDate = newDate.ToString("dd/MM/yyyy");
                 string newFormattedTimeStart = newTimeStart.ToString("HH:mm");
-                string newFormattedTimeEnd = schedule.TimeEnd.ToString("HH:mm");
+                string newFormattedTimeEnd = makeupSchedule.TimeEnd.ToString("HH:mm");
 
-                if (schedule.LearnerId.HasValue)
+                // Send the notification emails
+                if (originalSchedule.LearnerId.HasValue)
                 {
                     var learnerAccount = learner?.Account;
 
@@ -1232,9 +1284,10 @@ namespace InstruLearn_Application.BLL.Service
                     }
                 }
 
-                if (schedule.TeacherId.HasValue)
+                if (originalSchedule.TeacherId.HasValue)
                 {
-                    var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(schedule.TeacherId.Value);
+                    // Rest of the method remains the same with teacher notifications
+                    var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(originalSchedule.TeacherId.Value);
 
                     if (teacher != null && teacher.AccountId != null)
                     {
@@ -1280,10 +1333,11 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Makeup class schedule updated successfully. Notifications sent to the learner and teacher.",
+                    Message = "Makeup class scheduled successfully. Notifications sent to the learner and teacher.",
                     Data = new
                     {
-                        ScheduleId = schedule.ScheduleId,
+                        OriginalScheduleId = originalSchedule.ScheduleId,
+                        NewScheduleId = makeupSchedule.ScheduleId,
                         OldDate = oldDate,
                         OldDayOfWeek = oldDayOfWeek.ToString(),
                         OldTimeStart = oldTimeStart.ToString("HH:mm"),
@@ -1291,7 +1345,7 @@ namespace InstruLearn_Application.BLL.Service
                         NewDate = newDate,
                         NewDayOfWeek = newDate.DayOfWeek.ToString(),
                         NewTimeStart = newTimeStart.ToString("HH:mm"),
-                        NewTimeEnd = schedule.TimeEnd.ToString("HH:mm"),
+                        NewTimeEnd = makeupSchedule.TimeEnd.ToString("HH:mm"),
                         TimeLearning = timeLearning,
                         ChangeReason = changeReason,
                         AttendanceStatus = AttendanceStatus.NotYet.ToString()
@@ -1303,7 +1357,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Failed to update makeup class schedule: {ex.Message}"
+                    Message = $"Failed to schedule makeup class: {ex.Message}"
                 };
             }
         }

@@ -32,6 +32,8 @@ namespace InstruLearn_Application.Model.Models.DTO.Schedules
         //public TimeOnly RegistrationTimeStart { get; set; }
         public int LearningRegisId { get; set; }
         public AttendanceStatus AttendanceStatus { get; set; }
+        public PreferenceStatus PreferenceStatus { get; set; } = PreferenceStatus.None;
+        public bool IsMakeupClass { get; set; }
         public string? ChangeReason { get; set; }
         public List<ScheduleDaysDTO> ScheduleDays { get; set; }
         public List<ClassDayDTO> classDayDTOs { get; set; }
