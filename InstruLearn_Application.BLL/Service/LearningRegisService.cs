@@ -973,7 +973,6 @@ namespace InstruLearn_Application.BLL.Service
                         {
                             _logger.LogWarning($"No existing schedules found for class {paymentDTO.ClassId}, creating new ones");
 
-                            // Create completely new schedules if no existing schedules found
                             var classDays = await _unitOfWork.ClassDayRepository.GetQuery()
                                 .Where(cd => cd.ClassId == paymentDTO.ClassId)
                                 .OrderBy(cd => cd.Day) // Ensure consistent order
@@ -986,7 +985,6 @@ namespace InstruLearn_Application.BLL.Service
                                 int schedulesCreated = 0;
                                 int weekMultiplier = 0;
 
-                                // Pre-calculate all the schedule days for consistency
                                 var scheduleDays = new List<DateOnly>();
 
                                 while (scheduleDays.Count < classEntity.totalDays)
@@ -1276,7 +1274,7 @@ namespace InstruLearn_Application.BLL.Service
 
             return startDay.AddDays(daysToAdd);
         }
-    private async Task<object> GetFirstPaymentPeriodInfoAsync(int learningRegisId)
+        private async Task<object> GetFirstPaymentPeriodInfoAsync(int learningRegisId)
         {
             try
             {
@@ -1289,12 +1287,10 @@ namespace InstruLearn_Application.BLL.Service
                 decimal totalPrice = learningRegis.Price ?? 0;
                 decimal firstPaymentAmount = Math.Round(totalPrice * 0.4m, 0);
 
-                // Check if first payment has been made
                 var firstPaymentCompleted = false;
                 string firstPaymentStatus = "Chưa thanh toán";
                 DateTime? firstPaymentDate = null;
 
-                // Get payment transactions for this registration
                 var payments = await _unitOfWork.PaymentsRepository
                     .GetQuery()
                     .Where(p => p.PaymentFor == PaymentFor.LearningRegistration &&
@@ -1306,7 +1302,6 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     foreach (var payment in payments)
                     {
-                        // Check if this is the first payment (40%)
                         if (Math.Abs(payment.AmountPaid - firstPaymentAmount) < 0.1m && !firstPaymentCompleted)
                         {
                             var transaction = await _unitOfWork.WalletTransactionRepository
@@ -1322,14 +1317,29 @@ namespace InstruLearn_Application.BLL.Service
                     }
                 }
 
-                // Determine payment deadline and remaining days
                 int? firstPaymentRemainingDays = null;
                 DateTime? firstPaymentDeadline = null;
 
                 if (learningRegis.Status == LearningRegis.Accepted && learningRegis.PaymentDeadline.HasValue)
                 {
                     firstPaymentDeadline = learningRegis.PaymentDeadline;
-                    firstPaymentRemainingDays = (int)Math.Max(0, (firstPaymentDeadline.Value - DateTime.Now).TotalDays);
+
+                    DateTime now = DateTime.Now.Date;
+                    DateTime deadline = firstPaymentDeadline.Value.Date;
+
+                    int daysDifference = (deadline - now).Days;
+
+                    if (now.Date == deadline.Date)
+                    {
+                        firstPaymentRemainingDays = 0;
+                    }
+                    else
+                    {
+                        firstPaymentRemainingDays = daysDifference;
+                    }
+
+                    if (firstPaymentRemainingDays < 0)
+                        firstPaymentRemainingDays = 0;
                 }
 
                 return new
@@ -1349,7 +1359,6 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
-        // Helper method to get second payment period information
         private async Task<object> GetSecondPaymentPeriodInfoAsync(int learningRegisId)
         {
             try
@@ -1363,12 +1372,10 @@ namespace InstruLearn_Application.BLL.Service
                 decimal totalPrice = learningRegis.Price ?? 0;
                 decimal secondPaymentAmount = Math.Round(totalPrice * 0.6m, 0);
 
-                // Check if second payment has been made
                 var secondPaymentCompleted = false;
                 string secondPaymentStatus = "Chưa thanh toán";
                 DateTime? secondPaymentDate = null;
 
-                // Get payment transactions for this registration
                 var payments = await _unitOfWork.PaymentsRepository
                     .GetQuery()
                     .Where(p => p.PaymentFor == PaymentFor.LearningRegistration &&
@@ -1380,7 +1387,6 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     foreach (var payment in payments)
                     {
-                        // Check if this is the second payment (60%)
                         if (Math.Abs(payment.AmountPaid - secondPaymentAmount) < 0.1m && !secondPaymentCompleted)
                         {
                             var transaction = await _unitOfWork.WalletTransactionRepository
@@ -1396,15 +1402,30 @@ namespace InstruLearn_Application.BLL.Service
                     }
                 }
 
-                // Determine payment deadline and remaining days
                 int? secondPaymentRemainingDays = null;
                 DateTime? secondPaymentDeadline = null;
 
                 if ((learningRegis.Status == LearningRegis.FourtyFeedbackDone || learningRegis.Status == LearningRegis.Fourty) &&
-                    learningRegis.PaymentDeadline.HasValue)
+            learningRegis.PaymentDeadline.HasValue)
                 {
                     secondPaymentDeadline = learningRegis.PaymentDeadline;
-                    secondPaymentRemainingDays = (int)Math.Max(0, (secondPaymentDeadline.Value - DateTime.Now).TotalDays);
+
+                    DateTime now = DateTime.Now.Date;
+                    DateTime deadline = secondPaymentDeadline.Value.Date;
+
+                    int daysDifference = (deadline - now).Days;
+
+                    if (now.Date == deadline.Date)
+                    {
+                        secondPaymentRemainingDays = 0;
+                    }
+                    else
+                    {
+                        secondPaymentRemainingDays = daysDifference;
+                    }
+
+                    if (secondPaymentRemainingDays < 0)
+                        secondPaymentRemainingDays = 0;
                 }
 
                 return new
