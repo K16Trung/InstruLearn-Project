@@ -88,7 +88,8 @@ namespace InstruLearn_Application.Controllers
         public async Task<IActionResult> GetRegistrationsByLearnerId(int learnerId)
         {
             var result = await _learningRegisService.GetRegistrationsByLearnerIdAsync(learnerId);
-            return Ok(result);
+            var enrichedResult = await _paymentInfoService.EnrichLearningRegisWithPaymentInfoAsync(result);
+            return Ok(enrichedResult);
         }
 
         [HttpPut("update-status")]

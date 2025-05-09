@@ -40,30 +40,12 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(learningRegis.LearnerId);
-                if (learner == null)
-                {
-                    return new ResponseDTO
-                    {
-                        IsSucceed = false,
-                        Message = "Không tìm thấy học viên."
-                    };
-                }
-
-                string teacherName = "Chưa có";
-                if (learningRegis.TeacherId.HasValue)
-                {
-                    var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(learningRegis.TeacherId.Value);
-                    if (teacher != null)
-                    {
-                        teacherName = teacher.Fullname;
-                    }
-                }
-
+                // Calculate payment amounts
                 decimal totalPrice = learningRegis.Price ?? 0;
                 decimal firstPaymentAmount = Math.Round(totalPrice * 0.4m, 0);
                 decimal secondPaymentAmount = Math.Round(totalPrice * 0.6m, 0);
 
+                // Check payment status
                 var firstPaymentCompleted = false;
                 var secondPaymentCompleted = false;
                 string firstPaymentStatus = "Chưa thanh toán";
@@ -71,11 +53,36 @@ namespace InstruLearn_Application.BLL.Service
                 DateTime? firstPaymentDate = null;
                 DateTime? secondPaymentDate = null;
 
+                // Get payment transactions
                 var payments = await _unitOfWork.PaymentsRepository
                     .GetQuery()
-                    .Where(p => p.PaymentFor == PaymentFor.LearningRegistration && p.PaymentId == learningRegisId && p.Status == PaymentStatus.Completed)
+                    .Where(p => p.PaymentFor == PaymentFor.LearningRegistration &&
+                                p.PaymentId == learningRegisId &&
+                                p.Status == PaymentStatus.Completed)
                     .ToListAsync();
 
+                // Check status from the learning registration itself
+                if (learningRegis.Status == LearningRegis.Fourty ||
+                    learningRegis.Status == LearningRegis.FourtyFeedbackDone)
+                {
+                    // First payment (40%) is completed 
+                    firstPaymentCompleted = true;
+                    firstPaymentStatus = "Đã thanh toán";
+
+                    // Find the associated payment transaction for date
+                    var firstPayment = payments.FirstOrDefault(p => Math.Abs(p.AmountPaid - firstPaymentAmount) < 0.1m);
+                    if (firstPayment != null && !string.IsNullOrEmpty(firstPayment.TransactionId))
+                    {
+                        var transaction = await _unitOfWork.WalletTransactionRepository
+                            .GetTransactionWithWalletAsync(firstPayment.TransactionId);
+                        if (transaction != null)
+                        {
+                            firstPaymentDate = transaction.TransactionDate;
+                        }
+                    }
+                }
+
+                // Double-check if payments exist that don't match the status
                 if (payments != null && payments.Any())
                 {
                     foreach (var payment in payments)
@@ -85,12 +92,14 @@ namespace InstruLearn_Application.BLL.Service
 
                         if (transaction != null)
                         {
+                            // If there's a payment close to 40% amount and we haven't marked it as completed
                             if (Math.Abs(payment.AmountPaid - firstPaymentAmount) < 0.1m && !firstPaymentCompleted)
                             {
                                 firstPaymentCompleted = true;
                                 firstPaymentStatus = "Đã thanh toán";
                                 firstPaymentDate = transaction.TransactionDate;
                             }
+                            // If there's a payment close to 60% amount 
                             else if (Math.Abs(payment.AmountPaid - secondPaymentAmount) < 0.1m && !secondPaymentCompleted)
                             {
                                 secondPaymentCompleted = true;
@@ -101,86 +110,165 @@ namespace InstruLearn_Application.BLL.Service
                     }
                 }
 
+                // Initialize deadline variables
                 int? firstPaymentRemainingDays = null;
                 int? secondPaymentRemainingDays = null;
                 DateTime? firstPaymentDeadline = null;
                 DateTime? secondPaymentDeadline = null;
 
-                if (learningRegis.Status == LearningRegis.Accepted && learningRegis.PaymentDeadline.HasValue)
+                // Determine which phase this registration is in
+                bool isInFirstPaymentPhase = !firstPaymentCompleted;
+                bool isInSecondPaymentPhase = firstPaymentCompleted && !secondPaymentCompleted;
+
+                // Handle payment deadlines
+                if (learningRegis.PaymentDeadline.HasValue)
                 {
-                    firstPaymentDeadline = learningRegis.PaymentDeadline;
-                    firstPaymentRemainingDays = (int)Math.Max(0, (firstPaymentDeadline.Value - DateTime.Now).TotalDays);
-
-                    if (!firstPaymentCompleted && DateTime.Now > firstPaymentDeadline)
+                    // If we're in first payment phase
+                    if (isInFirstPaymentPhase)
                     {
-                        firstPaymentStatus = "Quá hạn";
+                        firstPaymentDeadline = learningRegis.PaymentDeadline;
 
-                        if (learningRegis.Status != LearningRegis.Rejected)
+                        // Calculate remaining days - ensure consistent calculation with the DaysRemaining shown elsewhere
+                        DateTime now = DateTime.Now.Date; // Use date to ignore time component
+                        DateTime deadline = firstPaymentDeadline.Value.Date; // Use date to ignore time component
+
+                        // Calculate days between now and deadline
+                        int daysDifference = (deadline - now).Days;
+
+                        // If deadline is today, count it as 1 day remaining
+                        if (daysDifference == 0 && now.Date == deadline.Date)
                         {
-                            using var transaction = await _unitOfWork.BeginTransactionAsync();
-                            try
+                            firstPaymentRemainingDays = 1;
+                        }
+                        else
+                        {
+                            // Add 1 to include the deadline day itself in the count
+                            firstPaymentRemainingDays = daysDifference + 1;
+                        }
+
+                        // Ensure we don't show negative days
+                        if (firstPaymentRemainingDays < 0)
+                            firstPaymentRemainingDays = 0;
+
+                        // Handle overdue case
+                        if (daysDifference < 0 && !firstPaymentCompleted)
+                        {
+                            firstPaymentStatus = "Đã quá hạn thanh toán 40%";
+
+                            if (learningRegis.Status != LearningRegis.Rejected)
                             {
-                                learningRegis.Status = LearningRegis.Rejected;
-                                learningRegis.LearningRequest = "Quá hạn thanh toán 40%";
-
-                                await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
-
-                                var testResult = await _unitOfWork.TestResultRepository
-                                    .GetByLearningRegisIdAsync(learningRegis.LearningRegisId);
-
-                                if (testResult != null)
+                                using var transaction = await _unitOfWork.BeginTransactionAsync();
+                                try
                                 {
-                                    testResult.Status = TestResultStatus.Cancelled;
-                                    await _unitOfWork.TestResultRepository.UpdateAsync(testResult);
-                                }
+                                    learningRegis.Status = LearningRegis.Rejected;
+                                    learningRegis.LearningRequest = "Quá hạn thanh toán 40%";
 
-                                await _unitOfWork.SaveChangeAsync();
-                                await transaction.CommitAsync();
+                                    await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
+
+                                    var testResult = await _unitOfWork.TestResultRepository
+                                        .GetByLearningRegisIdAsync(learningRegis.LearningRegisId);
+
+                                    if (testResult != null)
+                                    {
+                                        testResult.Status = TestResultStatus.Cancelled;
+                                        await _unitOfWork.TestResultRepository.UpdateAsync(testResult);
+                                    }
+
+                                    await _unitOfWork.SaveChangeAsync();
+                                    await transaction.CommitAsync();
+                                }
+                                catch (Exception ex)
+                                {
+                                    await transaction.RollbackAsync();
+                                    Console.WriteLine($"Error updating overdue payment status: {ex.Message}");
+                                }
                             }
-                            catch
+                        }
+                    }
+                    else if (isInSecondPaymentPhase)
+                    {
+                        secondPaymentDeadline = learningRegis.PaymentDeadline;
+
+                        DateTime now = DateTime.Now.Date;
+                        DateTime deadline = secondPaymentDeadline.Value.Date;
+
+                        int daysDifference = (deadline - now).Days;
+
+                        if (daysDifference == 0 && now.Date == deadline.Date)
+                        {
+                            secondPaymentRemainingDays = 1;
+                        }
+                        else
+                        {
+                            secondPaymentRemainingDays = daysDifference + 1;
+                        }
+
+                        if (secondPaymentRemainingDays < 0)
+                            secondPaymentRemainingDays = 0;
+
+                        if (daysDifference < 0 && !secondPaymentCompleted)
+                        {
+                            secondPaymentStatus = "Đã quá hạn thanh toán 60%";
+
+                            if (learningRegis.Status != LearningRegis.Cancelled)
                             {
-                                await transaction.RollbackAsync();
+                                using var transaction = await _unitOfWork.BeginTransactionAsync();
+                                try
+                                {
+                                    learningRegis.Status = LearningRegis.Cancelled;
+                                    learningRegis.LearningRequest = "Quá hạn thanh toán 60%";
+
+                                    await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
+
+                                    var schedules = await _unitOfWork.ScheduleRepository
+                                        .GetSchedulesByLearningRegisIdAsync(learningRegis.LearningRegisId);
+
+                                    foreach (var schedule in schedules)
+                                    {
+                                        await _unitOfWork.ScheduleRepository.DeleteAsync(schedule.ScheduleId);
+                                    }
+
+                                    await _unitOfWork.SaveChangeAsync();
+                                    await transaction.CommitAsync();
+                                }
+                                catch (Exception ex)
+                                {
+                                    await transaction.RollbackAsync();
+                                    Console.WriteLine($"Error updating overdue payment status: {ex.Message}");
+                                }
                             }
                         }
                     }
                 }
-
-                if ((learningRegis.Status == LearningRegis.FourtyFeedbackDone || learningRegis.Status == LearningRegis.Fourty) &&
-                    learningRegis.PaymentDeadline.HasValue)
+                else if (learningRegis.Status == LearningRegis.Pending || learningRegis.Status == LearningRegis.Accepted)
                 {
-                    secondPaymentDeadline = learningRegis.PaymentDeadline;
-                    secondPaymentRemainingDays = (int)Math.Max(0, (secondPaymentDeadline.Value - DateTime.Now).TotalDays);
-
-                    if (!secondPaymentCompleted && DateTime.Now > secondPaymentDeadline)
+                    if (learningRegis.AcceptedDate.HasValue)
                     {
-                        secondPaymentStatus = "Quá hạn";
+                        firstPaymentDeadline = learningRegis.AcceptedDate.Value.AddDays(3);
+                    }
+                    else
+                    {
+                        firstPaymentDeadline = DateTime.Now.AddDays(3);
+                    }
 
-                        if (learningRegis.Status != LearningRegis.Cancelled)
+                    if (firstPaymentDeadline.HasValue)
+                    {
+                        DateTime now = DateTime.Now.Date;
+                        DateTime deadline = firstPaymentDeadline.Value.Date;
+
+                        int daysDifference = (deadline - now).Days;
+
+                        if (daysDifference == 0 && now.Date == deadline.Date)
                         {
-                            using var transaction = await _unitOfWork.BeginTransactionAsync();
-                            try
-                            {
-                                learningRegis.Status = LearningRegis.Cancelled;
-                                learningRegis.LearningRequest = "Quá hạn thanh toán 60%";
-
-                                await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
-
-                                var schedules = await _unitOfWork.ScheduleRepository
-                                    .GetSchedulesByLearningRegisIdAsync(learningRegis.LearningRegisId);
-
-                                foreach (var schedule in schedules)
-                                {
-                                    await _unitOfWork.ScheduleRepository.DeleteAsync(schedule.ScheduleId);
-                                }
-
-                                await _unitOfWork.SaveChangeAsync();
-                                await transaction.CommitAsync();
-                            }
-                            catch
-                            {
-                                await transaction.RollbackAsync();
-                            }
+                            firstPaymentRemainingDays = 1;
                         }
+                        else
+                        {
+                            firstPaymentRemainingDays = daysDifference + 1;
+                        }
+
+                        if (firstPaymentRemainingDays < 0)
+                            firstPaymentRemainingDays = 0;
                     }
                 }
 
@@ -191,7 +279,8 @@ namespace InstruLearn_Application.BLL.Service
                     PaymentStatus = firstPaymentStatus,
                     PaymentDeadline = firstPaymentDeadline?.ToString("yyyy-MM-dd HH:mm:ss"),
                     PaymentDate = firstPaymentDate?.ToString("yyyy-MM-dd HH:mm:ss"),
-                    RemainingDays = firstPaymentRemainingDays
+                    RemainingDays = firstPaymentRemainingDays,
+                    IsOverdue = firstPaymentDeadline.HasValue && !firstPaymentCompleted && DateTime.Now > firstPaymentDeadline.Value
                 };
 
                 var secondPaymentPeriod = new
@@ -201,7 +290,8 @@ namespace InstruLearn_Application.BLL.Service
                     PaymentStatus = secondPaymentStatus,
                     PaymentDeadline = secondPaymentDeadline?.ToString("yyyy-MM-dd HH:mm:ss"),
                     PaymentDate = secondPaymentDate?.ToString("yyyy-MM-dd HH:mm:ss"),
-                    RemainingDays = secondPaymentRemainingDays
+                    RemainingDays = secondPaymentRemainingDays,
+                    IsOverdue = secondPaymentDeadline.HasValue && !secondPaymentCompleted && DateTime.Now > secondPaymentDeadline.Value
                 };
 
                 return new ResponseDTO
@@ -210,8 +300,12 @@ namespace InstruLearn_Application.BLL.Service
                     Message = "Thông tin thanh toán đã được lấy thành công.",
                     Data = new
                     {
+                        learningRegisId = learningRegis.LearningRegisId,
+                        currentStatus = learningRegis.Status.ToString(),
                         firstPaymentPeriod = firstPaymentPeriod,
-                        secondPaymentPeriod = secondPaymentPeriod
+                        secondPaymentPeriod = secondPaymentPeriod,
+                        isFirstPaymentPhase = isInFirstPaymentPhase,
+                        isSecondPaymentPhase = isInSecondPaymentPhase
                     }
                 };
             }

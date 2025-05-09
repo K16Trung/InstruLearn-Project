@@ -359,14 +359,48 @@ namespace InstruLearn_Application.BLL.Service
 
         public async Task<ResponseDTO> GetRegistrationsByLearnerIdAsync(int learnerId)
         {
-            var registrations = await _learningRegisRepository.GetRegistrationsByLearnerIdAsync(learnerId);
-            var registrationDtos = _mapper.Map<IEnumerable<OneOnOneRegisDTO>>(registrations);
-            return new ResponseDTO
+            try
             {
-                IsSucceed = true,
-                Message = $"All registrations for Learner ID {learnerId} retrieved successfully.",
-                Data = registrationDtos
-            };
+                var registrations = await _learningRegisRepository.GetRegistrationsByLearnerIdAsync(learnerId);
+                var registrationDtos = _mapper.Map<IEnumerable<OneOnOneRegisDTO>>(registrations).ToList();
+
+                var enrichedRegistrations = new List<object>();
+                foreach (var regDto in registrationDtos)
+                {
+                    var registrationDict = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(
+                        JsonSerializer.Serialize(regDto));
+
+                    var firstPaymentPeriod = await GetFirstPaymentPeriodInfoAsync(regDto.LearningRegisId);
+                    var secondPaymentPeriod = await GetSecondPaymentPeriodInfoAsync(regDto.LearningRegisId);
+
+                    var enrichedReg = new Dictionary<string, object>();
+                    foreach (var kvp in registrationDict)
+                    {
+                        enrichedReg[kvp.Key] = JsonSerializer.Deserialize<object>(kvp.Value.GetRawText());
+                    }
+
+                    enrichedReg["firstPaymentPeriod"] = firstPaymentPeriod;
+                    enrichedReg["secondPaymentPeriod"] = secondPaymentPeriod;
+
+                    enrichedRegistrations.Add(enrichedReg);
+                }
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = $"All registrations for Learner ID {learnerId} retrieved successfully.",
+                    Data = enrichedRegistrations
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error retrieving learning registrations for learner {learnerId} with payment information");
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Error retrieving learning registrations: {ex.Message}"
+                };
+            }
         }
 
         public async Task<ResponseDTO> UpdateLearningRegisStatusAsync(UpdateLearningRegisDTO updateDTO)
