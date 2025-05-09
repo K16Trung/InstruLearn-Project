@@ -177,6 +177,8 @@ namespace InstruLearn_Application
             builder.Services.AddHostedService<PaymentDeadlineService>();
             builder.Services.AddScoped<IFeedbackNotificationService, FeedbackNotificationService>();
             builder.Services.AddScoped<IStaffNotificationService, StaffNotificationService>();
+            builder.Services.AddScoped<IRevenueService, RevenueService>();
+            builder.Services.AddScoped<IPaymentInfoService, PaymentInfoService>();
             builder.Services.AddHostedService<CertificateCreationBackgroundService>();
             builder.Services.AddHostedService<AttendanceStatusBackgroundService>();
             builder.Services.AddAutoMapper(typeof(MappingProfile));
@@ -185,13 +187,10 @@ namespace InstruLearn_Application
             builder.Services.AddControllers()
                 .AddJsonOptions(options =>
                 {
-                    // Handle circular references by ignoring cycles
                     options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
 
-                    // Set a more reasonable max depth
                     options.JsonSerializerOptions.MaxDepth = 64;
 
-                    // Make property names case-sensitive
                     options.JsonSerializerOptions.PropertyNameCaseInsensitive = false;
                 });
 
@@ -206,7 +205,6 @@ namespace InstruLearn_Application
                                .AllowAnyMethod();
                     });
             });
-
 
             // Bear
             builder.Services.AddEndpointsApiExplorer();

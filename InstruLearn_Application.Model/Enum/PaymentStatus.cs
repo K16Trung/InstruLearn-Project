@@ -10,6 +10,7 @@ namespace InstruLearn_Application.Model.Enum
     {
         Pending,
         Completed,
-        Failed
+        Failed,
+        Overdue
     }
 }

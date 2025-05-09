@@ -90,7 +90,6 @@ namespace InstruLearn_Application.BLL.Service
             };
         }
 
-
         public async Task<ResponseDTO> CreateMajorTestAsync(CreateMajorTestDTO createMajorTestDTO)
         {
             var majorObj = await _unitOfWork.MajorRepository.GetByIdAsync(createMajorTestDTO.MajorId);
@@ -142,6 +141,7 @@ namespace InstruLearn_Application.BLL.Service
                 Message = "Major Test not found!"
             };
         }
+
         public async Task<ResponseDTO> DeleteMajorTestAsync(int majorTestId)
         {
             var deleteMajorTest = await _unitOfWork.MajorTestRepository.GetByIdAsync(majorTestId);

@@ -20,6 +20,8 @@ using InstruLearn_Application.Model.Models.DTO.LearnerClass;
 using Microsoft.EntityFrameworkCore;
 using InstruLearn_Application.Model.Models.DTO.Certification;
 using Microsoft.Extensions.DependencyInjection;
+using System.Dynamic;
+using System.Text.Json;
 
 namespace InstruLearn_Application.BLL.Service
 {
@@ -45,36 +47,99 @@ namespace InstruLearn_Application.BLL.Service
         }
         public async Task<ResponseDTO> GetAllLearningRegisAsync()
         {
-            var allRegistrations = await _learningRegisRepository.GetAllAsync();
-            var allDtos = _mapper.Map<IEnumerable<OneOnOneRegisDTO>>(allRegistrations);
-            return new ResponseDTO
+            try
             {
-                IsSucceed = true,
-                Message = "All learning registrations retrieved successfully.",
-                Data = allDtos
-            };
+                var allRegistrations = await _learningRegisRepository.GetAllAsync();
+                var allDtos = _mapper.Map<IEnumerable<OneOnOneRegisDTO>>(allRegistrations).ToList();
+
+                var enrichedRegistrations = new List<object>();
+                foreach (var regDto in allDtos)
+                {
+                    var registrationDict = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(
+                        JsonSerializer.Serialize(regDto));
+
+                    var firstPaymentPeriod = await GetFirstPaymentPeriodInfoAsync(regDto.LearningRegisId);
+                    var secondPaymentPeriod = await GetSecondPaymentPeriodInfoAsync(regDto.LearningRegisId);
+
+                    var enrichedReg = new Dictionary<string, object>();
+                    foreach (var kvp in registrationDict)
+                    {
+                        enrichedReg[kvp.Key] = JsonSerializer.Deserialize<object>(kvp.Value.GetRawText());
+                    }
+
+                    enrichedReg["firstPaymentPeriod"] = firstPaymentPeriod;
+                    enrichedReg["secondPaymentPeriod"] = secondPaymentPeriod;
+
+                    enrichedRegistrations.Add(enrichedReg);
+                }
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = "All learning registrations retrieved successfully.",
+                    Data = enrichedRegistrations
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving learning registrations with payment information");
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Error retrieving learning registrations: {ex.Message}"
+                };
+            }
         }
 
         public async Task<ResponseDTO> GetLearningRegisByIdAsync(int learningRegisId)
         {
-            var registration = await _learningRegisRepository.GetByIdAsync(learningRegisId);
-            if (registration == null)
+            try
             {
+                var registration = await _learningRegisRepository.GetByIdAsync(learningRegisId);
+                if (registration == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Learning registration not found.",
+                        Data = null
+                    };
+                }
+
+                var dto = _mapper.Map<OneOnOneRegisDTO>(registration);
+
+                var firstPaymentPeriod = await GetFirstPaymentPeriodInfoAsync(learningRegisId);
+                var secondPaymentPeriod = await GetSecondPaymentPeriodInfoAsync(learningRegisId);
+
+                dynamic enrichedDto = new ExpandoObject();
+                var enrichedDict = (IDictionary<string, object>)enrichedDto;
+
+                var dtoProps = typeof(OneOnOneRegisDTO).GetProperties();
+                foreach (var prop in dtoProps)
+                {
+                    enrichedDict[prop.Name] = prop.GetValue(dto);
+                }
+
+                enrichedDict["firstPaymentPeriod"] = firstPaymentPeriod;
+                enrichedDict["secondPaymentPeriod"] = secondPaymentPeriod;
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = "Learning registration retrieved successfully.",
+                    Data = enrichedDto
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error retrieving learning registration {learningRegisId} with payment information");
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Learning registration not found.",
+                    Message = $"Error retrieving learning registration: {ex.Message}",
                     Data = null
                 };
             }
-
-            var dto = _mapper.Map<OneOnOneRegisDTO>(registration);
-            return new ResponseDTO
-            {
-                IsSucceed = true,
-                Message = "Learning registration retrieved successfully.",
-                Data = dto
-            };
         }
 
         public async Task<ResponseDTO> GetRegistrationsByTeacherIdAsync(int teacherId)
@@ -1177,6 +1242,152 @@ namespace InstruLearn_Application.BLL.Service
 
             return startDay.AddDays(daysToAdd);
         }
+    private async Task<object> GetFirstPaymentPeriodInfoAsync(int learningRegisId)
+        {
+            try
+            {
+                var learningRegis = await _unitOfWork.LearningRegisRepository.GetByIdAsync(learningRegisId);
+                if (learningRegis == null)
+                {
+                    return null;
+                }
 
+                decimal totalPrice = learningRegis.Price ?? 0;
+                decimal firstPaymentAmount = Math.Round(totalPrice * 0.4m, 0);
+
+                // Check if first payment has been made
+                var firstPaymentCompleted = false;
+                string firstPaymentStatus = "Chưa thanh toán";
+                DateTime? firstPaymentDate = null;
+
+                // Get payment transactions for this registration
+                var payments = await _unitOfWork.PaymentsRepository
+                    .GetQuery()
+                    .Where(p => p.PaymentFor == PaymentFor.LearningRegistration &&
+                               p.PaymentId == learningRegisId &&
+                               p.Status == PaymentStatus.Completed)
+                    .ToListAsync();
+
+                if (payments != null && payments.Any())
+                {
+                    foreach (var payment in payments)
+                    {
+                        // Check if this is the first payment (40%)
+                        if (Math.Abs(payment.AmountPaid - firstPaymentAmount) < 0.1m && !firstPaymentCompleted)
+                        {
+                            var transaction = await _unitOfWork.WalletTransactionRepository
+                                .GetTransactionWithWalletAsync(payment.TransactionId);
+
+                            if (transaction != null)
+                            {
+                                firstPaymentCompleted = true;
+                                firstPaymentStatus = "Đã thanh toán";
+                                firstPaymentDate = transaction.TransactionDate;
+                            }
+                        }
+                    }
+                }
+
+                // Determine payment deadline and remaining days
+                int? firstPaymentRemainingDays = null;
+                DateTime? firstPaymentDeadline = null;
+
+                if (learningRegis.Status == LearningRegis.Accepted && learningRegis.PaymentDeadline.HasValue)
+                {
+                    firstPaymentDeadline = learningRegis.PaymentDeadline;
+                    firstPaymentRemainingDays = (int)Math.Max(0, (firstPaymentDeadline.Value - DateTime.Now).TotalDays);
+                }
+
+                return new
+                {
+                    PaymentPercent = 40,
+                    PaymentAmount = firstPaymentAmount,
+                    PaymentStatus = firstPaymentStatus,
+                    PaymentDeadline = firstPaymentDeadline?.ToString("yyyy-MM-dd HH:mm:ss"),
+                    PaymentDate = firstPaymentDate?.ToString("yyyy-MM-dd HH:mm:ss"),
+                    RemainingDays = firstPaymentRemainingDays
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error getting first payment period info for registration {learningRegisId}");
+                return null;
+            }
+        }
+
+        // Helper method to get second payment period information
+        private async Task<object> GetSecondPaymentPeriodInfoAsync(int learningRegisId)
+        {
+            try
+            {
+                var learningRegis = await _unitOfWork.LearningRegisRepository.GetByIdAsync(learningRegisId);
+                if (learningRegis == null)
+                {
+                    return null;
+                }
+
+                decimal totalPrice = learningRegis.Price ?? 0;
+                decimal secondPaymentAmount = Math.Round(totalPrice * 0.6m, 0);
+
+                // Check if second payment has been made
+                var secondPaymentCompleted = false;
+                string secondPaymentStatus = "Chưa thanh toán";
+                DateTime? secondPaymentDate = null;
+
+                // Get payment transactions for this registration
+                var payments = await _unitOfWork.PaymentsRepository
+                    .GetQuery()
+                    .Where(p => p.PaymentFor == PaymentFor.LearningRegistration &&
+                               p.PaymentId == learningRegisId &&
+                               p.Status == PaymentStatus.Completed)
+                    .ToListAsync();
+
+                if (payments != null && payments.Any())
+                {
+                    foreach (var payment in payments)
+                    {
+                        // Check if this is the second payment (60%)
+                        if (Math.Abs(payment.AmountPaid - secondPaymentAmount) < 0.1m && !secondPaymentCompleted)
+                        {
+                            var transaction = await _unitOfWork.WalletTransactionRepository
+                                .GetTransactionWithWalletAsync(payment.TransactionId);
+
+                            if (transaction != null)
+                            {
+                                secondPaymentCompleted = true;
+                                secondPaymentStatus = "Đã thanh toán";
+                                secondPaymentDate = transaction.TransactionDate;
+                            }
+                        }
+                    }
+                }
+
+                // Determine payment deadline and remaining days
+                int? secondPaymentRemainingDays = null;
+                DateTime? secondPaymentDeadline = null;
+
+                if ((learningRegis.Status == LearningRegis.FourtyFeedbackDone || learningRegis.Status == LearningRegis.Fourty) &&
+                    learningRegis.PaymentDeadline.HasValue)
+                {
+                    secondPaymentDeadline = learningRegis.PaymentDeadline;
+                    secondPaymentRemainingDays = (int)Math.Max(0, (secondPaymentDeadline.Value - DateTime.Now).TotalDays);
+                }
+
+                return new
+                {
+                    PaymentPercent = 60,
+                    PaymentAmount = secondPaymentAmount,
+                    PaymentStatus = secondPaymentStatus,
+                    PaymentDeadline = secondPaymentDeadline?.ToString("yyyy-MM-dd HH:mm:ss"),
+                    PaymentDate = secondPaymentDate?.ToString("yyyy-MM-dd HH:mm:ss"),
+                    RemainingDays = secondPaymentRemainingDays
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error getting second payment period info for registration {learningRegisId}");
+                return null;
+            }
+        }
     }
 }
