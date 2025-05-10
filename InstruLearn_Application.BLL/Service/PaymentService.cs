@@ -75,6 +75,7 @@ namespace InstruLearn_Application.BLL.Service
                 await _unitOfWork.WalletTransactionRepository.AddAsync(walletTransaction);
 
                 // Create Payment Record
+                // FIXED: Use PaymentId for the LearningRegis ID since we don't have a separate property
                 var payment = new Payment
                 {
                     WalletId = wallet.WalletId,
@@ -83,6 +84,7 @@ namespace InstruLearn_Application.BLL.Service
                     PaymentMethod = paymentDTO.PaymentMethod,
                     PaymentFor = PaymentFor.LearningRegistration,
                     Status = PaymentStatus.Completed
+                    // LearningRegisId property was removed as it doesn't exist
                 };
                 await _unitOfWork.PaymentsRepository.AddAsync(payment);
 
@@ -186,6 +188,7 @@ namespace InstruLearn_Application.BLL.Service
                 await _unitOfWork.WalletTransactionRepository.AddAsync(walletTransaction);
 
                 // Create Payment Record
+                // FIXED: Use PaymentId for the LearningRegis ID since we don't have a separate property
                 var payment = new Payment
                 {
                     WalletId = wallet.WalletId,
@@ -194,6 +197,7 @@ namespace InstruLearn_Application.BLL.Service
                     PaymentMethod = PaymentMethod.Wallet,
                     PaymentFor = PaymentFor.LearningRegistration,
                     Status = PaymentStatus.Completed
+                    // LearningRegisId property was removed as it doesn't exist
                 };
                 await _unitOfWork.PaymentsRepository.AddAsync(payment);
 
@@ -218,7 +222,5 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO { IsSucceed = false, Message = "Payment failed. " + ex.Message };
             }
         }
-
-
     }
 }

@@ -43,12 +43,10 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Calculate payment amounts
                 decimal totalPrice = learningRegis.Price ?? 0;
                 decimal firstPaymentAmount = Math.Round(totalPrice * 0.4m, 0);
                 decimal secondPaymentAmount = Math.Round(totalPrice * 0.6m, 0);
 
-                // Initialize payment status variables
                 var firstPaymentCompleted = false;
                 var secondPaymentCompleted = false;
                 string firstPaymentStatus = "Chưa thanh toán";
@@ -56,35 +54,31 @@ namespace InstruLearn_Application.BLL.Service
                 DateTime? firstPaymentDate = null;
                 DateTime? secondPaymentDate = null;
 
-                // Get payment transactions
-                var payments = await _unitOfWork.PaymentsRepository
-                    .GetQuery()
-                    .Where(p => p.PaymentFor == PaymentFor.LearningRegistration &&
-                                p.PaymentId == learningRegisId &&
-                                p.Status == PaymentStatus.Completed)
-                    .ToListAsync();
-
-                _logger.LogInformation($"Found {payments.Count} completed payments for learning registration {learningRegisId}");
-
-                // CRITICAL FIX: Check learning registration status FIRST
-                // This is more reliable across environments
                 if (learningRegis.Status == LearningRegis.Fourty ||
                     learningRegis.Status == LearningRegis.FourtyFeedbackDone ||
                     learningRegis.Status == LearningRegis.Sixty)
                 {
                     _logger.LogInformation($"Learning reg status is {learningRegis.Status}. Setting first payment as completed.");
                     firstPaymentCompleted = true;
-                    firstPaymentStatus = "Đã thanh toán";  // Always set to "Đã thanh toán" when status is Fourty or beyond
+                    firstPaymentStatus = "Đã thanh toán";
                 }
 
                 if (learningRegis.Status == LearningRegis.Sixty)
                 {
                     _logger.LogInformation($"Learning reg status is {learningRegis.Status}. Setting second payment as completed.");
                     secondPaymentCompleted = true;
-                    secondPaymentStatus = "Đã thanh toán";  // Always set to "Đã thanh toán" when status is Sixty
+                    secondPaymentStatus = "Đã thanh toán";
                 }
 
-                // After setting status based on LearningRegis.Status, try to find payment dates from payments
+                // Try to find payment transactions to get dates
+                var payments = await _unitOfWork.PaymentsRepository
+                    .GetQuery()
+                    .Where(p => p.PaymentFor == PaymentFor.LearningRegistration &&
+                               p.Status == PaymentStatus.Completed)
+                    .ToListAsync();
+
+                _logger.LogInformation($"Looking for payment records to determine payment dates...");
+
                 if (payments != null && payments.Any())
                 {
                     foreach (var payment in payments)
@@ -94,68 +88,52 @@ namespace InstruLearn_Application.BLL.Service
                         var transaction = await _unitOfWork.WalletTransactionRepository
                             .GetTransactionWithWalletAsync(payment.TransactionId);
 
-                        if (transaction != null)
+                        if (transaction != null && transaction.Wallet.LearnerId == learningRegis.LearnerId)
                         {
-                            // If there's a payment close to 40% amount (with 0.1 margin for rounding)
                             if (Math.Abs(payment.AmountPaid - firstPaymentAmount) < 0.1m)
                             {
-                                _logger.LogInformation($"Found 40% payment (Amount: {payment.AmountPaid}) for learning registration {learningRegisId}");
+                                _logger.LogInformation($"Found 40% payment (Amount: {payment.AmountPaid}) for learner {learningRegis.LearnerId}");
                                 if (firstPaymentDate == null)
                                 {
                                     firstPaymentDate = transaction.TransactionDate;
-                                    // Ensure status is set to completed as there's a valid payment
-                                    firstPaymentCompleted = true;
-                                    firstPaymentStatus = "Đã thanh toán";
                                 }
                             }
-                            // If there's a payment close to 60% amount
                             else if (Math.Abs(payment.AmountPaid - secondPaymentAmount) < 0.1m)
                             {
-                                _logger.LogInformation($"Found 60% payment (Amount: {payment.AmountPaid}) for learning registration {learningRegisId}");
+                                _logger.LogInformation($"Found 60% payment (Amount: {payment.AmountPaid}) for learner {learningRegis.LearnerId}");
                                 if (secondPaymentDate == null)
                                 {
                                     secondPaymentDate = transaction.TransactionDate;
-                                    // Ensure status is set to completed as there's a valid payment
-                                    secondPaymentCompleted = true;
-                                    secondPaymentStatus = "Đã thanh toán";
                                 }
                             }
                         }
                     }
                 }
 
-                // Initialize deadline variables
                 int? firstPaymentRemainingDays = null;
                 int? secondPaymentRemainingDays = null;
                 DateTime? firstPaymentDeadline = null;
                 DateTime? secondPaymentDeadline = null;
 
-                // Determine which phase this registration is in
                 bool isInFirstPaymentPhase = !firstPaymentCompleted;
                 bool isInSecondPaymentPhase = firstPaymentCompleted && !secondPaymentCompleted;
 
-                // Handle payment deadlines
                 if (learningRegis.PaymentDeadline.HasValue)
                 {
-                    // If we're in first payment phase
                     if (isInFirstPaymentPhase)
                     {
                         firstPaymentDeadline = learningRegis.PaymentDeadline;
 
-                        // Calculate remaining days
-                        DateTime now = DateTime.Now.Date; // Use date to ignore time component
-                        DateTime deadline = firstPaymentDeadline.Value.Date; // Use date to ignore time component
+                        DateTime now = DateTime.Now.Date;
+                        DateTime deadline = firstPaymentDeadline.Value.Date;
 
-                        // Calculate days between now and deadline
                         int daysDifference = (deadline - now).Days;
 
                         firstPaymentRemainingDays = daysDifference;
 
-                        // Ensure we don't show negative days
                         if (firstPaymentRemainingDays < 0)
                             firstPaymentRemainingDays = 0;
 
-                        // Handle overdue case
                         if (daysDifference < 0 && !firstPaymentCompleted)
                         {
                             firstPaymentStatus = "Đã quá hạn thanh toán 40%";
@@ -194,7 +172,6 @@ namespace InstruLearn_Application.BLL.Service
                     {
                         secondPaymentDeadline = learningRegis.PaymentDeadline;
 
-                        // Calculate remaining days for second payment
                         DateTime now = DateTime.Now.Date;
                         DateTime deadline = secondPaymentDeadline.Value.Date;
 
