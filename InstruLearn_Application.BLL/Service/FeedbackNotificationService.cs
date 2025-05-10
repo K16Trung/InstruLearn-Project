@@ -295,7 +295,7 @@ namespace InstruLearn_Application.BLL.Service
                             ?.Count(s => s.AttendanceStatus == AttendanceStatus.Present ||
                                       s.AttendanceStatus == AttendanceStatus.Absent) ?? 0;
 
-                        if (completedSessions < fortyPercentThreshold)
+                        if (completedSessions >= fortyPercentThreshold && !regis.HasPendingLearningPath)
                         {
                             continue;
                         }
