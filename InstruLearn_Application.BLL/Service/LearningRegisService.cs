@@ -1291,10 +1291,18 @@ namespace InstruLearn_Application.BLL.Service
                 string firstPaymentStatus = "Chưa thanh toán";
                 DateTime? firstPaymentDate = null;
 
+                if (learningRegis.Status == LearningRegis.Fourty ||
+                    learningRegis.Status == LearningRegis.FourtyFeedbackDone ||
+                    learningRegis.Status == LearningRegis.Sixty)
+                {
+                    _logger.LogInformation($"Learning reg status is {learningRegis.Status}. Setting first payment as completed.");
+                    firstPaymentCompleted = true;
+                    firstPaymentStatus = "Đã thanh toán";
+                }
+
                 var payments = await _unitOfWork.PaymentsRepository
                     .GetQuery()
                     .Where(p => p.PaymentFor == PaymentFor.LearningRegistration &&
-                               p.PaymentId == learningRegisId &&
                                p.Status == PaymentStatus.Completed)
                     .ToListAsync();
 
@@ -1302,16 +1310,15 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     foreach (var payment in payments)
                     {
-                        if (Math.Abs(payment.AmountPaid - firstPaymentAmount) < 0.1m && !firstPaymentCompleted)
-                        {
-                            var transaction = await _unitOfWork.WalletTransactionRepository
-                                .GetTransactionWithWalletAsync(payment.TransactionId);
+                        var transaction = await _unitOfWork.WalletTransactionRepository
+                            .GetTransactionWithWalletAsync(payment.TransactionId);
 
-                            if (transaction != null)
+                        if (transaction != null && transaction.Wallet.LearnerId == learningRegis.LearnerId)
+                        {
+                            if (Math.Abs(payment.AmountPaid - firstPaymentAmount) < 0.1m && firstPaymentDate == null)
                             {
-                                firstPaymentCompleted = true;
-                                firstPaymentStatus = "Đã thanh toán";
                                 firstPaymentDate = transaction.TransactionDate;
+                                _logger.LogInformation($"Found payment date: {firstPaymentDate} for 40% payment of registration {learningRegisId}");
                             }
                         }
                     }
@@ -1376,10 +1383,16 @@ namespace InstruLearn_Application.BLL.Service
                 string secondPaymentStatus = "Chưa thanh toán";
                 DateTime? secondPaymentDate = null;
 
+                if (learningRegis.Status == LearningRegis.Sixty)
+                {
+                    _logger.LogInformation($"Learning reg status is {learningRegis.Status}. Setting second payment as completed.");
+                    secondPaymentCompleted = true;
+                    secondPaymentStatus = "Đã thanh toán";
+                }
+
                 var payments = await _unitOfWork.PaymentsRepository
                     .GetQuery()
                     .Where(p => p.PaymentFor == PaymentFor.LearningRegistration &&
-                               p.PaymentId == learningRegisId &&
                                p.Status == PaymentStatus.Completed)
                     .ToListAsync();
 
@@ -1387,16 +1400,15 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     foreach (var payment in payments)
                     {
-                        if (Math.Abs(payment.AmountPaid - secondPaymentAmount) < 0.1m && !secondPaymentCompleted)
-                        {
-                            var transaction = await _unitOfWork.WalletTransactionRepository
-                                .GetTransactionWithWalletAsync(payment.TransactionId);
+                        var transaction = await _unitOfWork.WalletTransactionRepository
+                            .GetTransactionWithWalletAsync(payment.TransactionId);
 
-                            if (transaction != null)
+                        if (transaction != null && transaction.Wallet.LearnerId == learningRegis.LearnerId)
+                        {
+                            if (Math.Abs(payment.AmountPaid - secondPaymentAmount) < 0.1m && secondPaymentDate == null)
                             {
-                                secondPaymentCompleted = true;
-                                secondPaymentStatus = "Đã thanh toán";
                                 secondPaymentDate = transaction.TransactionDate;
+                                _logger.LogInformation($"Found payment date: {secondPaymentDate} for 60% payment of registration {learningRegisId}");
                             }
                         }
                     }
@@ -1405,8 +1417,9 @@ namespace InstruLearn_Application.BLL.Service
                 int? secondPaymentRemainingDays = null;
                 DateTime? secondPaymentDeadline = null;
 
-                if ((learningRegis.Status == LearningRegis.FourtyFeedbackDone || learningRegis.Status == LearningRegis.Fourty) &&
-            learningRegis.PaymentDeadline.HasValue)
+                if ((learningRegis.Status == LearningRegis.FourtyFeedbackDone ||
+                     learningRegis.Status == LearningRegis.Fourty) &&
+                    learningRegis.PaymentDeadline.HasValue)
                 {
                     secondPaymentDeadline = learningRegis.PaymentDeadline;
 
