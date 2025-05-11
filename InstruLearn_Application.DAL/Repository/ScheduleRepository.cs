@@ -111,13 +111,14 @@ namespace InstruLearn_Application.DAL.Repository
                 .Include(s => s.ScheduleDays)
                 .ToListAsync();
         }
-
-        public async Task<List<int>> GetFreeTeacherIdsAsync(int majorId, TimeOnly timeStart, int timeLearning, DateOnly startDay)
+        // correct
+        /*public async Task<List<int>> GetFreeTeacherIdsAsync(int majorId, TimeOnly timeStart, int timeLearning, DateOnly startDay)
         {
             TimeOnly timeEnd = timeStart.AddMinutes(timeLearning);
 
             // Get day of week if needed for recurring schedules
             DayOfWeek dayOfWeek = startDay.DayOfWeek;
+            //var busyTeacherIds = new HashSet<int>();
 
             var busyTeacherIds = await _appDbContext.Schedules
                 .Where(s => s.TeacherId.HasValue &&
@@ -138,6 +139,55 @@ namespace InstruLearn_Application.DAL.Repository
                              tm.Status == TeacherMajorStatus.Free)  // Assuming 1 is Active
                 .Select(tm => tm.TeacherId)
                 .ToListAsync();
+
+            // Exclude busy teachers from the active teachers
+            var freeTeacherIds = activeTeacherIdsForMajor
+                .Where(teacherId => !busyTeacherIds.Contains(teacherId))
+                .ToList();
+
+            return freeTeacherIds;
+        }*/
+        
+        public async Task<List<int>> GetFreeTeacherIdsAsync(int majorId, TimeOnly timeStart, int timeLearning, DateOnly[] startDay)
+        {
+            TimeOnly timeEnd = timeStart.AddMinutes(timeLearning);
+
+            // First, get all teachers who have an active relationship with the specified major
+            var activeTeacherIdsForMajor = await _appDbContext.TeacherMajors
+                .Where(tm => tm.MajorId == majorId &&
+                             tm.Status == TeacherMajorStatus.Free)
+                .Select(tm => tm.TeacherId)
+                .ToListAsync();
+
+            if (!activeTeacherIdsForMajor.Any())
+            {
+                return new List<int>(); // No teachers available for this major
+            }
+
+            // Then find all teachers who are busy during any of the specified days and times
+            var busyTeacherIds = new HashSet<int>();
+
+            foreach (var day in startDay)
+            {
+                var busyOnThisDay = await _appDbContext.Schedules
+                    .Where(s => s.TeacherId.HasValue &&
+                                s.StartDay == day &&
+                                (
+                                    (s.TimeStart <= timeStart && s.TimeEnd > timeStart) ||  // Overlapping start
+                                    (s.TimeStart < timeEnd && s.TimeEnd >= timeEnd) ||      // Overlapping end
+                                    (s.TimeStart >= timeStart && s.TimeEnd <= timeEnd) ||   // Fully inside
+                                    (timeStart <= s.TimeStart && timeEnd >= s.TimeEnd)      // Completely contains
+                                ))
+                    .Select(s => s.TeacherId.Value)
+                    .Distinct()
+                    .ToListAsync();
+
+                // Add all busy teacher IDs from this day to our set
+                foreach (var teacherId in busyOnThisDay)
+                {
+                    busyTeacherIds.Add(teacherId);
+                }
+            }
 
             // Exclude busy teachers from the active teachers
             var freeTeacherIds = activeTeacherIdsForMajor
