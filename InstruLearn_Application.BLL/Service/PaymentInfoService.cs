@@ -70,7 +70,6 @@ namespace InstruLearn_Application.BLL.Service
                     secondPaymentStatus = "Đã thanh toán";
                 }
 
-                // Try to find payment transactions to get dates
                 var payments = await _unitOfWork.PaymentsRepository
                     .GetQuery()
                     .Where(p => p.PaymentFor == PaymentFor.LearningRegistration &&
@@ -116,7 +115,9 @@ namespace InstruLearn_Application.BLL.Service
                 DateTime? secondPaymentDeadline = null;
 
                 bool isInFirstPaymentPhase = !firstPaymentCompleted;
-                bool isInSecondPaymentPhase = firstPaymentCompleted && !secondPaymentCompleted;
+                bool isInSecondPaymentPhase =
+                    (learningRegis.Status == LearningRegis.FourtyFeedbackDone) &&
+                    !secondPaymentCompleted;
 
                 if (learningRegis.PaymentDeadline.HasValue)
                 {

@@ -1393,7 +1393,7 @@ namespace InstruLearn_Application.BLL.Service
                 var payments = await _unitOfWork.PaymentsRepository
                     .GetQuery()
                     .Where(p => p.PaymentFor == PaymentFor.LearningRegistration &&
-                               p.Status == PaymentStatus.Completed)
+                              p.Status == PaymentStatus.Completed)
                     .ToListAsync();
 
                 if (payments != null && payments.Any())
@@ -1417,9 +1417,11 @@ namespace InstruLearn_Application.BLL.Service
                 int? secondPaymentRemainingDays = null;
                 DateTime? secondPaymentDeadline = null;
 
-                if ((learningRegis.Status == LearningRegis.FourtyFeedbackDone ||
-                     learningRegis.Status == LearningRegis.Fourty) &&
-                    learningRegis.PaymentDeadline.HasValue)
+                bool isInSecondPaymentPhase =
+                    (learningRegis.Status == LearningRegis.FourtyFeedbackDone) &&
+                    !secondPaymentCompleted;
+
+                if (isInSecondPaymentPhase && learningRegis.PaymentDeadline.HasValue)
                 {
                     secondPaymentDeadline = learningRegis.PaymentDeadline;
 
