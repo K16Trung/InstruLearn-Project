@@ -92,10 +92,59 @@ namespace InstruLearn_Application.Controllers
         }
 
         [HttpGet("available-teachers")]
-        public async Task<IActionResult> GetAvailableTeachers([FromQuery] int majorId, [FromQuery] TimeOnly timeStart, [FromQuery] int timeLearning, [FromQuery] DateOnly startDay)
+        public async Task<IActionResult> GetAvailableTeachers([FromQuery] int majorId, [FromQuery] TimeOnly timeStart, [FromQuery] int timeLearning, [FromQuery] string startDay)
         {
-            var result = await _scheduleService.GetAvailableTeachersAsync(majorId, timeStart, timeLearning, startDay);
-            return Ok(result);
+            if (startDay == null || !startDay.Any())
+            {
+                return BadRequest(new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "At least one day must be specified for checking teacher availability."
+                });
+            }
+
+            try
+            {
+                // Parse comma-separated date strings into DateOnly array
+                string[] dateStrings = startDay.Split(',').Select(d => d.Trim()).ToArray();
+                var startDays = new List<DateOnly>();
+
+                foreach (var dateString in dateStrings)
+                {
+                    if (DateOnly.TryParse(dateString, out DateOnly date))
+                    {
+                        startDays.Add(date);
+                    }
+                    else
+                    {
+                        return BadRequest(new ResponseDTO
+                        {
+                            IsSucceed = false,
+                            Message = $"Invalid date format: '{dateString}'. Expected format: yyyy-MM-dd"
+                        });
+                    }
+                }
+
+                if (!startDays.Any())
+                {
+                    return BadRequest(new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "No valid dates provided. Expected format: yyyy-MM-dd"
+                    });
+                }
+
+                var result = await _scheduleService.GetAvailableTeachersAsync(majorId, timeStart, timeLearning, startDays.ToArray());
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Error processing date input: {ex.Message}"
+                });
+            }
         }
 
         [HttpGet("class-attendance/{classId}")]

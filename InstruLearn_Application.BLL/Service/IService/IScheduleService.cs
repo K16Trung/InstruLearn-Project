@@ -19,7 +19,7 @@ namespace InstruLearn_Application.BLL.Service.IService
         Task<ResponseDTO> GetSchedulesByTeacherIdAsync(int teacherId);
         Task<ResponseDTO> GetClassSchedulesByTeacherIdAsync(int teacherId);
         Task<ResponseDTO> GetClassSchedulesByTeacherIdAsyncc(int teacherId);
-        Task<List<ValidTeacherDTO>> GetAvailableTeachersAsync(int majorId, TimeOnly timeStart, int timeLearning, DateOnly startDay);
+        Task<List<ValidTeacherDTO>> GetAvailableTeachersAsync(int majorId, TimeOnly timeStart, int timeLearning, DateOnly[] startDay);
         Task<ResponseDTO> GetClassSchedulesByLearnerIdAsync(int learnerId);
         Task<ResponseDTO> GetClassAttendanceAsync(int classId);
         Task<ResponseDTO> GetOneOnOneAttendanceAsync(int learnerId);
