@@ -112,7 +112,6 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<ILearningRegisTypeRepository, LearningRegisTypeRepository>();
             builder.Services.AddScoped<ILearningRegisDayRepository, LearningRegisDayRepository>();
             builder.Services.AddScoped<ISyllabusRepository, SyllabusRepository>();
-            builder.Services.AddScoped<ITestResultRepository, TestResultRepository>();
             builder.Services.AddScoped<IPurchaseRepository, PurchaseRepository>();
             builder.Services.AddScoped<IPurchaseItemRepository, PurchaseItemRepository>();
             builder.Services.AddScoped<ICertificationRepository, CertificationRepository>();
@@ -156,7 +155,6 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<ILearningRegisService, LearningRegisService>();
             builder.Services.AddScoped<ILearningRegisTypeService, LearningRegisTypeService>();
             builder.Services.AddScoped<ISyllabusService, SyllabusService>();
-            builder.Services.AddScoped<ITestResultService, TestResultService>();
             builder.Services.AddScoped<IPurchaseService, PurchaseService>();
             builder.Services.AddScoped<IPurchaseItemService, PurchaseItemService>();
             builder.Services.AddScoped<ICertificationService, CertificationService>();

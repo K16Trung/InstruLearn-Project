@@ -266,20 +266,6 @@ namespace InstruLearn_Application.BLL.Service
                         await _unitOfWork.SaveChangeAsync();
                     }
 
-                    var testResult = new Test_Result
-                    {
-                        LearnerId = createLearningRegisDTO.LearnerId,
-                        TeacherId = createLearningRegisDTO.TeacherId ?? 0,
-                        MajorId = createLearningRegisDTO.MajorId,
-                        LearningRegisId = learningRegis.LearningRegisId,
-                        ResultType = TestResultType.OneOnOne,
-                        Status = TestResultStatus.Pending,
-                        LearningRegistration = learningRegis
-                    };
-
-                    testResult.LearningRegistration.VideoUrl = createLearningRegisDTO.VideoUrl;
-
-                    await _unitOfWork.TestResultRepository.AddAsync(testResult);
                     await _unitOfWork.SaveChangeAsync();
 
                     var walletTransaction = new WalletTransaction
@@ -777,19 +763,6 @@ namespace InstruLearn_Application.BLL.Service
                     await _unitOfWork.dbContext.Learner_Classes.AddAsync(learnerClass);
                     await _unitOfWork.SaveChangeAsync();
 
-                    // 11. Create a test result record for the learner in this class
-                    var testResult = new Test_Result
-                    {
-                        LearnerId = paymentDTO.LearnerId,
-                        TeacherId = classEntity.TeacherId,
-                        MajorId = classEntity.MajorId,
-                        LearningRegisId = learningRegis.LearningRegisId,
-                        ResultType = TestResultType.Center,
-                        Status = TestResultStatus.Pending
-                    };
-
-                    await _unitOfWork.TestResultRepository.AddAsync(testResult);
-                    await _unitOfWork.SaveChangeAsync();
 
                     // NEW CODE: Create a notification to generate the certificate on the class start date
                     // Current date to check if class has already started
@@ -1126,13 +1099,6 @@ namespace InstruLearn_Application.BLL.Service
                     await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
                     await _unitOfWork.SaveChangeAsync();
 
-                    var testResult = await _unitOfWork.TestResultRepository.GetByLearningRegisIdAsync(learningRegisId);
-                    if (testResult != null)
-                    {
-                        testResult.Status = TestResultStatus.Cancelled;
-                        await _unitOfWork.TestResultRepository.UpdateAsync(testResult);
-                        await _unitOfWork.SaveChangeAsync();
-                    }
 
                     await _unitOfWork.CommitTransactionAsync();
 

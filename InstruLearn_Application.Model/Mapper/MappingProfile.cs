@@ -45,7 +45,6 @@ using InstruLearn_Application.Model.Models.DTO.Syllabus;
 using InstruLearn_Application.Model.Models.DTO.SyllbusContent;
 using InstruLearn_Application.Model.Models.DTO.Teacher;
 using InstruLearn_Application.Model.Models.DTO.TeacherMajor;
-using InstruLearn_Application.Model.Models.DTO.Test_Result;
 using InstruLearn_Application.Model.Models.DTO.Wallet;
 using InstruLearn_Application.Model.Models.DTO.WalletTransaction;
 using System;
@@ -486,9 +485,6 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<CreateCertificationDTO, Certification>().ReverseMap();
             CreateMap<UpdateCertificationDTO, Certification>().ReverseMap();
 
-            //🔹Test_result mapping
-            CreateMap<Test_Result, TestResultDTO>().ReverseMap();
-            CreateMap<CreateTestResultDTO, Test_Result>().ReverseMap();
 
             // 🔹Schedules mapping
 
