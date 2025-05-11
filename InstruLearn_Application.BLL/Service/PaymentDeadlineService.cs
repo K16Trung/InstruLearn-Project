@@ -102,15 +102,6 @@ namespace InstruLearn_Application.BLL.Service
 
                         await unitOfWork.LearningRegisRepository.UpdateAsync(registration);
 
-                        // Update associated test result if exists
-                        var testResult = await unitOfWork.TestResultRepository
-                            .GetByLearningRegisIdAsync(registration.LearningRegisId);
-
-                        if (testResult != null)
-                        {
-                            testResult.Status = TestResultStatus.Cancelled;
-                            await unitOfWork.TestResultRepository.UpdateAsync(testResult);
-                        }
 
                         await unitOfWork.SaveChangeAsync();
 

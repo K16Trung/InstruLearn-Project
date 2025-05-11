@@ -37,7 +37,6 @@ namespace InstruLearn_Application.DAL.UoW.IUoW
         ILearningRegisTypeRepository LearningRegisTypeRepository { get; }
         ILearningRegisDayRepository LearningRegisDayRepository { get; }
         ISyllabusRepository SyllabusRepository { get; }
-        ITestResultRepository TestResultRepository { get; }
         IPurchaseRepository PurchaseRepository { get; }
         IPurchaseItemRepository PurchaseItemRepository { get; }
         ICertificationRepository CertificationRepository { get; }

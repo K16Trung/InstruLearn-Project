@@ -148,15 +148,6 @@ namespace InstruLearn_Application.BLL.Service
 
                                     await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
 
-                                    var testResult = await _unitOfWork.TestResultRepository
-                                        .GetByLearningRegisIdAsync(learningRegis.LearningRegisId);
-
-                                    if (testResult != null)
-                                    {
-                                        testResult.Status = TestResultStatus.Cancelled;
-                                        await _unitOfWork.TestResultRepository.UpdateAsync(testResult);
-                                    }
-
                                     await _unitOfWork.SaveChangeAsync();
                                     await transaction.CommitAsync();
                                 }
