@@ -9,7 +9,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using InstruLearn_Application.Model.Models.DTO.MajorTest;
-using InstruLearn_Application.Model.Models.DTO.Test_Result;
 using InstruLearn_Application.Model.Models;
 using InstruLearn_Application.Model.Models.DTO.Feedback;
 

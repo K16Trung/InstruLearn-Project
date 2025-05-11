@@ -47,7 +47,6 @@ namespace InstruLearn_Application.Model.Models
         public bool HasPendingLearningPath { get; set; } = false;
 
         // Navigation properties
-        public ICollection<Test_Result> Test_Results { get; set; }
         public ICollection<LearningRegistrationDay> LearningRegistrationDay { get; set; }
         public ICollection<Schedules> Schedules { get; set; }
         public ICollection<LearningPathSession> LearningPathSessions { get; set; }

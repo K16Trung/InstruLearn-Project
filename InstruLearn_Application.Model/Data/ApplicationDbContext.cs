@@ -40,7 +40,7 @@ namespace InstruLearn_Application.Model.Data
         public DbSet<LearningRegistrationDay> LearningRegistrationDays { get; set; }
         public DbSet<Syllabus> Syllabus { get; set; }
         public DbSet<Purchase_Items> Purchase_Items { get; set; }
-        public DbSet<Test_Result> Test_Results { get; set; }
+        //public DbSet<Test_Result> Test_Results { get; set; }
         public DbSet<Schedules> Schedules { get; set; }
         public DbSet<ScheduleDays> ScheduleDays { get; set; }
         public DbSet<Certification> Certifications { get; set; }
@@ -339,32 +339,6 @@ namespace InstruLearn_Application.Model.Data
                 .HasOne(r => r.Learning_Registration)
                 .WithMany(l => l.LearningRegistrationDay)
                 .HasForeignKey(l => l.LearningRegisId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            //
-
-            modelBuilder.Entity<Test_Result>()
-                .HasOne(tr => tr.Major)
-                .WithMany(mt => mt.TestResults)
-                .HasForeignKey(tr => tr.MajorId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<Test_Result>()
-                .HasOne(tr => tr.Learner)
-                .WithMany(l => l.Test_Results)
-                .HasForeignKey(tr => tr.LearnerId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<Test_Result>()
-                .HasOne(tr => tr.Teacher)
-                .WithMany(t => t.TestResults)
-                .HasForeignKey(tr => tr.TeacherId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<Test_Result>()
-                .HasOne(tr => tr.LearningRegistration)
-                .WithMany(lr => lr.Test_Results)
-                .HasForeignKey(tr => tr.LearningRegisId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // Configure Schedules Entity

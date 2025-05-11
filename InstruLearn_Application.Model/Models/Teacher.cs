@@ -20,7 +20,6 @@ namespace InstruLearn_Application.Model.Models
 
         //Navigation property
         public ICollection<TeacherMajor> TeacherMajors { get; set; }
-        public ICollection<Test_Result> TestResults { get; set; }
         public ICollection<Class> Classes { get; set; }
         public ICollection<Learning_Registration> Learning_Registrations { get; set; }
         public ICollection<Schedules> Schedules { get; set; }
