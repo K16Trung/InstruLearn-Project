@@ -16,8 +16,9 @@ namespace InstruLearn_Application.Model.Models
         public int LearnerId { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? CompletedAt { get; set; }
-        public string AdditionalComments { get; set; }
+        public string? AdditionalComments { get; set; }
         public FeedbackStatus Status { get; set; }
+        public string? TeacherChangeReason { get; set; }
 
         // Navigation properties
         public Learning_Registration LearningRegistration { get; set; }
