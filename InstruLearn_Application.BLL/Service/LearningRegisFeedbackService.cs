@@ -314,6 +314,7 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     // Update existing feedback
                     existingFeedback.AdditionalComments = createDTO.AdditionalComments;
+                    existingFeedback.TeacherChangeReason = createDTO.TeacherChangeReason;
                     existingFeedback.CompletedAt = DateTime.Now;
                     existingFeedback.Status = FeedbackStatus.Completed;
 
@@ -384,6 +385,7 @@ namespace InstruLearn_Application.BLL.Service
                         LearningRegistrationId = createDTO.LearningRegistrationId,
                         LearnerId = createDTO.LearnerId,
                         AdditionalComments = createDTO.AdditionalComments,
+                        TeacherChangeReason = createDTO.TeacherChangeReason,
                         CreatedAt = DateTime.Now,
                         CompletedAt = DateTime.Now,
                         Status = FeedbackStatus.Completed,
@@ -459,7 +461,7 @@ namespace InstruLearn_Application.BLL.Service
                     var teacherChangeNotification = new StaffNotification
                     {
                         Title = "Yêu cầu thay đổi giáo viên",
-                        Message = $"Học viên {learner.FullName} (ID: {learner.LearnerId}) muốn tiếp tục học nhưng thay đổi giáo viên cho đăng ký học ID: {learningRegis.LearningRegisId}",
+                        Message = $"Học viên {learner.FullName} (ID: {learner.LearnerId}) muốn tiếp tục học nhưng thay đổi giáo viên cho đăng ký học ID: {learningRegis.LearningRegisId}.Lý do: {createDTO.TeacherChangeReason ?? "Không có lý do cụ thể"}",
                         LearningRegisId = learningRegis.LearningRegisId,
                         LearnerId = learner.LearnerId,
                         CreatedAt = DateTime.Now,
