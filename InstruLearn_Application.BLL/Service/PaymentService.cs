@@ -91,6 +91,7 @@ namespace InstruLearn_Application.BLL.Service
                 // Update Learning Registration Status
                 learningRegis.Status = LearningRegis.Fourty;
                 learningRegis.RemainingAmount = remainingAmount;
+                learningRegis.HasPendingLearningPath = true;
                 await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
 
                 // ✅ Create schedules for learner and teacher
