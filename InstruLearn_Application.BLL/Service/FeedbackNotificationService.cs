@@ -63,6 +63,12 @@ namespace InstruLearn_Application.BLL.Service
                     var existingFeedback = allFeedbacks
                         .FirstOrDefault(f => f.LearningRegistrationId == regis.LearningRegisId);
 
+                    // Add this check before creating feedback notifications
+                    if (regis.HasPendingLearningPath)
+                    {
+                        continue; // Skip if learning path is still pending
+                    }
+
                     // If no feedback exists, create one for the learner
                     if (existingFeedback == null)
                     {
@@ -295,7 +301,7 @@ namespace InstruLearn_Application.BLL.Service
                             ?.Count(s => s.AttendanceStatus == AttendanceStatus.Present ||
                                       s.AttendanceStatus == AttendanceStatus.Absent) ?? 0;
 
-                        if (completedSessions >= fortyPercentThreshold && !regis.HasPendingLearningPath)
+                        if (completedSessions < fortyPercentThreshold || regis.HasPendingLearningPath)
                         {
                             continue;
                         }
@@ -435,6 +441,11 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     try
                     {
+                        if (regis.HasPendingLearningPath)
+                        {
+                            _logger.LogInformation($"Skipping registration {regis.LearningRegisId} because it has a pending learning path");
+                            continue;
+                        }
                         // Get completed sessions count (sessions marked as Present or Absent)
                         var completedSessions = regis.Schedules
                             .Count(s => s.AttendanceStatus == AttendanceStatus.Present ||
