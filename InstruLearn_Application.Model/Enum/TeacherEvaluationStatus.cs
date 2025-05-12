@@ -6,13 +6,10 @@ using System.Threading.Tasks;
 
 namespace InstruLearn_Application.Model.Enum
 {
-    public enum NotificationType
+    public enum TeacherEvaluationStatus
     {
-        TeacherChangeRequest,
-        CreateLearningPath,
-        SchedulesCreated,
-        SelfAssessment,
-        Evaluation,
-        Certificate
+        NotStarted = 0,
+        InProgress = 1,
+        Completed = 2
     }
 }
