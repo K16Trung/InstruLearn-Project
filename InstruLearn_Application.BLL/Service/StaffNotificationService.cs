@@ -5,6 +5,7 @@ using InstruLearn_Application.Model.Enum;
 using InstruLearn_Application.Model.Models;
 using InstruLearn_Application.Model.Models.DTO;
 using InstruLearn_Application.Model.Models.DTO.LearningRegistration;
+using InstruLearn_Application.Model.Models.DTO.LearningRegistrationDay;
 using InstruLearn_Application.Model.Models.DTO.StaffNotification;
 using Microsoft.Extensions.Logging;
 using System;
@@ -108,7 +109,6 @@ namespace InstruLearn_Application.BLL.Service
             {
                 _logger.LogInformation("Retrieving learning registrations with teacher change requests");
 
-                // Get notifications with included relationships
                 var notifications = await _unitOfWork.StaffNotificationRepository
                     .GetContinueWithTeacherChangeRequestsAsync();
 
@@ -122,7 +122,6 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Build a list of learning registration IDs
                 var learningRegisIds = notifications
                     .Where(n => n.LearningRegisId.HasValue)
                     .Select(n => n.LearningRegisId.Value)
@@ -139,32 +138,181 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Get all learning registrations with their related entities
                 var learningRegistrations = new List<Learning_Registration>();
 
                 foreach (var id in learningRegisIds)
                 {
-                    // Include necessary related entities including nested navigation properties
                     var registration = await _unitOfWork.LearningRegisRepository.GetWithIncludesAsync(
                         lr => lr.LearningRegisId == id && lr.Status == LearningRegis.FourtyFeedbackDone,
                         "Teacher,Learner.Account,Major,Classes,LearningRegistrationDay,Learning_Registration_Type,LevelAssigned,Response.ResponseType");
 
                     if (registration != null && registration.Any())
                     {
+                        foreach (var regis in registration)
+                        {
+                            if (regis.LearningRegistrationDay == null || !regis.LearningRegistrationDay.Any())
+                            {
+                                var days = await _unitOfWork.LearningRegisDayRepository.GetWithIncludesAsync(
+                                    d => d.LearningRegisId == regis.LearningRegisId,
+                                    "");
+
+                                // Ensure the days collection is initialized
+                                if (regis.LearningRegistrationDay == null)
+                                    regis.LearningRegistrationDay = new List<LearningRegistrationDay>();
+
+                                if (days != null && days.Any())
+                                {
+                                    foreach (var day in days)
+                                    {
+                                        if (!regis.LearningRegistrationDay.Any(d => d.LearnRegisDayId == day.LearnRegisDayId))
+                                        {
+                                            regis.LearningRegistrationDay.Add(day);
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Get all schedules for this registration WITHOUT filtering by date
+                            var schedules = await _unitOfWork.ScheduleRepository
+                                .GetSchedulesByLearningRegisIdAsync(regis.LearningRegisId);
+
+                            // Assign ALL schedules to the registration
+                            regis.Schedules = schedules ?? new List<Schedules>();
+                        }
+
                         learningRegistrations.AddRange(registration);
                     }
                 }
 
                 var registrationDTOs = _mapper.Map<List<OneOnOneRegisDTO>>(learningRegistrations);
 
-                // Manually set response type information if needed
                 foreach (var dto in registrationDTOs)
                 {
                     var registration = learningRegistrations.FirstOrDefault(lr => lr.LearningRegisId == dto.LearningRegisId);
+
                     if (registration?.Response?.ResponseType != null)
                     {
                         dto.ResponseTypeId = registration.Response.ResponseType.ResponseTypeId;
                         dto.ResponseTypeName = registration.Response.ResponseType.ResponseTypeName;
+                    }
+
+                    if (dto.LearningDays == null)
+                        dto.LearningDays = new List<string>();
+
+                    dto.LearningDays.Clear();
+
+                    // Extract learning days and convert to DayOfWeek values
+                    var availableDayValues = new List<DayOfWeek>();
+
+                    if (registration?.LearningRegistrationDay != null && registration.LearningRegistrationDay.Any())
+                    {
+                        foreach (var day in registration.LearningRegistrationDay)
+                        {
+                            string dayString = day.DayOfWeek.ToString();
+                            dto.LearningDays.Add(dayString);
+
+                            // Convert the enum value to a DayOfWeek
+                            if (Enum.TryParse<DayOfWeek>(dayString, true, out var dayOfWeek))
+                            {
+                                availableDayValues.Add(dayOfWeek);
+                            }
+                        }
+                    }
+
+                    dto.StartDay = registration?.StartDay;
+                    dto.TimeStart = registration?.TimeStart ?? default;
+                    dto.TimeLearning = registration?.TimeLearning ?? 0;
+                    dto.NumberOfSession = registration?.NumberOfSession ?? 0;
+
+                    if (registration != null)
+                    {
+                        dto.TimeEnd = registration.TimeStart.AddMinutes(registration.TimeLearning);
+                    }
+
+                    // Use ALL schedules from the database, but only include the remaining 60% of sessions (since it's FourtyFeedbackDone status)
+                    if (registration?.Schedules != null && registration.Schedules.Any())
+                    {
+                        _logger.LogInformation($"Processing schedules for registration ID: {registration.LearningRegisId}. Found {registration.Schedules.Count} total schedule(s)");
+
+                        // Calculate how many sessions should be included (60% of total since we're in FourtyFeedbackDone status)
+                        int totalSessions = registration.NumberOfSession;
+                        int remainingSessions = (int)Math.Ceiling(totalSessions * 0.6);
+
+                        _logger.LogInformation($"For registration {registration.LearningRegisId}: Total sessions: {totalSessions}, Remaining sessions (60%): {remainingSessions}");
+
+                        // Order by date and time
+                        var orderedSchedules = registration.Schedules
+                            .OrderBy(s => s.StartDay)
+                            .ThenBy(s => s.TimeStart)
+                            .ToList();
+
+                        // Skip 40% and take 60% of sessions
+                        // If we have 10 sessions total, we skip 4 (40%) and take 6 (60%)
+                        int sessionsToSkip = totalSessions - remainingSessions;
+
+                        // Make sure we don't skip more than we have
+                        if (sessionsToSkip < 0)
+                            sessionsToSkip = 0;
+
+                        // Take only the remaining 60% of sessions
+                        dto.SessionDates = orderedSchedules
+                            .Skip(Math.Min(sessionsToSkip, orderedSchedules.Count))
+                            .Take(remainingSessions)
+                            .Select(s => $"{s.StartDay:yyyy-MM-dd} {s.TimeStart:HH:mm}")
+                            .ToList();
+
+                        _logger.LogInformation($"Remaining 60% session dates for registration {registration.LearningRegisId}: {string.Join(", ", dto.SessionDates)}");
+                    }
+                    else if (registration?.StartDay.HasValue == true &&
+                             availableDayValues.Count > 0 &&
+                             registration.NumberOfSession > 0)
+                    {
+                        _logger.LogWarning($"No schedules found for registration ID: {registration.LearningRegisId}. Using fallback date calculation.");
+
+                        // Calculate remaining sessions (60% of total for FourtyFeedbackDone status)
+                        int remainingSessions = (int)Math.Ceiling(registration.NumberOfSession * 0.6);
+
+                        // Start from today
+                        DateOnly currentDate = DateOnly.FromDateTime(DateTime.Today);
+
+                        var sessionDates = new List<string>();
+                        int sessionsFound = 0;
+                        int maxAttempts = 100; // Safety limit
+                        int attempts = 0;
+
+                        // Find the first valid day starting from today
+                        if (!availableDayValues.Contains(currentDate.DayOfWeek))
+                        {
+                            while (!availableDayValues.Contains(currentDate.DayOfWeek) && attempts < maxAttempts)
+                            {
+                                currentDate = currentDate.AddDays(1);
+                                attempts++;
+                            }
+                        }
+
+                        attempts = 0;
+                        // Generate dates for each remaining session
+                        while (sessionsFound < remainingSessions && attempts < maxAttempts)
+                        {
+                            if (availableDayValues.Contains(currentDate.DayOfWeek))
+                            {
+                                // Format the date and add to the list
+                                sessionDates.Add($"{currentDate:yyyy-MM-dd} {registration.TimeStart:HH:mm}");
+                                sessionsFound++;
+                            }
+
+                            if (sessionsFound < remainingSessions)
+                                currentDate = currentDate.AddDays(1);
+
+                            attempts++;
+                        }
+
+                        dto.SessionDates = sessionDates;
+                    }
+                    else
+                    {
+                        _logger.LogWarning($"Unable to calculate session dates for registration ID: {registration?.LearningRegisId}");
+                        dto.SessionDates = new List<string>();
                     }
                 }
 
@@ -186,6 +334,215 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
+        public async Task<ResponseDTO> GetTeacherChangeRequestLearningRegistrationByIdAsync(int learningRegisId)
+        {
+            try
+            {
+                _logger.LogInformation($"Retrieving teacher change request learning registration with ID: {learningRegisId}");
+
+                // First, check if there is a notification with this learning registration ID
+                var notifications = await _unitOfWork.StaffNotificationRepository
+                    .GetContinueWithTeacherChangeRequestsAsync();
+
+                var matchingNotification = notifications?
+                    .FirstOrDefault(n => n.LearningRegisId == learningRegisId);
+
+                if (matchingNotification == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = $"No teacher change request found for learning registration ID: {learningRegisId}",
+                        Data = null
+                    };
+                }
+
+                // Get the learning registration with the specific ID
+                var registration = await _unitOfWork.LearningRegisRepository.GetWithIncludesAsync(
+                    lr => lr.LearningRegisId == learningRegisId && lr.Status == LearningRegis.FourtyFeedbackDone,
+                    "Teacher,Learner.Account,Major,Classes,LearningRegistrationDay,Learning_Registration_Type,LevelAssigned,Response.ResponseType");
+
+                if (registration == null || !registration.Any())
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = $"Learning registration with ID {learningRegisId} not found or not in FourtyFeedbackDone status.",
+                        Data = null
+                    };
+                }
+
+                var regis = registration.First();
+
+                // Load learning registration days if they're not already loaded
+                if (regis.LearningRegistrationDay == null || !regis.LearningRegistrationDay.Any())
+                {
+                    var days = await _unitOfWork.LearningRegisDayRepository.GetWithIncludesAsync(
+                        d => d.LearningRegisId == regis.LearningRegisId,
+                        "");
+
+                    // Ensure the days collection is initialized
+                    if (regis.LearningRegistrationDay == null)
+                        regis.LearningRegistrationDay = new List<LearningRegistrationDay>();
+
+                    if (days != null && days.Any())
+                    {
+                        foreach (var day in days)
+                        {
+                            if (!regis.LearningRegistrationDay.Any(d => d.LearnRegisDayId == day.LearnRegisDayId))
+                            {
+                                regis.LearningRegistrationDay.Add(day);
+                            }
+                        }
+                    }
+                }
+
+                // Get all schedules for this registration (without filtering by date)
+                var schedules = await _unitOfWork.ScheduleRepository
+                    .GetSchedulesByLearningRegisIdAsync(regis.LearningRegisId);
+
+                // Assign schedules to the registration
+                regis.Schedules = schedules ?? new List<Schedules>();
+
+                // Map to DTO
+                var dto = _mapper.Map<OneOnOneRegisDTO>(regis);
+
+                // Set response type information
+                if (regis.Response?.ResponseType != null)
+                {
+                    dto.ResponseTypeId = regis.Response.ResponseType.ResponseTypeId;
+                    dto.ResponseTypeName = regis.Response.ResponseType.ResponseTypeName;
+                }
+
+                // Set learning days
+                if (dto.LearningDays == null)
+                    dto.LearningDays = new List<string>();
+                else
+                    dto.LearningDays.Clear();
+
+                var availableDayValues = new List<DayOfWeek>();
+
+                if (regis.LearningRegistrationDay != null && regis.LearningRegistrationDay.Any())
+                {
+                    foreach (var day in regis.LearningRegistrationDay)
+                    {
+                        string dayString = day.DayOfWeek.ToString();
+                        dto.LearningDays.Add(dayString);
+
+                        // Convert the enum value to a DayOfWeek
+                        if (Enum.TryParse<DayOfWeek>(dayString, true, out var dayOfWeek))
+                        {
+                            availableDayValues.Add(dayOfWeek);
+                        }
+                    }
+                }
+
+                // Set basic properties
+                dto.StartDay = regis.StartDay;
+                dto.TimeStart = regis.TimeStart;
+                dto.TimeLearning = regis.TimeLearning;
+                dto.NumberOfSession = regis.NumberOfSession;
+                dto.TimeEnd = regis.TimeStart.AddMinutes(regis.TimeLearning);
+
+                // Handle session dates using the same logic as in GetTeacherChangeRequestLearningRegistrationsAsync
+                if (regis.Schedules != null && regis.Schedules.Any())
+                {
+                    _logger.LogInformation($"Processing schedules for registration ID: {regis.LearningRegisId}. Found {regis.Schedules.Count} total schedule(s)");
+
+                    // Calculate how many sessions should be included (60% of total since we're in FourtyFeedbackDone status)
+                    int totalSessions = regis.NumberOfSession;
+                    int remainingSessions = (int)Math.Ceiling(totalSessions * 0.6);
+
+                    _logger.LogInformation($"For registration {regis.LearningRegisId}: Total sessions: {totalSessions}, Remaining sessions (60%): {remainingSessions}");
+
+                    // Order by date and time
+                    var orderedSchedules = regis.Schedules
+                        .OrderBy(s => s.StartDay)
+                        .ThenBy(s => s.TimeStart)
+                        .ToList();
+
+                    // Skip 40% and take 60% of sessions
+                    int sessionsToSkip = totalSessions - remainingSessions;
+
+                    // Make sure we don't skip more than we have
+                    if (sessionsToSkip < 0)
+                        sessionsToSkip = 0;
+
+                    // Take only the remaining 60% of sessions
+                    dto.SessionDates = orderedSchedules
+                        .Skip(Math.Min(sessionsToSkip, orderedSchedules.Count))
+                        .Take(remainingSessions)
+                        .Select(s => $"{s.StartDay:yyyy-MM-dd} {s.TimeStart:HH:mm}")
+                        .ToList();
+
+                    _logger.LogInformation($"Remaining 60% session dates for registration {regis.LearningRegisId}: {string.Join(", ", dto.SessionDates)}");
+                }
+                else if (regis.StartDay.HasValue && availableDayValues.Count > 0 && regis.NumberOfSession > 0)
+                {
+                    _logger.LogWarning($"No schedules found for registration ID: {regis.LearningRegisId}. Using fallback date calculation.");
+
+                    // Calculate remaining sessions (60% of total for FourtyFeedbackDone status)
+                    int remainingSessions = (int)Math.Ceiling(regis.NumberOfSession * 0.6);
+
+                    // Start from today
+                    DateOnly currentDate = DateOnly.FromDateTime(DateTime.Today);
+
+                    var sessionDates = new List<string>();
+                    int sessionsFound = 0;
+                    int maxAttempts = 100; // Safety limit
+                    int attempts = 0;
+
+                    // Find the first valid day starting from today
+                    if (!availableDayValues.Contains(currentDate.DayOfWeek))
+                    {
+                        while (!availableDayValues.Contains(currentDate.DayOfWeek) && attempts < maxAttempts)
+                        {
+                            currentDate = currentDate.AddDays(1);
+                            attempts++;
+                        }
+                    }
+
+                    attempts = 0;
+                    // Generate dates for each remaining session
+                    while (sessionsFound < remainingSessions && attempts < maxAttempts)
+                    {
+                        if (availableDayValues.Contains(currentDate.DayOfWeek))
+                        {
+                            // Format the date and add to the list
+                            sessionDates.Add($"{currentDate:yyyy-MM-dd} {regis.TimeStart:HH:mm}");
+                            sessionsFound++;
+                        }
+
+                        if (sessionsFound < remainingSessions)
+                            currentDate = currentDate.AddDays(1);
+
+                        attempts++;
+                    }
+
+                    dto.SessionDates = sessionDates;
+                }
+                else
+                {
+                    _logger.LogWarning($"Unable to calculate session dates for registration ID: {regis.LearningRegisId}");
+                    dto.SessionDates = new List<string>();
+                }
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = $"Retrieved teacher change request learning registration with ID: {learningRegisId}",
+                    Data = dto
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error retrieving teacher change request learning registration with ID: {learningRegisId}");
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Error retrieving teacher change request learning registration: {ex.Message}"
+                };
+            }
+        }
 
 
         public async Task<ResponseDTO> MarkNotificationAsReadAsync(int notificationId)

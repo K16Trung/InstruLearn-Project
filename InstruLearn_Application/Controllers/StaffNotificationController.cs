@@ -1,4 +1,5 @@
 ﻿using InstruLearn_Application.BLL.Service.IService;
+using InstruLearn_Application.Model.Enum;
 using InstruLearn_Application.Model.Models.DTO;
 using InstruLearn_Application.Model.Models.DTO.StaffNotification;
 using Microsoft.AspNetCore.Http;
@@ -34,6 +35,19 @@ namespace InstruLearn_Application.Controllers
         public async Task<ActionResult<ResponseDTO>> GetTeacherChangeLearningRegistrations()
         {
             var result = await _staffNotificationService.GetTeacherChangeRequestLearningRegistrationsAsync();
+
+            if (result.IsSucceed)
+            {
+                return Ok(result);
+            }
+
+            return BadRequest(result);
+        }
+        
+        [HttpGet("GetLearningRegis-ChangeTeacher/{learningRegisId}")]
+        public async Task<ActionResult<ResponseDTO>> GetTeacherChangeLearningRegistrationsById(int learningRegisId)
+        {
+            var result = await _staffNotificationService.GetTeacherChangeRequestLearningRegistrationByIdAsync(learningRegisId);
 
             if (result.IsSucceed)
             {
