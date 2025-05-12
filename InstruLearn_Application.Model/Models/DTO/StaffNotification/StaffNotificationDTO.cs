@@ -18,5 +18,6 @@ namespace InstruLearn_Application.Model.Models.DTO.StaffNotification
         public DateTime CreatedAt { get; set; }
         public NotificationStatus Status { get; set; }
         public NotificationType Type { get; set; }
+        public string TeacherChangeReason { get; set; }
     }
 }

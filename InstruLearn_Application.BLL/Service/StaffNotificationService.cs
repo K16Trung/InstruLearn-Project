@@ -85,6 +85,20 @@ namespace InstruLearn_Application.BLL.Service
 
                 var notificationDTOs = _mapper.Map<List<StaffNotificationDTO>>(notifications);
 
+                for (int i = 0; i < notifications.Count; i++)
+                {
+                    if (notifications[i].LearningRegisId.HasValue)
+                    {
+                        var feedback = await _unitOfWork.LearningRegisFeedbackRepository
+                            .GetFeedbackByRegistrationIdAsync(notifications[i].LearningRegisId.Value);
+
+                        if (feedback != null)
+                        {
+                            notificationDTOs[i].TeacherChangeReason = feedback.TeacherChangeReason;
+                        }
+                    }
+                }
+
                 return new ResponseDTO
                 {
                     IsSucceed = true,

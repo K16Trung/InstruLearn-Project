@@ -29,8 +29,8 @@ namespace InstruLearn_Application.Controllers
             return BadRequest(result);
         }
 
-        [HttpGet("monthly/{year}")]
-        public async Task<IActionResult> GetMonthlyRevenue(int year)
+        [HttpGet("yearly")]
+        public async Task<IActionResult> GetYearlyRevenueAsync(int year)
         {
             if (year < 2000 || year > 2050)
             {
@@ -41,7 +41,7 @@ namespace InstruLearn_Application.Controllers
                 });
             }
 
-            var result = await _revenueService.GetMonthlyRevenueAsync(year);
+            var result = await _revenueService.GetMonthlybyYearRevenueAsync(year);
             if (result.IsSucceed)
             {
                 return Ok(result);
@@ -49,8 +49,8 @@ namespace InstruLearn_Application.Controllers
             return BadRequest(result);
         }
 
-        [HttpGet("weekly/{year}/{weekNumber}")]
-        public async Task<IActionResult> GetWeeklyRevenue(int year, int weekNumber)
+        [HttpGet("monthly/{year}/{month}")]
+        public async Task<IActionResult> GetMonthlyRevenueWithWeeks(int year, int month)
         {
             if (year < 2000 || year > 2050)
             {
@@ -61,16 +61,16 @@ namespace InstruLearn_Application.Controllers
                 });
             }
 
-            if (weekNumber < 1 || weekNumber > 53)
+            if (month < 1 || month > 12)
             {
                 return BadRequest(new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Số tuần phải hợp lệ (1-53)."
+                    Message = "Tháng phải hợp lệ (1-12)."
                 });
             }
 
-            var result = await _revenueService.GetWeeklyRevenueAsync(year, weekNumber);
+            var result = await _revenueService.GetMonthlyRevenueWithWeeksAsync(year, month);
             if (result.IsSucceed)
             {
                 return Ok(result);

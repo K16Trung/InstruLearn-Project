@@ -8,8 +8,8 @@ namespace InstruLearn_Application.BLL.Service.IService
     public interface IRevenueService
     {
         Task<ResponseDTO> GetTotalRevenueAsync();
-        Task<ResponseDTO> GetMonthlyRevenueAsync(int year);
-        Task<ResponseDTO> GetWeeklyRevenueAsync(int year, int weekNumber);
+        Task<ResponseDTO> GetMonthlybyYearRevenueAsync(int year);
+        Task<ResponseDTO> GetMonthlyRevenueWithWeeksAsync(int year, int month);
         Task<ResponseDTO> GetDailyRevenueAsync(DateTime date);
     }
 }
