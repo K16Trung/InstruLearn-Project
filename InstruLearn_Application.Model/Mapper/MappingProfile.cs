@@ -44,6 +44,7 @@ using InstruLearn_Application.Model.Models.DTO.StaffNotification;
 using InstruLearn_Application.Model.Models.DTO.Syllabus;
 using InstruLearn_Application.Model.Models.DTO.SyllbusContent;
 using InstruLearn_Application.Model.Models.DTO.Teacher;
+using InstruLearn_Application.Model.Models.DTO.TeacherEvaluation;
 using InstruLearn_Application.Model.Models.DTO.TeacherMajor;
 using InstruLearn_Application.Model.Models.DTO.Wallet;
 using InstruLearn_Application.Model.Models.DTO.WalletTransaction;
@@ -705,6 +706,20 @@ namespace InstruLearn_Application.Model.Mapper
                 .ReverseMap()
                 .ForMember(dest => dest.Learner, opt => opt.Ignore())
                 .ForMember(dest => dest.LearningRegistration, opt => opt.Ignore());
+
+            // Teacher Evaluation Mappings
+            CreateMap<TeacherEvaluationFeedback, TeacherEvaluationDTO>()
+                .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Teacher.Fullname))
+                .ForMember(dest => dest.LearnerName, opt => opt.MapFrom(src => src.Learner.FullName))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
+
+            CreateMap<TeacherEvaluationQuestion, TeacherEvaluationQuestionDTO>();
+            CreateMap<TeacherEvaluationOption, TeacherEvaluationOptionDTO>();
+
+            CreateMap<TeacherEvaluationAnswer, TeacherEvaluationAnswerDTO>()
+                .ForMember(dest => dest.QuestionText, opt => opt.MapFrom(src => src.Question.QuestionText))
+                .ForMember(dest => dest.SelectedOptionText, opt => opt.MapFrom(src => src.SelectedOption.OptionText));
+
 
         }
     }

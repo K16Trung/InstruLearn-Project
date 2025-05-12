@@ -129,6 +129,7 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<ILearningRegisFeedbackQuestionRepository, LearningRegisFeedbackQuestionRepository>();
             builder.Services.AddScoped<ILearningRegisFeedbackRepository, LearningRegisFeedbackRepository>();
             builder.Services.AddScoped<IStaffNotificationRepository, StaffNotificationRepository>();
+            builder.Services.AddScoped<ITeacherEvaluationRepository, TeacherEvaluationRepository>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             builder.Services.AddScoped<IAuthService, AuthService>();
@@ -177,6 +178,7 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<IStaffNotificationService, StaffNotificationService>();
             builder.Services.AddScoped<IRevenueService, RevenueService>();
             builder.Services.AddScoped<IPaymentInfoService, PaymentInfoService>();
+            builder.Services.AddScoped<ITeacherEvaluationService, TeacherEvaluationService>();  
             builder.Services.AddHostedService<CertificateCreationBackgroundService>();
             builder.Services.AddHostedService<AttendanceStatusBackgroundService>();
             builder.Services.AddAutoMapper(typeof(MappingProfile));

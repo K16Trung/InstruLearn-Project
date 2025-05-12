@@ -40,7 +40,6 @@ namespace InstruLearn_Application.Model.Data
         public DbSet<LearningRegistrationDay> LearningRegistrationDays { get; set; }
         public DbSet<Syllabus> Syllabus { get; set; }
         public DbSet<Purchase_Items> Purchase_Items { get; set; }
-        //public DbSet<Test_Result> Test_Results { get; set; }
         public DbSet<Schedules> Schedules { get; set; }
         public DbSet<ScheduleDays> ScheduleDays { get; set; }
         public DbSet<Certification> Certifications { get; set; }
@@ -58,6 +57,10 @@ namespace InstruLearn_Application.Model.Data
         public DbSet<LearningRegisFeedback> LearningRegisFeedbacks { get; set; }
         public DbSet<LearningRegisFeedbackAnswer> LearningRegisFeedbackAnswers { get; set; }
         public DbSet<StaffNotification> StaffNotifications { get; set; }
+        public DbSet<TeacherEvaluationFeedback> TeacherEvaluationFeedbacks { get; set; }
+        public DbSet<TeacherEvaluationQuestion> TeacherEvaluationQuestions { get; set; }
+        public DbSet<TeacherEvaluationOption> TeacherEvaluationOptions { get; set; }
+        public DbSet<TeacherEvaluationAnswer> TeacherEvaluationAnswers { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -547,6 +550,67 @@ namespace InstruLearn_Application.Model.Data
                 .Property(n => n.Type)
                 .HasConversion<string>();
 
+            // Configure TeacherEvaluationQuestion entity
+            modelBuilder.Entity<TeacherEvaluationQuestion>()
+                .HasKey(q => q.EvaluationQuestionId);
+
+            modelBuilder.Entity<TeacherEvaluationQuestion>()
+                .HasMany(q => q.Options)
+                .WithOne(o => o.Question)
+                .HasForeignKey(o => o.EvaluationQuestionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure TeacherEvaluationOption entity
+            modelBuilder.Entity<TeacherEvaluationOption>()
+                .HasKey(o => o.EvaluationOptionId);
+
+            // Configure TeacherEvaluationFeedback entity
+            modelBuilder.Entity<TeacherEvaluationFeedback>()
+                .HasKey(f => f.EvaluationFeedbackId);
+
+            modelBuilder.Entity<TeacherEvaluationFeedback>()
+                .HasOne(f => f.Learner)
+                .WithMany()
+                .HasForeignKey(f => f.LearnerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<TeacherEvaluationFeedback>()
+                .HasOne(f => f.Teacher)
+                .WithMany()
+                .HasForeignKey(f => f.TeacherId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<TeacherEvaluationFeedback>()
+                .HasOne(f => f.LearningRegistration)
+                .WithMany()
+                .HasForeignKey(f => f.LearningRegistrationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<TeacherEvaluationFeedback>()
+                .HasMany(f => f.Answers)
+                .WithOne(a => a.Feedback)
+                .HasForeignKey(a => a.EvaluationFeedbackId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<TeacherEvaluationFeedback>()
+                .Property(f => f.Status)
+                .HasConversion<string>();
+
+            // Configure TeacherEvaluationAnswer entity
+            modelBuilder.Entity<TeacherEvaluationAnswer>()
+                .HasKey(a => a.EvaluationAnswerId);
+
+            modelBuilder.Entity<TeacherEvaluationAnswer>()
+                .HasOne(a => a.Question)
+                .WithMany()
+                .HasForeignKey(a => a.EvaluationQuestionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<TeacherEvaluationAnswer>()
+                .HasOne(a => a.SelectedOption)
+                .WithMany()
+                .HasForeignKey(a => a.SelectedOptionId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

@@ -57,6 +57,7 @@ namespace InstruLearn_Application.DAL.UoW
         private readonly ILearningRegisFeedbackQuestionRepository _learningRegisFeedbackQuestionRepository;
         private readonly ILearningRegisFeedbackRepository _learningRegisFeedbackRepository;
         private readonly IStaffNotificationRepository _staffNotificationRepository;
+        private readonly ITeacherEvaluationRepository _teacherEvaluationRepository;
         private readonly ApplicationDbContext _dbContext;
         private IDbContextTransaction? _transaction;
         private bool disposed = false;
@@ -104,6 +105,7 @@ namespace InstruLearn_Application.DAL.UoW
         public ILearningRegisFeedbackQuestionRepository LearningRegisFeedbackQuestionRepository { get { return _learningRegisFeedbackQuestionRepository; } }
         public ILearningRegisFeedbackRepository LearningRegisFeedbackRepository { get { return _learningRegisFeedbackRepository; } }
         public IStaffNotificationRepository StaffNotificationRepository { get { return _staffNotificationRepository; } }
+        public ITeacherEvaluationRepository TeacherEvaluationRepository { get { return _teacherEvaluationRepository; } }
 
         public ApplicationDbContext dbContext { get { return _dbContext; } }
 
@@ -111,7 +113,8 @@ namespace InstruLearn_Application.DAL.UoW
 
         public UnitOfWork(ApplicationDbContext dbContext, IAccountRepository accountRepository, IAdminRepository adminRepository, IManagerRepository managerRepository, IStaffRepository staffRepository, ILearnerRepository learnerRepository, ITeacherRepository teacherRepository, ICourseRepository courseRepository, ICourseTypeRepository courseTypeRepository, ICourseContentRepository courseContentRepository, IItemTypeRepository itemTypeRepository, ICourseContentItemRepository courseContentItemRepository, IFeedbackRepository feedbackRepository,
             IFeedbackRepliesRepository feedbackRepliesRepository, IQnARepository qnARepository, IQnARepliesRepository qnARepliesRepository, IWalletRepository walletRepository, IPaymentRepository paymentRepository, IWalletTransactionRepository walletTransactionRepository, IClassRepository classRepository, IClassDayRepository classDayRepository, IMajorRepository majorRepository, ILearningRegisRepository learningRegisRepository, ILearningRegisTypeRepository learningRegisTypeRepository, ISyllabusRepository syllabusRepository,
-            IMajorTestRepository majorTestRepository, IPurchaseRepository purchaseRepository, IPurchaseItemRepository purchaseItemRepository, ILearningRegisDayRepository learningRegisDayRepository, ICertificationRepository certificationRepository, IScheduleRepository scheduleRepository, ITeacherMajorRepository teacherMajorRepository, ILevelAssignedRepository levelAssignedRepository, IResponseRepository responseRepository, IResponseTypeRepository responseTypeRepository, ISyllabusContentRepository syllabusContentRepository, ILearningPathSessionRepository learningPathSessionRepository, ILearnerCourseRepository learnerCourseRepository, ILearnerContentProgressRepository learnerContentProgressRepository, ILearningRegisFeedbackAnswerRepository learningRegisFeedbackAnswerRepository, ILearningRegisFeedbackOptionRepository learningRegisFeedbackOptionRepository, ILearningRegisFeedbackQuestionRepository learningRegisFeedbackQuestionRepository, ILearningRegisFeedbackRepository learningRegisFeedbackRepository, IStaffNotificationRepository staffNotificationRepository)
+            IMajorTestRepository majorTestRepository, IPurchaseRepository purchaseRepository, IPurchaseItemRepository purchaseItemRepository, ILearningRegisDayRepository learningRegisDayRepository, ICertificationRepository certificationRepository, IScheduleRepository scheduleRepository, ITeacherMajorRepository teacherMajorRepository, ILevelAssignedRepository levelAssignedRepository, IResponseRepository responseRepository, IResponseTypeRepository responseTypeRepository, ISyllabusContentRepository syllabusContentRepository, ILearningPathSessionRepository learningPathSessionRepository
+            , ILearnerCourseRepository learnerCourseRepository, ILearnerContentProgressRepository learnerContentProgressRepository, ILearningRegisFeedbackAnswerRepository learningRegisFeedbackAnswerRepository, ILearningRegisFeedbackOptionRepository learningRegisFeedbackOptionRepository, ILearningRegisFeedbackQuestionRepository learningRegisFeedbackQuestionRepository, ILearningRegisFeedbackRepository learningRegisFeedbackRepository, IStaffNotificationRepository staffNotificationRepository, ITeacherEvaluationRepository teacherEvaluationRepository)
         {
             _dbContext = dbContext;
             _adminRepository = adminRepository;
@@ -157,6 +160,7 @@ namespace InstruLearn_Application.DAL.UoW
             _learningRegisFeedbackQuestionRepository = learningRegisFeedbackQuestionRepository;
             _learningRegisFeedbackRepository = learningRegisFeedbackRepository;
             _staffNotificationRepository = staffNotificationRepository;
+            _teacherEvaluationRepository = teacherEvaluationRepository;
         }
 
         protected virtual void Dispose(bool disposing)
