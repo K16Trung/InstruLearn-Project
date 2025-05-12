@@ -116,7 +116,7 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
-        public async Task<ResponseDTO> GetMonthlyRevenueAsync(int year)
+        public async Task<ResponseDTO> GetMonthlybyYearRevenueAsync(int year)
         {
             try
             {
@@ -136,18 +136,6 @@ namespace InstruLearn_Application.BLL.Service
 
                 var yearRevenueByType = await GetRevenueByTypeForTimeRangeAsync(startDate, endDate);
 
-                var weeklyData = await GetWeeklyRevenueAsync(startDate, endDate);
-
-                var quarterlyData = ((IEnumerable<dynamic>)monthlyData)
-                    .GroupBy(m => ((int)m.Month - 1) / 3 + 1)
-                    .Select(g => new
-                    {
-                        Quarter = g.Key,
-                        Revenue = g.Sum(m => (decimal)m.Revenue),
-                        TransactionCount = g.Sum(m => (int)m.TransactionCount)
-                    })
-                    .ToList();
-
                 var oneOnOneByMonth = await GetOneOnOneRegistrationRevenueByMonthAsync(year);
 
                 var centerClassByMonth = await GetCenterClassRegistrationRevenueByMonthAsync(year);
@@ -165,9 +153,7 @@ namespace InstruLearn_Application.BLL.Service
                         TotalTransactions = transactions.Count,
                         ByTimeUnit = new
                         {
-                            Monthly = monthlyData,
-                            Quarterly = quarterlyData,
-                            Weekly = weeklyData
+                            Monthly = monthlyData
                         },
                         ByRevenueType = new
                         {
@@ -193,85 +179,89 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
-        public async Task<ResponseDTO> GetWeeklyRevenueAsync(int year, int weekNumber)
+        public async Task<ResponseDTO> GetMonthlyRevenueWithWeeksAsync(int year, int month)
         {
             try
             {
-                _logger.LogInformation($"Getting weekly revenue for Year {year}, Week {weekNumber}");
+                _logger.LogInformation($"Getting monthly revenue with weekly breakdown for Year {year}, Month {month}");
 
-                DateTime jan1 = new DateTime(year, 1, 1);
-                int daysOffset = DayOfWeek.Monday - jan1.DayOfWeek;
-                DateTime firstMonday = jan1.AddDays(daysOffset > 0 ? daysOffset : daysOffset + 7);
+                // Validate input
+                if (month < 1 || month > 12)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Tháng phải hợp lệ (1-12)."
+                    };
+                }
 
-                DateTime weekStart = firstMonday.AddDays((weekNumber - 1) * 7);
-                DateTime weekEnd = weekStart.AddDays(6);
+                // Get the start and end dates for the specified month
+                DateTime monthStart = new DateTime(year, month, 1);
+                DateTime monthEnd = monthStart.AddMonths(1).AddDays(-1);
 
+                // Get all transactions for the month
                 var transactions = await _unitOfWork.WalletTransactionRepository
                     .GetQuery()
                     .Where(t => t.Status == TransactionStatus.Complete &&
                                t.TransactionType == TransactionType.Payment &&
-                               t.TransactionDate >= weekStart &&
-                               t.TransactionDate <= weekEnd)
+                               t.TransactionDate >= monthStart &&
+                               t.TransactionDate <= monthEnd)
                     .ToListAsync();
 
-                var dailyData = transactions
-                    .GroupBy(t => t.TransactionDate.DayOfWeek)
-                    .Select(g => new
-                    {
-                        DayOfWeek = g.Key.ToString(),
-                        Revenue = g.Sum(t => t.Amount),
-                        TransactionCount = g.Count()
-                    })
-                    .OrderBy(x => (int)Enum.Parse<DayOfWeek>(x.DayOfWeek))
-                    .ToList();
+                // Get week start dates within this month
+                var weekStartDates = GetWeekStartDatesInMonth(year, month);
 
-                var completeDailyData = Enumerable.Range(0, 7)
-                    .Select(i =>
-                    {
-                        var day = (DayOfWeek)i;
-                        var existingDay = dailyData.FirstOrDefault(d => d.DayOfWeek == day.ToString());
-                        return existingDay ?? new
-                        {
-                            DayOfWeek = day.ToString(),
-                            Revenue = 0m,
-                            TransactionCount = 0
-                        };
-                    })
-                    .ToList();
+                // Calculate weekly revenue data
+                var weeklyData = new List<object>();
 
-                var (oneOnOneDetails, oneOnOneCount) = await GetOneOnOneRegistrationRevenueAsync(weekStart, weekEnd);
-                var (centerClassDetails, centerClassCount) = await GetCenterClassRegistrationRevenueAsync(weekStart, weekEnd);
-                var (courseDetails, courseCount) = await GetCourseRevenueAsync(weekStart, weekEnd);
-
-                decimal reservationFees = await GetReservationFeesAsync(weekStart, weekEnd);
-
-                var (phase40Payments, phase60Payments) = await GetOneOnOnePaymentPhasesAsync(weekStart, weekEnd);
-                var centerClassInitialPayments = await GetCenterClassInitialPaymentsAsync(weekStart, weekEnd);
-
-                dynamic phase40PaymentsObj = phase40Payments;
-                dynamic phase60PaymentsObj = phase60Payments;
-                dynamic centerClassInitialPaymentsObj = centerClassInitialPayments;
-
-                return new ResponseDTO
+                foreach (var (weekNumber, startDate) in weekStartDates)
                 {
-                    IsSucceed = true,
-                    Message = $"Doanh thu cho tuần {weekNumber} năm {year} được tính toán thành công.",
-                    Data = new
+                    // Calculate the end date for this week (either end of week or end of month)
+                    DateTime weekEndDate = startDate.AddDays(6);
+                    if (weekEndDate > monthEnd)
                     {
-                        WeekInfo = new
+                        weekEndDate = monthEnd;
+                    }
+
+                    var weekTransactions = transactions
+                        .Where(t => t.TransactionDate >= startDate && t.TransactionDate <= weekEndDate)
+                        .ToList();
+
+                    // Daily breakdown within this week
+                    var dailyData = weekTransactions
+                        .GroupBy(t => t.TransactionDate.Date)
+                        .Select(g => new
                         {
-                            Year = year,
-                            WeekNumber = weekNumber,
-                            StartDate = weekStart.ToString("dd/MM/yyyy"),
-                            EndDate = weekEnd.ToString("dd/MM/yyyy")
-                        },
-                        Summary = new
-                        {
-                            TotalRevenue = transactions.Sum(t => t.Amount),
-                            TransactionCount = transactions.Count,
-                            DailyAverage = transactions.Any() ? transactions.Sum(t => t.Amount) / 7 : 0
-                        },
-                        DailyBreakdown = completeDailyData,
+                            Date = g.Key.ToString("yyyy-MM-dd"),
+                            DayOfWeek = g.Key.DayOfWeek.ToString(),
+                            Revenue = g.Sum(t => t.Amount),
+                            TransactionCount = g.Count()
+                        })
+                        .OrderBy(d => DateTime.Parse(d.Date))
+                        .ToList();
+
+                    // Get revenue by types for this week
+                    var (oneOnOneDetails, oneOnOneCount) = await GetOneOnOneRegistrationRevenueAsync(startDate, weekEndDate);
+                    var (centerClassDetails, centerClassCount) = await GetCenterClassRegistrationRevenueAsync(startDate, weekEndDate);
+                    var (courseDetails, courseCount) = await GetCourseRevenueAsync(startDate, weekEndDate);
+
+                    decimal reservationFees = await GetReservationFeesAsync(startDate, weekEndDate);
+                    var (phase40Payments, phase60Payments) = await GetOneOnOnePaymentPhasesAsync(startDate, weekEndDate);
+                    var centerClassInitialPayments = await GetCenterClassInitialPaymentsAsync(startDate, weekEndDate);
+
+                    dynamic phase40PaymentsObj = phase40Payments;
+                    dynamic phase60PaymentsObj = phase60Payments;
+                    dynamic centerClassInitialPaymentsObj = centerClassInitialPayments;
+
+                    weeklyData.Add(new
+                    {
+                        WeekNumber = weekNumber,
+                        WeekInMonth = weekStartDates.FindIndex(w => w.startDate == startDate) + 1,
+                        StartDate = startDate.ToString("yyyy-MM-dd"),
+                        EndDate = weekEndDate.ToString("yyyy-MM-dd"),
+                        TotalRevenue = weekTransactions.Sum(t => t.Amount),
+                        TransactionCount = weekTransactions.Count,
+                        DailyBreakdown = dailyData,
                         DetailedRevenue = new
                         {
                             OneOnOneRegistrations = oneOnOneDetails,
@@ -294,16 +284,49 @@ namespace InstruLearn_Application.BLL.Service
                                 TotalAmount = centerClassInitialPaymentsObj.TotalAmount
                             }
                         }
+                    });
+                }
+
+                // Calculate monthly revenue breakdown by type
+                var revenueByType = await GetRevenueByTypeForTimeRangeAsync(monthStart, monthEnd);
+
+                // Get monthly summary
+                decimal totalMonthRevenue = transactions.Sum(t => t.Amount);
+                int totalMonthTransactions = transactions.Count;
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = $"Doanh thu chi tiết tháng {month}/{year} được tính toán thành công.",
+                    Data = new
+                    {
+                        MonthInfo = new
+                        {
+                            Year = year,
+                            Month = month,
+                            MonthName = monthStart.ToString("MMMM"),
+                            StartDate = monthStart.ToString("yyyy-MM-dd"),
+                            EndDate = monthEnd.ToString("yyyy-MM-dd")
+                        },
+                        Summary = new
+                        {
+                            TotalRevenue = totalMonthRevenue,
+                            TransactionCount = totalMonthTransactions,
+                            DailyAverage = totalMonthTransactions > 0 ? totalMonthRevenue / DateTime.DaysInMonth(year, month) : 0,
+                            WeekCount = weeklyData.Count
+                        },
+                        WeeklyBreakdown = weeklyData,
+                        RevenueByType = revenueByType
                     }
                 };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error calculating weekly revenue for Year {year}, Week {weekNumber}");
+                _logger.LogError(ex, $"Error calculating monthly revenue with weekly breakdown for Year {year}, Month {month}");
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Lỗi khi tính toán doanh thu theo tuần: {ex.Message}"
+                    Message = $"Lỗi khi tính toán doanh thu theo tháng: {ex.Message}"
                 };
             }
         }
@@ -376,7 +399,6 @@ namespace InstruLearn_Application.BLL.Service
                         {
                             TotalRevenue = transactions.Sum(t => t.Amount),
                             TransactionCount = transactions.Count,
-                            HourlyAverage = transactions.Any() ? transactions.Sum(t => t.Amount) / 24 : 0,
                             PeakHour = completeHourlyData
                                 .OrderByDescending(h => h.Revenue)
                                 .ThenByDescending(h => h.TransactionCount)
@@ -419,8 +441,6 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
-        #region Helper Methods
-
         private async Task<(object TotalRevenue, int Count)> GetOneOnOneRegistrationRevenueAsync(
             DateTime? startDate = null, DateTime? endDate = null)
         {
@@ -450,8 +470,6 @@ namespace InstruLearn_Application.BLL.Service
 
             return (new { TotalRevenue = totalRevenue, Count = count }, count);
         }
-
-
 
         private async Task<(object TotalRevenue, int Count)> GetCenterClassRegistrationRevenueAsync(
             DateTime? startDate = null, DateTime? endDate = null)
@@ -670,6 +688,53 @@ namespace InstruLearn_Application.BLL.Service
                 .ToList<object>();
 
             return dailyRevenue;
+        }
+
+        private List<(int weekNumber, DateTime startDate)> GetWeekStartDatesInMonth(int year, int month)
+        {
+            var result = new List<(int weekNumber, DateTime startDate)>();
+
+            DateTime firstDayOfMonth = new DateTime(year, month, 1);
+
+            DateTime lastDayOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
+
+            DateTime firstMonday = firstDayOfMonth;
+            while (firstMonday.DayOfWeek != DayOfWeek.Monday)
+            {
+                firstMonday = firstMonday.AddDays(-1);
+            }
+
+            if (firstMonday < firstDayOfMonth)
+            {
+                firstMonday = firstMonday.AddDays(7);
+            }
+
+            DateTime firstDayOfYear = new DateTime(year, 1, 1);
+
+            DateTime firstMondayOfYear = firstDayOfYear;
+            while (firstMondayOfYear.DayOfWeek != DayOfWeek.Monday)
+            {
+                firstMondayOfYear = firstMondayOfYear.AddDays(1);
+            }
+
+            DateTime currentWeekStart = firstMonday;
+
+            if (firstDayOfMonth.DayOfWeek != DayOfWeek.Monday)
+            {
+                int weekNumber = (int)Math.Ceiling((firstDayOfMonth - firstMondayOfYear).TotalDays / 7) + 1;
+                result.Add((weekNumber, firstDayOfMonth));
+                currentWeekStart = firstMonday;
+            }
+
+            while (currentWeekStart <= lastDayOfMonth)
+            {
+                int weekNumber = (int)Math.Ceiling((currentWeekStart - firstMondayOfYear).TotalDays / 7) + 1;
+
+                result.Add((weekNumber, currentWeekStart));
+                currentWeekStart = currentWeekStart.AddDays(7);
+            }
+
+            return result;
         }
 
         private async Task<List<object>> GetWeeklyRevenueAsync(DateTime startDate, DateTime endDate)
@@ -1158,6 +1223,5 @@ namespace InstruLearn_Application.BLL.Service
                 _ => "Khác"
             };
         }
-        #endregion
     }
 }
