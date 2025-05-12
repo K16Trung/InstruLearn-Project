@@ -70,6 +70,75 @@ namespace InstruLearn_Application.BLL.Service
                     enrichedReg["firstPaymentPeriod"] = firstPaymentPeriod;
                     enrichedReg["secondPaymentPeriod"] = secondPaymentPeriod;
 
+                    // Get the original registration entity for this DTO
+                    var registration = allRegistrations.FirstOrDefault(lr => lr.LearningRegisId == regDto.LearningRegisId);
+
+                    // Ensure SessionDates are properly loaded
+                    if (registration != null)
+                    {
+                        // Get learning days as DayOfWeek values to use if schedules aren't available
+                        var availableDayValues = new List<DayOfWeek>();
+                        if (registration.LearningRegistrationDay != null && registration.LearningRegistrationDay.Any())
+                        {
+                            foreach (var day in registration.LearningRegistrationDay)
+                            {
+                                string dayString = day.DayOfWeek.ToString();
+
+                                // Convert the enum value to a DayOfWeek
+                                if (Enum.TryParse<DayOfWeek>(dayString, true, out var dayOfWeek))
+                                {
+                                    availableDayValues.Add(dayOfWeek);
+                                }
+                            }
+                        }
+
+                        if (registration.Schedules != null && registration.Schedules.Any())
+                        {
+                            _logger.LogInformation($"Processing schedules for registration ID: {registration.LearningRegisId}. Found {registration.Schedules.Count} total schedule(s)");
+
+                            var orderedSchedules = registration.Schedules
+                                .OrderBy(s => s.StartDay)
+                                .ThenBy(s => s.TimeStart)
+                                .ToList();
+
+                            regDto.SessionDates = orderedSchedules
+                                .Select(s => $"{s.StartDay:yyyy-MM-dd} {s.TimeStart:HH:mm}")
+                                .ToList();
+                        }
+                        else if (registration.StartDay.HasValue &&
+                                 availableDayValues.Count > 0 &&
+                                 registration.NumberOfSession > 0)
+                        {
+                            _logger.LogInformation($"No schedules found for registration ID: {registration.LearningRegisId}. Generating dates based on learning days.");
+
+                            DateOnly currentDate = registration.StartDay.Value;
+
+                            var sessionDates = new List<string>();
+                            int sessionsFound = 0;
+                            int maxAttempts = 100; // Safety limit
+
+                            while (sessionsFound < registration.NumberOfSession && sessionsFound < maxAttempts)
+                            {
+                                if (availableDayValues.Contains(currentDate.DayOfWeek))
+                                {
+                                    sessionDates.Add($"{currentDate:yyyy-MM-dd} {registration.TimeStart:HH:mm}");
+                                    sessionsFound++;
+                                }
+
+                                currentDate = currentDate.AddDays(1);
+                            }
+
+                            regDto.SessionDates = sessionDates;
+                        }
+                        else
+                        {
+                            _logger.LogWarning($"Unable to calculate session dates for registration ID: {registration.LearningRegisId}");
+                            regDto.SessionDates = new List<string>();
+                        }
+
+                        enrichedReg["SessionDates"] = regDto.SessionDates;
+                    }
+
                     enrichedRegistrations.Add(enrichedReg);
                 }
 
@@ -90,6 +159,7 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
         }
+
 
         public async Task<ResponseDTO> GetLearningRegisByIdAsync(int learningRegisId)
         {

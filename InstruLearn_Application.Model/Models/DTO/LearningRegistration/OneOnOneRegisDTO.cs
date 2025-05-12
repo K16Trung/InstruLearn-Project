@@ -1,4 +1,5 @@
-﻿using System;
+﻿using InstruLearn_Application.Model.Models.DTO.StaffNotification;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
@@ -30,6 +31,9 @@ namespace InstruLearn_Application.Model.Models.DTO.LearningRegistration
         public string SyllabusLink { get; set; }
         public DateOnly? StartDay { get; set; }
         public TimeOnly TimeStart { get; set; }
+        // In OneOnOneRegisDTO.cs
+        public List<string> SessionDates { get; set; } = new List<string>();
+
         public int TimeLearning { get; set; }
         public TimeOnly? TimeEnd { get; set; }
         public DateTime RequestDate { get; set; }
