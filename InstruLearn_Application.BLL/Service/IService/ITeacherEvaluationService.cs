@@ -13,19 +13,16 @@ namespace InstruLearn_Application.BLL.Service.IService
     public interface ITeacherEvaluationService
     {
         Task<ResponseDTO> GetAllEvaluationsAsync();
-        Task<ResponseDTO> GetEvaluationByIdAsync(int evaluationFeedbackId);
         Task<ResponseDTO> GetEvaluationByRegistrationIdAsync(int learningRegistrationId);
         Task<ResponseDTO> GetEvaluationsByTeacherIdAsync(int teacherId);
         Task<ResponseDTO> GetEvaluationsByLearnerIdAsync(int learnerId);
-        Task<ResponseDTO> GetPendingEvaluationsForTeacherAsync(int teacherId);
+        Task<ResponseDTO> GetActiveQuestionsAsync();
+        Task<ResponseDTO> GetQuestionByIdAsync(int questionId);
         Task<ResponseDTO> CreateQuestionWithOptionsAsync(CreateTeacherEvaluationQuestionDTO questionDTO);
         Task<ResponseDTO> UpdateQuestionAsync(int questionId, TeacherEvaluationQuestionDTO questionDTO);
         Task<ResponseDTO> DeleteQuestionAsync(int questionId);
-        Task<ResponseDTO> CreateEvaluationAsync(int learningRegistrationId);
-        Task<ResponseDTO> UpdateEvaluationFeedbackAsync(int evaluationFeedbackId, TeacherEvaluationDTO feedbackDTO);
-        Task<ResponseDTO> DeleteEvaluationFeedbackAsync(int evaluationFeedbackId);
-        Task<ResponseDTO> SubmitEvaluationAsync(SubmitTeacherEvaluationDTO submitDTO);
-        Task<ResponseDTO> CheckAndCreateEvaluationRequestsAsync();
-        Task<ResponseDTO> GetActiveQuestionsAsync();
+        Task<ResponseDTO> ActivateQuestionAsync(int questionId);
+        Task<ResponseDTO> DeactivateQuestionAsync(int questionId);
+        Task<ResponseDTO> SubmitEvaluationFeedbackAsync(SubmitTeacherEvaluationDTO submitDTO);
     }
 }

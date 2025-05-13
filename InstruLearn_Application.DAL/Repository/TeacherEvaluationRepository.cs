@@ -3,6 +3,7 @@ using InstruLearn_Application.Model.Data;
 using InstruLearn_Application.Model.Enum;
 using InstruLearn_Application.Model.Models;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -21,78 +22,59 @@ namespace InstruLearn_Application.DAL.Repository
         public async Task<List<TeacherEvaluationFeedback>> GetAllEvaluationsWithDetailsAsync()
         {
             return await _appDbContext.TeacherEvaluationFeedbacks
-                .Include(t => t.Teacher)
-                .Include(t => t.Learner)
-                .Include(t => t.LearningRegistration)
-                .Include(t => t.Answers)
+                .Include(e => e.Teacher)
+                .Include(e => e.Answers)
                     .ThenInclude(a => a.Question)
-                .Include(t => t.Answers)
+                .Include(e => e.Answers)
                     .ThenInclude(a => a.SelectedOption)
-                .OrderByDescending(t => t.CreatedAt)
+                .Include(e => e.LearningRegistration)
+                    .ThenInclude(lr => lr.Learner)
                 .ToListAsync();
         }
 
         public async Task<TeacherEvaluationFeedback> GetByIdWithDetailsAsync(int evaluationId)
         {
             return await _appDbContext.TeacherEvaluationFeedbacks
-                .Include(t => t.Teacher)
-                .Include(t => t.Learner)
-                .Include(t => t.LearningRegistration)
-                .Include(t => t.Answers)
+                .Include(e => e.Teacher)
+                .Include(e => e.Answers)
                     .ThenInclude(a => a.Question)
-                .Include(t => t.Answers)
+                .Include(e => e.Answers)
                     .ThenInclude(a => a.SelectedOption)
-                .FirstOrDefaultAsync(t => t.EvaluationFeedbackId == evaluationId);
-        }
-
-        public async Task<TeacherEvaluationFeedback> GetByLearningRegistrationIdAsync(int learningRegistrationId)
-        {
-            return await _appDbContext.TeacherEvaluationFeedbacks
-                .Include(t => t.Teacher)
-                .Include(t => t.Learner)
-                .Include(t => t.Answers)
-                    .ThenInclude(a => a.Question)
-                .Include(t => t.Answers)
-                    .ThenInclude(a => a.SelectedOption)
-                .FirstOrDefaultAsync(t => t.LearningRegistrationId == learningRegistrationId);
+                .Include(e => e.LearningRegistration)
+                    .ThenInclude(lr => lr.Learner)
+                .FirstOrDefaultAsync(e => e.EvaluationFeedbackId == evaluationId);
         }
 
         public async Task<List<TeacherEvaluationFeedback>> GetByTeacherIdAsync(int teacherId)
         {
             return await _appDbContext.TeacherEvaluationFeedbacks
-                .Include(t => t.Learner)
-                .Include(t => t.LearningRegistration)
-                .Where(t => t.TeacherId == teacherId)
-                .OrderByDescending(t => t.CreatedAt)
+                .Include(e => e.Teacher)
+                .Include(e => e.LearningRegistration)
+                    .ThenInclude(lr => lr.Learner)
+                .Where(e => e.TeacherId == teacherId)
                 .ToListAsync();
         }
 
         public async Task<List<TeacherEvaluationFeedback>> GetByLearnerIdAsync(int learnerId)
         {
             return await _appDbContext.TeacherEvaluationFeedbacks
-                .Include(t => t.Teacher)
-                .Include(t => t.LearningRegistration)
-                .Where(t => t.LearnerId == learnerId)
-                .OrderByDescending(t => t.CreatedAt)
+                .Include(e => e.Teacher)
+                .Include(e => e.LearningRegistration)
+                .Where(e => e.LearnerId == learnerId)
                 .ToListAsync();
         }
 
-        public async Task<List<TeacherEvaluationFeedback>> GetPendingByTeacherIdAsync(int teacherId)
+        public async Task<TeacherEvaluationFeedback> GetByLearningRegistrationIdAsync(int learningRegistrationId)
         {
             return await _appDbContext.TeacherEvaluationFeedbacks
-                .Include(t => t.Learner)
-                .Include(t => t.LearningRegistration)
-                .Where(t => t.TeacherId == teacherId &&
-                       (t.Status == TeacherEvaluationStatus.NotStarted ||
-                        t.Status == TeacherEvaluationStatus.InProgress))
-                .OrderByDescending(t => t.CreatedAt)
-                .ToListAsync();
-        }
-
-        public async Task<bool> ExistsByLearningRegistrationIdAsync(int learningRegistrationId)
-        {
-            return await _appDbContext.TeacherEvaluationFeedbacks
-                .AnyAsync(t => t.LearningRegistrationId == learningRegistrationId);
+                .Include(e => e.Teacher)
+                .Include(e => e.Answers)
+                    .ThenInclude(a => a.Question)
+                .Include(e => e.Answers)
+                    .ThenInclude(a => a.SelectedOption)
+                .Include(e => e.LearningRegistration)
+                    .ThenInclude(lr => lr.Learner)
+                .FirstOrDefaultAsync(e => e.LearningRegistrationId == learningRegistrationId);
         }
 
         public async Task<List<TeacherEvaluationQuestion>> GetActiveQuestionsWithOptionsAsync()
@@ -111,30 +93,9 @@ namespace InstruLearn_Application.DAL.Repository
                 .FirstOrDefaultAsync(q => q.EvaluationQuestionId == questionId);
         }
 
-        public async Task<List<TeacherEvaluationOption>> GetOptionsByQuestionIdAsync(int questionId)
-        {
-            return await _appDbContext.TeacherEvaluationOptions
-                .Where(o => o.EvaluationQuestionId == questionId)
-                .ToListAsync();
-        }
-
-        public async Task<List<TeacherEvaluationAnswer>> GetAnswersByFeedbackIdAsync(int evaluationFeedbackId)
-        {
-            return await _appDbContext.TeacherEvaluationAnswers
-                .Include(a => a.Question)
-                .Include(a => a.SelectedOption)
-                .Where(a => a.EvaluationFeedbackId == evaluationFeedbackId)
-                .ToListAsync();
-        }
-
         public async Task AddAnswerAsync(TeacherEvaluationAnswer answer)
         {
             await _appDbContext.TeacherEvaluationAnswers.AddAsync(answer);
-        }
-
-        public async Task UpdateAnswerAsync(TeacherEvaluationAnswer answer)
-        {
-            _appDbContext.TeacherEvaluationAnswers.Update(answer);
         }
 
         public async Task AddQuestionAsync(TeacherEvaluationQuestion question)
@@ -147,13 +108,17 @@ namespace InstruLearn_Application.DAL.Repository
             await _appDbContext.TeacherEvaluationOptions.AddAsync(option);
         }
 
-        // New methods for update and delete operations
         public async Task UpdateQuestionAsync(TeacherEvaluationQuestion question)
         {
             _appDbContext.TeacherEvaluationQuestions.Update(question);
         }
 
-        public async Task DeleteQuestionAsync(int questionId)
+        public async Task UpdateAsync(TeacherEvaluationFeedback evaluation)
+        {
+            _appDbContext.TeacherEvaluationFeedbacks.Update(evaluation);
+        }
+
+        public async Task DeleteAsync(int questionId)
         {
             var question = await _appDbContext.TeacherEvaluationQuestions
                 .Include(q => q.Options)
@@ -165,49 +130,14 @@ namespace InstruLearn_Application.DAL.Repository
                 {
                     _appDbContext.TeacherEvaluationOptions.RemoveRange(question.Options);
                 }
-
                 _appDbContext.TeacherEvaluationQuestions.Remove(question);
             }
         }
 
-        public async Task UpdateFeedbackAsync(TeacherEvaluationFeedback feedback)
+        public async Task<bool> ExistsByLearningRegistrationIdAsync(int learningRegistrationId)
         {
-            _appDbContext.TeacherEvaluationFeedbacks.Update(feedback);
-        }
-
-        public async Task DeleteFeedbackAsync(int feedbackId)
-        {
-            var feedback = await _appDbContext.TeacherEvaluationFeedbacks
-                .Include(f => f.Answers)
-                .FirstOrDefaultAsync(f => f.EvaluationFeedbackId == feedbackId);
-
-            if (feedback != null)
-            {
-                // First, delete related answers
-                if (feedback.Answers != null && feedback.Answers.Any())
-                {
-                    _appDbContext.TeacherEvaluationAnswers.RemoveRange(feedback.Answers);
-                }
-
-                // Delete the feedback
-                _appDbContext.TeacherEvaluationFeedbacks.Remove(feedback);
-            }
-        }
-
-        public async Task DeleteOptionAsync(int optionId)
-        {
-            var option = await _appDbContext.TeacherEvaluationOptions
-                .FirstOrDefaultAsync(o => o.EvaluationOptionId == optionId);
-
-            if (option != null)
-            {
-                _appDbContext.TeacherEvaluationOptions.Remove(option);
-            }
-        }
-
-        public async Task UpdateOptionAsync(TeacherEvaluationOption option)
-        {
-            _appDbContext.TeacherEvaluationOptions.Update(option);
+            return await _appDbContext.TeacherEvaluationFeedbacks
+                .AnyAsync(e => e.LearningRegistrationId == learningRegistrationId);
         }
     }
 }
