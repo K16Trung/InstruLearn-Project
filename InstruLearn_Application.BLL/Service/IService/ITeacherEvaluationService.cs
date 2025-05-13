@@ -18,9 +18,13 @@ namespace InstruLearn_Application.BLL.Service.IService
         Task<ResponseDTO> GetEvaluationsByTeacherIdAsync(int teacherId);
         Task<ResponseDTO> GetEvaluationsByLearnerIdAsync(int learnerId);
         Task<ResponseDTO> GetPendingEvaluationsForTeacherAsync(int teacherId);
+        Task<ResponseDTO> GetAllQuestionsAsync();
+        Task<ResponseDTO> GetQuestionByIdAsync(int questionId);
         Task<ResponseDTO> CreateQuestionWithOptionsAsync(CreateTeacherEvaluationQuestionDTO questionDTO);
         Task<ResponseDTO> UpdateQuestionAsync(int questionId, TeacherEvaluationQuestionDTO questionDTO);
         Task<ResponseDTO> DeleteQuestionAsync(int questionId);
+        Task<ResponseDTO> ActivateQuestionAsync(int questionId);
+        Task<ResponseDTO> DeactivateQuestionAsync(int questionId);
         Task<ResponseDTO> CreateEvaluationAsync(int learningRegistrationId);
         Task<ResponseDTO> UpdateEvaluationFeedbackAsync(int evaluationFeedbackId, TeacherEvaluationDTO feedbackDTO);
         Task<ResponseDTO> DeleteEvaluationFeedbackAsync(int evaluationFeedbackId);

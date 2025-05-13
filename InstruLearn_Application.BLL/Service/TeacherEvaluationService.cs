@@ -91,7 +91,6 @@ namespace InstruLearn_Application.BLL.Service
 
                 if (evaluation.LearningRegistration != null)
                 {
-
                     var registration = await _unitOfWork.LearningRegisRepository
                         .GetWithIncludesAsync(
                             x => x.LearningRegisId == evaluation.LearningRegistrationId,
@@ -147,7 +146,6 @@ namespace InstruLearn_Application.BLL.Service
 
                 if (evaluation.LearningRegistration != null)
                 {
-
                     var registration = await _unitOfWork.LearningRegisRepository
                         .GetWithIncludesAsync(
                             x => x.LearningRegisId == learningRegistrationId,
@@ -189,10 +187,19 @@ namespace InstruLearn_Application.BLL.Service
             try
             {
                 var evaluations = await _unitOfWork.TeacherEvaluationRepository.GetByTeacherIdAsync(teacherId);
+
                 var evaluationDTOs = _mapper.Map<List<TeacherEvaluationDTO>>(evaluations);
 
                 foreach (var dto in evaluationDTOs)
                 {
+                    var evaluationWithDetails = await _unitOfWork.TeacherEvaluationRepository
+                        .GetByIdWithDetailsAsync(dto.EvaluationFeedbackId);
+
+                    if (evaluationWithDetails != null && evaluationWithDetails.Answers != null)
+                    {
+                        dto.Answers = _mapper.Map<List<TeacherEvaluationAnswerDTO>>(evaluationWithDetails.Answers);
+                    }
+
                     var learningRegis = await _unitOfWork.LearningRegisRepository.GetByIdAsync(dto.LearningRegistrationId);
                     if (learningRegis != null)
                     {
@@ -228,10 +235,19 @@ namespace InstruLearn_Application.BLL.Service
             try
             {
                 var evaluations = await _unitOfWork.TeacherEvaluationRepository.GetByLearnerIdAsync(learnerId);
+
                 var evaluationDTOs = _mapper.Map<List<TeacherEvaluationDTO>>(evaluations);
 
                 foreach (var dto in evaluationDTOs)
                 {
+                    var evaluationWithDetails = await _unitOfWork.TeacherEvaluationRepository
+                        .GetByIdWithDetailsAsync(dto.EvaluationFeedbackId);
+
+                    if (evaluationWithDetails != null && evaluationWithDetails.Answers != null)
+                    {
+                        dto.Answers = _mapper.Map<List<TeacherEvaluationAnswerDTO>>(evaluationWithDetails.Answers);
+                    }
+
                     var learningRegis = await _unitOfWork.LearningRegisRepository.GetByIdAsync(dto.LearningRegistrationId);
                     if (learningRegis != null)
                     {
@@ -297,6 +313,77 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     IsSucceed = false,
                     Message = $"Error retrieving pending evaluations: {ex.Message}"
+                };
+            }
+        }
+
+        public async Task<ResponseDTO> GetAllQuestionsAsync()
+        {
+            try
+            {
+                var questions = await _unitOfWork.TeacherEvaluationRepository.GetAllQuestionsWithOptionsAsync();
+
+                if (questions == null || !questions.Any())
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = true,
+                        Message = "No questions found.",
+                        Data = new List<TeacherEvaluationQuestionDTO>()
+                    };
+                }
+
+                var questionDTOs = _mapper.Map<List<TeacherEvaluationQuestionDTO>>(questions);
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = $"Retrieved {questionDTOs.Count} questions.",
+                    Data = questionDTOs
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving all questions");
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Error retrieving questions: {ex.Message}"
+                };
+            }
+        }
+
+        public async Task<ResponseDTO> GetQuestionByIdAsync(int questionId)
+        {
+            try
+            {
+                var question = await _unitOfWork.TeacherEvaluationRepository.GetQuestionWithOptionsAsync(questionId);
+
+                if (question == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = $"Question with ID {questionId} not found."
+                    };
+                }
+
+                var questionDTO = _mapper.Map<TeacherEvaluationQuestionDTO>(question);
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = "Question retrieved successfully.",
+                    Data = questionDTO
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving question {QuestionId}", questionId);
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Error retrieving question: {ex.Message}"
                 };
             }
         }
@@ -467,23 +554,126 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
+        public async Task<ResponseDTO> ActivateQuestionAsync(int questionId)
+        {
+            try
+            {
+                var question = await _unitOfWork.TeacherEvaluationRepository.GetQuestionWithOptionsAsync(questionId);
+
+                if (question == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = $"Question with ID {questionId} not found."
+                    };
+                }
+
+                if (question.IsActive)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = true,
+                        Message = $"Question with ID {questionId} is already active."
+                    };
+                }
+
+                question.IsActive = true;
+                await _unitOfWork.TeacherEvaluationRepository.UpdateQuestionAsync(question);
+                await _unitOfWork.SaveChangeAsync();
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = $"Question with ID {questionId} has been activated successfully."
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error activating question {QuestionId}", questionId);
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Error activating question: {ex.Message}"
+                };
+            }
+        }
+
+        public async Task<ResponseDTO> DeactivateQuestionAsync(int questionId)
+        {
+            try
+            {
+                var question = await _unitOfWork.TeacherEvaluationRepository.GetQuestionWithOptionsAsync(questionId);
+
+                if (question == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = $"Question with ID {questionId} not found."
+                    };
+                }
+
+                if (!question.IsActive)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = true,
+                        Message = $"Question with ID {questionId} is already inactive."
+                    };
+                }
+
+                question.IsActive = false;
+                await _unitOfWork.TeacherEvaluationRepository.UpdateQuestionAsync(question);
+                await _unitOfWork.SaveChangeAsync();
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = $"Question with ID {questionId} has been deactivated successfully."
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deactivating question {QuestionId}", questionId);
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Error deactivating question: {ex.Message}"
+                };
+            }
+        }
+
         public async Task<ResponseDTO> CreateQuestionWithOptionsAsync(CreateTeacherEvaluationQuestionDTO questionDTO)
         {
             try
             {
-                var question = _mapper.Map<TeacherEvaluationQuestion>(questionDTO);
+                var question = new TeacherEvaluationQuestion
+                {
+                    QuestionText = questionDTO.QuestionText,
+                    DisplayOrder = questionDTO.DisplayOrder,
+                    IsRequired = questionDTO.IsRequired,
+                    IsActive = questionDTO.IsActive,
+                    Options = new List<TeacherEvaluationOption>()
+                };
 
                 await _unitOfWork.TeacherEvaluationRepository.AddQuestionAsync(question);
+
                 await _unitOfWork.SaveChangeAsync();
 
                 if (questionDTO.Options != null && questionDTO.Options.Any())
                 {
                     foreach (var optionDTO in questionDTO.Options)
                     {
-                        var option = _mapper.Map<TeacherEvaluationOption>(optionDTO);
-                        option.EvaluationQuestionId = question.EvaluationQuestionId;
+                        var option = new TeacherEvaluationOption
+                        {
+                            EvaluationQuestionId = question.EvaluationQuestionId,
+                            OptionText = optionDTO.OptionText,
+                        };
+
                         await _unitOfWork.TeacherEvaluationRepository.AddOptionAsync(option);
                     }
+
                     await _unitOfWork.SaveChangeAsync();
                 }
 

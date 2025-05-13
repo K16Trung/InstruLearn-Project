@@ -62,6 +62,10 @@ namespace InstruLearn_Application.DAL.Repository
             return await _appDbContext.TeacherEvaluationFeedbacks
                 .Include(t => t.Learner)
                 .Include(t => t.LearningRegistration)
+                .Include(t => t.Answers)
+                    .ThenInclude(a => a.Question)
+                .Include(t => t.Answers)
+                    .ThenInclude(a => a.SelectedOption)
                 .Where(t => t.TeacherId == teacherId)
                 .OrderByDescending(t => t.CreatedAt)
                 .ToListAsync();
@@ -72,6 +76,10 @@ namespace InstruLearn_Application.DAL.Repository
             return await _appDbContext.TeacherEvaluationFeedbacks
                 .Include(t => t.Teacher)
                 .Include(t => t.LearningRegistration)
+                .Include(t => t.Answers)
+                    .ThenInclude(a => a.Question)
+                .Include(t => t.Answers)
+                    .ThenInclude(a => a.SelectedOption)
                 .Where(t => t.LearnerId == learnerId)
                 .OrderByDescending(t => t.CreatedAt)
                 .ToListAsync();
@@ -145,6 +153,14 @@ namespace InstruLearn_Application.DAL.Repository
         public async Task AddOptionAsync(TeacherEvaluationOption option)
         {
             await _appDbContext.TeacherEvaluationOptions.AddAsync(option);
+        }
+
+        public async Task<List<TeacherEvaluationQuestion>> GetAllQuestionsWithOptionsAsync()
+        {
+            return await _appDbContext.TeacherEvaluationQuestions
+                .Include(q => q.Options)
+                .OrderBy(q => q.DisplayOrder)
+                .ToListAsync();
         }
 
         // New methods for update and delete operations
