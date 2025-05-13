@@ -56,6 +56,8 @@ namespace InstruLearn_Application.BLL.Service
                     .GetActiveQuestionsWithOptionsAsync();
 
                 var feedbackNotifications = new List<object>();
+                var feedbacksToUpdate = new List<LearningRegisFeedback>();
+                var registrationsToUpdate = new List<Learning_Registration>();
 
                 foreach (var regis in learningRegs)
                 {
@@ -79,7 +81,8 @@ namespace InstruLearn_Application.BLL.Service
                             LearnerId = learnerId,
                             CreatedAt = DateTime.Now,
                             Status = FeedbackStatus.NotStarted,
-                            AdditionalComments = ""
+                            AdditionalComments = "",
+                            DeadlineDate = DateTime.Now.AddDays(1)
                         };
 
                         await _unitOfWork.LearningRegisFeedbackRepository.AddAsync(newFeedback);
@@ -90,6 +93,35 @@ namespace InstruLearn_Application.BLL.Service
                             .GetFeedbackByRegistrationIdAsync(regis.LearningRegisId);
 
                         _logger.LogInformation($"Created new feedback record with ID {existingFeedback.FeedbackId} for learning registration {regis.LearningRegisId}");
+                    }
+                    else if (existingFeedback.DeadlineDate == null)
+                    {
+                        // Set deadline for existing feedbacks that don't have one
+                        existingFeedback.DeadlineDate = DateTime.Now.AddDays(1);
+                        feedbacksToUpdate.Add(existingFeedback);
+                    }
+
+                    // Check if feedback deadline has passed and update status if needed
+                    if (existingFeedback.DeadlineDate.HasValue &&
+                        DateTime.Now > existingFeedback.DeadlineDate.Value &&
+                        existingFeedback.Status != FeedbackStatus.Completed)
+                    {
+                        _logger.LogInformation($"Feedback deadline passed for feedback ID {existingFeedback.FeedbackId}. Auto-updating status.");
+
+                        // Mark feedback as completed automatically
+                        existingFeedback.Status = FeedbackStatus.Completed;
+                        existingFeedback.CompletedAt = DateTime.Now;
+                        existingFeedback.AdditionalComments = "Auto-completed by system due to deadline expiration";
+
+                        // Update the learning registration to FourtyFeedbackDone
+                        if (regis.Status == LearningRegis.Fourty)
+                        {
+                            regis.Status = LearningRegis.FourtyFeedbackDone;
+                            registrationsToUpdate.Add(regis);
+                        }
+
+                        feedbacksToUpdate.Add(existingFeedback);
+                        continue; // Skip displaying this feedback since it's now completed
                     }
 
                     // Only include notifications for forms that are not completed
@@ -147,10 +179,28 @@ namespace InstruLearn_Application.BLL.Service
                             RemainingPayment = remainingPayment,
                             FeedbackStatus = existingFeedback.Status.ToString(),
                             CreatedAt = existingFeedback.CreatedAt,
+                            DeadlineDate = existingFeedback.DeadlineDate,
                             Questions = questions,
                             Message = $"Bạn đã thanh toán 40% học phí. Vui lòng hoàn thành phản hồi này để xác nhận bạn muốn tiếp tục học và thanh toán 60% còn lại."
                         });
                     }
+                }
+
+                // Save all feedback updates
+                foreach (var feedback in feedbacksToUpdate)
+                {
+                    await _unitOfWork.LearningRegisFeedbackRepository.UpdateAsync(feedback);
+                }
+
+                // Save all registration status updates
+                foreach (var registration in registrationsToUpdate)
+                {
+                    await _unitOfWork.LearningRegisRepository.UpdateAsync(registration);
+                }
+
+                if (feedbacksToUpdate.Any() || registrationsToUpdate.Any())
+                {
+                    await _unitOfWork.SaveChangeAsync();
                 }
 
                 return new ResponseDTO
