@@ -13,6 +13,8 @@ namespace InstruLearn_Application.Model.Enum
         SchedulesCreated,
         SelfAssessment,
         Evaluation,
-        Certificate
+        Certificate,
+        PaymentReminder,
+        FeedbackRequired
     }
 }

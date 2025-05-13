@@ -178,7 +178,8 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<IStaffNotificationService, StaffNotificationService>();
             builder.Services.AddScoped<IRevenueService, RevenueService>();
             builder.Services.AddScoped<IPaymentInfoService, PaymentInfoService>();
-            builder.Services.AddScoped<ITeacherEvaluationService, TeacherEvaluationService>();  
+            builder.Services.AddScoped<ITeacherEvaluationService, TeacherEvaluationService>();
+            builder.Services.AddScoped<ILearnerNotificationService, LearnerNotificationService>();
             builder.Services.AddHostedService<CertificateCreationBackgroundService>();
             builder.Services.AddHostedService<AttendanceStatusBackgroundService>();
             builder.Services.AddAutoMapper(typeof(MappingProfile));
