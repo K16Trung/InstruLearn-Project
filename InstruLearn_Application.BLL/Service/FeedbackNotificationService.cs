@@ -149,6 +149,44 @@ namespace InstruLearn_Application.BLL.Service
                             remainingPayment = regis.Price.Value * 0.6m;
                         }
 
+                        // Calculate days remaining until deadline
+                        int daysRemaining = 0;
+                        string deadlineMessage = "";
+                        string formattedDeadlineDate = "N/A";
+
+                        if (existingFeedback.DeadlineDate.HasValue)
+                        {
+                            // Get total days remaining (decimals will be truncated)
+                            TimeSpan timeRemaining = existingFeedback.DeadlineDate.Value - DateTime.Now;
+                            daysRemaining = Math.Max(0, (int)Math.Ceiling(timeRemaining.TotalDays));
+
+                            // Format deadline date for display
+                            formattedDeadlineDate = existingFeedback.DeadlineDate.Value.ToString("dd/MM/yyyy HH:mm");
+
+                            // Customize message based on days remaining
+                            if (daysRemaining < 1)
+                            {
+                                // Less than a day - show hours
+                                int hoursRemaining = Math.Max(0, (int)Math.Ceiling(timeRemaining.TotalHours));
+                                if (hoursRemaining < 1)
+                                {
+                                    deadlineMessage = "Hạn chót hôm nay! Vui lòng hoàn thành ngay.";
+                                }
+                                else
+                                {
+                                    deadlineMessage = $"Còn {hoursRemaining} giờ để hoàn thành phản hồi này.";
+                                }
+                            }
+                            else if (daysRemaining == 1)
+                            {
+                                deadlineMessage = "Còn 1 ngày để hoàn thành phản hồi này.";
+                            }
+                            else
+                            {
+                                deadlineMessage = $"Còn {daysRemaining} ngày để hoàn thành phản hồi này.";
+                            }
+                        }
+
                         // Create a notification with shared questions and without circular references
                         var questions = feedbackQuestions.Select(q => new
                         {
@@ -180,6 +218,7 @@ namespace InstruLearn_Application.BLL.Service
                             FeedbackStatus = existingFeedback.Status.ToString(),
                             CreatedAt = existingFeedback.CreatedAt,
                             DeadlineDate = existingFeedback.DeadlineDate,
+                            DaysRemaining = daysRemaining,
                             Questions = questions,
                             Message = $"Bạn đã thanh toán 40% học phí. Vui lòng hoàn thành phản hồi này để xác nhận bạn muốn tiếp tục học và thanh toán 60% còn lại."
                         });
