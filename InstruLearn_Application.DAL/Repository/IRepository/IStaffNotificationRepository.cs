@@ -14,6 +14,7 @@ namespace InstruLearn_Application.DAL.Repository.IRepository
         Task<List<StaffNotification>> GetTeacherChangeRequestsAsync();
         Task<List<StaffNotification>> GetContinueWithTeacherChangeRequestsAsync();
         Task<List<StaffNotification>> GetNotificationsByTeacherIdAsync(int teacherId, NotificationType[] notificationTypes);
+        Task<List<StaffNotification>> GetNotificationsByLearnerIdAsync(int learnerId);
         Task MarkAsReadAsync(int notificationId);
         Task MarkAsResolvedAsync(int notificationId);
     }
