@@ -398,7 +398,6 @@ namespace InstruLearn_Application.BLL.Service
                 };
 
                 await _unitOfWork.TeacherEvaluationRepository.AddQuestionAsync(question);
-
                 await _unitOfWork.SaveChangeAsync();
 
                 if (questionDTO.Options != null && questionDTO.Options.Any())
@@ -408,8 +407,7 @@ namespace InstruLearn_Application.BLL.Service
                         var option = new TeacherEvaluationOption
                         {
                             EvaluationQuestionId = question.EvaluationQuestionId,
-                            OptionText = optionDTO.OptionText,
-                            RatingValue = optionDTO.RatingValue
+                            OptionText = optionDTO.OptionText
                         };
 
                         await _unitOfWork.TeacherEvaluationRepository.AddOptionAsync(option);
@@ -421,14 +419,14 @@ namespace InstruLearn_Application.BLL.Service
                 var createdQuestion = await _unitOfWork.TeacherEvaluationRepository
                     .GetQuestionWithOptionsAsync(question.EvaluationQuestionId);
 
-                await NotifyLearnersAboutNewQuestion(createdQuestion);
+                await CheckAndCreateEvaluationsForLastDayLearners();
 
                 var response = _mapper.Map<TeacherEvaluationQuestionDTO>(createdQuestion);
 
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Question created successfully and learners have been notified.",
+                    Message = "Question created successfully. Evaluations will appear for teachers when learners reach their last day of one-on-one sessions.",
                     Data = response
                 };
             }
@@ -620,6 +618,90 @@ namespace InstruLearn_Application.BLL.Service
                     IsSucceed = false,
                     Message = $"Error submitting evaluation: {ex.Message}"
                 };
+            }
+        }
+
+        private async Task CheckAndCreateEvaluationsForLastDayLearners()
+        {
+            try
+            {
+                var oneOnOneRegistrations = await _unitOfWork.LearningRegisRepository
+                    .GetWithIncludesAsync(
+                        x => (x.Status == LearningRegis.Fourty || x.Status == LearningRegis.Sixty) &&
+                             x.ClassId == null &&
+                             x.TeacherId != null,
+                        "Learner,Teacher"
+                    );
+
+                if (oneOnOneRegistrations == null || !oneOnOneRegistrations.Any())
+                {
+                    _logger.LogInformation("No active one-on-one learning registrations found for evaluation");
+                    return;
+                }
+
+                foreach (var registration in oneOnOneRegistrations)
+                {
+                    if (registration.LearnerId <= 0 || registration.TeacherId <= 0)
+                        continue;
+
+                    bool evaluationExists = await _unitOfWork.TeacherEvaluationRepository
+                        .ExistsByLearningRegistrationIdAsync(registration.LearningRegisId);
+
+                    if (evaluationExists)
+                        continue;
+
+                    var schedules = await _unitOfWork.ScheduleRepository
+                        .GetSchedulesByLearningRegisIdAsync(registration.LearningRegisId);
+
+                    if (schedules == null || !schedules.Any())
+                        continue;
+
+                    int totalSessions = registration.NumberOfSession;
+                    int completedSessions = schedules.Count(s => s.AttendanceStatus == AttendanceStatus.Present);
+                    int remainingSessions = totalSessions - completedSessions;
+
+                    var orderedSchedules = schedules
+                        .OrderBy(s => s.StartDay)
+                        .ToList();
+
+                    var today = DateOnly.FromDateTime(DateTime.Today);
+                    var lastScheduleDate = orderedSchedules.LastOrDefault()?.StartDay;
+
+                    bool isLastDay = (lastScheduleDate == today && remainingSessions <= 1);
+
+                    if (!isLastDay)
+                        continue;
+
+                    var evaluationFeedback = new TeacherEvaluationFeedback
+                    {
+                        TeacherId = registration.TeacherId.Value,
+                        LearnerId = registration.LearnerId,
+                        LearningRegistrationId = registration.LearningRegisId,
+                        Status = TeacherEvaluationStatus.NotStarted,
+                        CreatedAt = DateTime.Now,
+                        GoalsAchieved = false
+                    };
+
+                    await _unitOfWork.TeacherEvaluationRepository.AddAsync(evaluationFeedback);
+                    await _unitOfWork.SaveChangeAsync();
+
+                    await CreateTeacherEvaluationNotification(
+                        registration.TeacherId.Value,
+                        evaluationFeedback.EvaluationFeedbackId,
+                        registration.LearnerId,
+                        registration.LearningRegisId,
+                        registration.LearningRequest
+                    );
+
+                    _logger.LogInformation(
+                        "Created evaluation for teacher {TeacherId} to evaluate learner {LearnerId} on their last day",
+                        registration.TeacherId.Value, registration.LearnerId);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking for learners on their last day for evaluation");
+                throw;
             }
         }
 
