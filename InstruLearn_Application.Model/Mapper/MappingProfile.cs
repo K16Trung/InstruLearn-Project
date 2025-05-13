@@ -725,7 +725,8 @@ namespace InstruLearn_Application.Model.Mapper
 
             CreateMap<TeacherEvaluationAnswer, TeacherEvaluationAnswerDTO>()
                 .ForMember(dest => dest.QuestionText, opt => opt.MapFrom(src => src.Question.QuestionText))
-                .ForMember(dest => dest.SelectedOptionText, opt => opt.MapFrom(src => src.SelectedOption.OptionText));
+                .ForMember(dest => dest.SelectedOptionText, opt => opt.MapFrom(src => src.SelectedOption.OptionText))
+                .ForMember(dest => dest.RatingValue, opt => opt.MapFrom(src => src.SelectedOption.RatingValue));
 
             CreateMap<CreateTeacherEvaluationQuestionDTO, TeacherEvaluationQuestion>();
 

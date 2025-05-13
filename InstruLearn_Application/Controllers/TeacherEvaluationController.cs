@@ -3,6 +3,7 @@ using InstruLearn_Application.Model.Models.DTO;
 using InstruLearn_Application.Model.Models.DTO.TeacherEvaluation;
 using InstruLearn_Application.Model.Models.DTO.TeacherEvaluationOption;
 using InstruLearn_Application.Model.Models.DTO.TeacherEvaluationQuestion;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 
@@ -61,6 +62,20 @@ namespace InstruLearn_Application.Controllers
             return Ok(result);
         }
 
+        [HttpGet("questions/active")]
+        public async Task<IActionResult> GetActiveQuestions()
+        {
+            var result = await _teacherEvaluationService.GetActiveQuestionsAsync();
+            return result.IsSucceed ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpGet("questions/{questionId}")]
+        public async Task<IActionResult> GetQuestionById(int questionId)
+        {
+            var result = await _teacherEvaluationService.GetQuestionByIdAsync(questionId);
+            return result.IsSucceed ? Ok(result) : BadRequest(result);
+        }
+
         [HttpPost("create-questions")]
         public async Task<ActionResult<ResponseDTO>> CreateQuestion([FromBody] CreateTeacherEvaluationQuestionDTO questionDTO)
         {
@@ -82,8 +97,22 @@ namespace InstruLearn_Application.Controllers
             return Ok(result);
         }
 
+        [HttpPut("questions/{questionId}/activate")]
+        public async Task<IActionResult> ActivateQuestion(int questionId)
+        {
+            var result = await _teacherEvaluationService.ActivateQuestionAsync(questionId);
+            return result.IsSucceed ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpPut("questions/{questionId}/deactivate")]
+        public async Task<IActionResult> DeactivateQuestion(int questionId)
+        {
+            var result = await _teacherEvaluationService.DeactivateQuestionAsync(questionId);
+            return result.IsSucceed ? Ok(result) : BadRequest(result);
+        }
+
         [HttpPost("create-evaluation-feedback/{learningRegistrationId}")]
-        public async Task<ActionResult<ResponseDTO>> Create(int learningRegistrationId)
+        public async Task<ActionResult<ResponseDTO>> CreateEvaluationFeedback(int learningRegistrationId)
         {
             var result = await _teacherEvaluationService.CreateEvaluationAsync(learningRegistrationId);
             return Ok(result);
@@ -114,13 +143,6 @@ namespace InstruLearn_Application.Controllers
         public async Task<ActionResult<ResponseDTO>> AutoCreateRequests()
         {
             var result = await _teacherEvaluationService.CheckAndCreateEvaluationRequestsAsync();
-            return Ok(result);
-        }
-
-        [HttpGet("questions/active")]
-        public async Task<ActionResult<ResponseDTO>> GetActiveQuestions()
-        {
-            var result = await _teacherEvaluationService.GetActiveQuestionsAsync();
             return Ok(result);
         }
     }
