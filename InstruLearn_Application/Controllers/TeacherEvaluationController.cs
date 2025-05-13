@@ -27,13 +27,6 @@ namespace InstruLearn_Application.Controllers
             return Ok(result);
         }
 
-        [HttpGet("{evaluationFeedbackId}")]
-        public async Task<ActionResult<ResponseDTO>> GetById(int evaluationFeedbackId)
-        {
-            var result = await _teacherEvaluationService.GetEvaluationByIdAsync(evaluationFeedbackId);
-            return Ok(result);
-        }
-
         [HttpGet("by-registration/{learningRegistrationId}")]
         public async Task<ActionResult<ResponseDTO>> GetByRegistrationId(int learningRegistrationId)
         {
@@ -52,13 +45,6 @@ namespace InstruLearn_Application.Controllers
         public async Task<ActionResult<ResponseDTO>> GetByLearnerId(int learnerId)
         {
             var result = await _teacherEvaluationService.GetEvaluationsByLearnerIdAsync(learnerId);
-            return Ok(result);
-        }
-
-        [HttpGet("pending/teacher/{teacherId}")]
-        public async Task<ActionResult<ResponseDTO>> GetPendingForTeacher(int teacherId)
-        {
-            var result = await _teacherEvaluationService.GetPendingEvaluationsForTeacherAsync(teacherId);
             return Ok(result);
         }
 
@@ -111,38 +97,10 @@ namespace InstruLearn_Application.Controllers
             return result.IsSucceed ? Ok(result) : BadRequest(result);
         }
 
-        [HttpPost("create-evaluation-feedback/{learningRegistrationId}")]
-        public async Task<ActionResult<ResponseDTO>> CreateEvaluationFeedback(int learningRegistrationId)
-        {
-            var result = await _teacherEvaluationService.CreateEvaluationAsync(learningRegistrationId);
-            return Ok(result);
-        }
-
-        [HttpPut("update-evaluation-feedback/{evaluationFeedbackId}")]
-        public async Task<ActionResult<ResponseDTO>> UpdateEvaluationFeedback(int evaluationFeedbackId, [FromBody] TeacherEvaluationDTO feedbackDTO)
-        {
-            var result = await _teacherEvaluationService.UpdateEvaluationFeedbackAsync(evaluationFeedbackId, feedbackDTO);
-            return Ok(result);
-        }
-
-        [HttpDelete("delete-evaluation-feedback/{evaluationFeedbackId}")]
-        public async Task<ActionResult<ResponseDTO>> DeleteEvaluationFeedback(int evaluationFeedbackId)
-        {
-            var result = await _teacherEvaluationService.DeleteEvaluationFeedbackAsync(evaluationFeedbackId);
-            return Ok(result);
-        }
-
         [HttpPost("submit-evaluation-feedback")]
-        public async Task<ActionResult<ResponseDTO>> Submit([FromBody] SubmitTeacherEvaluationDTO submitDTO)
+        public async Task<ActionResult<ResponseDTO>> SubmitEvaluationFeedback([FromBody] SubmitTeacherEvaluationDTO submitDTO)
         {
-            var result = await _teacherEvaluationService.SubmitEvaluationAsync(submitDTO);
-            return Ok(result);
-        }
-
-        [HttpPost("auto-create-requests")]
-        public async Task<ActionResult<ResponseDTO>> AutoCreateRequests()
-        {
-            var result = await _teacherEvaluationService.CheckAndCreateEvaluationRequestsAsync();
+            var result = await _teacherEvaluationService.SubmitEvaluationFeedbackAsync(submitDTO);
             return Ok(result);
         }
     }
