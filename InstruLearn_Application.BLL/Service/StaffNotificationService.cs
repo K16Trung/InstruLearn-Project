@@ -650,6 +650,9 @@ namespace InstruLearn_Application.BLL.Service
                     ? await _unitOfWork.TeacherRepository.GetByIdAsync(originalTeacherId.Value)
                     : null;
 
+                bool isSameTeacher = originalTeacherId.HasValue && originalTeacherId.Value == newTeacherId;
+                _logger.LogInformation($"Teacher change request: Old teacher ID: {originalTeacherId}, New teacher ID: {newTeacherId}, Same teacher: {isSameTeacher}");
+
                 using var transaction = await _unitOfWork.BeginTransactionAsync();
                 try
                 {
@@ -671,12 +674,15 @@ namespace InstruLearn_Application.BLL.Service
                     await _unitOfWork.SaveChangeAsync();
                     await transaction.CommitAsync();
 
-                    await SendTeacherChangeNotifications(registration, newTeacher, originalTeacher, changeReason, futureSchedules);
+                    // Pass the isSameTeacher flag to the notification method
+                    await SendTeacherChangeNotifications(registration, newTeacher, originalTeacher, changeReason, futureSchedules, isSameTeacher);
 
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "Teacher changed successfully for the learning registration and all future schedules. Notifications sent.",
+                        Message = isSameTeacher
+                            ? "Teacher request processed. The same teacher will continue teaching this learner. Notifications sent."
+                            : "Teacher changed successfully for the learning registration and all future schedules. Notifications sent.",
                         Data = new
                         {
                             LearningRegisId = learningRegisId,
@@ -685,7 +691,8 @@ namespace InstruLearn_Application.BLL.Service
                             OriginalTeacherId = originalTeacherId,
                             OriginalTeacherName = originalTeacher?.Fullname ?? "No previous teacher",
                             UpdatedSchedules = futureSchedules.Count,
-                            NotificationResolved = true
+                            NotificationResolved = true,
+                            IsSameTeacher = isSameTeacher
                         }
                     };
                 }
@@ -707,6 +714,7 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
         }
+
 
         public async Task<ResponseDTO> GetTeacherNotificationsAsync(int teacherId)
         {
@@ -761,7 +769,8 @@ namespace InstruLearn_Application.BLL.Service
             Teacher newTeacher,
             Teacher originalTeacher,
             string changeReason,
-            List<Schedules> affectedSchedules)
+            List<Schedules> affectedSchedules,
+            bool isSameTeacher = false)
         {
             var nextSessionDate = affectedSchedules.Any()
                 ? affectedSchedules.OrderBy(s => s.StartDay).First().StartDay.ToString("dd/MM/yyyy")
@@ -770,139 +779,218 @@ namespace InstruLearn_Application.BLL.Service
             // 1. Notify the learner
             if (registration.Learner?.Account != null && !string.IsNullOrEmpty(registration.Learner.Account.Email))
             {
-                string learnerSubject = "Teacher Change Notification";
-                string learnerBody = $@"
-            <html>
-            <body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
-                <div style='background-color: #f7f7f7; padding: 20px; border-radius: 5px;'>
-                    <h2 style='color: #333;'>Thông báo thay đổi giáo viên</h2>
+                string learnerSubject = isSameTeacher ? "Teacher Request Processed" : "Teacher Change Notification";
+                string learnerBody;
+
+                if (isSameTeacher)
+                {
+                    // Custom message when the same teacher continues
+                    learnerBody = $@"
+                    <html>
+                    <body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
+                        <div style='background-color: #f7f7f7; padding: 20px; border-radius: 5px;'>
+                            <h2 style='color: #333;'>Thông báo về yêu cầu thay đổi giáo viên</h2>
                     
-                    <p>Xin chào {registration.Learner.FullName},</p>
+                            <p>Xin chào {registration.Learner.FullName},</p>
                     
-                    <p>Chúng tôi muốn thông báo rằng yêu cầu thay đổi giáo viên của bạn đã được chấp nhận.</p>
+                            <p>Chúng tôi đã nhận được yêu cầu thay đổi giáo viên của bạn và đã xem xét tình huống.</p>
                     
-                    <div style='background-color: #fff3cd; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #ffc107;'>
-                        <h3 style='margin-top: 0; color: #333;'>Chi tiết thay đổi:</h3>
-                        <p><strong>Giáo viên cũ:</strong> {originalTeacher?.Fullname ?? "Chưa có giáo viên"}</p>
-                        <p><strong>Giáo viên mới:</strong> {newTeacher.Fullname}</p>
-                        <p><strong>Buổi học tiếp theo:</strong> {nextSessionDate}</p>
-                        <p><strong>Lý do thay đổi:</strong> {changeReason}</p>
-                    </div>
+                            <div style='background-color: #e3f2fd; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #2196F3;'>
+                                <h3 style='margin-top: 0; color: #333;'>Kết quả xem xét:</h3>
+                                <p>Sau khi đánh giá, chúng tôi quyết định rằng giáo viên hiện tại của bạn <strong>{newTeacher.Fullname}</strong> vẫn là phù hợp nhất để tiếp tục dạy bạn.</p>
+                                <p><strong>Lý do:</strong> {changeReason}</p>
+                                <p><strong>Buổi học tiếp theo:</strong> {nextSessionDate}</p>
+                            </div>
                     
-                    <p>Tất cả các buổi học sắp tới của bạn sẽ được thực hiện với giáo viên mới.</p>
-                    <p>Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với nhóm hỗ trợ của chúng tôi.</p>
+                            <p>Chúng tôi hiểu rằng mỗi học viên có nhu cầu học tập khác nhau. Nếu bạn gặp khó khăn, vui lòng cung cấp thêm chi tiết để chúng tôi có thể hỗ trợ bạn tốt hơn.</p>
+                            <p>Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với nhóm hỗ trợ của chúng tôi.</p>
                     
-                    <p>Trân trọng,<br>Đội ngũ InstruLearn</p>
-                </div>
-            </body>
-            </html>";
+                            <p>Trân trọng,<br>Đội ngũ InstruLearn</p>
+                        </div>
+                    </body>
+                    </html>";
+                }
+                else
+                {
+                    // Original notification for teacher change
+                    learnerBody = $@"
+                    <html>
+                    <body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
+                        <div style='background-color: #f7f7f7; padding: 20px; border-radius: 5px;'>
+                            <h2 style='color: #333;'>Thông báo thay đổi giáo viên</h2>
+                    
+                            <p>Xin chào {registration.Learner.FullName},</p>
+                    
+                            <p>Chúng tôi muốn thông báo rằng yêu cầu thay đổi giáo viên của bạn đã được chấp nhận.</p>
+                    
+                            <div style='background-color: #fff3cd; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #ffc107;'>
+                                <h3 style='margin-top: 0; color: #333;'>Chi tiết thay đổi:</h3>
+                                <p><strong>Giáo viên cũ:</strong> {originalTeacher?.Fullname ?? "Chưa có giáo viên"}</p>
+                                <p><strong>Giáo viên mới:</strong> {newTeacher.Fullname}</p>
+                                <p><strong>Buổi học tiếp theo:</strong> {nextSessionDate}</p>
+                                <p><strong>Lý do thay đổi:</strong> {changeReason}</p>
+                            </div>
+                    
+                            <p>Tất cả các buổi học sắp tới của bạn sẽ được thực hiện với giáo viên mới.</p>
+                            <p>Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với nhóm hỗ trợ của chúng tôi.</p>
+                    
+                            <p>Trân trọng,<br>Đội ngũ InstruLearn</p>
+                        </div>
+                    </body>
+                    </html>";
+                }
 
                 await _emailService.SendEmailAsync(registration.Learner.Account.Email, learnerSubject, learnerBody, true);
                 _logger.LogInformation("Sent teacher change notification email to learner {LearnerId}", registration.LearnerId);
             }
 
-            // 2. Notify the new teacher
+            // 2. Notify the teacher (whether new or same)
             if (newTeacher.AccountId != null)
             {
-                var newTeacherAccount = await _unitOfWork.AccountRepository.GetByIdAsync(newTeacher.AccountId);
-                if (newTeacherAccount != null && !string.IsNullOrEmpty(newTeacherAccount.Email))
+                var teacherAccount = await _unitOfWork.AccountRepository.GetByIdAsync(newTeacher.AccountId);
+                if (teacherAccount != null && !string.IsNullOrEmpty(teacherAccount.Email))
                 {
                     var sessionsByDate = affectedSchedules
                         .OrderBy(s => s.StartDay)
                         .GroupBy(s => s.StartDay)
                         .Take(5)
-                        .Select(g => new {
+                        .Select(g => new
+                        {
                             Date = g.Key.ToString("dd/MM/yyyy"),
                             DayOfWeek = g.Key.DayOfWeek.ToString(),
-                            Sessions = g.Select(s => new {
+                            Sessions = g.Select(s => new
+                            {
                                 TimeStart = s.TimeStart.ToString("HH:mm"),
                                 TimeEnd = s.TimeEnd.ToString("HH:mm")
                             }).ToList()
                         }).ToList();
 
                     string sessionsList = string.Join("", sessionsByDate.Select(d => $@"
-                <div style='margin-bottom: 10px;'>
-                    <strong>{d.Date} ({d.DayOfWeek})</strong>:
-                    {string.Join(", ", d.Sessions.Select(s => $"{s.TimeStart}-{s.TimeEnd}"))}
-                </div>"));
+                        <div style='margin-bottom: 10px;'>
+                            <strong>{d.Date} ({d.DayOfWeek})</strong>:
+                            {string.Join(", ", d.Sessions.Select(s => $"{s.TimeStart}-{s.TimeEnd}"))}
+                        </div>"));
 
                     if (sessionsList.Length == 0)
                     {
                         sessionsList = "<p>Chi tiết lịch học sẽ được cập nhật trong thời gian tới.</p>";
                     }
 
-                    string newTeacherSubject = "Phân công lớp học mới";
-                    string newTeacherBody = $@"
-                <html>
-                <body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
-                    <div style='background-color: #f7f7f7; padding: 20px; border-radius: 5px;'>
-                        <h2 style='color: #333;'>Thông báo phân công giảng dạy mới</h2>
-                        
-                        <p>Xin chào {newTeacher.Fullname},</p>
-                        
-                        <p>Bạn đã được phân công giảng dạy cho học viên {registration.Learner?.FullName ?? "N/A"}.</p>
-                        
-                        <div style='background-color: #e8f5e9; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #4CAF50;'>
-                            <h3 style='margin-top: 0; color: #333;'>Chi tiết phân công:</h3>
-                            <p><strong>Học viên:</strong> {registration.Learner?.FullName ?? "N/A"}</p>
-                            <p><strong>Môn học:</strong> {registration.Major?.MajorName ?? "N/A"}</p>
-                            <p><strong>Lý do được phân công:</strong> {changeReason}</p>
-                            <p><strong>Lịch học sắp tới:</strong></p>
-                            {sessionsList}
-                            {(affectedSchedules.Count > 5 ? "<p><em>...và các buổi học khác</em></p>" : "")}
-                        </div>
-                        
-                        <p>Vui lòng kiểm tra hệ thống để biết thêm chi tiết về lịch giảng dạy của bạn.</p>
-                        <p>Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với quản trị viên.</p>
-                        
-                        <p>Trân trọng,<br>Đội ngũ InstruLearn</p>
-                    </div>
-                </body>
-                </html>";
+                    string teacherSubject = isSameTeacher
+                        ? "Xác nhận tiếp tục giảng dạy"
+                        : "Phân công lớp học mới";
 
-                    await _emailService.SendEmailAsync(newTeacherAccount.Email, newTeacherSubject, newTeacherBody, true);
-                    _logger.LogInformation("Sent assignment notification email to new teacher {TeacherId}", newTeacher.TeacherId);
+                    string teacherBody;
+
+                    if (isSameTeacher)
+                    {
+                        // Email for same teacher continuing
+                        teacherBody = $@"
+                        <html>
+                        <body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
+                            <div style='background-color: #f7f7f7; padding: 20px; border-radius: 5px;'>
+                                <h2 style='color: #333;'>Thông báo xác nhận tiếp tục giảng dạy</h2>
+                        
+                                <p>Xin chào {newTeacher.Fullname},</p>
+                        
+                                <p>Chúng tôi xin thông báo rằng sau khi xem xét yêu cầu thay đổi giáo viên từ học viên {registration.Learner?.FullName ?? "N/A"}, 
+                           quyết định của chúng tôi là bạn sẽ tiếp tục làm giáo viên cho học viên này.</p>
+                        
+                                <div style='background-color: #e8f5e9; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #4CAF50;'>
+                                    <h3 style='margin-top: 0; color: #333;'>Chi tiết:</h3>
+                                    <p><strong>Học viên:</strong> {registration.Learner?.FullName ?? "N/A"}</p>
+                                    <p><strong>Môn học:</strong> {registration.Major?.MajorName ?? "N/A"}</p>
+                                    <p><strong>Lý do quyết định:</strong> {changeReason}</p>
+                                    <p><strong>Lịch học sắp tới:</strong></p>
+                                    {sessionsList}
+                                    {(affectedSchedules.Count > 5 ? "<p><em>...và các buổi học khác</em></p>" : "")}
+                                </div>
+                        
+                                <p>Vui lòng tiếp tục cung cấp trải nghiệm học tập chất lượng cao cho học viên này.</p>
+                                <p>Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với quản trị viên.</p>
+                        
+                                <p>Trân trọng,<br>Đội ngũ InstruLearn</p>
+                            </div>
+                        </body>
+                        </html>";
+                    }
+                    else
+                    {
+                        // Original email for new teacher assignment
+                        teacherBody = $@"
+                        <html>
+                        <body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
+                            <div style='background-color: #f7f7f7; padding: 20px; border-radius: 5px;'>
+                                <h2 style='color: #333;'>Thông báo phân công giảng dạy mới</h2>
+                        
+                                <p>Xin chào {newTeacher.Fullname},</p>
+                        
+                                <p>Bạn đã được phân công giảng dạy cho học viên {registration.Learner?.FullName ?? "N/A"}.</p>
+                        
+                                <div style='background-color: #e8f5e9; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #4CAF50;'>
+                                    <h3 style='margin-top: 0; color: #333;'>Chi tiết phân công:</h3>
+                                    <p><strong>Học viên:</strong> {registration.Learner?.FullName ?? "N/A"}</p>
+                                    <p><strong>Môn học:</strong> {registration.Major?.MajorName ?? "N/A"}</p>
+                                    <p><strong>Lý do được phân công:</strong> {changeReason}</p>
+                                    <p><strong>Lịch học sắp tới:</strong></p>
+                                    {sessionsList}
+                                    {(affectedSchedules.Count > 5 ? "<p><em>...và các buổi học khác</em></p>" : "")}
+                                </div>
+                        
+                                <p>Vui lòng kiểm tra hệ thống để biết thêm chi tiết về lịch giảng dạy của bạn.</p>
+                                <p>Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với quản trị viên.</p>
+                        
+                                <p>Trân trọng,<br>Đội ngũ InstruLearn</p>
+                            </div>
+                        </body>
+                        </html>";
+                    }
+
+                    await _emailService.SendEmailAsync(teacherAccount.Email, teacherSubject, teacherBody, true);
+                    _logger.LogInformation("Sent notification email to {0} teacher {1}",
+                        isSameTeacher ? "continuing" : "new", newTeacher.TeacherId);
                 }
             }
 
-            // 3. Notify the original teacher (if applicable)
-            if (originalTeacher != null && originalTeacher.AccountId != null && originalTeacher.TeacherId != newTeacher.TeacherId)
+            // 3. Notify the original teacher only if different from new teacher
+            if (!isSameTeacher && originalTeacher != null && originalTeacher.AccountId != null)
             {
                 var originalTeacherAccount = await _unitOfWork.AccountRepository.GetByIdAsync(originalTeacher.AccountId);
                 if (originalTeacherAccount != null && !string.IsNullOrEmpty(originalTeacherAccount.Email))
                 {
                     string originalTeacherSubject = "Thay đổi lớp giảng dạy";
                     string originalTeacherBody = $@"
-                <html>
-                <body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
-                    <div style='background-color: #f7f7f7; padding: 20px; border-radius: 5px;'>
-                        <h2 style='color: #333;'>Thông báo thay đổi lớp giảng dạy</h2>
+                        <html>
+                        <body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
+                            <div style='background-color: #f7f7f7; padding: 20px; border-radius: 5px;'>
+                                <h2 style='color: #333;'>Thông báo thay đổi lớp giảng dạy</h2>
                         
-                        <p>Xin chào {originalTeacher.Fullname},</p>
+                                <p>Xin chào {originalTeacher.Fullname},</p>
                         
-                        <p>Chúng tôi muốn thông báo rằng bạn sẽ không còn giảng dạy cho học viên {registration.Learner?.FullName ?? "N/A"}.</p>
+                                <p>Chúng tôi muốn thông báo rằng bạn sẽ không còn giảng dạy cho học viên {registration.Learner?.FullName ?? "N/A"}.</p>
                         
-                        <div style='background-color: #ffebee; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #f44336;'>
-                            <h3 style='margin-top: 0; color: #333;'>Chi tiết thay đổi:</h3>
-                            <p><strong>Học viên:</strong> {registration.Learner?.FullName ?? "N/A"}</p>
-                            <p><strong>Môn học:</strong> {registration.Major?.MajorName ?? "N/A"}</p>
-                            <p><strong>Giáo viên mới:</strong> {newTeacher.Fullname}</p>
-                            <p><strong>Lý do thay đổi:</strong> {changeReason}</p>
-                        </div>
+                                <div style='background-color: #ffebee; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #f44336;'>
+                                    <h3 style='margin-top: 0; color: #333;'>Chi tiết thay đổi:</h3>
+                                    <p><strong>Học viên:</strong> {registration.Learner?.FullName ?? "N/A"}</p>
+                                    <p><strong>Môn học:</strong> {registration.Major?.MajorName ?? "N/A"}</p>
+                                    <p><strong>Giáo viên mới:</strong> {newTeacher.Fullname}</p>
+                                    <p><strong>Lý do thay đổi:</strong> {changeReason}</p>
+                                </div>
                         
-                        <p>Lịch giảng dạy của bạn đã được cập nhật.</p>
-                        <p>Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với quản trị viên.</p>
+                                <p>Lịch giảng dạy của bạn đã được cập nhật.</p>
+                                <p>Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với quản trị viên.</p>
                         
-                        <p>Trân trọng,<br>Đội ngũ InstruLearn</p>
-                    </div>
-                </body>
-                </html>";
+                                <p>Trân trọng,<br>Đội ngũ InstruLearn</p>
+                            </div>
+                        </body>
+                        </html>";
 
                     await _emailService.SendEmailAsync(originalTeacherAccount.Email, originalTeacherSubject, originalTeacherBody, true);
                     _logger.LogInformation("Sent notification email to original teacher {TeacherId}", originalTeacher.TeacherId);
                 }
             }
         }
+
 
     }
 }
