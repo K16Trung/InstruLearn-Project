@@ -14,6 +14,5 @@ namespace InstruLearn_Application.Model.Models.DTO.TeacherEvaluation
         public int SelectedOptionId { get; set; }
         public string QuestionText { get; set; }
         public string SelectedOptionText { get; set; }
-        public int RatingValue { get; set; }
     }
 }
