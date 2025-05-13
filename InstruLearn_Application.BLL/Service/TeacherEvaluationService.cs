@@ -72,61 +72,6 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
-        public async Task<ResponseDTO> GetEvaluationByIdAsync(int evaluationFeedbackId)
-        {
-            try
-            {
-                var evaluation = await _unitOfWork.TeacherEvaluationRepository.GetByIdWithDetailsAsync(evaluationFeedbackId);
-
-                if (evaluation == null)
-                {
-                    return new ResponseDTO
-                    {
-                        IsSucceed = false,
-                        Message = $"Evaluation with ID {evaluationFeedbackId} not found."
-                    };
-                }
-
-                var evaluationDTO = _mapper.Map<TeacherEvaluationDTO>(evaluation);
-
-                if (evaluation.LearningRegistration != null)
-                {
-                    var registration = await _unitOfWork.LearningRegisRepository
-                        .GetWithIncludesAsync(
-                            x => x.LearningRegisId == evaluation.LearningRegistrationId,
-                            "Schedules"
-                        );
-
-                    if (registration != null && registration.Any())
-                    {
-                        var regis = registration.First();
-
-                        var completedSessions = regis.Schedules
-                            .Count(s => s.AttendanceStatus == AttendanceStatus.Present);
-
-                        evaluationDTO.CompletedSessions = completedSessions;
-                        evaluationDTO.TotalSessions = regis.NumberOfSession;
-                    }
-                }
-
-                return new ResponseDTO
-                {
-                    IsSucceed = true,
-                    Message = "Evaluation retrieved successfully.",
-                    Data = evaluationDTO
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving evaluation {EvaluationId}", evaluationFeedbackId);
-                return new ResponseDTO
-                {
-                    IsSucceed = false,
-                    Message = $"Error retrieving evaluation: {ex.Message}"
-                };
-            }
-        }
-
         public async Task<ResponseDTO> GetEvaluationByRegistrationIdAsync(int learningRegistrationId)
         {
             try
@@ -278,81 +223,6 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
-        public async Task<ResponseDTO> GetPendingEvaluationsForTeacherAsync(int teacherId)
-        {
-            try
-            {
-                var pendingEvaluations = await _unitOfWork.TeacherEvaluationRepository.GetPendingByTeacherIdAsync(teacherId);
-                var pendingEvaluationDTOs = _mapper.Map<List<TeacherEvaluationDTO>>(pendingEvaluations);
-
-                foreach (var dto in pendingEvaluationDTOs)
-                {
-                    var learningRegis = await _unitOfWork.LearningRegisRepository.GetByIdAsync(dto.LearningRegistrationId);
-                    if (learningRegis != null)
-                    {
-                        dto.TotalSessions = learningRegis.NumberOfSession;
-
-                        var schedules = await _unitOfWork.ScheduleRepository
-                            .GetSchedulesByLearningRegisIdAsync(learningRegis.LearningRegisId);
-
-                        dto.CompletedSessions = schedules?.Count(s => s.AttendanceStatus == AttendanceStatus.Present) ?? 0;
-                    }
-                }
-
-                return new ResponseDTO
-                {
-                    IsSucceed = true,
-                    Message = $"Retrieved {pendingEvaluationDTOs.Count} pending evaluations for teacher ID {teacherId}.",
-                    Data = pendingEvaluationDTOs
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving pending evaluations for teacher {TeacherId}", teacherId);
-                return new ResponseDTO
-                {
-                    IsSucceed = false,
-                    Message = $"Error retrieving pending evaluations: {ex.Message}"
-                };
-            }
-        }
-
-        public async Task<ResponseDTO> GetAllQuestionsAsync()
-        {
-            try
-            {
-                var questions = await _unitOfWork.TeacherEvaluationRepository.GetAllQuestionsWithOptionsAsync();
-
-                if (questions == null || !questions.Any())
-                {
-                    return new ResponseDTO
-                    {
-                        IsSucceed = true,
-                        Message = "No questions found.",
-                        Data = new List<TeacherEvaluationQuestionDTO>()
-                    };
-                }
-
-                var questionDTOs = _mapper.Map<List<TeacherEvaluationQuestionDTO>>(questions);
-
-                return new ResponseDTO
-                {
-                    IsSucceed = true,
-                    Message = $"Retrieved {questionDTOs.Count} questions.",
-                    Data = questionDTOs
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving all questions");
-                return new ResponseDTO
-                {
-                    IsSucceed = false,
-                    Message = $"Error retrieving questions: {ex.Message}"
-                };
-            }
-        }
-
         public async Task<ResponseDTO> GetQuestionByIdAsync(int questionId)
         {
             try
@@ -388,168 +258,38 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
-        public async Task<ResponseDTO> CreateEvaluationAsync(int learningRegistrationId)
+        public async Task<ResponseDTO> GetActiveQuestionsAsync()
         {
             try
             {
-                var existingEvaluation = await _unitOfWork.TeacherEvaluationRepository
-                    .ExistsByLearningRegistrationIdAsync(learningRegistrationId);
+                var questions = await _unitOfWork.TeacherEvaluationRepository.GetActiveQuestionsWithOptionsAsync();
 
-                if (existingEvaluation)
+                if (questions == null || !questions.Any())
                 {
                     return new ResponseDTO
                     {
-                        IsSucceed = false,
-                        Message = "An evaluation already exists for this learning registration."
+                        IsSucceed = true,
+                        Message = "No active evaluation questions found.",
+                        Data = new List<TeacherEvaluationQuestionDTO>()
                     };
                 }
 
-                var learningRegis = await _unitOfWork.LearningRegisRepository
-                    .GetWithIncludesAsync(
-                        x => x.LearningRegisId == learningRegistrationId,
-                        "Teacher,Learner"
-                    );
-
-                if (learningRegis == null || !learningRegis.Any())
-                {
-                    return new ResponseDTO
-                    {
-                        IsSucceed = false,
-                        Message = "Learning registration not found."
-                    };
-                }
-
-                var registration = learningRegis.First();
-
-                if (registration.TeacherId == null)
-                {
-                    return new ResponseDTO
-                    {
-                        IsSucceed = false,
-                        Message = "The learning registration does not have an assigned teacher."
-                    };
-                }
-
-                var newEvaluation = new TeacherEvaluationFeedback
-                {
-                    LearningRegistrationId = learningRegistrationId,
-                    TeacherId = registration.TeacherId.Value,
-                    LearnerId = registration.LearnerId,
-                    CreatedAt = DateTime.Now,
-                    Status = TeacherEvaluationStatus.NotStarted,
-                    GoalsAchieved = false
-                };
-
-                await _unitOfWork.TeacherEvaluationRepository.AddAsync(newEvaluation);
-                await _unitOfWork.SaveChangeAsync();
-
-                var savedEvaluation = await _unitOfWork.TeacherEvaluationRepository
-                    .GetByLearningRegistrationIdAsync(learningRegistrationId);
-
-                await CreateTeacherEvaluationNotification(
-                    registration.TeacherId.Value,
-                    savedEvaluation.EvaluationFeedbackId,
-                    registration.LearnerId,
-                    learningRegistrationId,
-                    registration.LearningRequest
-                );
+                var questionDTOs = _mapper.Map<List<TeacherEvaluationQuestionDTO>>(questions);
 
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Evaluation created successfully. Teacher has been notified.",
-                    Data = _mapper.Map<TeacherEvaluationDTO>(savedEvaluation)
+                    Message = $"Retrieved {questionDTOs.Count} active evaluation questions.",
+                    Data = questionDTOs
                 };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating evaluation for learning registration {LearningRegistrationId}", learningRegistrationId);
+                _logger.LogError(ex, "Error retrieving active evaluation questions");
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error creating evaluation: {ex.Message}"
-                };
-            }
-        }
-
-        public async Task<ResponseDTO> UpdateEvaluationFeedbackAsync(int evaluationFeedbackId, TeacherEvaluationDTO feedbackDTO)
-        {
-            try
-            {
-                var existingFeedback = await _unitOfWork.TeacherEvaluationRepository.GetByIdWithDetailsAsync(evaluationFeedbackId);
-
-                if (existingFeedback == null)
-                {
-                    return new ResponseDTO
-                    {
-                        IsSucceed = false,
-                        Message = $"Evaluation feedback with ID {evaluationFeedbackId} not found."
-                    };
-                }
-
-                existingFeedback.Status = feedbackDTO.Status;
-                existingFeedback.GoalsAchieved = feedbackDTO.GoalsAchieved;
-
-                if (feedbackDTO.Status == TeacherEvaluationStatus.Completed && existingFeedback.CompletedAt == null)
-                {
-                    existingFeedback.CompletedAt = DateTime.Now;
-                }
-
-                await _unitOfWork.TeacherEvaluationRepository.UpdateAsync(existingFeedback);
-                await _unitOfWork.SaveChangeAsync();
-
-                var updatedFeedback = await _unitOfWork.TeacherEvaluationRepository.GetByIdWithDetailsAsync(evaluationFeedbackId);
-                var updatedFeedbackDTO = _mapper.Map<TeacherEvaluationDTO>(updatedFeedback);
-
-                return new ResponseDTO
-                {
-                    IsSucceed = true,
-                    Message = "Evaluation feedback updated successfully.",
-                    Data = updatedFeedbackDTO
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating evaluation feedback {FeedbackId}", evaluationFeedbackId);
-                return new ResponseDTO
-                {
-                    IsSucceed = false,
-                    Message = $"Error updating evaluation feedback: {ex.Message}"
-                };
-            }
-        }
-
-        public async Task<ResponseDTO> DeleteEvaluationFeedbackAsync(int evaluationFeedbackId)
-        {
-            try
-            {
-                var existingFeedback = await _unitOfWork.TeacherEvaluationRepository.GetByIdWithDetailsAsync(evaluationFeedbackId);
-
-                if (existingFeedback == null)
-                {
-                    return new ResponseDTO
-                    {
-                        IsSucceed = false,
-                        Message = $"Evaluation feedback with ID {evaluationFeedbackId} not found."
-                    };
-                }
-
-                await _unitOfWork.TeacherEvaluationRepository.DeleteAsync(evaluationFeedbackId);
-                await _unitOfWork.SaveChangeAsync();
-
-                return new ResponseDTO
-                {
-                    IsSucceed = true,
-                    Message = $"Evaluation feedback with ID {evaluationFeedbackId} and all its answers have been deleted successfully."
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deleting evaluation feedback {FeedbackId}", evaluationFeedbackId);
-                return new ResponseDTO
-                {
-                    IsSucceed = false,
-                    Message = $"Error deleting evaluation feedback: {ex.Message}"
+                    Message = $"Error retrieving active evaluation questions: {ex.Message}"
                 };
             }
         }
@@ -669,6 +409,7 @@ namespace InstruLearn_Application.BLL.Service
                         {
                             EvaluationQuestionId = question.EvaluationQuestionId,
                             OptionText = optionDTO.OptionText,
+                            RatingValue = optionDTO.RatingValue
                         };
 
                         await _unitOfWork.TeacherEvaluationRepository.AddOptionAsync(option);
@@ -680,12 +421,14 @@ namespace InstruLearn_Application.BLL.Service
                 var createdQuestion = await _unitOfWork.TeacherEvaluationRepository
                     .GetQuestionWithOptionsAsync(question.EvaluationQuestionId);
 
+                await NotifyLearnersAboutNewQuestion(createdQuestion);
+
                 var response = _mapper.Map<TeacherEvaluationQuestionDTO>(createdQuestion);
 
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Question created successfully.",
+                    Message = "Question created successfully and learners have been notified.",
                     Data = response
                 };
             }
@@ -794,19 +537,28 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
-        public async Task<ResponseDTO> SubmitEvaluationAsync(SubmitTeacherEvaluationDTO submitDTO)
+        public async Task<ResponseDTO> SubmitEvaluationFeedbackAsync(SubmitTeacherEvaluationDTO submitDTO)
         {
             try
             {
                 var evaluation = await _unitOfWork.TeacherEvaluationRepository
-                    .GetByIdWithDetailsAsync(submitDTO.EvaluationFeedbackId);
+                    .GetByLearningRegistrationIdAsync(submitDTO.LearningRegistrationId);
 
                 if (evaluation == null)
                 {
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Evaluation not found."
+                        Message = "Evaluation not found for the specified learning registration."
+                    };
+                }
+
+                if (evaluation.LearnerId != submitDTO.LearnerId)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "The provided learner ID does not match the evaluation record."
                     };
                 }
 
@@ -862,7 +614,7 @@ namespace InstruLearn_Application.BLL.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error submitting evaluation {EvaluationId}", submitDTO.EvaluationFeedbackId);
+                _logger.LogError(ex, "Error submitting evaluation for registration {LearningRegistrationId}", submitDTO.LearningRegistrationId);
                 return new ResponseDTO
                 {
                     IsSucceed = false,
@@ -871,160 +623,58 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
-        public async Task<ResponseDTO> CheckAndCreateEvaluationRequestsAsync()
+        private async Task NotifyLearnersAboutNewQuestion(TeacherEvaluationQuestion question)
         {
             try
             {
-                _logger.LogInformation("Starting automatic check for teacher evaluation requests");
-
+                // Get all active learning registrations that may need evaluations
                 var activeRegistrations = await _unitOfWork.LearningRegisRepository
                     .GetWithIncludesAsync(
                         x => x.Status == LearningRegis.Fourty || x.Status == LearningRegis.Sixty,
-                        "Teacher,Learner,Schedules"
+                        "Learner"
                     );
 
                 if (activeRegistrations == null || !activeRegistrations.Any())
                 {
-                    return new ResponseDTO
+                    _logger.LogInformation("No active learning registrations found for new question notifications");
+                    return;
+                }
+
+                foreach (var registration in activeRegistrations)
+                {
+                    if (registration.LearnerId <= 0)
+                        continue;
+
+                    // Check if there's already an evaluation for this registration
+                    var existingEvaluation = await _unitOfWork.TeacherEvaluationRepository
+                        .ExistsByLearningRegistrationIdAsync(registration.LearningRegisId);
+
+                    if (!existingEvaluation)
+                        continue;
+
+                    // Create notification for the learner
+                    var notification = new StaffNotification
                     {
-                        IsSucceed = true,
-                        Message = "No active learning registrations found."
+                        LearningRegisId = registration.LearningRegisId,
+                        LearnerId = registration.LearnerId,
+                        Type = NotificationType.Evaluation,
+                        Status = NotificationStatus.Unread,
+                        CreatedAt = DateTime.Now,
+                        Title = "New Evaluation Question Added",
+                        Message = $"A new question has been added to the teacher evaluation form: '{question.QuestionText}'. " +
+                                 $"Please check your evaluation form to provide feedback."
                     };
+
+                    await _unitOfWork.StaffNotificationRepository.AddAsync(notification);
                 }
 
-                int requestsCreated = 0;
-                var results = new List<object>();
-
-                foreach (var regis in activeRegistrations)
-                {
-                    try
-                    {
-                        if (regis.TeacherId == null)
-                        {
-                            continue;
-                        }
-
-                        var completedSchedules = regis.Schedules
-                            ?.Where(s => s.AttendanceStatus == AttendanceStatus.Present)
-                            .OrderByDescending(s => s.StartDay)
-                            .ToList();
-
-                        if (completedSchedules == null || !completedSchedules.Any())
-                        {
-                            continue;
-                        }
-
-                        var existingEvaluation = await _unitOfWork.TeacherEvaluationRepository
-                            .ExistsByLearningRegistrationIdAsync(regis.LearningRegisId);
-
-                        if (existingEvaluation)
-                        {
-                            continue;
-                        }
-
-                        var newEvaluation = new TeacherEvaluationFeedback
-                        {
-                            LearningRegistrationId = regis.LearningRegisId,
-                            TeacherId = regis.TeacherId.Value,
-                            LearnerId = regis.LearnerId,
-                            CreatedAt = DateTime.Now,
-                            Status = TeacherEvaluationStatus.NotStarted,
-                            GoalsAchieved = false
-                        };
-
-                        await _unitOfWork.TeacherEvaluationRepository.AddAsync(newEvaluation);
-                        await _unitOfWork.SaveChangeAsync();
-
-                        var savedEvaluation = await _unitOfWork.TeacherEvaluationRepository
-                            .GetByLearningRegistrationIdAsync(regis.LearningRegisId);
-
-                        requestsCreated++;
-
-                        await CreateTeacherEvaluationNotification(
-                            regis.TeacherId.Value,
-                            savedEvaluation.EvaluationFeedbackId,
-                            regis.LearnerId,
-                            regis.LearningRegisId,
-                            regis.LearningRequest
-                        );
-
-                        results.Add(new
-                        {
-                            LearningRegisId = regis.LearningRegisId,
-                            TeacherId = regis.TeacherId,
-                            TeacherName = regis.Teacher?.Fullname ?? "N/A",
-                            LearnerId = regis.LearnerId,
-                            LearnerName = regis.Learner?.FullName ?? "N/A",
-                            EvaluationId = savedEvaluation.EvaluationFeedbackId,
-                            CreatedAt = savedEvaluation.CreatedAt,
-                            NotificationCreated = true
-                        });
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error processing evaluation request for registration {LearningRegisId}",
-                            regis.LearningRegisId);
-
-                        results.Add(new
-                        {
-                            LearningRegisId = regis.LearningRegisId,
-                            Error = ex.Message,
-                            Success = false
-                        });
-                    }
-                }
-
-                return new ResponseDTO
-                {
-                    IsSucceed = true,
-                    Message = $"Created {requestsCreated} teacher evaluation requests.",
-                    Data = results
-                };
+                await _unitOfWork.SaveChangeAsync();
+                _logger.LogInformation("Notifications sent to learners about new evaluation question: {QuestionId}", question.EvaluationQuestionId);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error checking and creating teacher evaluation requests");
-                return new ResponseDTO
-                {
-                    IsSucceed = false,
-                    Message = $"Error creating teacher evaluation requests: {ex.Message}"
-                };
-            }
-        }
-
-        public async Task<ResponseDTO> GetActiveQuestionsAsync()
-        {
-            try
-            {
-                var questions = await _unitOfWork.TeacherEvaluationRepository.GetActiveQuestionsWithOptionsAsync();
-
-                if (questions == null || !questions.Any())
-                {
-                    return new ResponseDTO
-                    {
-                        IsSucceed = true,
-                        Message = "No active evaluation questions found.",
-                        Data = new List<TeacherEvaluationQuestionDTO>()
-                    };
-                }
-
-                var questionDTOs = _mapper.Map<List<TeacherEvaluationQuestionDTO>>(questions);
-
-                return new ResponseDTO
-                {
-                    IsSucceed = true,
-                    Message = $"Retrieved {questionDTOs.Count} active evaluation questions.",
-                    Data = questionDTOs
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving active evaluation questions");
-                return new ResponseDTO
-                {
-                    IsSucceed = false,
-                    Message = $"Error retrieving active evaluation questions: {ex.Message}"
-                };
+                _logger.LogError(ex, "Error creating learner notifications for new evaluation question");
+                throw;
             }
         }
 
@@ -1048,14 +698,16 @@ namespace InstruLearn_Application.BLL.Service
                     Status = NotificationStatus.Unread,
                     CreatedAt = DateTime.Now,
                     Title = "Student Evaluation Required",
-                    Message = $"Please complete an evaluation for {learnerName} (ID: {evaluationId}). " +
-                             $"Learning goals: {learningGoals}"
+                    Message = $"Please complete an evaluation for {learnerName}. " +
+                             $"Learning goals: {learningGoals}. " +
+                             $"Evaluation ID: {evaluationId}"
                 };
 
                 await _unitOfWork.StaffNotificationRepository.AddAsync(notification);
                 await _unitOfWork.SaveChangeAsync();
 
-                _logger.LogInformation($"Created evaluation notification for teacher {teacherId} regarding learner {learnerId}");
+                _logger.LogInformation("Created evaluation notification for teacher {TeacherId} regarding learner {LearnerId}",
+                    teacherId, learnerId);
             }
             catch (Exception ex)
             {
@@ -1082,15 +734,17 @@ namespace InstruLearn_Application.BLL.Service
                     Type = NotificationType.Evaluation,
                     Status = NotificationStatus.Unread,
                     CreatedAt = DateTime.Now,
-                    Title = "Learning Evaluation Completed",
-                    Message = $"{teacherName} has completed your learning evaluation (ID: {evaluationId}). " +
-                             $"View your evaluation results and feedback."
+                    Title = "Teacher Evaluation Form Completed",
+                    Message = $"{teacherName} has completed your learning evaluation. " +
+                             $"You can now view your evaluation results and feedback. " +
+                             $"Evaluation ID: {evaluationId}"
                 };
 
                 await _unitOfWork.StaffNotificationRepository.AddAsync(notification);
                 await _unitOfWork.SaveChangeAsync();
 
-                _logger.LogInformation($"Created evaluation completion notification for learner {learnerId}");
+                _logger.LogInformation("Created evaluation completion notification for learner {LearnerId} from teacher {TeacherId}",
+                    learnerId, teacherId);
             }
             catch (Exception ex)
             {
@@ -1106,7 +760,8 @@ namespace InstruLearn_Application.BLL.Service
                 var notifications = await _unitOfWork.StaffNotificationRepository.GetQuery()
                     .Where(n => n.LearningRegistration.TeacherId == teacherId &&
                                n.Type == NotificationType.Evaluation &&
-                               n.Message.Contains($"ID: {evaluationId}") &&
+                               (n.Message.Contains($"Evaluation ID: {evaluationId}") ||
+                                n.Message.Contains($"ID: {evaluationId}")) &&
                                n.Status != NotificationStatus.Resolved)
                     .ToListAsync();
 
@@ -1119,11 +774,13 @@ namespace InstruLearn_Application.BLL.Service
                     }
 
                     await _unitOfWork.SaveChangeAsync();
-                    _logger.LogInformation($"Marked evaluation notification(s) as resolved for teacher {teacherId}, evaluation {evaluationId}");
+                    _logger.LogInformation("Marked {0} evaluation notification(s) as resolved for teacher {1}, evaluation {2}",
+                        notifications.Count, teacherId, evaluationId);
                 }
                 else
                 {
-                    _logger.LogWarning($"No evaluation notifications found to mark as resolved for teacher {teacherId}, evaluation {evaluationId}");
+                    _logger.LogWarning("No evaluation notifications found to mark as resolved for teacher {0}, evaluation {1}",
+                        teacherId, evaluationId);
                 }
             }
             catch (Exception ex)
