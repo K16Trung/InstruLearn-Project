@@ -1,10 +1,11 @@
-﻿using System;
+﻿using InstruLearn_Application.Model.Models.DTO.TeacherEvaluationOption;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace InstruLearn_Application.Model.Models.DTO.TeacherEvaluation
+namespace InstruLearn_Application.Model.Models.DTO.TeacherEvaluationQuestion
 {
     public class TeacherEvaluationQuestionDTO
     {

@@ -18,6 +18,20 @@ namespace InstruLearn_Application.DAL.Repository
             _appDbContext = appDbContext;
         }
 
+        public async Task<List<TeacherEvaluationFeedback>> GetAllEvaluationsWithDetailsAsync()
+        {
+            return await _appDbContext.TeacherEvaluationFeedbacks
+                .Include(t => t.Teacher)
+                .Include(t => t.Learner)
+                .Include(t => t.LearningRegistration)
+                .Include(t => t.Answers)
+                    .ThenInclude(a => a.Question)
+                .Include(t => t.Answers)
+                    .ThenInclude(a => a.SelectedOption)
+                .OrderByDescending(t => t.CreatedAt)
+                .ToListAsync();
+        }
+
         public async Task<TeacherEvaluationFeedback> GetByIdWithDetailsAsync(int evaluationId)
         {
             return await _appDbContext.TeacherEvaluationFeedbacks
@@ -121,6 +135,79 @@ namespace InstruLearn_Application.DAL.Repository
         public async Task UpdateAnswerAsync(TeacherEvaluationAnswer answer)
         {
             _appDbContext.TeacherEvaluationAnswers.Update(answer);
+        }
+
+        public async Task AddQuestionAsync(TeacherEvaluationQuestion question)
+        {
+            await _appDbContext.TeacherEvaluationQuestions.AddAsync(question);
+        }
+
+        public async Task AddOptionAsync(TeacherEvaluationOption option)
+        {
+            await _appDbContext.TeacherEvaluationOptions.AddAsync(option);
+        }
+
+        // New methods for update and delete operations
+        public async Task UpdateQuestionAsync(TeacherEvaluationQuestion question)
+        {
+            _appDbContext.TeacherEvaluationQuestions.Update(question);
+        }
+
+        public async Task DeleteQuestionAsync(int questionId)
+        {
+            var question = await _appDbContext.TeacherEvaluationQuestions
+                .Include(q => q.Options)
+                .FirstOrDefaultAsync(q => q.EvaluationQuestionId == questionId);
+
+            if (question != null)
+            {
+                if (question.Options != null && question.Options.Any())
+                {
+                    _appDbContext.TeacherEvaluationOptions.RemoveRange(question.Options);
+                }
+
+                _appDbContext.TeacherEvaluationQuestions.Remove(question);
+            }
+        }
+
+        public async Task UpdateFeedbackAsync(TeacherEvaluationFeedback feedback)
+        {
+            _appDbContext.TeacherEvaluationFeedbacks.Update(feedback);
+        }
+
+        public async Task DeleteFeedbackAsync(int feedbackId)
+        {
+            var feedback = await _appDbContext.TeacherEvaluationFeedbacks
+                .Include(f => f.Answers)
+                .FirstOrDefaultAsync(f => f.EvaluationFeedbackId == feedbackId);
+
+            if (feedback != null)
+            {
+                // First, delete related answers
+                if (feedback.Answers != null && feedback.Answers.Any())
+                {
+                    _appDbContext.TeacherEvaluationAnswers.RemoveRange(feedback.Answers);
+                }
+
+                // Delete the feedback
+                _appDbContext.TeacherEvaluationFeedbacks.Remove(feedback);
+            }
+        }
+
+        public async Task DeleteOptionAsync(int optionId)
+        {
+            var option = await _appDbContext.TeacherEvaluationOptions
+                .FirstOrDefaultAsync(o => o.EvaluationOptionId == optionId);
+
+            if (option != null)
+            {
+                _appDbContext.TeacherEvaluationOptions.Remove(option);
+            }
+        }
+
+        public async Task UpdateOptionAsync(TeacherEvaluationOption option)
+        {
+            _appDbContext.TeacherEvaluationOptions.Update(option);
         }
     }
 }
