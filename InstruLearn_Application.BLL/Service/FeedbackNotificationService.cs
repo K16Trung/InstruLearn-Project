@@ -56,6 +56,8 @@ namespace InstruLearn_Application.BLL.Service
                     .GetActiveQuestionsWithOptionsAsync();
 
                 var feedbackNotifications = new List<object>();
+                var feedbacksToUpdate = new List<LearningRegisFeedback>();
+                var registrationsToUpdate = new List<Learning_Registration>();
 
                 foreach (var regis in learningRegs)
                 {
@@ -79,7 +81,8 @@ namespace InstruLearn_Application.BLL.Service
                             LearnerId = learnerId,
                             CreatedAt = DateTime.Now,
                             Status = FeedbackStatus.NotStarted,
-                            AdditionalComments = ""
+                            AdditionalComments = "",
+                            DeadlineDate = DateTime.Now.AddDays(1)
                         };
 
                         await _unitOfWork.LearningRegisFeedbackRepository.AddAsync(newFeedback);
@@ -90,6 +93,35 @@ namespace InstruLearn_Application.BLL.Service
                             .GetFeedbackByRegistrationIdAsync(regis.LearningRegisId);
 
                         _logger.LogInformation($"Created new feedback record with ID {existingFeedback.FeedbackId} for learning registration {regis.LearningRegisId}");
+                    }
+                    else if (existingFeedback.DeadlineDate == null)
+                    {
+                        // Set deadline for existing feedbacks that don't have one
+                        existingFeedback.DeadlineDate = DateTime.Now.AddDays(1);
+                        feedbacksToUpdate.Add(existingFeedback);
+                    }
+
+                    // Check if feedback deadline has passed and update status if needed
+                    if (existingFeedback.DeadlineDate.HasValue &&
+                        DateTime.Now > existingFeedback.DeadlineDate.Value &&
+                        existingFeedback.Status != FeedbackStatus.Completed)
+                    {
+                        _logger.LogInformation($"Feedback deadline passed for feedback ID {existingFeedback.FeedbackId}. Auto-updating status.");
+
+                        // Mark feedback as completed automatically
+                        existingFeedback.Status = FeedbackStatus.Completed;
+                        existingFeedback.CompletedAt = DateTime.Now;
+                        existingFeedback.AdditionalComments = "Auto-completed by system due to deadline expiration";
+
+                        // Update the learning registration to FourtyFeedbackDone
+                        if (regis.Status == LearningRegis.Fourty)
+                        {
+                            regis.Status = LearningRegis.FourtyFeedbackDone;
+                            registrationsToUpdate.Add(regis);
+                        }
+
+                        feedbacksToUpdate.Add(existingFeedback);
+                        continue; // Skip displaying this feedback since it's now completed
                     }
 
                     // Only include notifications for forms that are not completed
@@ -147,10 +179,28 @@ namespace InstruLearn_Application.BLL.Service
                             RemainingPayment = remainingPayment,
                             FeedbackStatus = existingFeedback.Status.ToString(),
                             CreatedAt = existingFeedback.CreatedAt,
+                            DeadlineDate = existingFeedback.DeadlineDate,
                             Questions = questions,
                             Message = $"Bạn đã thanh toán 40% học phí. Vui lòng hoàn thành phản hồi này để xác nhận bạn muốn tiếp tục học và thanh toán 60% còn lại."
                         });
                     }
+                }
+
+                // Save all feedback updates
+                foreach (var feedback in feedbacksToUpdate)
+                {
+                    await _unitOfWork.LearningRegisFeedbackRepository.UpdateAsync(feedback);
+                }
+
+                // Save all registration status updates
+                foreach (var registration in registrationsToUpdate)
+                {
+                    await _unitOfWork.LearningRegisRepository.UpdateAsync(registration);
+                }
+
+                if (feedbacksToUpdate.Any() || registrationsToUpdate.Any())
+                {
+                    await _unitOfWork.SaveChangeAsync();
                 }
 
                 return new ResponseDTO
@@ -317,7 +367,8 @@ namespace InstruLearn_Application.BLL.Service
                                 LearnerId = regis.LearnerId,
                                 CreatedAt = DateTime.Now,
                                 Status = FeedbackStatus.NotStarted,
-                                AdditionalComments = ""
+                                AdditionalComments = "",
+                                DeadlineDate = DateTime.Now.AddDays(1)
                             };
 
                             await _unitOfWork.LearningRegisFeedbackRepository.AddAsync(newFeedback);
@@ -573,6 +624,97 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
         }
+
+        public async Task<ResponseDTO> CheckForExpiredFeedbacksAsync()
+        {
+            try
+            {
+                _logger.LogInformation("Checking for expired feedback deadlines");
+
+                // Get all feedbacks that are not completed and have a deadline date in the past
+                var expiredFeedbacks = await _unitOfWork.LearningRegisFeedbackRepository
+                    .GetWithIncludesAsync(
+                        f => f.Status != FeedbackStatus.Completed &&
+                             f.DeadlineDate.HasValue &&
+                             f.DeadlineDate < DateTime.Now,
+                        "LearningRegistration"
+                    );
+
+                if (expiredFeedbacks == null || !expiredFeedbacks.Any())
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = true,
+                        Message = "No expired feedbacks found."
+                    };
+                }
+
+                int updatedCount = 0;
+                var results = new List<object>();
+
+                foreach (var feedback in expiredFeedbacks)
+                {
+                    try
+                    {
+                        // Update feedback status
+                        feedback.Status = FeedbackStatus.Completed;
+                        feedback.CompletedAt = DateTime.Now;
+                        feedback.AdditionalComments = (feedback.AdditionalComments ?? "") +
+                                                     "\nAuto-completed by system due to deadline expiration";
+
+                        await _unitOfWork.LearningRegisFeedbackRepository.UpdateAsync(feedback);
+
+                        // Get and update the learning registration
+                        var learningRegis = feedback.LearningRegistration;
+                        if (learningRegis == null)
+                        {
+                            learningRegis = await _unitOfWork.LearningRegisRepository
+                                .GetByIdAsync(feedback.LearningRegistrationId);
+                        }
+
+                        if (learningRegis != null && learningRegis.Status == LearningRegis.Fourty)
+                        {
+                            learningRegis.Status = LearningRegis.FourtyFeedbackDone;
+                            await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
+                        }
+
+                        updatedCount++;
+
+                        results.Add(new
+                        {
+                            FeedbackId = feedback.FeedbackId,
+                            LearningRegistrationId = feedback.LearningRegistrationId,
+                            LearnerId = feedback.LearnerId,
+                            ExpiredOn = feedback.DeadlineDate,
+                            ProcessedOn = DateTime.Now
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error processing expired feedback {FeedbackId}", feedback.FeedbackId);
+                    }
+                }
+
+                await _unitOfWork.SaveChangeAsync();
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = $"Updated {updatedCount} expired feedbacks.",
+                    Data = results
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking for expired feedbacks");
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Error checking for expired feedbacks: {ex.Message}"
+                };
+            }
+        }
+
 
 
         private async Task SendFeedbackEmailNotification(string email, string learnerName, int feedbackId, string teacherName, decimal remainingPayment)

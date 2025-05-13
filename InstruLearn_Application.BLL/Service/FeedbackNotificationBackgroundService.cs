@@ -49,6 +49,17 @@ namespace InstruLearn_Application.BLL.Service
                     {
                         _logger.LogWarning("Feedback notification check completed with warnings: {message}", result.Message);
                     }
+
+                    // Check for expired feedbacks and update their status
+                    var expiredResult = await feedbackService.CheckForExpiredFeedbacksAsync();
+                    if (expiredResult.IsSucceed)
+                    {
+                        _logger.LogInformation("Expired feedback check completed successfully: {message}", expiredResult.Message);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Expired feedback check completed with warnings: {message}", expiredResult.Message);
+                    }
                 }
                 catch (Exception ex)
                 {

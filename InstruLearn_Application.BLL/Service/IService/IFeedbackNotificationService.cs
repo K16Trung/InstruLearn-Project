@@ -13,6 +13,7 @@ namespace InstruLearn_Application.BLL.Service.IService
         Task<ResponseDTO> ProcessFeedbackCompletionAsync(int feedbackId, bool continueStudying);
         Task<ResponseDTO> AutoCheckAndCreateFeedbackNotificationsAsync();
         Task<ResponseDTO> CheckAndUpdateLearnerProgressAsync();
+        Task<ResponseDTO> CheckForExpiredFeedbacksAsync();
         Task SendTestFeedbackEmailNotification(string email, string learnerName, int feedbackId, string teacherName, decimal remainingPayment);
     }
 }
