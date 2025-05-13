@@ -1,5 +1,4 @@
-﻿// InstruLearn_Application.Model/Models/TeacherEvaluationFeedback.cs
-using InstruLearn_Application.Model.Enum;
+﻿using InstruLearn_Application.Model.Enum;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -20,8 +19,6 @@ namespace InstruLearn_Application.Model.Models
         public DateTime CreatedAt { get; set; }
         public DateTime? CompletedAt { get; set; }
         public TeacherEvaluationStatus Status { get; set; }
-        public string? GoalsAssessment { get; set; }
-        public int ProgressRating { get; set; }
         public bool GoalsAchieved { get; set; }
 
         // Navigation property for the answers

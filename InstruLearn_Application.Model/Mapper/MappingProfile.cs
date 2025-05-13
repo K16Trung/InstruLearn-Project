@@ -45,6 +45,8 @@ using InstruLearn_Application.Model.Models.DTO.Syllabus;
 using InstruLearn_Application.Model.Models.DTO.SyllbusContent;
 using InstruLearn_Application.Model.Models.DTO.Teacher;
 using InstruLearn_Application.Model.Models.DTO.TeacherEvaluation;
+using InstruLearn_Application.Model.Models.DTO.TeacherEvaluationOption;
+using InstruLearn_Application.Model.Models.DTO.TeacherEvaluationQuestion;
 using InstruLearn_Application.Model.Models.DTO.TeacherMajor;
 using InstruLearn_Application.Model.Models.DTO.Wallet;
 using InstruLearn_Application.Model.Models.DTO.WalletTransaction;
@@ -713,13 +715,19 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.LearnerName, opt => opt.MapFrom(src => src.Learner.FullName))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
 
-            CreateMap<TeacherEvaluationQuestion, TeacherEvaluationQuestionDTO>();
+            CreateMap<TeacherEvaluationQuestion, TeacherEvaluationQuestionDTO>()
+                .ForMember(dest => dest.Options, opt => opt.MapFrom(src => src.Options));
+            CreateMap<TeacherEvaluationQuestionDTO, TeacherEvaluationQuestion>()
+                .ForMember(dest => dest.Options, opt => opt.MapFrom(src => src.Options));
+
             CreateMap<TeacherEvaluationOption, TeacherEvaluationOptionDTO>();
+            CreateMap<TeacherEvaluationOptionDTO, TeacherEvaluationOption>();
 
             CreateMap<TeacherEvaluationAnswer, TeacherEvaluationAnswerDTO>()
                 .ForMember(dest => dest.QuestionText, opt => opt.MapFrom(src => src.Question.QuestionText))
                 .ForMember(dest => dest.SelectedOptionText, opt => opt.MapFrom(src => src.SelectedOption.OptionText));
 
+            CreateMap<CreateTeacherEvaluationQuestionDTO, TeacherEvaluationQuestion>();
 
         }
     }

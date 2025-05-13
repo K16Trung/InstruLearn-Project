@@ -10,6 +10,7 @@ namespace InstruLearn_Application.Model.Models
         public int EvaluationOptionId { get; set; }
         public int EvaluationQuestionId { get; set; }
         public string OptionText { get; set; }
+        public int RatingValue { get; set; }
         public TeacherEvaluationQuestion Question { get; set; }
     }
 }

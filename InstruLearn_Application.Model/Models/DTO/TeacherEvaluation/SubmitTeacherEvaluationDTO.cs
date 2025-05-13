@@ -9,8 +9,6 @@ namespace InstruLearn_Application.Model.Models.DTO.TeacherEvaluation
     public class SubmitTeacherEvaluationDTO
     {
         public int EvaluationFeedbackId { get; set; }
-        public string GoalsAssessment { get; set; }
-        public int ProgressRating { get; set; }
         public bool GoalsAchieved { get; set; }
         public List<TeacherEvaluationAnswerSubmitDTO> Answers { get; set; }
     }

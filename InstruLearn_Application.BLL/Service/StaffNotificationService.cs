@@ -89,12 +89,49 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     if (notifications[i].LearningRegisId.HasValue)
                     {
+                        // Get the registration data for this notification
+                        var registrationData = await _unitOfWork.LearningRegisRepository.GetWithIncludesAsync(
+                            lr => lr.LearningRegisId == notifications[i].LearningRegisId.Value &&
+                                  lr.Status == LearningRegis.FourtyFeedbackDone,
+                            "Teacher,Learner");
+
+                        // Retrieve the feedback to get the teacher change reason
                         var feedback = await _unitOfWork.LearningRegisFeedbackRepository
                             .GetFeedbackByRegistrationIdAsync(notifications[i].LearningRegisId.Value);
 
                         if (feedback != null)
                         {
                             notificationDTOs[i].TeacherChangeReason = feedback.TeacherChangeReason;
+
+                            // Clean up the message by removing IDs and "Lý do:" prefix
+                            if (registrationData != null && registrationData.Any() && registrationData.First().Learner != null)
+                            {
+                                var learner = registrationData.First().Learner;
+                                notificationDTOs[i].Message = $"Học viên {learner.FullName} muốn tiếp tục học nhưng thay đổi giáo viên.";
+                            }
+                            else
+                            {
+                                // If we can't get the learner information, simply clean up the message
+                                string message = notificationDTOs[i].Message;
+
+                                // Find the index of "Lý do:" and remove it and everything after
+                                int reasonIndex = message.IndexOf(".Lý do:");
+                                if (reasonIndex > 0)
+                                {
+                                    notificationDTOs[i].Message = message.Substring(0, reasonIndex + 1);
+                                }
+
+                                // Remove the ID mentions
+                                notificationDTOs[i].Message = System.Text.RegularExpressions.Regex.Replace(
+                                    notificationDTOs[i].Message,
+                                    @"\(ID: \d+\)",
+                                    "");
+
+                                notificationDTOs[i].Message = System.Text.RegularExpressions.Regex.Replace(
+                                    notificationDTOs[i].Message,
+                                    @"cho đăng ký học ID: \d+",
+                                    "");
+                            }
                         }
                     }
                 }
