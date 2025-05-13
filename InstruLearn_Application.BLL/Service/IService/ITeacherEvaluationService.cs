@@ -24,5 +24,6 @@ namespace InstruLearn_Application.BLL.Service.IService
         Task<ResponseDTO> ActivateQuestionAsync(int questionId);
         Task<ResponseDTO> DeactivateQuestionAsync(int questionId);
         Task<ResponseDTO> SubmitEvaluationFeedbackAsync(SubmitTeacherEvaluationDTO submitDTO);
+        Task<ResponseDTO> CheckForLastDayEvaluationsAsync();
     }
 }

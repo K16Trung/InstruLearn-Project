@@ -621,8 +621,45 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
-        private async Task CheckAndCreateEvaluationsForLastDayLearners()
+        public async Task<ResponseDTO> CheckForLastDayEvaluationsAsync()
         {
+            try
+            {
+                var evaluationsCreated = await CheckAndCreateEvaluationsForLastDayLearnersWithDetails();
+
+                if (evaluationsCreated.Any())
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = true,
+                        Message = $"Successfully created {evaluationsCreated.Count} evaluations for learners on their last day",
+                        Data = evaluationsCreated
+                    };
+                }
+                else
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = true,
+                        Message = "No learners on their last day found for evaluation creation"
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking for last day evaluations");
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Error checking for last day evaluations: {ex.Message}"
+                };
+            }
+        }
+
+        private async Task<List<object>> CheckAndCreateEvaluationsForLastDayLearnersWithDetails()
+        {
+            var createdEvaluations = new List<object>();
+
             try
             {
                 var oneOnOneRegistrations = await _unitOfWork.LearningRegisRepository
@@ -636,7 +673,7 @@ namespace InstruLearn_Application.BLL.Service
                 if (oneOnOneRegistrations == null || !oneOnOneRegistrations.Any())
                 {
                     _logger.LogInformation("No active one-on-one learning registrations found for evaluation");
-                    return;
+                    return createdEvaluations;
                 }
 
                 foreach (var registration in oneOnOneRegistrations)
@@ -696,13 +733,36 @@ namespace InstruLearn_Application.BLL.Service
                     _logger.LogInformation(
                         "Created evaluation for teacher {TeacherId} to evaluate learner {LearnerId} on their last day",
                         registration.TeacherId.Value, registration.LearnerId);
+
+                    // Add to the returned list for tracking
+                    createdEvaluations.Add(new
+                    {
+                        EvaluationId = evaluationFeedback.EvaluationFeedbackId,
+                        TeacherId = registration.TeacherId.Value,
+                        TeacherName = registration.Teacher?.Fullname ?? "Unknown",
+                        LearnerId = registration.LearnerId,
+                        LearnerName = registration.Learner?.FullName ?? "Unknown",
+                        LearningRegistrationId = registration.LearningRegisId,
+                        TotalSessions = totalSessions,
+                        CompletedSessions = completedSessions,
+                        LastScheduleDate = lastScheduleDate.ToString(),
+                        LearningRequest = registration.LearningRequest
+                    });
                 }
+
+                return createdEvaluations;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error checking for learners on their last day for evaluation");
                 throw;
             }
+        }
+
+        // Update existing method to use the new one with details
+        private async Task CheckAndCreateEvaluationsForLastDayLearners()
+        {
+            await CheckAndCreateEvaluationsForLastDayLearnersWithDetails();
         }
 
         private async Task NotifyLearnersAboutNewQuestion(TeacherEvaluationQuestion question)

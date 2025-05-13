@@ -103,5 +103,12 @@ namespace InstruLearn_Application.Controllers
             var result = await _teacherEvaluationService.SubmitEvaluationFeedbackAsync(submitDTO);
             return Ok(result);
         }
+
+        [HttpGet("check-lastday-evaluations")]
+        public async Task<IActionResult> CheckLastDayEvaluations()
+        {
+            var result = await _teacherEvaluationService.CheckForLastDayEvaluationsAsync();
+            return Ok(result);
+        }
     }
 }
