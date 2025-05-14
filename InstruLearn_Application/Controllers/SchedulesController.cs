@@ -181,6 +181,26 @@ namespace InstruLearn_Application.Controllers
             return Ok(result);
         }
 
+        [HttpPut("check-attendance/{scheduleId}")]
+        public async Task<IActionResult> CheckAttendance(int scheduleId, [FromBody] CheckClassAttendanceDTO model)
+        {
+            if (model == null)
+            {
+                return BadRequest(new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Invalid request data."
+                });
+            }
+
+            var result = await _scheduleService.CheckClassAttendanceAsync(
+                scheduleId,
+                model.Status);
+
+            return Ok(result);
+        }
+
+
         [HttpGet("conflict-check/learner/{learnerId}")]
         public async Task<IActionResult> CheckLearnerScheduleConflict(int learnerId, [FromQuery] DateOnly startDay, [FromQuery] TimeOnly timeStart, [FromQuery] int durationMinutes)
         {

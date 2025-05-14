@@ -29,9 +29,40 @@ namespace InstruLearn_Application.BLL.Service
 
         public async Task<List<ClassDTO>> GetAllClassAsync()
         {
-            var ClassGetAll = await _unitOfWork.ClassRepository.GetAllAsync();
-            var ClassMapper = _mapper.Map<List<ClassDTO>>(ClassGetAll);
-            return ClassMapper;
+            var classes = await _unitOfWork.ClassRepository.GetAllAsync();
+
+            // Map classes to DTOs
+            var classDTOs = _mapper.Map<List<ClassDTO>>(classes);
+
+            foreach (var classDTO in classDTOs)
+            {
+                var classDayPatterns = await _unitOfWork.ClassDayRepository.GetQuery()
+                    .Where(cd => cd.ClassId == classDTO.ClassId)
+                    .ToListAsync();
+
+                classDTO.ClassDays = _mapper.Map<List<ClassDayDTO>>(classDayPatterns);
+
+                var sessionDates = new List<DateOnly>();
+                DateOnly currentDate = classDTO.StartDate;
+                int daysAdded = 0;
+
+                var classMeetingDays = classDayPatterns.Select(cd => cd.Day).ToList();
+
+                while (daysAdded < classDTO.totalDays)
+                {
+                    if (classMeetingDays.Contains((DayOfWeeks)currentDate.DayOfWeek))
+                    {
+                        sessionDates.Add(currentDate);
+                        daysAdded++;
+                    }
+
+                    currentDate = currentDate.AddDays(1);
+                }
+
+                classDTO.SessionDates = sessionDates;
+            }
+
+            return classDTOs;
         }
 
         public async Task<ResponseDTO> GetClassByIdAsync(int id)
@@ -52,26 +83,72 @@ namespace InstruLearn_Application.BLL.Service
                     .Where(cd => cd.ClassId == id)
                     .ToListAsync();
 
-                var learnerClasses = await _unitOfWork.dbContext.Learner_Classes
-                    .Where(lc => lc.ClassId == id)
-                    .Include(lc => lc.Learner)
-                        .ThenInclude(l => l.Account)
-                    .ToListAsync();
+                var syllabus = await _unitOfWork.SyllabusRepository.GetSyllabusByClassIdAsync(id);
 
                 var classDetailDTO = _mapper.Map<ClassDetailDTO>(classEntity);
 
+                if (syllabus != null)
+                {
+                    classDetailDTO.SyllabusId = syllabus.SyllabusId;
+                    classDetailDTO.SyllabusName = syllabus.SyllabusName;
+                }
+
                 classDetailDTO.ClassDays = _mapper.Map<List<ClassDayDTO>>(classDays);
 
-                classDetailDTO.StudentCount = learnerClasses.Count;
-                classDetailDTO.Students = learnerClasses.Select(lc => new ClassStudentDTO
-                {
-                    LearnerId = lc.LearnerId,
-                    FullName = lc.Learner?.FullName ?? "N/A",
-                    Email = lc.Learner?.Account?.Email ?? "N/A",
-                    PhoneNumber = lc.Learner?.Account?.PhoneNumber ?? "N/A",
-                    Avatar = lc.Learner?.Account?.Avatar ?? "N/A"
+                var sessionDates = new List<DateOnly>();
+                DateOnly currentDate = classDetailDTO.StartDate;
+                int daysAdded = 0;
+                var classMeetingDays = classDays.Select(cd => cd.Day).ToList();
 
-                }).ToList();
+                while (daysAdded < classDetailDTO.TotalDays)
+                {
+                    if (classMeetingDays.Contains((DayOfWeeks)currentDate.DayOfWeek))
+                    {
+                        sessionDates.Add(currentDate);
+                        daysAdded++;
+                    }
+                    currentDate = currentDate.AddDays(1);
+                }
+
+                classDetailDTO.SessionDates = sessionDates;
+
+                var studentCount = await _unitOfWork.dbContext.Learner_Classes
+                    .Where(lc => lc.ClassId == id)
+                    .CountAsync();
+
+                classDetailDTO.StudentCount = studentCount;
+
+                if (studentCount > 0)
+                {
+                    var students = await _unitOfWork.dbContext.Learner_Classes
+                        .Where(lc => lc.ClassId == id)
+                        .Join(
+                            _unitOfWork.dbContext.Learners,
+                            lc => lc.LearnerId,
+                            l => l.LearnerId,
+                            (lc, l) => new { LearnerId = l.LearnerId, Learner = l }
+                        )
+                        .Join(
+                            _unitOfWork.dbContext.Accounts,
+                            join => join.Learner.AccountId,
+                            a => a.AccountId,
+                            (join, a) => new ClassStudentDTO
+                            {
+                                LearnerId = join.LearnerId,
+                                FullName = join.Learner.FullName ?? "N/A",
+                                Email = a.Email ?? "N/A",
+                                PhoneNumber = a.PhoneNumber ?? "N/A",
+                                Avatar = a.Avatar ?? "N/A"
+                            }
+                        )
+                        .ToListAsync();
+
+                    classDetailDTO.Students = students;
+                }
+                else
+                {
+                    classDetailDTO.Students = new List<ClassStudentDTO>();
+                }
 
                 return new ResponseDTO
                 {
@@ -89,6 +166,7 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
         }
+
 
         public async Task<ResponseDTO> GetClassesByMajorIdAsync(int majorId)
         {
