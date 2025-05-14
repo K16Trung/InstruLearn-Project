@@ -679,7 +679,7 @@ namespace InstruLearn_Application.Model.Data
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<ClassFeedbackEvaluation>()
-                .Property(e => e.Value)
+                .Property(e => e.AchievedPercentage)
                 .HasColumnType("decimal(5,2)");
         }
     }

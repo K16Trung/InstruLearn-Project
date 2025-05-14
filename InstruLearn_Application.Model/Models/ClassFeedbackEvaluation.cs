@@ -17,7 +17,7 @@ namespace InstruLearn_Application.Model.Models
         public int CriterionId { get; set; }
         public LevelFeedbackCriterion Criterion { get; set; }
         [Column(TypeName = "decimal(5,2)")]
-        public decimal Value { get; set; }
+        public decimal AchievedPercentage { get; set; }
         public string Comment { get; set; }
     }
 }

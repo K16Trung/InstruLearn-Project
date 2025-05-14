@@ -8,6 +8,8 @@ using InstruLearn_Application.Model.Models.DTO.Auth;
 using InstruLearn_Application.Model.Models.DTO.Certification;
 using InstruLearn_Application.Model.Models.DTO.Class;
 using InstruLearn_Application.Model.Models.DTO.ClassDay;
+using InstruLearn_Application.Model.Models.DTO.ClassFeedback;
+using InstruLearn_Application.Model.Models.DTO.ClassFeedbackEvaluation;
 using InstruLearn_Application.Model.Models.DTO.Course;
 using InstruLearn_Application.Model.Models.DTO.Course_Content;
 using InstruLearn_Application.Model.Models.DTO.Course_Content_Item;
@@ -728,6 +730,27 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.SelectedOptionText, opt => opt.MapFrom(src => src.SelectedOption.OptionText));
 
             CreateMap<CreateTeacherEvaluationQuestionDTO, TeacherEvaluationQuestion>();
+
+            // ClassFeedbackEvaluation mappings
+            CreateMap<ClassFeedbackEvaluation, ClassFeedbackEvaluationDTO>()
+                .ForMember(dest => dest.GradeCategory, opt => opt.MapFrom(src => src.Criterion.GradeCategory))
+                .ForMember(dest => dest.Weight, opt => opt.MapFrom(src => src.Criterion.Weight))
+                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Criterion.Description))
+                .ForMember(dest => dest.WeightedScore, opt => opt.MapFrom(src =>
+                    src.AchievedPercentage * src.Criterion.Weight / 100));
+
+            CreateMap<CreateClassFeedbackEvaluationDTO, ClassFeedbackEvaluation>();
+            CreateMap<UpdateClassFeedbackEvaluationDTO, ClassFeedbackEvaluation>();
+
+            // ClassFeedback mappings
+            CreateMap<ClassFeedback, ClassFeedbackDTO>()
+                .ForMember(dest => dest.ClassName, opt => opt.MapFrom(src => src.Class.ClassName))
+                .ForMember(dest => dest.LearnerName, opt => opt.MapFrom(src => src.Learner.FullName))
+                .ForMember(dest => dest.TemplateName, opt => opt.MapFrom(src => src.Template.TemplateName))
+                .ForMember(dest => dest.AverageScore, opt => opt.MapFrom(src =>
+                    src.Evaluations != null && src.Evaluations.Any() ?
+                        src.Evaluations.Sum(e => e.AchievedPercentage * e.Criterion.Weight / 100) : 0));
+
 
         }
     }
