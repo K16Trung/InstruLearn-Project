@@ -70,13 +70,10 @@ namespace InstruLearn_Application.BLL.Service
                     enrichedReg["firstPaymentPeriod"] = firstPaymentPeriod;
                     enrichedReg["secondPaymentPeriod"] = secondPaymentPeriod;
 
-                    // Get the original registration entity for this DTO
                     var registration = allRegistrations.FirstOrDefault(lr => lr.LearningRegisId == regDto.LearningRegisId);
 
-                    // Ensure SessionDates are properly loaded
                     if (registration != null)
                     {
-                        // Get learning days as DayOfWeek values to use if schedules aren't available
                         var availableDayValues = new List<DayOfWeek>();
                         if (registration.LearningRegistrationDay != null && registration.LearningRegistrationDay.Any())
                         {
@@ -84,7 +81,6 @@ namespace InstruLearn_Application.BLL.Service
                             {
                                 string dayString = day.DayOfWeek.ToString();
 
-                                // Convert the enum value to a DayOfWeek
                                 if (Enum.TryParse<DayOfWeek>(dayString, true, out var dayOfWeek))
                                 {
                                     availableDayValues.Add(dayOfWeek);
@@ -115,7 +111,7 @@ namespace InstruLearn_Application.BLL.Service
 
                             var sessionDates = new List<string>();
                             int sessionsFound = 0;
-                            int maxAttempts = 100; // Safety limit
+                            int maxAttempts = 100;
 
                             while (sessionsFound < registration.NumberOfSession && sessionsFound < maxAttempts)
                             {
@@ -675,6 +671,16 @@ namespace InstruLearn_Application.BLL.Service
                         };
                     }
 
+                    int? levelId = classEntity.LevelId;
+                    if (!levelId.HasValue)
+                    {
+                        _logger.LogWarning($"Class with ID {paymentDTO.ClassId} doesn't have an associated level");
+                    }
+                    else
+                    {
+                        _logger.LogInformation($"Using level ID {levelId} from class {paymentDTO.ClassId}");
+                    }
+
                     var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(paymentDTO.LearnerId);
                     if (learner == null)
                     {
@@ -780,7 +786,7 @@ namespace InstruLearn_Application.BLL.Service
                         TeacherId = classEntity.TeacherId,
                         RegisTypeId = classRegisType.RegisTypeId,
                         MajorId = classEntity.MajorId,
-                        LevelId = paymentDTO.LevelId,
+                        LevelId = levelId,
                         Status = LearningRegis.Accepted,
                         RequestDate = DateTime.UtcNow,
                         Price = totalClassPrice,
@@ -795,7 +801,6 @@ namespace InstruLearn_Application.BLL.Service
                     await _unitOfWork.LearningRegisRepository.AddAsync(learningRegis);
                     await _unitOfWork.SaveChangeAsync();
 
-                    // 10. Create Learner_class entry
                     var learnerClass = new Learner_class
                     {
                         LearnerId = paymentDTO.LearnerId,
@@ -806,19 +811,14 @@ namespace InstruLearn_Application.BLL.Service
                     await _unitOfWork.SaveChangeAsync();
 
 
-                    // NEW CODE: Create a notification to generate the certificate on the class start date
-                    // Current date to check if class has already started
                     DateOnly today = DateOnly.FromDateTime(DateTime.Now);
 
-                    // Check if the class has already started or starts today
                     if (classEntity.StartDate <= today)
                     {
-                        // If class has already started, create certificate now
                         _logger.LogInformation($"Class has already started. Creating certificate immediately for learner {paymentDTO.LearnerId} in class {paymentDTO.ClassId}");
 
                         try
                         {
-                            // Get information for certificate
                             string teacherName = "Unknown Teacher";
                             if (classEntity.Teacher != null)
                             {
@@ -847,7 +847,6 @@ namespace InstruLearn_Application.BLL.Service
                                 }
                             }
 
-                            // Create certificate
                             var createCertificationDTO = new CreateCertificationDTO
                             {
                                 LearnerId = paymentDTO.LearnerId,
@@ -858,7 +857,6 @@ namespace InstruLearn_Application.BLL.Service
                                 Subject = majorName
                             };
 
-                            // Use the ICertificationService to create the certificate
                             var certificationService = _serviceProvider.GetRequiredService<ICertificationService>();
                             var certResult = await certificationService.CreateCertificationAsync(createCertificationDTO);
 
@@ -873,13 +871,11 @@ namespace InstruLearn_Application.BLL.Service
                         }
                         catch (Exception certEx)
                         {
-                            // Log error but don't fail the enrollment process
                             _logger.LogError(certEx, $"Error creating certificate for learner {paymentDTO.LearnerId} in class {paymentDTO.ClassId}");
                         }
                     }
                     else
                     {
-                        // If class hasn't started yet, create a notification for future certificate creation
                         _logger.LogInformation($"Class starts on {classEntity.StartDate}. Creating notification for future certificate creation");
 
                         var staffNotification = new StaffNotification
@@ -898,8 +894,6 @@ namespace InstruLearn_Application.BLL.Service
                         _logger.LogInformation($"Certificate creation scheduled for class start date: {classEntity.StartDate}");
                     }
 
-                    // 12. REVISED APPROACH: Find existing schedules for other learners in this class to use as a template
-                    // This ensures that all learners get the exact same schedule pattern
                     var existingLearnerSchedules = await _unitOfWork.ScheduleRepository.GetQuery()
                         .Where(s => s.ClassId == paymentDTO.ClassId &&
                                    s.TeacherId == classEntity.TeacherId &&
@@ -911,15 +905,13 @@ namespace InstruLearn_Application.BLL.Service
                     {
                         _logger.LogInformation($"Found {existingLearnerSchedules.Count} existing schedules for other learners in class {paymentDTO.ClassId}");
 
-                        // Group schedules by start day to get unique dates
                         var uniqueDates = existingLearnerSchedules
                             .GroupBy(s => s.StartDay)
                             .Select(g => g.First())
                             .OrderBy(s => s.StartDay)
-                            .Take(classEntity.totalDays) // Ensure we only take what we need
+                            .Take(classEntity.totalDays)
                             .ToList();
 
-                        // Create new schedules for this learner using the same pattern as existing learners
                         var newSchedules = new List<Schedules>();
 
                         foreach (var existingSchedule in uniqueDates)
@@ -930,7 +922,7 @@ namespace InstruLearn_Application.BLL.Service
                                 ClassId = paymentDTO.ClassId,
                                 LearningRegisId = learningRegis.LearningRegisId,
                                 TeacherId = classEntity.TeacherId,
-                                StartDay = existingSchedule.StartDay, // Use the exact same day pattern
+                                StartDay = existingSchedule.StartDay,
                                 TimeStart = classEntity.ClassTime,
                                 TimeEnd = classEntity.ClassTime.AddHours(2),
                                 Mode = ScheduleMode.Center
@@ -944,7 +936,6 @@ namespace InstruLearn_Application.BLL.Service
                     }
                     else
                     {
-                        // No existing schedules with learners found, try to use teacher schedules or create new ones
                         var existingTeacherSchedules = await _unitOfWork.ScheduleRepository.GetQuery()
                             .Where(s => s.ClassId == paymentDTO.ClassId &&
                                        s.TeacherId == classEntity.TeacherId &&
@@ -956,7 +947,6 @@ namespace InstruLearn_Application.BLL.Service
                         {
                             _logger.LogInformation($"Found {existingTeacherSchedules.Count} existing teacher schedules for class {paymentDTO.ClassId}");
 
-                            // Keep track of how many schedules we've assigned
                             int schedulesUsed = 0;
                             var learnerSchedules = new List<Schedules>();
 
@@ -990,7 +980,7 @@ namespace InstruLearn_Application.BLL.Service
 
                             var classDays = await _unitOfWork.ClassDayRepository.GetQuery()
                                 .Where(cd => cd.ClassId == paymentDTO.ClassId)
-                                .OrderBy(cd => cd.Day) // Ensure consistent order
+                                .OrderBy(cd => cd.Day)
                                 .ToListAsync();
 
                             if (classDays.Any())
