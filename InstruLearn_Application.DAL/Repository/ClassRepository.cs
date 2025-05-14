@@ -72,6 +72,20 @@ namespace InstruLearn_Application.DAL.Repository
                         Console.WriteLine($"Major loaded explicitly: {major.MajorName}");
                     }
                 }
+
+                if (classEntity.LevelId.HasValue && classEntity.Level == null)
+                {
+                    // Try to load level explicitly if it failed with Include
+                    var level = await _appDbContext.LevelAssigneds
+                        .FirstOrDefaultAsync(l => l.LevelId == classEntity.LevelId.Value);
+
+                    Console.WriteLine($"Explicit level load result: {level != null}");
+
+                    if (level != null)
+                    {
+                        classEntity.Level = level;
+                    }
+                }
             }
 
             return classEntity;

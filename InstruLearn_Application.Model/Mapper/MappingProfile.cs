@@ -344,8 +344,8 @@ namespace InstruLearn_Application.Model.Mapper
             // 🔹 Class Mappings
             CreateMap<Class, ClassDTO>()
             .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Teacher.Fullname))
-            .ForMember(dest => dest.MajorName, opt => opt.MapFrom(src => src.Major.MajorName))
-            .ForMember(dest => dest.LevelName, opt => opt.MapFrom(src => src.Level.LevelName))
+            .ForMember(dest => dest.MajorName, opt => opt.MapFrom(src => src.Major != null ? src.Major.MajorName : null))
+            .ForMember(dest => dest.LevelName, opt => opt.MapFrom(src => src.Level != null ? src.Level.LevelName : null))
             .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src =>
                 DateTimeHelper.CalculateClassEndDate(
                     src.StartDate,

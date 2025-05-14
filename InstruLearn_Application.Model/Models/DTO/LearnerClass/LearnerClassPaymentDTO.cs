@@ -10,5 +10,6 @@ namespace InstruLearn_Application.Model.Models.DTO.LearnerClass
     {
         public int LearnerId { get; set; }
         public int ClassId { get; set; }
+        public int? LevelId { get; set; }
     }
 }

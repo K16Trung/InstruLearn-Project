@@ -780,6 +780,7 @@ namespace InstruLearn_Application.BLL.Service
                         TeacherId = classEntity.TeacherId,
                         RegisTypeId = classRegisType.RegisTypeId,
                         MajorId = classEntity.MajorId,
+                        LevelId = paymentDTO.LevelId,
                         Status = LearningRegis.Accepted,
                         RequestDate = DateTime.UtcNow,
                         Price = totalClassPrice,

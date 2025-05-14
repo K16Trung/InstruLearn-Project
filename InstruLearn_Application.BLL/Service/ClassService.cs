@@ -37,6 +37,11 @@ namespace InstruLearn_Application.BLL.Service
             foreach (var classDTO in classDTOs)
             {
 
+                if (string.IsNullOrEmpty(classDTO.MajorName))
+                {
+                    classDTO.MajorName = "Not Assigned";
+                }
+
                 // Handle null Level properties
                 if (string.IsNullOrEmpty(classDTO.LevelName))
                 {
