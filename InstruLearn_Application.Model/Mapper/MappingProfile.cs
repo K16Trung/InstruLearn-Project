@@ -29,6 +29,8 @@ using InstruLearn_Application.Model.Models.DTO.LearningRegisFeedbackQuestion;
 using InstruLearn_Application.Model.Models.DTO.LearningRegistration;
 using InstruLearn_Application.Model.Models.DTO.LearningRegistrationType;
 using InstruLearn_Application.Model.Models.DTO.LevelAssigned;
+using InstruLearn_Application.Model.Models.DTO.LevelFeedbackCriterion;
+using InstruLearn_Application.Model.Models.DTO.LevelFeedbackTemplate;
 using InstruLearn_Application.Model.Models.DTO.Major;
 using InstruLearn_Application.Model.Models.DTO.MajorTest;
 using InstruLearn_Application.Model.Models.DTO.Manager;
@@ -751,7 +753,22 @@ namespace InstruLearn_Application.Model.Mapper
                     src.Evaluations != null && src.Evaluations.Any() ?
                         src.Evaluations.Sum(e => e.AchievedPercentage * e.Criterion.Weight / 100) : 0));
 
+            // LevelFeedbackTemplate mappings
+            CreateMap<LevelFeedbackTemplate, LevelFeedbackTemplateDTO>()
+                .ForMember(dest => dest.LevelName, opt => opt.MapFrom(src => src.Level.LevelName))
+                .ForMember(dest => dest.MajorName, opt => opt.MapFrom(src => src.Level.Major.MajorName))
+                .ForMember(dest => dest.Criteria, opt => opt.MapFrom(src => src.Criteria));
 
+            CreateMap<CreateLevelFeedbackTemplateDTO, LevelFeedbackTemplate>();
+            CreateMap<UpdateLevelFeedbackTemplateDTO, LevelFeedbackTemplate>()
+                .ForMember(dest => dest.LevelId, opt => opt.Ignore());
+
+            // LevelFeedbackCriterion mappings
+            CreateMap<LevelFeedbackCriterion, LevelFeedbackCriterionDTO>()
+                .ForMember(dest => dest.TemplateId, opt => opt.MapFrom(src => src.TemplateId));
+
+            CreateMap<CreateLevelFeedbackCriterionDTO, LevelFeedbackCriterion>();
+            CreateMap<UpdateLevelFeedbackCriterionDTO, LevelFeedbackCriterion>();
         }
     }
 }
