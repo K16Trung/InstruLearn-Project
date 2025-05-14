@@ -19,7 +19,7 @@ namespace InstruLearn_Application.BLL.Service.IService
         Task<ResponseDTO> GetActiveQuestionsAsync();
         Task<ResponseDTO> GetQuestionByIdAsync(int questionId);
         Task<ResponseDTO> CreateQuestionWithOptionsAsync(CreateTeacherEvaluationQuestionDTO questionDTO);
-        Task<ResponseDTO> UpdateQuestionAsync(int questionId, TeacherEvaluationQuestionDTO questionDTO);
+        Task<ResponseDTO> UpdateQuestionAsync(int questionId, UpdateTeacherEvaluationQuestionDTO questionDTO);
         Task<ResponseDTO> DeleteQuestionAsync(int questionId);
         Task<ResponseDTO> ActivateQuestionAsync(int questionId);
         Task<ResponseDTO> DeactivateQuestionAsync(int questionId);

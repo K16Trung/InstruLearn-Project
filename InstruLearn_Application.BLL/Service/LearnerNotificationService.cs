@@ -151,7 +151,7 @@ namespace InstruLearn_Application.BLL.Service
 
                     if (!string.IsNullOrEmpty(statusMessage))
                     {
-                        emailNotifications.Add(new NotificationDTO
+                        var notification = new NotificationDTO
                         {
                             Title = statusTitle,
                             Message = statusMessage,
@@ -161,7 +161,18 @@ namespace InstruLearn_Application.BLL.Service
                             Status = NotificationStatus.Unread,
                             LearningRegisId = registration.LearningRegisId,
                             LearningRequest = registration.LearningRequest
-                        });
+                        };
+
+                        if (registration.Status == LearningRegis.Cancelled)
+                        {
+                            notification.Reason = "Quá hạn thanh toán 60%";
+                        }
+                        else if (registration.Status == LearningRegis.Rejected)
+                        {
+                            notification.Reason = "Quá hạn thanh toán 40%";
+                        }
+
+                        emailNotifications.Add(notification);
                     }
 
                     // Learning path confirmation notifications

@@ -18,6 +18,7 @@ namespace InstruLearn_Application.Model.Models.DTO.Notification
         public NotificationStatus Status { get; set; }
         public int? LearningRegisId { get; set; }
         public string LearningRequest { get; set; }
+        public string Reason { get; set; }
         public decimal? Amount { get; set; }
         public DateTime? Deadline { get; set; }
         
