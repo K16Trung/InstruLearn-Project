@@ -70,7 +70,7 @@ namespace InstruLearn_Application.Controllers
         }
 
         [HttpPut("update-question/{questionId}")]
-        public async Task<ActionResult<ResponseDTO>> UpdateQuestion(int questionId, [FromBody] TeacherEvaluationQuestionDTO questionDTO)
+        public async Task<ActionResult<ResponseDTO>> UpdateQuestion(int questionId, [FromBody] UpdateTeacherEvaluationQuestionDTO questionDTO)
         {
             var result = await _teacherEvaluationService.UpdateQuestionAsync(questionId, questionDTO);
             return Ok(result);

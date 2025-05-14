@@ -149,6 +149,17 @@ namespace InstruLearn_Application.BLL.Service
                     if (learningRegis != null)
                     {
                         dto.TotalSessions = learningRegis.NumberOfSession;
+                        dto.LearningRequest = learningRegis.LearningRequest; // Add LearningRequest
+
+                        // Get the major name for this learning registration
+                        if (learningRegis.MajorId > 0)
+                        {
+                            var major = await _unitOfWork.MajorRepository.GetByIdAsync(learningRegis.MajorId);
+                            if (major != null)
+                            {
+                                dto.MajorName = major.MajorName;
+                            }
+                        }
 
                         var schedules = await _unitOfWork.ScheduleRepository
                             .GetSchedulesByLearningRegisIdAsync(learningRegis.LearningRegisId);
@@ -197,6 +208,17 @@ namespace InstruLearn_Application.BLL.Service
                     if (learningRegis != null)
                     {
                         dto.TotalSessions = learningRegis.NumberOfSession;
+                        dto.LearningRequest = learningRegis.LearningRequest; // Add LearningRequest
+
+                        // Get the major name for this learning registration
+                        if (learningRegis.MajorId > 0)
+                        {
+                            var major = await _unitOfWork.MajorRepository.GetByIdAsync(learningRegis.MajorId);
+                            if (major != null)
+                            {
+                                dto.MajorName = major.MajorName;
+                            }
+                        }
 
                         var schedules = await _unitOfWork.ScheduleRepository
                             .GetSchedulesByLearningRegisIdAsync(learningRegis.LearningRegisId);
@@ -441,7 +463,7 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
-        public async Task<ResponseDTO> UpdateQuestionAsync(int questionId, TeacherEvaluationQuestionDTO questionDTO)
+        public async Task<ResponseDTO> UpdateQuestionAsync(int questionId, UpdateTeacherEvaluationQuestionDTO questionDTO)
         {
             try
             {
@@ -463,6 +485,32 @@ namespace InstruLearn_Application.BLL.Service
 
                 _unitOfWork.dbContext.Entry(existingQuestion).State = EntityState.Modified;
                 await _unitOfWork.SaveChangeAsync();
+
+                if (questionDTO.Options != null && questionDTO.Options.Any())
+                {
+                    foreach (var optionDTO in questionDTO.Options)
+                    {
+                        if (optionDTO.EvaluationOptionId > 0)
+                        {
+                            var existingOption = existingQuestion.Options.FirstOrDefault(o => o.EvaluationOptionId == optionDTO.EvaluationOptionId);
+                            if (existingOption != null)
+                            {
+                                existingOption.OptionText = optionDTO.OptionText;
+                                await _unitOfWork.TeacherEvaluationRepository.UpdateOptionAsync(existingOption);
+                            }
+                        }
+                        else
+                        {
+                            var newOption = new TeacherEvaluationOption
+                            {
+                                EvaluationQuestionId = questionId,
+                                OptionText = optionDTO.OptionText
+                            };
+                            await _unitOfWork.TeacherEvaluationRepository.AddOptionAsync(newOption);
+                        }
+                    }
+                    await _unitOfWork.SaveChangeAsync();
+                }
 
                 var updatedQuestion = await _unitOfWork.TeacherEvaluationRepository.GetQuestionWithOptionsAsync(questionId);
                 var updatedQuestionDTO = _mapper.Map<TeacherEvaluationQuestionDTO>(updatedQuestion);

@@ -732,6 +732,11 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.SelectedOptionText, opt => opt.MapFrom(src => src.SelectedOption.OptionText));
 
             CreateMap<CreateTeacherEvaluationQuestionDTO, TeacherEvaluationQuestion>();
+            CreateMap<UpdateTeacherEvaluationQuestionDTO, TeacherEvaluationQuestion>()
+                .ForMember(dest => dest.Options, opt => opt.Ignore());
+
+            CreateMap<UpdateTeacherEvaluationOptionDTO, TeacherEvaluationOption>()
+                .ForMember(dest => dest.EvaluationQuestionId, opt => opt.Ignore());
 
             // ClassFeedbackEvaluation mappings
             CreateMap<ClassFeedbackEvaluation, ClassFeedbackEvaluationDTO>()

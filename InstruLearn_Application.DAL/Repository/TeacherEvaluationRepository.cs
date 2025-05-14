@@ -112,6 +112,10 @@ namespace InstruLearn_Application.DAL.Repository
         {
             _appDbContext.TeacherEvaluationQuestions.Update(question);
         }
+        public async Task UpdateOptionAsync(TeacherEvaluationOption option)
+        {
+            _appDbContext.TeacherEvaluationOptions.Update(option);
+        }
 
         public async Task UpdateAsync(TeacherEvaluationFeedback evaluation)
         {

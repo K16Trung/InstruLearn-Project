@@ -20,5 +20,6 @@ namespace InstruLearn_Application.DAL.Repository.IRepository
         Task AddQuestionAsync(TeacherEvaluationQuestion question);
         Task AddOptionAsync(TeacherEvaluationOption option);
         Task UpdateQuestionAsync(TeacherEvaluationQuestion question);
+        Task UpdateOptionAsync(TeacherEvaluationOption option);
     }
 }
