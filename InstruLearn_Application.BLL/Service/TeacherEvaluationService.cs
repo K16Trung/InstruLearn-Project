@@ -149,6 +149,17 @@ namespace InstruLearn_Application.BLL.Service
                     if (learningRegis != null)
                     {
                         dto.TotalSessions = learningRegis.NumberOfSession;
+                        dto.LearningRequest = learningRegis.LearningRequest; // Add LearningRequest
+
+                        // Get the major name for this learning registration
+                        if (learningRegis.MajorId > 0)
+                        {
+                            var major = await _unitOfWork.MajorRepository.GetByIdAsync(learningRegis.MajorId);
+                            if (major != null)
+                            {
+                                dto.MajorName = major.MajorName;
+                            }
+                        }
 
                         var schedules = await _unitOfWork.ScheduleRepository
                             .GetSchedulesByLearningRegisIdAsync(learningRegis.LearningRegisId);
@@ -197,6 +208,17 @@ namespace InstruLearn_Application.BLL.Service
                     if (learningRegis != null)
                     {
                         dto.TotalSessions = learningRegis.NumberOfSession;
+                        dto.LearningRequest = learningRegis.LearningRequest; // Add LearningRequest
+
+                        // Get the major name for this learning registration
+                        if (learningRegis.MajorId > 0)
+                        {
+                            var major = await _unitOfWork.MajorRepository.GetByIdAsync(learningRegis.MajorId);
+                            if (major != null)
+                            {
+                                dto.MajorName = major.MajorName;
+                            }
+                        }
 
                         var schedules = await _unitOfWork.ScheduleRepository
                             .GetSchedulesByLearningRegisIdAsync(learningRegis.LearningRegisId);

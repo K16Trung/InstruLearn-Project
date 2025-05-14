@@ -15,6 +15,8 @@ namespace InstruLearn_Application.Model.Models.DTO.TeacherEvaluation
         public string TeacherName { get; set; }
         public int LearnerId { get; set; }
         public string LearnerName { get; set; }
+        public string MajorName { get; set; }
+        public string LearningRequest { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? CompletedAt { get; set; }
         public TeacherEvaluationStatus Status { get; set; }
