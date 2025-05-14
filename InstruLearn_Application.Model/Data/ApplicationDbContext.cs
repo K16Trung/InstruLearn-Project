@@ -61,6 +61,10 @@ namespace InstruLearn_Application.Model.Data
         public DbSet<TeacherEvaluationQuestion> TeacherEvaluationQuestions { get; set; }
         public DbSet<TeacherEvaluationOption> TeacherEvaluationOptions { get; set; }
         public DbSet<TeacherEvaluationAnswer> TeacherEvaluationAnswers { get; set; }
+        public DbSet<LevelFeedbackTemplate> LevelFeedbackTemplates { get; set; }
+        public DbSet<LevelFeedbackCriterion> LevelFeedbackCriteria { get; set; }
+        public DbSet<ClassFeedback> ClassFeedbacks { get; set; }
+        public DbSet<ClassFeedbackEvaluation> ClassFeedbackEvaluations { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -611,6 +615,72 @@ namespace InstruLearn_Application.Model.Data
                 .WithMany()
                 .HasForeignKey(a => a.SelectedOptionId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Configure LevelFeedbackTemplate entity
+            modelBuilder.Entity<LevelFeedbackTemplate>()
+                .HasKey(t => t.TemplateId);
+
+            modelBuilder.Entity<LevelFeedbackTemplate>()
+                .HasOne(t => t.Level)
+                .WithMany()
+                .HasForeignKey(t => t.LevelId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<LevelFeedbackTemplate>()
+                .HasMany(t => t.Criteria)
+                .WithOne(c => c.Template)
+                .HasForeignKey(c => c.TemplateId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure LevelFeedbackCriterion entity
+            modelBuilder.Entity<LevelFeedbackCriterion>()
+                .HasKey(c => c.CriterionId);
+
+            modelBuilder.Entity<LevelFeedbackCriterion>()
+                .Property(c => c.Weight)
+                .HasColumnType("decimal(5,2)");
+
+            // Configure ClassFeedback entity
+            modelBuilder.Entity<ClassFeedback>()
+                .HasKey(f => f.FeedbackId);
+
+            modelBuilder.Entity<ClassFeedback>()
+                .HasOne(f => f.Class)
+                .WithMany()
+                .HasForeignKey(f => f.ClassId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ClassFeedback>()
+                .HasOne(f => f.Learner)
+                .WithMany()
+                .HasForeignKey(f => f.LearnerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ClassFeedback>()
+                .HasOne(f => f.Template)
+                .WithMany()
+                .HasForeignKey(f => f.TemplateId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ClassFeedback>()
+                .HasMany(f => f.Evaluations)
+                .WithOne(e => e.Feedback)
+                .HasForeignKey(e => e.FeedbackId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure ClassFeedbackEvaluation entity
+            modelBuilder.Entity<ClassFeedbackEvaluation>()
+                .HasKey(e => e.EvaluationId);
+
+            modelBuilder.Entity<ClassFeedbackEvaluation>()
+                .HasOne(e => e.Criterion)
+                .WithMany(c => c.Evaluations)
+                .HasForeignKey(e => e.CriterionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ClassFeedbackEvaluation>()
+                .Property(e => e.Value)
+                .HasColumnType("decimal(5,2)");
         }
     }
 }
