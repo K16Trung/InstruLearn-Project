@@ -239,7 +239,7 @@ namespace InstruLearn_Application.BLL.Service
                     PaymentAmount = firstPaymentAmount,
                     PaymentStatus = firstPaymentStatus,
                     PaymentDeadline = firstPaymentDeadline?.ToString("yyyy-MM-dd HH:mm:ss"),
-                    PaymentDate = firstPaymentDate?.ToString("yyyy-MM-dd HH:mm:ss"),
+                    PaymentDate = firstPaymentCompleted ? firstPaymentDate?.ToString("yyyy-MM-dd HH:mm:ss") : null,
                     RemainingDays = firstPaymentRemainingDays,
                     IsOverdue = firstPaymentDeadline.HasValue && !firstPaymentCompleted && DateTime.Now > firstPaymentDeadline.Value
                 };
@@ -250,7 +250,7 @@ namespace InstruLearn_Application.BLL.Service
                     PaymentAmount = secondPaymentAmount,
                     PaymentStatus = secondPaymentStatus,
                     PaymentDeadline = secondPaymentDeadline?.ToString("yyyy-MM-dd HH:mm:ss"),
-                    PaymentDate = secondPaymentDate?.ToString("yyyy-MM-dd HH:mm:ss"),
+                    PaymentDate = secondPaymentCompleted ? secondPaymentDate?.ToString("yyyy-MM-dd HH:mm:ss") : null,
                     RemainingDays = secondPaymentRemainingDays,
                     IsOverdue = secondPaymentDeadline.HasValue && !secondPaymentCompleted && DateTime.Now > secondPaymentDeadline.Value
                 };
