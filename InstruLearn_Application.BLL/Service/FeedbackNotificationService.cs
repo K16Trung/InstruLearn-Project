@@ -755,6 +755,174 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
+        public async Task<ResponseDTO> CheckForClassLastDayFeedbacksAsync()
+        {
+            try
+            {
+                _logger.LogInformation("Starting automatic check for classes on their last day");
+
+                var activeClasses = await _unitOfWork.ClassRepository
+                    .GetWithIncludesAsync(
+                        x => x.Status == ClassStatus.Ongoing,
+                        "ClassDays,Teacher,Major,Level,Learner_Classes,Learner_Classes.Learner"
+                    );
+
+                if (activeClasses == null || !activeClasses.Any())
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = true,
+                        Message = "No active classes found for feedback creation."
+                    };
+                }
+
+                var today = DateOnly.FromDateTime(DateTime.Today);
+                int feedbacksCreated = 0;
+                var classesProcessed = new List<object>();
+
+                foreach (var classEntity in activeClasses)
+                {
+                    try
+                    {
+                        var classDayValues = classEntity.ClassDays.Select(cd => cd.Day).ToList();
+                        if (!classDayValues.Any()) continue;
+
+                        var endDate = DateTimeHelper.CalculateEndDate(classEntity.StartDate, classEntity.totalDays, classDayValues);
+
+                        if (endDate == today)
+                        {
+                            _logger.LogInformation($"Class ID {classEntity.ClassId} '{classEntity.ClassName}' has its last day today.");
+
+                            var template = await _unitOfWork.LevelFeedbackTemplateRepository
+                                .GetTemplateForLevelAsync(classEntity.LevelId.Value);
+
+                            if (template == null)
+                            {
+                                _logger.LogWarning($"No active feedback template found for class {classEntity.ClassId} with level ID {classEntity.LevelId}");
+                                continue;
+                            }
+
+                            var learnersWithFeedback = new List<object>();
+
+                            foreach (var learnerClass in classEntity.Learner_Classes)
+                            {
+                                // Skip if no valid learner
+                                if (learnerClass.LearnerId <= 0)
+                                    continue;
+
+                                var existingFeedback = await _unitOfWork.ClassFeedbackRepository
+                                    .GetFeedbackByClassAndLearnerAsync(classEntity.ClassId, learnerClass.LearnerId);
+
+                                if (existingFeedback != null)
+                                {
+                                    learnersWithFeedback.Add(new
+                                    {
+                                        LearnerId = learnerClass.LearnerId,
+                                        LearnerName = learnerClass.Learner?.FullName ?? "Unknown",
+                                        FeedbackId = existingFeedback.FeedbackId,
+                                        Status = "Already exists"
+                                    });
+                                    continue;
+                                }
+
+                                var newFeedback = new ClassFeedback
+                                {
+                                    ClassId = classEntity.ClassId,
+                                    LearnerId = learnerClass.LearnerId,
+                                    TemplateId = template.TemplateId,
+                                    CreatedAt = DateTime.Now,
+                                };
+
+                                await _unitOfWork.ClassFeedbackRepository.AddAsync(newFeedback);
+                                await _unitOfWork.SaveChangeAsync();
+
+                                if (template.Criteria != null)
+                                {
+                                    foreach (var criterion in template.Criteria)
+                                    {
+                                        var evaluation = new ClassFeedbackEvaluation
+                                        {
+                                            FeedbackId = newFeedback.FeedbackId,
+                                            CriterionId = criterion.CriterionId,
+                                            AchievedPercentage = 0
+                                        };
+
+                                        await _unitOfWork.ClassFeedbackEvaluationRepository.AddAsync(evaluation);
+                                    }
+
+                                    await _unitOfWork.SaveChangeAsync();
+                                }
+
+                                var notification = new StaffNotification
+                                {
+                                    LearnerId = learnerClass.LearnerId,
+                                    LearningRegisId = null,
+                                    Type = NotificationType.ClassFeedback,
+                                    Status = NotificationStatus.Unread,
+                                    CreatedAt = DateTime.Now,
+                                    Title = $"Feedback for class '{classEntity.ClassName}'",
+                                    Message = $"Please provide your feedback for the class '{classEntity.ClassName}' taught by {classEntity.Teacher.Fullname}."
+                                };
+
+                                await _unitOfWork.StaffNotificationRepository.AddAsync(notification);
+                                await _unitOfWork.SaveChangeAsync();
+
+                                feedbacksCreated++;
+
+                                learnersWithFeedback.Add(new
+                                {
+                                    LearnerId = learnerClass.LearnerId,
+                                    LearnerName = learnerClass.Learner?.FullName ?? "Unknown",
+                                    FeedbackId = newFeedback.FeedbackId,
+                                    Status = "Created"
+                                });
+                            }
+
+                            classesProcessed.Add(new
+                            {
+                                ClassId = classEntity.ClassId,
+                                ClassName = classEntity.ClassName,
+                                TeacherId = classEntity.TeacherId,
+                                TeacherName = classEntity.Teacher?.Fullname ?? "N/A",
+                                MajorId = classEntity.MajorId,
+                                MajorName = classEntity.Major?.MajorName ?? "N/A",
+                                LevelId = classEntity.LevelId,
+                                LevelName = classEntity.Level?.LevelName ?? "N/A",
+                                StartDate = classEntity.StartDate,
+                                EndDate = endDate,
+                                TemplateId = template.TemplateId,
+                                TemplateName = template.TemplateName,
+                                LearnersCount = classEntity.Learner_Classes.Count,
+                                FeedbacksCreated = learnersWithFeedback.Count(f => ((dynamic)f).Status == "Created"),
+                                LearnerFeedbacks = learnersWithFeedback
+                            });
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, $"Error processing class {classEntity.ClassId} for last day feedback");
+                    }
+                }
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = $"Processed {classesProcessed.Count} classes on their last day. Created {feedbacksCreated} feedback forms.",
+                    Data = classesProcessed
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking for class last day feedbacks");
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Error checking for class last day feedbacks: {ex.Message}"
+                };
+            }
+        }
+
+
 
 
         private async Task SendFeedbackEmailNotification(string email, string learnerName, int feedbackId, string teacherName, decimal remainingPayment)

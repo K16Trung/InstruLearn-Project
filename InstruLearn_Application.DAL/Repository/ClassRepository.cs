@@ -23,7 +23,8 @@ namespace InstruLearn_Application.DAL.Repository
         {
             return await _appDbContext.Classes
                 .Include(c => c.Teacher)
-                .Include(c => c.Major) 
+                .Include(c => c.Major)
+                .Include(c => c.Level)
                 .Include(c => c.ClassDays)
                 .ToListAsync();
         }
@@ -34,6 +35,7 @@ namespace InstruLearn_Application.DAL.Repository
             var classEntity = await _appDbContext.Classes
                 .Include(c => c.Teacher)
                 .Include(c => c.Major)
+                .Include(c => c.Level)
                 .Include(c => c.ClassDays)
                 .FirstOrDefaultAsync(c => c.ClassId == classId);
 
