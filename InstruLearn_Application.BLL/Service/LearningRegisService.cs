@@ -1281,6 +1281,7 @@ namespace InstruLearn_Application.BLL.Service
 
             return startDay.AddDays(daysToAdd);
         }
+
         private async Task<object> GetFirstPaymentPeriodInfoAsync(int learningRegisId)
         {
             try
@@ -1307,26 +1308,41 @@ namespace InstruLearn_Application.BLL.Service
                     firstPaymentStatus = "Đã thanh toán";
                 }
 
-                var payments = await _unitOfWork.PaymentsRepository
-                    .GetQuery()
-                    .Where(p => p.PaymentFor == PaymentFor.LearningRegistration &&
-                               p.Status == PaymentStatus.Completed)
-                    .ToListAsync();
-
-                if (payments != null && payments.Any())
+                if (firstPaymentCompleted)
                 {
-                    foreach (var payment in payments)
-                    {
-                        var transaction = await _unitOfWork.WalletTransactionRepository
-                            .GetTransactionWithWalletAsync(payment.TransactionId);
+                    var payments = await _unitOfWork.PaymentsRepository
+                        .GetQuery()
+                        .Where(p => p.PaymentFor == PaymentFor.LearningRegistration &&
+                                   p.Status == PaymentStatus.Completed)
+                        .ToListAsync();
 
-                        if (transaction != null && transaction.Wallet.LearnerId == learningRegis.LearnerId)
+                    if (payments != null && payments.Any())
+                    {
+                        var relevantPayments = new List<(Payment payment, DateTime transactionDate)>();
+
+                        foreach (var payment in payments)
                         {
-                            if (Math.Abs(payment.AmountPaid - firstPaymentAmount) < 0.1m && firstPaymentDate == null)
+                            var transaction = await _unitOfWork.WalletTransactionRepository
+                                .GetTransactionWithWalletAsync(payment.TransactionId);
+
+                            if (transaction != null &&
+                                transaction.Wallet.LearnerId == learningRegis.LearnerId)
                             {
-                                firstPaymentDate = transaction.TransactionDate;
-                                _logger.LogInformation($"Found payment date: {firstPaymentDate} for 40% payment of registration {learningRegisId}");
+                                if (Math.Abs(payment.AmountPaid - firstPaymentAmount) < 0.1m)
+                                {
+                                    relevantPayments.Add((payment, transaction.TransactionDate));
+                                }
                             }
+                        }
+
+                        if (relevantPayments.Any())
+                        {
+                            var mostRecentPayment = relevantPayments
+                                .OrderByDescending(p => p.transactionDate)
+                                .FirstOrDefault();
+
+                            firstPaymentDate = mostRecentPayment.transactionDate;
+                            _logger.LogInformation($"Found payment date: {firstPaymentDate} for 40% payment of registration {learningRegisId}");
                         }
                     }
                 }
@@ -1362,7 +1378,7 @@ namespace InstruLearn_Application.BLL.Service
                     PaymentAmount = firstPaymentAmount,
                     PaymentStatus = firstPaymentStatus,
                     PaymentDeadline = firstPaymentDeadline?.ToString("yyyy-MM-dd HH:mm:ss"),
-                    PaymentDate = firstPaymentDate?.ToString("yyyy-MM-dd HH:mm:ss"),
+                    PaymentDate = firstPaymentCompleted ? firstPaymentDate?.ToString("yyyy-MM-dd HH:mm:ss") : null,
                     RemainingDays = firstPaymentRemainingDays
                 };
             }
@@ -1456,7 +1472,7 @@ namespace InstruLearn_Application.BLL.Service
                     PaymentAmount = secondPaymentAmount,
                     PaymentStatus = secondPaymentStatus,
                     PaymentDeadline = secondPaymentDeadline?.ToString("yyyy-MM-dd HH:mm:ss"),
-                    PaymentDate = secondPaymentDate?.ToString("yyyy-MM-dd HH:mm:ss"),
+                    PaymentDate = secondPaymentCompleted ? secondPaymentDate?.ToString("yyyy-MM-dd HH:mm:ss") : null,
                     RemainingDays = secondPaymentRemainingDays
                 };
             }
