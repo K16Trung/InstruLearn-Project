@@ -758,6 +758,12 @@ namespace InstruLearn_Application.Model.Mapper
                     src.Evaluations != null && src.Evaluations.Any() ?
                         src.Evaluations.Sum(e => e.AchievedPercentage * e.Criterion.Weight / 100) : 0));
 
+            CreateMap<CreateClassFeedbackDTO, ClassFeedback>()
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => DateTime.Now))
+                .ForMember(dest => dest.CompletedAt, opt => opt.MapFrom(src => DateTime.Now))
+                .ForMember(dest => dest.Evaluations, opt => opt.Ignore()); // Evaluations are handled separately
+
+
             // LevelFeedbackTemplate mappings
             CreateMap<LevelFeedbackTemplate, LevelFeedbackTemplateDTO>()
                 .ForMember(dest => dest.LevelName, opt => opt.MapFrom(src => src.Level.LevelName))
