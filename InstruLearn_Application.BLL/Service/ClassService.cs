@@ -36,6 +36,18 @@ namespace InstruLearn_Application.BLL.Service
 
             foreach (var classDTO in classDTOs)
             {
+
+                if (string.IsNullOrEmpty(classDTO.MajorName))
+                {
+                    classDTO.MajorName = "Not Assigned";
+                }
+
+                // Handle null Level properties
+                if (string.IsNullOrEmpty(classDTO.LevelName))
+                {
+                    classDTO.LevelName = "Not Assigned";
+                }
+
                 var classDayPatterns = await _unitOfWork.ClassDayRepository.GetQuery()
                     .Where(cd => cd.ClassId == classDTO.ClassId)
                     .ToListAsync();
@@ -225,6 +237,27 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
+            // Validate level assignment for the major
+            var levelAssigned = await _unitOfWork.LevelAssignedRepository.GetByIdAsync(createClassDTO.LevelId);
+            if (levelAssigned == null)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Không tìm thấy cấp độ học",
+                };
+            }
+
+            // Verify the level belongs to the selected major
+            if (levelAssigned.MajorId != createClassDTO.MajorId)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Cấp độ học không thuộc gói học đã chọn",
+                };
+            }
+
             if (createClassDTO.ClassDays == null || !createClassDTO.ClassDays.Any())
             {
                 return new ResponseDTO
@@ -237,6 +270,7 @@ namespace InstruLearn_Application.BLL.Service
             var classObj = _mapper.Map<Class>(createClassDTO);
             classObj.Teacher = teacher;
             classObj.Major = major;
+            classObj.LevelId = createClassDTO.LevelId;
 
             DateOnly endDate = DateTimeHelper.CalculateEndDate(createClassDTO.StartDate, createClassDTO.totalDays, createClassDTO.ClassDays);
 
@@ -304,7 +338,9 @@ namespace InstruLearn_Application.BLL.Service
                     EndDate = endDate,
                     TotalDays = createClassDTO.totalDays,
                     ClassDays = createClassDTO.ClassDays,
-                    ScheduleCount = teacherSchedules.Count
+                    ScheduleCount = teacherSchedules.Count,
+                    LevelId = classObj.LevelId,
+                    LevelName = levelAssigned.LevelName
                 }
             };
         }

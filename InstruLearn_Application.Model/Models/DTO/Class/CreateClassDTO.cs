@@ -13,6 +13,7 @@ namespace InstruLearn_Application.Model.Models.DTO.Class
         public int TeacherId { get; set; }
         public int MajorId { get; set; }
         public int SyllabusId { get; set; }
+        public int LevelId { get; set; }
         public string ClassName { get; set; }
         public DateOnly StartDate { get; set; }
         public TimeOnly ClassTime { get; set; }

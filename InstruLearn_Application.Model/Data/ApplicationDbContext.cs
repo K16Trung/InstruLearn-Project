@@ -245,6 +245,12 @@ namespace InstruLearn_Application.Model.Data
                 .HasForeignKey(c => c.MajorId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<Class>()
+                .HasOne(c => c.Level)
+                .WithMany()
+                .HasForeignKey(c => c.LevelId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             //
 
             modelBuilder.Entity<Major>()

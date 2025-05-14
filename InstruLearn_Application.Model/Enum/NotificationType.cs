@@ -15,6 +15,7 @@ namespace InstruLearn_Application.Model.Enum
         Evaluation,
         Certificate,
         PaymentReminder,
-        FeedbackRequired
+        FeedbackRequired,
+        ClassFeedback
     }
 }
