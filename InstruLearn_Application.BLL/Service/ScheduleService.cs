@@ -698,6 +698,44 @@ namespace InstruLearn_Application.BLL.Service
             };
         }
 
+        public async Task<ResponseDTO> CheckClassAttendanceAsync(int scheduleId, AttendanceStatus status)
+        {
+            try
+            {
+                var schedule = await _unitOfWork.ScheduleRepository.FirstOrDefaultAsync(s => s.ScheduleId == scheduleId);
+                if (schedule == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Schedule not found"
+                    };
+                }
+
+                schedule.AttendanceStatus = status;
+                await _unitOfWork.SaveChangeAsync();
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = "Attendance status updated successfully",
+                    Data = new
+                    {
+                        ScheduleId = schedule.ScheduleId,
+                        AttendanceStatus = schedule.AttendanceStatus
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Error updating attendance status: {ex.Message}"
+                };
+            }
+        }
+
         public async Task<ResponseDTO> CheckLearnerScheduleConflictAsync(int learnerId, DateOnly startDay, TimeOnly timeStart, int durationMinutes)
         {
             try

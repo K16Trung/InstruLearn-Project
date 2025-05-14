@@ -24,6 +24,7 @@ namespace InstruLearn_Application.Model.Models.DTO.Class
         public int totalDays { get; set; }
         public ClassStatus Status { get; set; }
         public decimal Price { get; set; }
+        public List<DateOnly> SessionDates { get; set; } = new List<DateOnly>();
         public ICollection<ClassDayDTO> ClassDays { get; set; }
     }
 }

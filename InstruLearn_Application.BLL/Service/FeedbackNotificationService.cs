@@ -219,6 +219,7 @@ namespace InstruLearn_Application.BLL.Service
                             CreatedAt = existingFeedback.CreatedAt,
                             DeadlineDate = existingFeedback.DeadlineDate,
                             DaysRemaining = daysRemaining,
+                            DeadlineMessage = deadlineMessage,
                             Questions = questions,
                             Message = $"Bạn đã thanh toán 40% học phí. Vui lòng hoàn thành phản hồi này để xác nhận bạn muốn tiếp tục học và thanh toán 60% còn lại."
                         });

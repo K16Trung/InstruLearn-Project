@@ -473,7 +473,6 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Fetch LevelAssigned to get the correct LevelPrice
                 var levelAssigned = await _unitOfWork.LevelAssignedRepository.GetByIdAsync(updateDTO.LevelId);
                 if (levelAssigned == null)
                 {
@@ -484,18 +483,14 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Store the original teacher ID to check if it's being changed
                 int? originalTeacherId = learningRegis.TeacherId;
 
                 using var transaction = await _unitOfWork.BeginTransactionAsync();
 
-                // Map other properties (excluding Price)
                 _mapper.Map(updateDTO, learningRegis);
 
-                // Update the Price based on LevelAssigned
                 learningRegis.Price = levelAssigned.LevelPrice * learningRegis.NumberOfSession;
 
-                // Manually update status
                 learningRegis.Status = LearningRegis.Accepted;
                 learningRegis.AcceptedDate = DateTime.Now;
 
@@ -504,29 +499,23 @@ namespace InstruLearn_Application.BLL.Service
                 await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
                 await _unitOfWork.SaveChangeAsync();
 
-                // Calculate total price
                 decimal totalPrice = learningRegis.Price.Value;
 
-                // Get learner information for sending email notification
                 var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(learningRegis.LearnerId);
                 var account = learner != null ? await _unitOfWork.AccountRepository.GetByIdAsync(learner.AccountId) : null;
 
-                // Determine if the teacher has been changed
                 bool teacherChanged = originalTeacherId != learningRegis.TeacherId;
 
-                // Get original teacher information (if there was one and it was changed)
                 Teacher originalTeacher = null;
                 if (teacherChanged && originalTeacherId.HasValue)
                 {
                     originalTeacher = await _unitOfWork.TeacherRepository.GetByIdAsync(originalTeacherId.Value);
                 }
 
-                // Get current teacher information
                 var currentTeacher = learningRegis.TeacherId.HasValue
                     ? await _unitOfWork.TeacherRepository.GetByIdAsync(learningRegis.TeacherId.Value)
                     : null;
 
-                // Create notification for teacher to create learning path
                 if (currentTeacher != null)
                 {
                     var teacherNotification = new StaffNotification
@@ -545,7 +534,6 @@ namespace InstruLearn_Application.BLL.Service
                     await _unitOfWork.SaveChangeAsync();
                 }
 
-                // Send notification to learner if email is available
                 if (account != null && !string.IsNullOrEmpty(account.Email))
                 {
                     try
@@ -613,12 +601,10 @@ namespace InstruLearn_Application.BLL.Service
                     }
                     catch (Exception emailEx)
                     {
-                        // Log the error but continue - don't fail the update because of email issues
                         _logger.LogError(emailEx, "Gửi email thông báo phê duyệt đăng ký học không thành công");
                     }
                 }
 
-                // Commit transaction
                 await _unitOfWork.CommitTransactionAsync();
 
                 return new ResponseDTO
@@ -655,10 +641,9 @@ namespace InstruLearn_Application.BLL.Service
 
                 if (!classScheduleConflict.IsSucceed)
                 {
-                    return classScheduleConflict; // Return the conflict response
+                    return classScheduleConflict;
                 }
 
-                // Check if learner is already enrolled or has a pending enrollment for this class
                 var existingEnrollments = await _unitOfWork.LearningRegisRepository
                     .GetQuery()
                     .AnyAsync(lr =>
@@ -675,12 +660,10 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Start transaction
                 using var transaction = await _unitOfWork.BeginTransactionAsync();
 
                 try
                 {
-                    // 1. Verify the class exists
                     var classEntity = await _unitOfWork.ClassRepository.GetByIdAsync(paymentDTO.ClassId);
                     if (classEntity == null)
                     {
@@ -692,7 +675,6 @@ namespace InstruLearn_Application.BLL.Service
                         };
                     }
 
-                    // 2. Verify the learner exists
                     var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(paymentDTO.LearnerId);
                     if (learner == null)
                     {
@@ -704,7 +686,6 @@ namespace InstruLearn_Application.BLL.Service
                         };
                     }
 
-                    // 3. Check if learner is already enrolled in this class
                     var existingEnrollment = await _unitOfWork.dbContext.Learner_Classes
                         .FirstOrDefaultAsync(lc => lc.LearnerId == paymentDTO.LearnerId && lc.ClassId == paymentDTO.ClassId);
 
@@ -718,8 +699,6 @@ namespace InstruLearn_Application.BLL.Service
                         };
                     }
 
-                    // 4. Calculate class price - UPDATED PRICING LOGIC
-                    // Per-day price from class entity
                     decimal pricePerDay = classEntity.Price;
                     if (pricePerDay <= 0)
                     {
@@ -731,18 +710,14 @@ namespace InstruLearn_Application.BLL.Service
                         };
                     }
 
-                    // Calculate total price based on total days
                     decimal totalClassPrice = pricePerDay * classEntity.totalDays;
 
-                    // Calculate 10% payment amount required
                     decimal paymentAmount = totalClassPrice * 0.1m;
 
-                    // Round to ensure clean numbers
                     paymentAmount = Math.Round(paymentAmount, 2);
 
                     _logger.LogInformation($"Class price calculation: {pricePerDay} per day × {classEntity.totalDays} days = {totalClassPrice} total. 10% payment: {paymentAmount}");
 
-                    // 5. Get Registration Type for Class
                     var classRegisType = await _unitOfWork.LearningRegisTypeRepository.GetQuery()
                         .FirstOrDefaultAsync(rt => rt.RegisTypeName.Contains("Center"));
 
@@ -756,7 +731,6 @@ namespace InstruLearn_Application.BLL.Service
                         };
                     }
 
-                    // 6. Check wallet balance
                     var wallet = await _unitOfWork.WalletRepository.GetFirstOrDefaultAsync(w => w.LearnerId == paymentDTO.LearnerId);
                     if (wallet == null)
                     {
@@ -778,7 +752,6 @@ namespace InstruLearn_Application.BLL.Service
                         };
                     }
 
-                    // 7. Deduct payment from wallet
                     wallet.Balance -= paymentAmount;
                     var walletUpdateResult = await _unitOfWork.WalletRepository.UpdateAsync(wallet);
                     if (!walletUpdateResult)
@@ -787,7 +760,6 @@ namespace InstruLearn_Application.BLL.Service
                     }
                     await _unitOfWork.SaveChangeAsync();
 
-                    // 8. Create wallet transaction record
                     var walletTransaction = new WalletTransaction
                     {
                         TransactionId = Guid.NewGuid().ToString(),
@@ -801,7 +773,6 @@ namespace InstruLearn_Application.BLL.Service
                     await _unitOfWork.WalletTransactionRepository.AddAsync(walletTransaction);
                     await _unitOfWork.SaveChangeAsync();
 
-                    // 9. Create learning registration for tracking
                     var learningRegis = new Learning_Registration
                     {
                         LearnerId = paymentDTO.LearnerId,
@@ -811,10 +782,10 @@ namespace InstruLearn_Application.BLL.Service
                         MajorId = classEntity.MajorId,
                         Status = LearningRegis.Accepted,
                         RequestDate = DateTime.UtcNow,
-                        Price = totalClassPrice, // Store the TOTAL price in learning registration
+                        Price = totalClassPrice,
                         NumberOfSession = classEntity.totalDays,
                         TimeStart = classEntity.ClassTime,
-                        TimeLearning = 120, // Default 2 hours
+                        TimeLearning = 120,
                         StartDay = classEntity.StartDate,
                         VideoUrl = string.Empty,
                         LearningRequest = string.Empty
