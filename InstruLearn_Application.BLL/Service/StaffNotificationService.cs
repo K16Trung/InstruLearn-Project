@@ -759,18 +759,106 @@ namespace InstruLearn_Application.BLL.Service
             {
                 _logger.LogInformation($"Retrieving notifications for teacher ID: {teacherId}");
 
-                // Specify the notification types we want to filter by
                 var notificationTypes = new[] {
             NotificationType.CreateLearningPath,
             NotificationType.SchedulesCreated,
             NotificationType.ClassFeedback
         };
 
-                // Get notifications for this teacher with the specified types
-                var notifications = await _unitOfWork.StaffNotificationRepository.GetNotificationsByTeacherIdAsync(
-                    teacherId, notificationTypes);
+                // Initialize with empty list to avoid null reference exceptions
+                List<StaffNotification> notifications = new List<StaffNotification>();
 
-                if (notifications == null || !notifications.Any())
+                try
+                {
+                    // Step 1: Get direct notifications (if repository supports this)
+                    var directNotifications = await _unitOfWork.StaffNotificationRepository
+                        .GetNotificationsByTeacherIdAsync(teacherId, notificationTypes);
+
+                    if (directNotifications != null && directNotifications.Any())
+                    {
+                        notifications.AddRange(directNotifications);
+                        _logger.LogInformation($"Found {directNotifications.Count} direct notifications for teacher {teacherId}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error getting direct notifications for teacher {TeacherId}", teacherId);
+                }
+
+                try
+                {
+                    var learningRegistrations = await _unitOfWork.LearningRegisRepository
+                        .GetWithIncludesAsync(lr => lr.TeacherId == teacherId, null);
+
+                    if (learningRegistrations?.Any() == true)
+                    {
+                        var learningRegisIds = learningRegistrations.Select(lr => lr.LearningRegisId).ToList();
+                        _logger.LogInformation($"Teacher {teacherId} has {learningRegisIds.Count} learning registrations");
+
+                        if (learningRegisIds.Any())
+                        {
+                            var additionalNotifications = await _unitOfWork.StaffNotificationRepository
+                                .GetWithIncludesAsync(n =>
+                                    n.LearningRegisId.HasValue &&
+                                    learningRegisIds.Contains(n.LearningRegisId.Value) &&
+                                    n.Status != NotificationStatus.Resolved, null);
+
+                            var filteredAdditional = additionalNotifications?
+                                .Where(n => notificationTypes.Contains(n.Type))
+                                .ToList();
+
+                            if (filteredAdditional?.Any() == true)
+                            {
+                                _logger.LogInformation($"Found {filteredAdditional.Count} additional notifications via learning registrations");
+
+                                foreach (var notification in filteredAdditional)
+                                {
+                                    if (!notifications.Any(n => n.NotificationId == notification.NotificationId))
+                                    {
+                                        notifications.Add(notification);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error getting learning registration notifications for teacher {TeacherId}", teacherId);
+                }
+
+                try
+                {
+                    var messageBasedNotifications = await _unitOfWork.StaffNotificationRepository
+                        .GetWithIncludesAsync(n =>
+                            n.Type == NotificationType.ClassFeedback &&
+                            (n.Message.Contains($"teacher {teacherId}") ||
+                             n.Title.Contains($"Teacher {teacherId}")) &&
+                            n.Status != NotificationStatus.Resolved, null);
+
+                    if (messageBasedNotifications?.Any() == true)
+                    {
+                        _logger.LogInformation($"Found {messageBasedNotifications.Count} message-based notifications for teacher {teacherId}");
+
+                        foreach (var notification in messageBasedNotifications)
+                        {
+                            if (!notifications.Any(n => n.NotificationId == notification.NotificationId))
+                            {
+                                notifications.Add(notification);
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Log but continue
+                    _logger.LogError(ex, "Error getting message-based notifications for teacher {TeacherId}", teacherId);
+                }
+
+                _logger.LogInformation($"Total notifications found: {notifications.Count} for teacher {teacherId}");
+
+                // Return empty list if no notifications found
+                if (notifications.Count == 0)
                 {
                     return new ResponseDTO
                     {
@@ -780,23 +868,40 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Map to DTOs
-                var notificationDTOs = _mapper.Map<List<StaffNotificationDTO>>(notifications);
-
-                return new ResponseDTO
+                try
                 {
-                    IsSucceed = true,
-                    Message = $"Retrieved {notifications.Count} notifications for teacher ID: {teacherId}",
-                    Data = notificationDTOs
-                };
+                    // Map notifications to DTOs
+                    var notificationDTOs = _mapper.Map<List<StaffNotificationDTO>>(notifications);
+
+                    return new ResponseDTO
+                    {
+                        IsSucceed = true,
+                        Message = $"Retrieved {notifications.Count} notifications for teacher ID: {teacherId}",
+                        Data = notificationDTOs
+                    };
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error mapping notifications to DTOs for teacher {TeacherId}", teacherId);
+
+                    // If mapping fails, still return a valid response but with an error message
+                    return new ResponseDTO
+                    {
+                        IsSucceed = true, // Still mark as success to prevent CORS issues
+                        Message = $"Retrieved {notifications.Count} notifications but encountered an error during processing: {ex.Message}",
+                        Data = new List<object>() // Empty list as fallback
+                    };
+                }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error retrieving notifications for teacher ID: {teacherId}");
+
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error retrieving notifications: {ex.Message}"
+                    Message = $"Error retrieving notifications: {ex.Message}",
+                    Data = new List<object>() // Empty list as fallback
                 };
             }
         }

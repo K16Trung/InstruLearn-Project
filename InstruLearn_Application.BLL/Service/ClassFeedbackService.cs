@@ -251,7 +251,26 @@ namespace InstruLearn_Application.BLL.Service
             if (feedback == null)
                 return null;
 
-            return _mapper.Map<ClassFeedbackDTO>(feedback);
+            var feedbackDto = _mapper.Map<ClassFeedbackDTO>(feedback);
+
+            // Calculate total percentage based on achievements
+            if (feedback.Evaluations != null && feedback.Evaluations.Any())
+            {
+                decimal totalPercentage = 0;
+
+                foreach (var evaluation in feedback.Evaluations)
+                {
+                    totalPercentage += evaluation.AchievedPercentage;
+                }
+
+                feedbackDto.AverageScore = totalPercentage;
+            }
+            else
+            {
+                feedbackDto.AverageScore = 0;
+            }
+
+            return feedbackDto;
         }
 
         public async Task<List<ClassFeedbackDTO>> GetFeedbacksByClassIdAsync(int classId)
@@ -263,7 +282,28 @@ namespace InstruLearn_Application.BLL.Service
         public async Task<List<ClassFeedbackDTO>> GetFeedbacksByLearnerIdAsync(int learnerId)
         {
             var feedbacks = await _unitOfWork.ClassFeedbackRepository.GetFeedbacksByLearnerIdAsync(learnerId);
-            return _mapper.Map<List<ClassFeedbackDTO>>(feedbacks);
+            var feedbackDTOs = _mapper.Map<List<ClassFeedbackDTO>>(feedbacks);
+
+            foreach (var feedbackDTO in feedbackDTOs)
+            {
+                var feedbackWithEval = await _unitOfWork.ClassFeedbackRepository.GetFeedbackWithEvaluationsAsync(feedbackDTO.FeedbackId);
+                if (feedbackWithEval?.Evaluations == null || !feedbackWithEval.Evaluations.Any())
+                {
+                    feedbackDTO.AverageScore = 0;
+                    continue;
+                }
+
+                decimal totalPercentage = 0;
+
+                foreach (var evaluation in feedbackWithEval.Evaluations)
+                {
+                    totalPercentage += evaluation.AchievedPercentage;
+                }
+
+                feedbackDTO.AverageScore = totalPercentage;
+            }
+
+            return feedbackDTOs;
         }
 
         public async Task<ClassFeedbackDTO> GetFeedbackByClassAndLearnerAsync(int classId, int learnerId)
@@ -291,56 +331,49 @@ namespace InstruLearn_Application.BLL.Service
                     ClassId = classId,
                     ClassName = classEntity.ClassName,
                     MajorName = classEntity.Major?.MajorName ?? "Unknown",
-                    LevelName = "Unknown", // Get from major/level if available
+                    LevelName = "Unknown",
                     TotalFeedbacks = 0,
                     OverallAverageScore = 0,
                     CriterionSummaries = new List<CriterionSummaryDTO>()
                 };
             }
 
-            // Calculate overall average score
-            decimal overallTotal = 0;
-            int overallCount = 0;
-
-            // Track criterion statistics
-            var criterionScores = new Dictionary<int, List<decimal>>();
+            var criterionTotals = new Dictionary<int, decimal>();
+            var criterionCounts = new Dictionary<int, int>();
             var criterionDetails = new Dictionary<int, (string Name, decimal Weight)>();
 
-            // Process all feedbacks
             foreach (var feedback in feedbacks)
             {
                 foreach (var evaluation in feedback.Evaluations)
                 {
-                    var weightedScore = evaluation.AchievedPercentage * evaluation.Criterion.Weight / 100;
-                    overallTotal += weightedScore;
-                    overallCount++;
-
-                    // Track scores by criterion
                     int criterionId = evaluation.CriterionId;
-                    if (!criterionScores.ContainsKey(criterionId))
+                    
+                    if (!criterionTotals.ContainsKey(criterionId))
                     {
-                        criterionScores[criterionId] = new List<decimal>();
+                        criterionTotals[criterionId] = 0;
+                        criterionCounts[criterionId] = 0;
                         criterionDetails[criterionId] = (evaluation.Criterion.GradeCategory, evaluation.Criterion.Weight);
                     }
 
-                    criterionScores[criterionId].Add(evaluation.AchievedPercentage);
+                    criterionTotals[criterionId] += evaluation.AchievedPercentage;
+                    criterionCounts[criterionId]++;
                 }
             }
 
-            // Calculate criterion averages
+            decimal overallTotal = criterionTotals.Values.Sum();
+
             var criterionSummaries = new List<CriterionSummaryDTO>();
-            foreach (var criterionId in criterionScores.Keys)
+            foreach (var criterionId in criterionTotals.Keys)
             {
                 criterionSummaries.Add(new CriterionSummaryDTO
                 {
                     CriterionId = criterionId,
                     GradeCategory = criterionDetails[criterionId].Name,
                     Weight = criterionDetails[criterionId].Weight,
-                    AverageScore = criterionScores[criterionId].Average()
+                    AverageScore = criterionTotals[criterionId]
                 });
             }
 
-            // Get level name if available
             string levelName = "Unknown";
             if (classEntity.Major != null)
             {
@@ -358,7 +391,7 @@ namespace InstruLearn_Application.BLL.Service
                 MajorName = classEntity.Major?.MajorName ?? "Unknown",
                 LevelName = levelName,
                 TotalFeedbacks = feedbacks.Count(),
-                OverallAverageScore = overallCount > 0 ? overallTotal / overallCount : 0,
+                OverallAverageScore = overallTotal,
                 CriterionSummaries = criterionSummaries
             };
         }
