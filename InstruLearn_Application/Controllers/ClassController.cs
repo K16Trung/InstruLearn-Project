@@ -55,12 +55,25 @@ namespace InstruLearn_Application.Controllers
             var result = await _classService.AddClassAsync(createClassDTO);
             return Ok(result);
         }
+
         [HttpPut("update/{id}")]
         public async Task<IActionResult> UpdateClassAsync(int id, [FromBody] UpdateClassDTO updateClassDTO)
         {
             var result = await _classService.UpdateClassAsync(id, updateClassDTO);
             return Ok(result);
         }
+
+        [HttpPost("change-class")]
+        public async Task<IActionResult> ChangeClassForLearner([FromBody] ChangeClassDTO changeClassDTO)
+        {
+            var result = await _classService.ChangeClassForLearnerAsync(changeClassDTO);
+
+            if (!result.IsSucceed)
+                return BadRequest(result);
+
+            return Ok(result);
+        }
+
         [HttpDelete("delete/{id}")]
         public async Task<IActionResult> DeleteClassAsync(int id)
         {

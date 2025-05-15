@@ -20,11 +20,16 @@ namespace InstruLearn_Application.BLL.Service
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly ILearnerNotificationService _learnerNotificationService;
 
-        public ClassService(IUnitOfWork unitOfWork, IMapper mapper)
+        public ClassService(
+            IUnitOfWork unitOfWork, 
+            IMapper mapper, 
+            ILearnerNotificationService learnerNotificationService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _learnerNotificationService = learnerNotificationService;
         }
 
         public async Task<List<ClassDTO>> GetAllClassAsync()
@@ -311,6 +316,134 @@ namespace InstruLearn_Application.BLL.Service
                 Message = "Classes retrieved successfully.",
                 Data = classDtos
             };
+        }
+
+        public async Task<ResponseDTO> ChangeClassForLearnerAsync(ChangeClassDTO changeClassDTO)
+        {
+            // Check if learner exists
+            var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(changeClassDTO.LearnerId);
+            if (learner == null)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Không tìm thấy học viên."
+                };
+            }
+
+            // Find learner's current class
+            var currentLearnerClass = await _unitOfWork.dbContext.Learner_Classes
+                .FirstOrDefaultAsync(lc => lc.LearnerId == changeClassDTO.LearnerId);
+
+            if (currentLearnerClass == null)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Học viên chưa đăng ký lớp học nào."
+                };
+            }
+
+            // Check if the new class is the same as the current class
+            if (currentLearnerClass.ClassId == changeClassDTO.ClassId)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Học viên đã thuộc lớp này rồi."
+                };
+            }
+
+            // Get current class details for notification
+            var currentClass = await _unitOfWork.ClassRepository.GetByIdAsync(currentLearnerClass.ClassId);
+            if (currentClass == null)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Không tìm thấy thông tin lớp học hiện tại."
+                };
+            }
+
+            // Check if new class exists
+            var newClass = await _unitOfWork.ClassRepository.GetByIdAsync(changeClassDTO.ClassId);
+            if (newClass == null)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Không tìm thấy lớp học mới."
+                };
+            }
+
+            // Check if the new class has available capacity
+            var studentCount = await _unitOfWork.dbContext.Learner_Classes
+                .Where(lc => lc.ClassId == changeClassDTO.ClassId)
+                .CountAsync();
+            if (studentCount >= newClass.MaxStudents)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Lớp học mới đã đầy."
+                };
+            }
+
+            // Begin transaction
+            using var transaction = await _unitOfWork.BeginTransactionAsync();
+
+            try
+            {
+                // Update the learner's class
+                currentLearnerClass.ClassId = changeClassDTO.ClassId;
+                await _unitOfWork.SaveChangeAsync();
+
+                // Create a notification for the learner
+                var notificationMessage = $"Bạn đã được chuyển từ lớp {currentClass.ClassName} sang lớp {newClass.ClassName}.";
+                if (!string.IsNullOrEmpty(changeClassDTO.Reason))
+                {
+                    notificationMessage += $" Lý do: {changeClassDTO.Reason}";
+                }
+
+                // Create a StaffNotification instead of LearnerNotification
+                var notification = new StaffNotification
+                {
+                    LearnerId = changeClassDTO.LearnerId,
+                    Title = "Thay đổi lớp học",
+                    Message = notificationMessage,
+                    Type = NotificationType.ClassChange,
+                    Status = NotificationStatus.Unread,
+                    CreatedAt = DateTime.Now
+                };
+
+                await _unitOfWork.StaffNotificationRepository.AddAsync(notification);
+                await _unitOfWork.SaveChangeAsync();
+
+                // Commit transaction
+                await _unitOfWork.CommitTransactionAsync();
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = "Đã chuyển lớp thành công.",
+                    Data = new
+                    {
+                        LearnerId = changeClassDTO.LearnerId,
+                        LearnerName = learner.FullName,
+                        OldClassName = currentClass.ClassName,
+                        NewClassName = newClass.ClassName
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Lỗi khi chuyển lớp: {ex.Message}"
+                };
+            }
         }
 
         public async Task<ResponseDTO> AddClassAsync(CreateClassDTO createClassDTO)
