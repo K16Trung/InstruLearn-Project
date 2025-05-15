@@ -343,18 +343,19 @@ namespace InstruLearn_Application.Model.Mapper
 
             // 🔹 Class Mappings
             CreateMap<Class, ClassDTO>()
-            .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Teacher.Fullname))
-            .ForMember(dest => dest.MajorName, opt => opt.MapFrom(src => src.Major != null ? src.Major.MajorName : null))
-            .ForMember(dest => dest.LevelName, opt => opt.MapFrom(src => src.Level != null ? src.Level.LevelName : null))
-            .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src =>
-                DateTimeHelper.CalculateClassEndDate(
-                    src.StartDate,
-                    src.totalDays,
-                    src.ClassDays.Select(cd => (int)cd.Day).ToList()
-                )
-            ))
-            .ForMember(dest => dest.ClassEndTime, opt => opt.MapFrom(src => src.ClassTime.AddHours(2)))
-            .ForMember(dest => dest.ClassDays, opt => opt.MapFrom(src => src.ClassDays));
+                .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Teacher.Fullname))
+                .ForMember(dest => dest.MajorName, opt => opt.MapFrom(src => src.Major != null ? src.Major.MajorName : null))
+                .ForMember(dest => dest.LevelName, opt => opt.MapFrom(src => src.Level != null ? src.Level.LevelName : null))
+                .ForMember(dest => dest.SyllabusLink, opt => opt.MapFrom(src => src.Level != null ? src.Level.SyllabusLink : null))
+                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src =>
+                    DateTimeHelper.CalculateClassEndDate(
+                        src.StartDate,
+                        src.totalDays,
+                        src.ClassDays.Select(cd => (int)cd.Day).ToList()
+                    )
+                ))
+                .ForMember(dest => dest.ClassEndTime, opt => opt.MapFrom(src => src.ClassTime.AddHours(2)))
+                .ForMember(dest => dest.ClassDays, opt => opt.MapFrom(src => src.ClassDays));
 
             CreateMap<CreateClassDTO, Class>()
                 .ForMember(dest => dest.ClassDays, opt => opt.MapFrom(src => src.ClassDays.Select(day => new Models.ClassDay { Day = day })))
@@ -363,7 +364,6 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<UpdateClassDTO, Class>()
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status));
 
-
             CreateMap<Models.ClassDay, ClassDayDTO>()
                 .ForMember(dest => dest.Day, opt => opt.MapFrom(src => src.Day));
 
@@ -371,7 +371,7 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Teacher != null ? src.Teacher.Fullname : "N/A"))
                 .ForMember(dest => dest.MajorName, opt => opt.MapFrom(src => src.Major != null ? src.Major.MajorName : "N/A"))
                 .ForMember(dest => dest.LevelName, opt => opt.MapFrom(src => src.Level != null ? src.Level.LevelName : "N/A"))
-                .ForMember(dest => dest.SyllabusName, opt => opt.MapFrom(src => src.Syllabus != null ? src.Syllabus.SyllabusName : "N/A"))
+                .ForMember(dest => dest.SyllabusLink, opt => opt.MapFrom(src => src.Level != null ? src.Level.SyllabusLink : null))
                 .ForMember(dest => dest.TotalDays, opt => opt.MapFrom(src => src.totalDays))
                 .ForMember(dest => dest.ClassDays, opt => opt.Ignore())
                 .ForMember(dest => dest.StudentCount, opt => opt.Ignore())
