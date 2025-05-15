@@ -19,6 +19,7 @@ namespace InstruLearn_Application.Model.Models
         public string ClassName { get; set; }
         public DateOnly StartDate { get; set; }
         public TimeOnly ClassTime { get; set; }
+        public DateOnly TestDay { get; set; }
         public int MaxStudents { get; set; }
         public int totalDays { get; set; }
         public ClassStatus Status { get; set; }

@@ -18,8 +18,8 @@ namespace InstruLearn_Application.Model.Models.DTO.Class
         public string MajorName { get; set; }
         public int LevelId { get; set; }
         public string LevelName { get; set; }
-        public int SyllabusId { get; set; }
-        public string SyllabusName { get; set; }
+        public string? SyllabusLink { get; set; }
+        public DateOnly TestDay { get; set; }
         public TimeOnly ClassTime { get; set; }
         public int MaxStudents { get; set; }
         public int TotalDays { get; set; }
@@ -32,5 +32,6 @@ namespace InstruLearn_Application.Model.Models.DTO.Class
         // Added fields for student information
         public int StudentCount { get; set; }
         public List<ClassStudentDTO> Students { get; set; }
+
     }
 }

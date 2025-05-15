@@ -357,8 +357,8 @@ namespace InstruLearn_Application.Model.Mapper
             .ForMember(dest => dest.ClassDays, opt => opt.MapFrom(src => src.ClassDays));
 
             CreateMap<CreateClassDTO, Class>()
-                .ForMember(dest => dest.SyllabusId, opt => opt.MapFrom(src => src.SyllabusId))
-                .ForMember(dest => dest.ClassDays, opt => opt.MapFrom(src => src.ClassDays.Select(day => new Models.ClassDay { Day = day })));
+                .ForMember(dest => dest.ClassDays, opt => opt.MapFrom(src => src.ClassDays.Select(day => new Models.ClassDay { Day = day })))
+                .ForMember(dest => dest.TestDay, opt => opt.MapFrom(src => src.TestDay));
 
             CreateMap<UpdateClassDTO, Class>()
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status));

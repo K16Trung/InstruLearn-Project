@@ -31,21 +31,25 @@ namespace InstruLearn_Application.BLL.Service
         {
             var classes = await _unitOfWork.ClassRepository.GetAllAsync();
 
-            // Map classes to DTOs
             var classDTOs = _mapper.Map<List<ClassDTO>>(classes);
 
             foreach (var classDTO in classDTOs)
             {
-
                 if (string.IsNullOrEmpty(classDTO.MajorName))
                 {
                     classDTO.MajorName = "Not Assigned";
                 }
 
-                // Handle null Level properties
                 if (string.IsNullOrEmpty(classDTO.LevelName))
                 {
                     classDTO.LevelName = "Not Assigned";
+                }
+
+                // Set the SyllabusLink from the Level association
+                if (string.IsNullOrEmpty(classDTO.SyllabusLink))
+                {
+                    var level = await _unitOfWork.LevelAssignedRepository.GetByIdAsync(classDTO.LevelId);
+                    classDTO.SyllabusLink = level?.SyllabusLink;
                 }
 
                 var classDayPatterns = await _unitOfWork.ClassDayRepository.GetQuery()
@@ -99,10 +103,10 @@ namespace InstruLearn_Application.BLL.Service
 
                 var classDetailDTO = _mapper.Map<ClassDetailDTO>(classEntity);
 
-                if (syllabus != null)
+                if (string.IsNullOrEmpty(classDetailDTO.SyllabusLink))
                 {
-                    classDetailDTO.SyllabusId = syllabus.SyllabusId;
-                    classDetailDTO.SyllabusName = syllabus.SyllabusName;
+                    var level = await _unitOfWork.LevelAssignedRepository.GetByIdAsync(classDetailDTO.LevelId);
+                    classDetailDTO.SyllabusLink = level?.SyllabusLink;
                 }
 
                 classDetailDTO.ClassDays = _mapper.Map<List<ClassDayDTO>>(classDays);
@@ -220,7 +224,13 @@ namespace InstruLearn_Application.BLL.Service
                         classDTO.LevelName = "Not Assigned";
                     }
 
-                    // Get class days
+                    // Set the SyllabusLink from the Level association
+                    if (string.IsNullOrEmpty(classDTO.SyllabusLink))
+                    {
+                        var level = await _unitOfWork.LevelAssignedRepository.GetByIdAsync(classDTO.LevelId);
+                        classDTO.SyllabusLink = level?.SyllabusLink;
+                    }
+
                     var classDayPatterns = await _unitOfWork.ClassDayRepository.GetQuery()
                         .Where(cd => cd.ClassId == classDTO.ClassId)
                         .ToListAsync();
@@ -271,8 +281,6 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
-
-
         public async Task<ResponseDTO> GetClassesByMajorIdAsync(int majorId)
         {
             var classes = await _unitOfWork.ClassRepository.GetClassesByMajorIdAsync(majorId);
@@ -289,6 +297,16 @@ namespace InstruLearn_Application.BLL.Service
 
             var classDtos = _mapper.Map<List<ClassDTO>>(classes);
 
+            // Set the SyllabusLink for each class
+            foreach (var classDto in classDtos)
+            {
+                if (string.IsNullOrEmpty(classDto.SyllabusLink))
+                {
+                    var level = await _unitOfWork.LevelAssignedRepository.GetByIdAsync(classDto.LevelId);
+                    classDto.SyllabusLink = level?.SyllabusLink;
+                }
+            }
+
             return new ResponseDTO
             {
                 IsSucceed = true,
@@ -299,7 +317,6 @@ namespace InstruLearn_Application.BLL.Service
 
         public async Task<ResponseDTO> AddClassAsync(CreateClassDTO createClassDTO)
         {
-
             var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(createClassDTO.TeacherId);
             if (teacher == null)
             {
@@ -320,17 +337,6 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
-            var Syllabus = await _unitOfWork.SyllabusRepository.GetByIdAsync(createClassDTO.SyllabusId);
-            if (Syllabus == null)
-            {
-                return new ResponseDTO
-                {
-                    IsSucceed = false,
-                    Message = "Không tìm thấy giáo trình học",
-                };
-            }
-
-            // Validate level assignment for the major
             var levelAssigned = await _unitOfWork.LevelAssignedRepository.GetByIdAsync(createClassDTO.LevelId);
             if (levelAssigned == null)
             {
@@ -341,13 +347,21 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
-            // Verify the level belongs to the selected major
             if (levelAssigned.MajorId != createClassDTO.MajorId)
             {
                 return new ResponseDTO
                 {
                     IsSucceed = false,
                     Message = "Cấp độ học không thuộc gói học đã chọn",
+                };
+            }
+
+            if (string.IsNullOrEmpty(levelAssigned.SyllabusLink))
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Cấp độ học này chưa có liên kết đến giáo trình",
                 };
             }
 
@@ -364,6 +378,15 @@ namespace InstruLearn_Application.BLL.Service
             classObj.Teacher = teacher;
             classObj.Major = major;
             classObj.LevelId = createClassDTO.LevelId;
+
+            if (createClassDTO.TestDay < createClassDTO.StartDate)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Ngày kiểm tra không thể trước ngày bắt đầu lớp học",
+                };
+            }
 
             DateOnly endDate = DateTimeHelper.CalculateEndDate(createClassDTO.StartDate, createClassDTO.totalDays, createClassDTO.ClassDays);
 
@@ -407,16 +430,15 @@ namespace InstruLearn_Application.BLL.Service
                         TimeEnd = createClassDTO.ClassTime.AddHours(2),
                         Mode = ScheduleMode.Center,
                         ScheduleDays = new List<ScheduleDays>
-                {
-                    new ScheduleDays { DayOfWeeks = (DayOfWeeks)currentDate.DayOfWeek }
-                }
+                        {
+                            new ScheduleDays { DayOfWeeks = (DayOfWeeks)currentDate.DayOfWeek }
+                        }
                     });
                     classDaysCount++;
                 }
                 currentDate = currentDate.AddDays(1);
             }
 
-            // Save schedules to database
             await _unitOfWork.ScheduleRepository.AddRangeAsync(teacherSchedules);
             await _unitOfWork.SaveChangeAsync();
 
@@ -429,11 +451,13 @@ namespace InstruLearn_Application.BLL.Service
                     ClassId = classObj.ClassId,
                     StartDate = createClassDTO.StartDate,
                     EndDate = endDate,
+                    TestDay = createClassDTO.TestDay,
                     TotalDays = createClassDTO.totalDays,
                     ClassDays = createClassDTO.ClassDays,
                     ScheduleCount = teacherSchedules.Count,
                     LevelId = classObj.LevelId,
-                    LevelName = levelAssigned.LevelName
+                    LevelName = levelAssigned.LevelName,
+                    SyllabusLink = levelAssigned.SyllabusLink
                 }
             };
         }
@@ -486,7 +510,6 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
         }
-
 
         public async Task<ResponseDTO> DeleteClassAsync(int classId)
         {
