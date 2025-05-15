@@ -32,6 +32,24 @@ namespace InstruLearn_Application.Controllers
             return Ok(result);
         }
 
+        [HttpPost("check-classes-needing-feedback")]
+        public async Task<IActionResult> CheckClassesNeedingFeedback()
+        {
+            try
+            {
+                var response = await _feedbackNotificationService.CheckForClassLastDayFeedbacksAsync();
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"An error occurred while checking classes needing feedback: {ex.Message}"
+                });
+            }
+        }
+
         [HttpPost("complete-feedback")]
         public async Task<ActionResult<ResponseDTO>> CompleteFeedback([FromBody] CompleteFeedbackDTO model)
         {

@@ -14,7 +14,7 @@ namespace InstruLearn_Application.BLL.Service.IService
         Task<ResponseDTO> AutoCheckAndCreateFeedbackNotificationsAsync();
         Task<ResponseDTO> CheckAndUpdateLearnerProgressAsync();
         Task<ResponseDTO> CheckForExpiredFeedbacksAsync();
-        Task<ResponseDTO> CheckForClassLastDayFeedbacksAsync();
+        Task<ResponseDTO> CheckForClassLastDayFeedbacksAsync(bool includeOlderClasses = false);
         Task SendTestFeedbackEmailNotification(string email, string learnerName, int feedbackId, string teacherName, decimal remainingPayment);
     }
 }

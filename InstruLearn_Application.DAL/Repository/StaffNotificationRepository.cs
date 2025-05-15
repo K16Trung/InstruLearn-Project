@@ -68,14 +68,37 @@ namespace InstruLearn_Application.DAL.Repository
 
         public async Task<List<StaffNotification>> GetNotificationsByTeacherIdAsync(int teacherId, NotificationType[] notificationTypes)
         {
-            return await _context.StaffNotifications
-                .Include(n => n.Learner)
-                .Include(n => n.LearningRegistration)
-                    .ThenInclude(lr => lr.Teacher)
-                .Where(n => n.LearningRegistration.TeacherId == teacherId &&
-                            notificationTypes.Contains(n.Type))
-                .OrderByDescending(n => n.CreatedAt)
+            var directNotifications = await _context.StaffNotifications
+                .Where(n => (n.Message.Contains($"teacher {teacherId}") ||
+                            n.Title.Contains($"Teacher {teacherId}") ||
+                            n.Title.Contains($"teacher {teacherId}")) &&
+                            notificationTypes.Contains(n.Type) &&
+                            n.Status != NotificationStatus.Resolved)
                 .ToListAsync();
+
+            var teacherRegistrationNotifications = await _context.StaffNotifications
+                .Include(n => n.LearningRegistration)
+                .Where(n => n.LearningRegistration.TeacherId == teacherId &&
+                           notificationTypes.Contains(n.Type) &&
+                           n.Status != NotificationStatus.Resolved)
+                .ToListAsync();
+
+            var classNotifications = await _context.StaffNotifications
+                .Include(n => n.LearningRegistration)
+                .Where(n => n.Type == NotificationType.ClassFeedback &&
+                           notificationTypes.Contains(n.Type) &&
+                           n.Status != NotificationStatus.Resolved &&
+                           n.Message.Contains($"teacher {teacherId}"))
+                .ToListAsync();
+
+            var allNotifications = new List<StaffNotification>();
+            allNotifications.AddRange(directNotifications);
+            allNotifications.AddRange(teacherRegistrationNotifications);
+            allNotifications.AddRange(classNotifications);
+
+            return allNotifications.GroupBy(n => n.NotificationId)
+                                  .Select(g => g.First())
+                                  .ToList();
         }
 
         public async Task<List<StaffNotification>> GetNotificationsByLearnerIdAsync(int learnerId)
@@ -86,6 +109,19 @@ namespace InstruLearn_Application.DAL.Repository
                 .Where(n => n.LearnerId == learnerId)
                 .OrderByDescending(n => n.CreatedAt)
                 .ToListAsync();
+        }
+
+        private class StaffNotificationComparer : IEqualityComparer<StaffNotification>
+        {
+            public bool Equals(StaffNotification x, StaffNotification y)
+            {
+                return x.NotificationId == y.NotificationId;
+            }
+
+            public int GetHashCode(StaffNotification obj)
+            {
+                return obj.NotificationId.GetHashCode();
+            }
         }
 
     }

@@ -755,15 +755,36 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
-        public async Task<ResponseDTO> CheckForClassLastDayFeedbacksAsync()
+        public async Task<ResponseDTO> CheckForClassLastDayFeedbacksAsync(bool includeOlderClasses = false)
         {
             try
             {
                 _logger.LogInformation("Starting automatic check for classes on their last day or recently ended without feedback");
+                _logger.LogInformation($"Including older classes: {includeOlderClasses}");
 
-                // Get active classes and recently completed classes (within last 7 days)
                 var today = DateOnly.FromDateTime(DateTime.Today);
                 var sevenDaysAgo = today.AddDays(-7);
+
+                var registrationsWithType1002 = await _unitOfWork.LearningRegisRepository
+                    .GetWithIncludesAsync(x => x.Learning_Registration_Type.RegisTypeId == 1002, "Classes");
+
+                var classIdsWithType1002 = registrationsWithType1002
+                    .Where(r => r.Classes != null)
+                    .Select(r => r.Classes.ClassId)
+                    .Distinct()
+                    .ToList();
+
+                _logger.LogInformation($"Found {classIdsWithType1002.Count} classes linked to registrations with regisTypeId 1002"); ;
+
+                if (!classIdsWithType1002.Any())
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = true,
+                        Message = "No classes with registration type 1002 found for feedback creation.",
+                        Data = new List<object>()
+                    };
+                }
 
                 var classes = await _unitOfWork.ClassRepository
                     .GetWithIncludesAsync(
@@ -794,7 +815,7 @@ namespace InstruLearn_Application.BLL.Service
 
                         // Check if the class is on its last day or has recently ended without feedback
                         bool isLastDay = endDate == today;
-                        bool isRecentlyEnded = endDate < today && endDate >= sevenDaysAgo;
+                        bool isRecentlyEnded = endDate < today && (includeOlderClasses || endDate >= sevenDaysAgo);
 
                         if (isLastDay || isRecentlyEnded)
                         {
@@ -871,7 +892,6 @@ namespace InstruLearn_Application.BLL.Service
                                     await _unitOfWork.SaveChangeAsync();
                                 }
 
-                                // Create notification for the STUDENT
                                 var notification = new StaffNotification
                                 {
                                     LearnerId = learnerClass.LearnerId,
@@ -897,12 +917,8 @@ namespace InstruLearn_Application.BLL.Service
                                 });
                             }
 
-                            // Only add to the processed list if any learners were missing feedback
                             if (anyLearnersMissingFeedback || isLastDay)
                             {
-                                // Create notification for the TEACHER
-                                // Since we don't have TeacherId in StaffNotification, we're using a workaround
-                                // We'll create a notification linked to learningRegis with the teacher's class ID in the message
                                 if (classEntity.TeacherId > 0)
                                 {
                                     int newFeedbacksCount = learnersWithFeedback.Count(f => ((dynamic)f).Status == "Created");
