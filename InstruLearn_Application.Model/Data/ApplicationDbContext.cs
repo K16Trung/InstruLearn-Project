@@ -38,7 +38,6 @@ namespace InstruLearn_Application.Model.Data
         public DbSet<Learning_Registration_Type> Learning_Registration_Types { get; set; }
         public DbSet<Purchase> Purchases { get; set; }
         public DbSet<LearningRegistrationDay> LearningRegistrationDays { get; set; }
-        public DbSet<Syllabus> Syllabus { get; set; }
         public DbSet<Purchase_Items> Purchase_Items { get; set; }
         public DbSet<Schedules> Schedules { get; set; }
         public DbSet<ScheduleDays> ScheduleDays { get; set; }
@@ -48,7 +47,6 @@ namespace InstruLearn_Application.Model.Data
         public DbSet<Response> Responses { get; set; }
         public DbSet<ResponseType> ResponseTypes { get; set; }
         public DbSet<Learner_class> Learner_Classes { get; set; }
-        public DbSet<Syllabus_Content> Syllabus_Contents { get; set; }
         public DbSet<LearningPathSession> LearningPathSessions { get; set; }
         public DbSet<Learner_Course> LearnerCourses { get; set; }
         public DbSet<Learner_Content_Progress> LearnerContentProgresses { get; set; }
@@ -228,12 +226,6 @@ namespace InstruLearn_Application.Model.Data
                 .WithMany(c => c.ClassDays)
                 .HasForeignKey(cd => cd.ClassId)
                 .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<Class>()
-                .HasOne(c => c.Syllabus)
-                .WithMany(s => s.Classes)
-                .HasForeignKey(c => c.SyllabusId)
-                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Class>()
                 .Property(c => c.Price)
@@ -438,13 +430,6 @@ namespace InstruLearn_Application.Model.Data
                 .HasOne(C => C.Classes)
                 .WithMany(lc => lc.Learner_Classes)
                 .HasForeignKey(C => C.ClassId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            // Syllabus
-            modelBuilder.Entity<Syllabus_Content>()
-                .HasOne(sc => sc.Syllabus)
-                .WithMany(s => s.SyllabusContents)
-                .HasForeignKey(sc => sc.SyllabusId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             // LearningPathSession

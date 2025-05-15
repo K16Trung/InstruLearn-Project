@@ -99,8 +99,6 @@ namespace InstruLearn_Application.BLL.Service
                     .Where(cd => cd.ClassId == id)
                     .ToListAsync();
 
-                var syllabus = await _unitOfWork.SyllabusRepository.GetSyllabusByClassIdAsync(id);
-
                 var classDetailDTO = _mapper.Map<ClassDetailDTO>(classEntity);
 
                 if (string.IsNullOrEmpty(classDetailDTO.SyllabusLink))

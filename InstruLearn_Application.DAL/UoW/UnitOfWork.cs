@@ -39,7 +39,6 @@ namespace InstruLearn_Application.DAL.UoW
         private readonly ILearningRegisRepository _learningRegisRepository;
         private readonly ILearningRegisTypeRepository _learningRegisTypeRepository;
         private readonly ILearningRegisDayRepository _learningRegisDayRepository;
-        private readonly ISyllabusRepository _syllabusRepository;
         private readonly IPurchaseRepository _purchaseRepository;
         private readonly IPurchaseItemRepository _purchaseItemRepository;
         private readonly ICertificationRepository _certificationRepository;
@@ -48,7 +47,6 @@ namespace InstruLearn_Application.DAL.UoW
         private readonly ILevelAssignedRepository _levelAssignedRepository;
         private readonly IResponseRepository _responseRepository;
         private readonly IResponseTypeRepository _responseTypeRepository;
-        private readonly ISyllabusContentRepository _syllabusContentRepository;
         private readonly ILearnerCourseRepository _learnerCourseRepository;
         private readonly ILearnerContentProgressRepository _learnerContentProgressRepository;
         private readonly ILearningPathSessionRepository _learningPathSessionRepository;
@@ -91,7 +89,6 @@ namespace InstruLearn_Application.DAL.UoW
         public ILearningRegisRepository LearningRegisRepository { get { return _learningRegisRepository; } }
         public ILearningRegisTypeRepository LearningRegisTypeRepository { get { return _learningRegisTypeRepository; } }
         public ILearningRegisDayRepository LearningRegisDayRepository { get { return _learningRegisDayRepository; } }
-        public ISyllabusRepository SyllabusRepository { get { return _syllabusRepository; } }
         public IPurchaseRepository PurchaseRepository { get { return _purchaseRepository; } }
         public IPurchaseItemRepository PurchaseItemRepository { get { return _purchaseItemRepository; } }
         public ICertificationRepository CertificationRepository { get { return _certificationRepository; } }
@@ -100,7 +97,6 @@ namespace InstruLearn_Application.DAL.UoW
         public ILevelAssignedRepository LevelAssignedRepository { get { return _levelAssignedRepository; } }
         public IResponseRepository ResponseRepository { get { return _responseRepository; } }
         public IResponseTypeRepository ResponseTypeRepository { get { return _responseTypeRepository; } }
-        public ISyllabusContentRepository SyllabusContentRepository { get { return _syllabusContentRepository; } }
         public ILearningPathSessionRepository LearningPathSessionRepository { get { return _learningPathSessionRepository; } }
         public ILearnerCourseRepository LearnerCourseRepository { get { return _learnerCourseRepository; } }
         public ILearnerContentProgressRepository LearnerContentProgressRepository { get { return _learnerContentProgressRepository; } }
@@ -120,8 +116,8 @@ namespace InstruLearn_Application.DAL.UoW
 
 
         public UnitOfWork(ApplicationDbContext dbContext, IAccountRepository accountRepository, IAdminRepository adminRepository, IManagerRepository managerRepository, IStaffRepository staffRepository, ILearnerRepository learnerRepository, ITeacherRepository teacherRepository, ICourseRepository courseRepository, ICourseTypeRepository courseTypeRepository, ICourseContentRepository courseContentRepository, IItemTypeRepository itemTypeRepository, ICourseContentItemRepository courseContentItemRepository, IFeedbackRepository feedbackRepository,
-            IFeedbackRepliesRepository feedbackRepliesRepository, IQnARepository qnARepository, IQnARepliesRepository qnARepliesRepository, IWalletRepository walletRepository, IPaymentRepository paymentRepository, IWalletTransactionRepository walletTransactionRepository, IClassRepository classRepository, IClassDayRepository classDayRepository, IMajorRepository majorRepository, ILearningRegisRepository learningRegisRepository, ILearningRegisTypeRepository learningRegisTypeRepository, ISyllabusRepository syllabusRepository,
-            IMajorTestRepository majorTestRepository, IPurchaseRepository purchaseRepository, IPurchaseItemRepository purchaseItemRepository, ILearningRegisDayRepository learningRegisDayRepository, ICertificationRepository certificationRepository, IScheduleRepository scheduleRepository, ITeacherMajorRepository teacherMajorRepository, ILevelAssignedRepository levelAssignedRepository, IResponseRepository responseRepository, IResponseTypeRepository responseTypeRepository, ISyllabusContentRepository syllabusContentRepository, ILearningPathSessionRepository learningPathSessionRepository
+            IFeedbackRepliesRepository feedbackRepliesRepository, IQnARepository qnARepository, IQnARepliesRepository qnARepliesRepository, IWalletRepository walletRepository, IPaymentRepository paymentRepository, IWalletTransactionRepository walletTransactionRepository, IClassRepository classRepository, IClassDayRepository classDayRepository, IMajorRepository majorRepository, ILearningRegisRepository learningRegisRepository, ILearningRegisTypeRepository learningRegisTypeRepository,
+            IMajorTestRepository majorTestRepository, IPurchaseRepository purchaseRepository, IPurchaseItemRepository purchaseItemRepository, ILearningRegisDayRepository learningRegisDayRepository, ICertificationRepository certificationRepository, IScheduleRepository scheduleRepository, ITeacherMajorRepository teacherMajorRepository, ILevelAssignedRepository levelAssignedRepository, IResponseRepository responseRepository, IResponseTypeRepository responseTypeRepository, ILearningPathSessionRepository learningPathSessionRepository
             , ILearnerCourseRepository learnerCourseRepository, ILearnerContentProgressRepository learnerContentProgressRepository, ILearningRegisFeedbackAnswerRepository learningRegisFeedbackAnswerRepository, ILearningRegisFeedbackOptionRepository learningRegisFeedbackOptionRepository, ILearningRegisFeedbackQuestionRepository learningRegisFeedbackQuestionRepository, ILearningRegisFeedbackRepository learningRegisFeedbackRepository, IStaffNotificationRepository staffNotificationRepository, ITeacherEvaluationRepository teacherEvaluationRepository, ILevelFeedbackTemplateRepository levelFeedbackTemplateRepository, ILevelFeedbackCriterionRepository levelFeedbackCriterionRepository, IClassFeedbackRepository classFeedbackRepository, IClassFeedbackEvaluationRepository classFeedbackEvaluationRepository)
         {
             _dbContext = dbContext;
@@ -149,7 +145,6 @@ namespace InstruLearn_Application.DAL.UoW
             _majorTestRepository = majorTestRepository;
             _learningRegisRepository = learningRegisRepository;
             _learningRegisTypeRepository = learningRegisTypeRepository;
-            _syllabusRepository = syllabusRepository;
             _purchaseRepository = purchaseRepository;
             _purchaseItemRepository = purchaseItemRepository;
             _learningRegisDayRepository = learningRegisDayRepository;
@@ -159,7 +154,6 @@ namespace InstruLearn_Application.DAL.UoW
             _levelAssignedRepository = levelAssignedRepository;
             _responseRepository = responseRepository;
             _responseTypeRepository = responseTypeRepository;
-            _syllabusContentRepository = syllabusContentRepository;
             _learningPathSessionRepository = learningPathSessionRepository;
             _learnerCourseRepository = learnerCourseRepository;
             _learnerContentProgressRepository = learnerContentProgressRepository;

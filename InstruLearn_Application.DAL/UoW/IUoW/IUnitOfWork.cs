@@ -36,7 +36,6 @@ namespace InstruLearn_Application.DAL.UoW.IUoW
         ILearningRegisRepository LearningRegisRepository { get; }
         ILearningRegisTypeRepository LearningRegisTypeRepository { get; }
         ILearningRegisDayRepository LearningRegisDayRepository { get; }
-        ISyllabusRepository SyllabusRepository { get; }
         IPurchaseRepository PurchaseRepository { get; }
         IPurchaseItemRepository PurchaseItemRepository { get; }
         ICertificationRepository CertificationRepository { get; }
@@ -45,7 +44,6 @@ namespace InstruLearn_Application.DAL.UoW.IUoW
         ILevelAssignedRepository LevelAssignedRepository { get; }
         IResponseRepository ResponseRepository { get; }
         IResponseTypeRepository ResponseTypeRepository { get; }
-        ISyllabusContentRepository SyllabusContentRepository { get; }
         ILearningPathSessionRepository LearningPathSessionRepository { get; }
         ILearnerCourseRepository LearnerCourseRepository { get; }
         ILearnerContentProgressRepository LearnerContentProgressRepository { get; }
