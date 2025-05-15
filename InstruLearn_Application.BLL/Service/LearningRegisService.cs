@@ -1039,6 +1039,50 @@ namespace InstruLearn_Application.BLL.Service
 
                     await _unitOfWork.CommitTransactionAsync();
 
+                    try
+                    {
+                        string formattedClassTime = classEntity.ClassTime.ToString("HH:mm");
+
+                        string formattedTestDay = classEntity.TestDay.ToString("dd/MM/yyyy");
+
+                        string notificationMessage = $@"Chào bạn,
+
+Cảm ơn bạn đã đăng ký tham gia lớp học {classEntity.ClassName} tại InstruLearn.
+Để hoàn tất việc xếp lớp, bạn vui lòng đến trung tâm InstruLearn vào lúc {formattedClassTime} ngày {formattedTestDay} để thực hiện kiểm tra chất lượng đầu vào.
+
+Việc kiểm tra này giúp chúng tôi sắp xếp lớp phù hợp với trình độ hiện tại của bạn và thực hiện thanh toán.
+
+Lưu ý:
+Học viên vui lòng bỏ qua thông báo này nếu:
+- Học viên đã thực hiện kiểm tra chất lượng đầu vào.
+- Đã được chuyển lớp do chưa phù hợp với trình độ lớp đã đăng ký.
+- Đã được chuyển lớp để phù hợp hơn với năng lực hiện tại.
+
+Địa chỉ: 935 Huỳnh Tấn Phát, Phú Thuận, Quận 7, TP.HCM
+
+Trân trọng,
+InstruLearn";
+
+                        var entranceTestNotification = new StaffNotification
+                        {
+                            LearnerId = paymentDTO.LearnerId,
+                            Title = "Thông báo kiểm tra đầu vào lớp " + classEntity.ClassName,
+                            Message = notificationMessage,
+                            Type = NotificationType.EntranceTest,
+                            Status = NotificationStatus.Unread,
+                            CreatedAt = DateTime.Now
+                        };
+
+                        await _unitOfWork.StaffNotificationRepository.AddAsync(entranceTestNotification);
+                        await _unitOfWork.SaveChangeAsync();
+
+                        _logger.LogInformation($"Created entrance test notification for learner {paymentDTO.LearnerId} for class {paymentDTO.ClassId}");
+                    }
+                    catch (Exception notifEx)
+                    {
+                        _logger.LogError(notifEx, $"Failed to create entrance test notification for learner {paymentDTO.LearnerId}");
+                    }
+
                     _logger.LogInformation($"Learner {paymentDTO.LearnerId} successfully enrolled in class {paymentDTO.ClassId} with payment of {paymentAmount} (10% of total {totalClassPrice})");
 
                     return new ResponseDTO

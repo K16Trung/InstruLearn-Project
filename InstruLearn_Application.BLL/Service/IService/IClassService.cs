@@ -14,6 +14,7 @@ namespace InstruLearn_Application.BLL.Service.IService
         Task<ResponseDTO> GetClassByIdAsync (int classid);
         Task<ResponseDTO> GetClassesByTeacherIdAsync(int teacherId);
         Task<ResponseDTO> GetClassesByMajorIdAsync(int majorId);
+        Task<ResponseDTO> ChangeClassForLearnerAsync(ChangeClassDTO changeClassDTO);
         Task<ResponseDTO> AddClassAsync (CreateClassDTO createClassDTO);
         Task<ResponseDTO> UpdateClassAsync (int classId, UpdateClassDTO updateClassDTO);
         Task<ResponseDTO> DeleteClassAsync (int classId);
