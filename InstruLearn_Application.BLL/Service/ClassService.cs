@@ -377,18 +377,33 @@ namespace InstruLearn_Application.BLL.Service
             classObj.Major = major;
             classObj.LevelId = createClassDTO.LevelId;
 
-            if (createClassDTO.TestDay < createClassDTO.StartDate)
+            // Get current date for validation
+            DateTime now = DateTime.Now;
+            DateOnly today = DateOnly.FromDateTime(now);
+
+            // Check that TestDay is BEFORE the start date, not after
+            if (createClassDTO.TestDay >= createClassDTO.StartDate)
             {
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Ngày kiểm tra không thể trước ngày bắt đầu lớp học",
+                    Message = "Ngày kiểm tra phải được lên lịch trước ngày bắt đầu lớp học",
                 };
             }
 
+            // Make sure TestDay is at least 7 days from today (optional)
+            if (createClassDTO.TestDay < today.AddDays(7))
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Ngày kiểm tra phải được lên lịch ít nhất một tuần kể từ ngày hôm nay",
+                };
+            }
+
+            // Then continue with the rest of the method...
             DateOnly endDate = DateTimeHelper.CalculateEndDate(createClassDTO.StartDate, createClassDTO.totalDays, createClassDTO.ClassDays);
 
-            DateTime now = DateTime.Now;
             if (createClassDTO.StartDate.ToDateTime(new TimeOnly(0, 0)) > now)
             {
                 classObj.Status = ClassStatus.Scheduled;
