@@ -4,6 +4,7 @@ using InstruLearn_Application.Model.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InstruLearn_Application.Model.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250515084337_add_Testday")]
+    partial class add_Testday
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -183,6 +186,9 @@ namespace InstruLearn_Application.Model.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
+                    b.Property<int>("SyllabusId")
+                        .HasColumnType("int");
+
                     b.Property<int>("TeacherId")
                         .HasColumnType("int");
 
@@ -197,6 +203,8 @@ namespace InstruLearn_Application.Model.Migrations
                     b.HasIndex("LevelId");
 
                     b.HasIndex("MajorId");
+
+                    b.HasIndex("SyllabusId");
 
                     b.HasIndex("TeacherId");
 
@@ -1384,6 +1392,49 @@ namespace InstruLearn_Application.Model.Migrations
                     b.ToTable("StaffNotifications");
                 });
 
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.Syllabus", b =>
+                {
+                    b.Property<int>("SyllabusId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SyllabusId"));
+
+                    b.Property<string>("SyllabusDescription")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SyllabusName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("SyllabusId");
+
+                    b.ToTable("Syllabus");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.Syllabus_Content", b =>
+                {
+                    b.Property<int>("SyllabusContentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SyllabusContentId"));
+
+                    b.Property<string>("ContentName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("SyllabusId")
+                        .HasColumnType("int");
+
+                    b.HasKey("SyllabusContentId");
+
+                    b.HasIndex("SyllabusId");
+
+                    b.ToTable("Syllabus_Contents");
+                });
+
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Teacher", b =>
                 {
                     b.Property<int>("TeacherId")
@@ -1648,6 +1699,12 @@ namespace InstruLearn_Application.Model.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("InstruLearn_Application.Model.Models.Syllabus", "Syllabus")
+                        .WithMany("Classes")
+                        .HasForeignKey("SyllabusId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("InstruLearn_Application.Model.Models.Teacher", "Teacher")
                         .WithMany("Classes")
                         .HasForeignKey("TeacherId")
@@ -1657,6 +1714,8 @@ namespace InstruLearn_Application.Model.Migrations
                     b.Navigation("Level");
 
                     b.Navigation("Major");
+
+                    b.Navigation("Syllabus");
 
                     b.Navigation("Teacher");
                 });
@@ -2225,6 +2284,17 @@ namespace InstruLearn_Application.Model.Migrations
                     b.Navigation("LearningRegistration");
                 });
 
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.Syllabus_Content", b =>
+                {
+                    b.HasOne("InstruLearn_Application.Model.Models.Syllabus", "Syllabus")
+                        .WithMany("SyllabusContents")
+                        .HasForeignKey("SyllabusId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Syllabus");
+                });
+
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Teacher", b =>
                 {
                     b.HasOne("InstruLearn_Application.Model.Models.Account", "Account")
@@ -2514,6 +2584,13 @@ namespace InstruLearn_Application.Model.Migrations
                     b.Navigation("ClassDays");
 
                     b.Navigation("ScheduleDays");
+                });
+
+            modelBuilder.Entity("InstruLearn_Application.Model.Models.Syllabus", b =>
+                {
+                    b.Navigation("Classes");
+
+                    b.Navigation("SyllabusContents");
                 });
 
             modelBuilder.Entity("InstruLearn_Application.Model.Models.Teacher", b =>

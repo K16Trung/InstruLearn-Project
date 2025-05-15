@@ -343,26 +343,26 @@ namespace InstruLearn_Application.Model.Mapper
 
             // 🔹 Class Mappings
             CreateMap<Class, ClassDTO>()
-            .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Teacher.Fullname))
-            .ForMember(dest => dest.MajorName, opt => opt.MapFrom(src => src.Major != null ? src.Major.MajorName : null))
-            .ForMember(dest => dest.LevelName, opt => opt.MapFrom(src => src.Level != null ? src.Level.LevelName : null))
-            .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src =>
-                DateTimeHelper.CalculateClassEndDate(
-                    src.StartDate,
-                    src.totalDays,
-                    src.ClassDays.Select(cd => (int)cd.Day).ToList()
-                )
-            ))
-            .ForMember(dest => dest.ClassEndTime, opt => opt.MapFrom(src => src.ClassTime.AddHours(2)))
-            .ForMember(dest => dest.ClassDays, opt => opt.MapFrom(src => src.ClassDays));
+                .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Teacher.Fullname))
+                .ForMember(dest => dest.MajorName, opt => opt.MapFrom(src => src.Major != null ? src.Major.MajorName : null))
+                .ForMember(dest => dest.LevelName, opt => opt.MapFrom(src => src.Level != null ? src.Level.LevelName : null))
+                .ForMember(dest => dest.SyllabusLink, opt => opt.MapFrom(src => src.Level != null ? src.Level.SyllabusLink : null))
+                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src =>
+                    DateTimeHelper.CalculateClassEndDate(
+                        src.StartDate,
+                        src.totalDays,
+                        src.ClassDays.Select(cd => (int)cd.Day).ToList()
+                    )
+                ))
+                .ForMember(dest => dest.ClassEndTime, opt => opt.MapFrom(src => src.ClassTime.AddHours(2)))
+                .ForMember(dest => dest.ClassDays, opt => opt.MapFrom(src => src.ClassDays));
 
             CreateMap<CreateClassDTO, Class>()
-                .ForMember(dest => dest.SyllabusId, opt => opt.MapFrom(src => src.SyllabusId))
-                .ForMember(dest => dest.ClassDays, opt => opt.MapFrom(src => src.ClassDays.Select(day => new Models.ClassDay { Day = day })));
+                .ForMember(dest => dest.ClassDays, opt => opt.MapFrom(src => src.ClassDays.Select(day => new Models.ClassDay { Day = day })))
+                .ForMember(dest => dest.TestDay, opt => opt.MapFrom(src => src.TestDay));
 
             CreateMap<UpdateClassDTO, Class>()
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status));
-
 
             CreateMap<Models.ClassDay, ClassDayDTO>()
                 .ForMember(dest => dest.Day, opt => opt.MapFrom(src => src.Day));
@@ -371,7 +371,7 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Teacher != null ? src.Teacher.Fullname : "N/A"))
                 .ForMember(dest => dest.MajorName, opt => opt.MapFrom(src => src.Major != null ? src.Major.MajorName : "N/A"))
                 .ForMember(dest => dest.LevelName, opt => opt.MapFrom(src => src.Level != null ? src.Level.LevelName : "N/A"))
-                .ForMember(dest => dest.SyllabusName, opt => opt.MapFrom(src => src.Syllabus != null ? src.Syllabus.SyllabusName : "N/A"))
+                .ForMember(dest => dest.SyllabusLink, opt => opt.MapFrom(src => src.Level != null ? src.Level.SyllabusLink : null))
                 .ForMember(dest => dest.TotalDays, opt => opt.MapFrom(src => src.totalDays))
                 .ForMember(dest => dest.ClassDays, opt => opt.Ignore())
                 .ForMember(dest => dest.StudentCount, opt => opt.Ignore())
@@ -578,10 +578,6 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.Fullname, opt => opt.MapFrom(src => src.Fullname))
                 .ReverseMap();
 
-            // Syllabus mapping
-            CreateMap<Syllabus, SyllabusDTO>().ReverseMap();
-            CreateMap<CreateSyllabusDTO, Syllabus>().ReverseMap();
-
             //🔹LevelAssigned mappings
             CreateMap<LevelAssigned, LevelAssignedDTO>()
                 .ForMember(dest => dest.LevelAssignedId, opt => opt.MapFrom(src => src.LevelId))
@@ -628,25 +624,6 @@ namespace InstruLearn_Application.Model.Mapper
 
             //wallet learner_class mapping
             CreateMap<Learner_class, LearnerClassPaymentDTO>().ReverseMap();
-
-            // Syllabus Content mapping
-            CreateMap<Syllabus, SyllabusContentDTO>()
-                .ForMember(dest => dest.SyllabusId, opt => opt.MapFrom(src => src.SyllabusId))
-                .ForMember(dest => dest.SyllabusName, opt => opt.MapFrom(src => src.SyllabusName))
-                .ForMember(dest => dest.SyllabusContents, opt => opt.MapFrom(src => src.SyllabusContents));
-
-            CreateMap<Syllabus_Content, SyllabusContentDetailDTO>()
-                .ForMember(dest => dest.SyllabusContentId, opt => opt.MapFrom(src => src.SyllabusContentId))
-                .ForMember(dest => dest.ContentName, opt => opt.MapFrom(src => src.ContentName));
-
-            CreateMap<Syllabus_Content, SyllabusContentDTO>()
-                .ForMember(dest => dest.SyllabusId, opt => opt.MapFrom(src => src.SyllabusId))
-                .ForMember(dest => dest.SyllabusName, opt => opt.MapFrom(src => src.Syllabus.SyllabusName))
-                .ForMember(dest => dest.SyllabusContents, opt => opt.Ignore());
-
-            CreateMap<CreateSyllabusContentDTO, Syllabus_Content>()
-                .ForMember(dest => dest.SyllabusId, opt => opt.MapFrom(src => src.SyllabusId))
-                .ForMember(dest => dest.ContentName, opt => opt.MapFrom(src => src.ContentName));
 
             // Learning Path Session mapping
             CreateMap<LearningPathSession, LearningPathSessionDTO>().ReverseMap();

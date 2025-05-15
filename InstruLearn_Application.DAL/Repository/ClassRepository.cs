@@ -1,27 +1,27 @@
 ﻿using InstruLearn_Application.DAL.Repository.IRepository;
 using InstruLearn_Application.Model.Data;
+using InstruLearn_Application.Model.Enum;
 using InstruLearn_Application.Model.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace InstruLearn_Application.DAL.Repository
 {
     public class ClassRepository : GenericRepository<Class>, IClassRepository
     {
-        private readonly ApplicationDbContext _appDbContext;
-        public ClassRepository(ApplicationDbContext appDbContext) : base(appDbContext)
+        private readonly ApplicationDbContext _context;
+
+        public ClassRepository(ApplicationDbContext context) : base(context)
         {
-            _appDbContext = appDbContext;
+            _context = context;
         }
 
-        // Override GetAllAsync to include navigation properties
-        public async Task<List<Class>> GetAllAsync()
+        public new async Task<List<Class>> GetAllAsync()
         {
-            return await _appDbContext.Classes
+            return await _context.Classes
                 .Include(c => c.Teacher)
                 .Include(c => c.Major)
                 .Include(c => c.Level)
@@ -29,81 +29,19 @@ namespace InstruLearn_Application.DAL.Repository
                 .ToListAsync();
         }
 
-        // Override GetByIdAsync to include navigation properties
-        public async Task<Class> GetByIdAsync(int classId)
+        public new async Task<Class> GetByIdAsync(int id)
         {
-            var classEntity = await _appDbContext.Classes
+            return await _context.Classes
                 .Include(c => c.Teacher)
                 .Include(c => c.Major)
                 .Include(c => c.Level)
                 .Include(c => c.ClassDays)
-                .FirstOrDefaultAsync(c => c.ClassId == classId);
-
-            if (classEntity != null)
-            {
-                // Explicit loading for Teacher if it's still null
-                if (classEntity.Teacher == null && classEntity.TeacherId > 0)
-                {
-                    Console.WriteLine($"Teacher not loaded with Include. Attempting explicit loading for TeacherId: {classEntity.TeacherId}");
-
-                    // Load Teacher explicitly
-                    var teacher = await _appDbContext.Teachers
-                        .FirstOrDefaultAsync(t => t.TeacherId == classEntity.TeacherId);
-
-                    if (teacher != null)
-                    {
-                        classEntity.Teacher = teacher;
-                        Console.WriteLine($"Teacher loaded explicitly: {teacher.Fullname}");
-                    }
-                }
-
-                // Explicit loading for Major if it's still null
-                if (classEntity.Major == null && classEntity.MajorId > 0)
-                {
-                    Console.WriteLine($"Major not loaded with Include. Attempting explicit loading for MajorId: {classEntity.MajorId}");
-
-                    // Load Major explicitly
-                    var major = await _appDbContext.Majors
-                        .FirstOrDefaultAsync(m => m.MajorId == classEntity.MajorId);
-
-                    if (major != null)
-                    {
-                        classEntity.Major = major;
-                        Console.WriteLine($"Major loaded explicitly: {major.MajorName}");
-                    }
-                }
-
-                if (classEntity.LevelId.HasValue && classEntity.Level == null)
-                {
-                    // Try to load level explicitly if it failed with Include
-                    var level = await _appDbContext.LevelAssigneds
-                        .FirstOrDefaultAsync(l => l.LevelId == classEntity.LevelId.Value);
-
-                    Console.WriteLine($"Explicit level load result: {level != null}");
-
-                    if (level != null)
-                    {
-                        classEntity.Level = level;
-                    }
-                }
-            }
-
-            return classEntity;
-        }
-
-        public async Task<List<Class>> GetClassesByMajorIdAsync(int majorId)
-        {
-            return await _appDbContext.Classes
-                .Include(c => c.Teacher)
-                .Include(c => c.Major)
-                .Include(c => c.ClassDays)
-                .Where(c => c.MajorId == majorId)
-                .ToListAsync();
+                .FirstOrDefaultAsync(c => c.ClassId == id);
         }
 
         public async Task<List<Class>> GetClassesByTeacherIdAsync(int teacherId)
         {
-            return await _appDbContext.Classes
+            return await _context.Classes
                 .Include(c => c.Teacher)
                 .Include(c => c.Major)
                 .Include(c => c.Level)
@@ -112,6 +50,84 @@ namespace InstruLearn_Application.DAL.Repository
                 .ToListAsync();
         }
 
+        public async Task<List<Class>> GetClassesByMajorIdAsync(int majorId)
+        {
+            return await _context.Classes
+                .Include(c => c.Teacher)
+                .Include(c => c.Major)
+                .Include(c => c.Level)
+                .Include(c => c.ClassDays)
+                .Where(c => c.MajorId == majorId)
+                .ToListAsync();
+        }
 
+        public async Task<List<Class>> GetClassesByLevelIdAsync(int levelId)
+        {
+            return await _context.Classes
+                .Include(c => c.Teacher)
+                .Include(c => c.Major)
+                .Include(c => c.Level)
+                .Include(c => c.ClassDays)
+                .Where(c => c.LevelId == levelId)
+                .ToListAsync();
+        }
+
+        public async Task<List<Class>> GetAvailableClassesAsync()
+        {
+            return await _context.Classes
+                .Include(c => c.Teacher)
+                .Include(c => c.Major)
+                .Include(c => c.Level)
+                .Include(c => c.ClassDays)
+                .Where(c => c.Status == ClassStatus.Scheduled || c.Status == ClassStatus.Ongoing)
+                .ToListAsync();
+        }
+
+        public async Task<int> GetStudentCountAsync(int classId)
+        {
+            return await _context.Learner_Classes
+                .Where(lc => lc.ClassId == classId)
+                .CountAsync();
+        }
+
+        public async Task<bool> UpdateClassStatusAsync(int classId, ClassStatus newStatus)
+        {
+            var classEntity = await _context.Classes.FindAsync(classId);
+            if (classEntity == null)
+                return false;
+
+            classEntity.Status = newStatus;
+            _context.Classes.Update(classEntity);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public new IQueryable<Class> GetQuery()
+        {
+            return _context.Classes
+                .Include(c => c.Teacher)
+                .Include(c => c.Major)
+                .Include(c => c.Level)
+                .Include(c => c.ClassDays)
+                .AsQueryable();
+        }
+
+        public async Task AddRangeAsync(IEnumerable<Class> classes)
+        {
+            await _context.Classes.AddRangeAsync(classes);
+        }
+
+        public void UpdateRange(IEnumerable<Class> classes)
+        {
+            _context.Classes.UpdateRange(classes);
+        }
+
+        public async Task DeleteRangeAsync(IEnumerable<int> classIds)
+        {
+            var classesToDelete = await _context.Classes
+                .Where(c => classIds.Contains(c.ClassId))
+                .ToListAsync();
+
+            _context.Classes.RemoveRange(classesToDelete);
+        }
     }
 }
