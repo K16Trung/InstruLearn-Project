@@ -179,6 +179,99 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
+        public async Task<ResponseDTO> GetClassesByTeacherIdAsync(int teacherId)
+        {
+            try
+            {
+                var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(teacherId);
+                if (teacher == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Teacher not found.",
+                        Data = null
+                    };
+                }
+
+                var classes = await _unitOfWork.ClassRepository.GetClassesByTeacherIdAsync(teacherId);
+
+                if (classes == null || !classes.Any())
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = true,
+                        Message = "No classes found for this teacher.",
+                        Data = new List<ClassDTO>()
+                    };
+                }
+
+                var classDTOs = _mapper.Map<List<ClassDTO>>(classes);
+
+                foreach (var classDTO in classDTOs)
+                {
+                    if (string.IsNullOrEmpty(classDTO.MajorName))
+                    {
+                        classDTO.MajorName = "Not Assigned";
+                    }
+
+                    if (string.IsNullOrEmpty(classDTO.LevelName))
+                    {
+                        classDTO.LevelName = "Not Assigned";
+                    }
+
+                    // Get class days
+                    var classDayPatterns = await _unitOfWork.ClassDayRepository.GetQuery()
+                        .Where(cd => cd.ClassId == classDTO.ClassId)
+                        .ToListAsync();
+
+                    classDTO.ClassDays = _mapper.Map<List<ClassDayDTO>>(classDayPatterns);
+
+                    var sessionDates = new List<DateOnly>();
+                    DateOnly currentDate = classDTO.StartDate;
+                    int daysAdded = 0;
+
+                    var classMeetingDays = classDayPatterns.Select(cd => cd.Day).ToList();
+
+                    while (daysAdded < classDTO.totalDays)
+                    {
+                        if (classMeetingDays.Contains((DayOfWeeks)currentDate.DayOfWeek))
+                        {
+                            sessionDates.Add(currentDate);
+                            daysAdded++;
+                        }
+
+                        currentDate = currentDate.AddDays(1);
+                    }
+
+                    classDTO.SessionDates = sessionDates;
+
+                    var studentCount = await _unitOfWork.dbContext.Learner_Classes
+                        .Where(lc => lc.ClassId == classDTO.ClassId)
+                        .CountAsync();
+
+                    classDTO.StudentCount = studentCount;
+                }
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = $"Retrieved {classDTOs.Count} classes for teacher ID: {teacherId}.",
+                    Data = classDTOs
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Error retrieving classes for teacher: {ex.Message}",
+                    Data = null
+                };
+            }
+        }
+
+
 
         public async Task<ResponseDTO> GetClassesByMajorIdAsync(int majorId)
         {

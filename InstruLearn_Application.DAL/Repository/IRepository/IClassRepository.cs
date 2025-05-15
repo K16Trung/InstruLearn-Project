@@ -12,5 +12,7 @@ namespace InstruLearn_Application.DAL.Repository.IRepository
         Task<List<Class>> GetAllAsync();
         Task<Class> GetByIdAsync(int classId);
         Task<List<Class>> GetClassesByMajorIdAsync(int majorId);
+        Task<List<Class>> GetClassesByTeacherIdAsync(int teacherId);
+
     }
 }

@@ -101,5 +101,17 @@ namespace InstruLearn_Application.DAL.Repository
                 .ToListAsync();
         }
 
+        public async Task<List<Class>> GetClassesByTeacherIdAsync(int teacherId)
+        {
+            return await _appDbContext.Classes
+                .Include(c => c.Teacher)
+                .Include(c => c.Major)
+                .Include(c => c.Level)
+                .Include(c => c.ClassDays)
+                .Where(c => c.TeacherId == teacherId)
+                .ToListAsync();
+        }
+
+
     }
 }

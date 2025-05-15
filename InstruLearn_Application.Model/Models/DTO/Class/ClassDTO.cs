@@ -23,6 +23,7 @@ namespace InstruLearn_Application.Model.Models.DTO.Class
         public TimeOnly ClassTime { get; set; }
         public TimeOnly ClassEndTime { get; set; }
         public int MaxStudents { get; set; }
+        public int StudentCount { get; set; }
         public int totalDays { get; set; }
         public ClassStatus Status { get; set; }
         public decimal Price { get; set; }

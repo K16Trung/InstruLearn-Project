@@ -27,6 +27,17 @@ namespace InstruLearn_Application.Controllers
             return Ok(result);
         }
 
+        [HttpGet("teacher/{teacherId}")]
+        public async Task<IActionResult> GetClassesByTeacherId(int teacherId)
+        {
+            var result = await _classService.GetClassesByTeacherIdAsync(teacherId);
+
+            if (!result.IsSucceed)
+                return NotFound(result);
+
+            return Ok(result);
+        }
+
         [HttpGet("MajorId/{majorId}/class")]
         public async Task<IActionResult> GetClassesByCoursePackageId(int majorId)
         {
