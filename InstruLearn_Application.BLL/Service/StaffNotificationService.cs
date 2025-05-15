@@ -762,7 +762,8 @@ namespace InstruLearn_Application.BLL.Service
                 // Specify the notification types we want to filter by
                 var notificationTypes = new[] {
             NotificationType.CreateLearningPath,
-            NotificationType.SchedulesCreated
+            NotificationType.SchedulesCreated,
+            NotificationType.ClassFeedback
         };
 
                 // Get notifications for this teacher with the specified types

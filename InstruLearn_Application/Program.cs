@@ -191,6 +191,7 @@ namespace InstruLearn_Application
             builder.Services.AddAutoMapper(typeof(MappingProfile));
             builder.Services.AddHostedService<PayOSWebhookRegistrationService>();
             builder.Services.AddHostedService<TeacherEvaluationBackgroundService>();
+            builder.Services.AddHostedService<ClassFeedbackBackgroundService>();
 
             builder.Services.AddControllers()
                 .AddJsonOptions(options =>

@@ -759,28 +759,31 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                _logger.LogInformation("Starting automatic check for classes on their last day");
+                _logger.LogInformation("Starting automatic check for classes on their last day or recently ended without feedback");
 
-                var activeClasses = await _unitOfWork.ClassRepository
+                // Get active classes and recently completed classes (within last 7 days)
+                var today = DateOnly.FromDateTime(DateTime.Today);
+                var sevenDaysAgo = today.AddDays(-7);
+
+                var classes = await _unitOfWork.ClassRepository
                     .GetWithIncludesAsync(
-                        x => x.Status == ClassStatus.Ongoing,
+                        x => (x.Status == ClassStatus.Scheduled || x.Status == ClassStatus.Ongoing || x.Status == ClassStatus.Completed),
                         "ClassDays,Teacher,Major,Level,Learner_Classes,Learner_Classes.Learner"
                     );
 
-                if (activeClasses == null || !activeClasses.Any())
+                if (classes == null || !classes.Any())
                 {
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "No active classes found for feedback creation."
+                        Message = "No active or recently completed classes found for feedback creation."
                     };
                 }
 
-                var today = DateOnly.FromDateTime(DateTime.Today);
                 int feedbacksCreated = 0;
                 var classesProcessed = new List<object>();
 
-                foreach (var classEntity in activeClasses)
+                foreach (var classEntity in classes)
                 {
                     try
                     {
@@ -789,9 +792,20 @@ namespace InstruLearn_Application.BLL.Service
 
                         var endDate = DateTimeHelper.CalculateEndDate(classEntity.StartDate, classEntity.totalDays, classDayValues);
 
-                        if (endDate == today)
+                        // Check if the class is on its last day or has recently ended without feedback
+                        bool isLastDay = endDate == today;
+                        bool isRecentlyEnded = endDate < today && endDate >= sevenDaysAgo;
+
+                        if (isLastDay || isRecentlyEnded)
                         {
-                            _logger.LogInformation($"Class ID {classEntity.ClassId} '{classEntity.ClassName}' has its last day today.");
+                            _logger.LogInformation($"Class ID {classEntity.ClassId} '{classEntity.ClassName}' " +
+                                                  (isLastDay ? "has its last day today." : "has recently ended without complete feedback."));
+
+                            if (classEntity.LevelId == null)
+                            {
+                                _logger.LogWarning($"Class {classEntity.ClassId} has no level assigned, skipping feedback creation");
+                                continue;
+                            }
 
                             var template = await _unitOfWork.LevelFeedbackTemplateRepository
                                 .GetTemplateForLevelAsync(classEntity.LevelId.Value);
@@ -803,11 +817,12 @@ namespace InstruLearn_Application.BLL.Service
                             }
 
                             var learnersWithFeedback = new List<object>();
+                            bool anyLearnersMissingFeedback = false;
 
                             foreach (var learnerClass in classEntity.Learner_Classes)
                             {
                                 // Skip if no valid learner
-                                if (learnerClass.LearnerId <= 0)
+                                if (learnerClass.LearnerId <= 0 || learnerClass.Learner == null)
                                     continue;
 
                                 var existingFeedback = await _unitOfWork.ClassFeedbackRepository
@@ -824,6 +839,9 @@ namespace InstruLearn_Application.BLL.Service
                                     });
                                     continue;
                                 }
+
+                                // At this point, we know we need to create feedback for this student
+                                anyLearnersMissingFeedback = true;
 
                                 var newFeedback = new ClassFeedback
                                 {
@@ -853,10 +871,11 @@ namespace InstruLearn_Application.BLL.Service
                                     await _unitOfWork.SaveChangeAsync();
                                 }
 
+                                // Create notification for the STUDENT
                                 var notification = new StaffNotification
                                 {
                                     LearnerId = learnerClass.LearnerId,
-                                    LearningRegisId = null,
+                                    LearningRegisId = null, // As this is a class feedback, not related to learning registration
                                     Type = NotificationType.ClassFeedback,
                                     Status = NotificationStatus.Unread,
                                     CreatedAt = DateTime.Now,
@@ -878,52 +897,98 @@ namespace InstruLearn_Application.BLL.Service
                                 });
                             }
 
-                            classesProcessed.Add(new
+                            // Only add to the processed list if any learners were missing feedback
+                            if (anyLearnersMissingFeedback || isLastDay)
                             {
-                                ClassId = classEntity.ClassId,
-                                ClassName = classEntity.ClassName,
-                                TeacherId = classEntity.TeacherId,
-                                TeacherName = classEntity.Teacher?.Fullname ?? "N/A",
-                                MajorId = classEntity.MajorId,
-                                MajorName = classEntity.Major?.MajorName ?? "N/A",
-                                LevelId = classEntity.LevelId,
-                                LevelName = classEntity.Level?.LevelName ?? "N/A",
-                                StartDate = classEntity.StartDate,
-                                EndDate = endDate,
-                                TemplateId = template.TemplateId,
-                                TemplateName = template.TemplateName,
-                                LearnersCount = classEntity.Learner_Classes.Count,
-                                FeedbacksCreated = learnersWithFeedback.Count(f => ((dynamic)f).Status == "Created"),
-                                LearnerFeedbacks = learnersWithFeedback
-                            });
+                                // Create notification for the TEACHER
+                                // Since we don't have TeacherId in StaffNotification, we're using a workaround
+                                // We'll create a notification linked to learningRegis with the teacher's class ID in the message
+                                if (classEntity.TeacherId > 0)
+                                {
+                                    int newFeedbacksCount = learnersWithFeedback.Count(f => ((dynamic)f).Status == "Created");
+
+                                    if (newFeedbacksCount > 0)
+                                    {
+                                        // Find any learning registration that links to this teacher
+                                        var teacherLearningRegis = await _unitOfWork.LearningRegisRepository
+                                            .GetFirstOrDefaultAsync(lr => lr.TeacherId == classEntity.TeacherId);
+
+                                        // If we found a learning registration for this teacher
+                                        if (teacherLearningRegis != null)
+                                        {
+                                            var teacherNotification = new StaffNotification
+                                            {
+                                                // Use the teacher's learning registration ID to make it appear in their notifications
+                                                LearningRegisId = teacherLearningRegis.LearningRegisId,
+                                                LearnerId = null,
+                                                Type = NotificationType.ClassFeedback,
+                                                Status = NotificationStatus.Unread,
+                                                CreatedAt = DateTime.Now,
+                                                Title = $"Student Feedback Required for Class: {classEntity.ClassId}_{classEntity.ClassName}",
+                                                Message = $"Please complete feedback forms for {newFeedbacksCount} students in your {classEntity.Level?.LevelName ?? "N/A"} " +
+                                                        $"{classEntity.Major?.MajorName ?? "N/A"} class '{classEntity.ClassName}' (ID: {classEntity.ClassId}). " +
+                                                        $"This class has reached its last day. All feedback forms have been prepared with the template '{template.TemplateName}'."
+                                            };
+
+                                            await _unitOfWork.StaffNotificationRepository.AddAsync(teacherNotification);
+                                            await _unitOfWork.SaveChangeAsync();
+
+                                            _logger.LogInformation($"Created teacher notification for class {classEntity.ClassId} ({classEntity.ClassName})");
+                                        }
+                                        else
+                                        {
+                                            _logger.LogWarning($"No learning registration found for teacher ID: {classEntity.TeacherId}, couldn't create notification");
+                                        }
+                                    }
+                                }
+
+                                classesProcessed.Add(new
+                                {
+                                    ClassId = classEntity.ClassId,
+                                    ClassName = classEntity.ClassName,
+                                    TeacherId = classEntity.TeacherId,
+                                    TeacherName = classEntity.Teacher?.Fullname ?? "N/A",
+                                    MajorId = classEntity.MajorId,
+                                    MajorName = classEntity.Major?.MajorName ?? "N/A",
+                                    LevelId = classEntity.LevelId,
+                                    LevelName = classEntity.Level?.LevelName ?? "N/A",
+                                    StartDate = classEntity.StartDate,
+                                    EndDate = endDate,
+                                    Status = classEntity.Status.ToString(),
+                                    IsLastDay = isLastDay,
+                                    IsRecentlyEnded = isRecentlyEnded,
+                                    TemplateId = template.TemplateId,
+                                    TemplateName = template.TemplateName,
+                                    LearnersCount = classEntity.Learner_Classes.Count,
+                                    FeedbacksCreated = learnersWithFeedback.Count(f => ((dynamic)f).Status == "Created"),
+                                    LearnerFeedbacks = learnersWithFeedback
+                                });
+                            }
                         }
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, $"Error processing class {classEntity.ClassId} for last day feedback");
+                        _logger.LogError(ex, $"Error processing class {classEntity.ClassId} for feedback");
                     }
                 }
 
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = $"Processed {classesProcessed.Count} classes on their last day. Created {feedbacksCreated} feedback forms.",
+                    Message = $"Processed {classesProcessed.Count} classes (on last day or recently ended). Created {feedbacksCreated} feedback forms.",
                     Data = classesProcessed
                 };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error checking for class last day feedbacks");
+                _logger.LogError(ex, "Error checking for classes needing feedback");
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error checking for class last day feedbacks: {ex.Message}"
+                    Message = $"Error checking for classes needing feedback: {ex.Message}"
                 };
             }
         }
-
-
-
 
         private async Task SendFeedbackEmailNotification(string email, string learnerName, int feedbackId, string teacherName, decimal remainingPayment)
         {
