@@ -63,7 +63,7 @@ namespace InstruLearn_Application.Controllers
             return Ok(result);
         }
 
-        [HttpPost("change-class")]
+        [HttpPut("change-class")]
         public async Task<IActionResult> ChangeClassForLearner([FromBody] ChangeClassDTO changeClassDTO)
         {
             var result = await _classService.ChangeClassForLearnerAsync(changeClassDTO);

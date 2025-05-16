@@ -10,5 +10,6 @@ namespace InstruLearn_Application.BLL.Service.IService
     public interface ILearnerNotificationService
     {
         Task<ResponseDTO> GetLearnerEmailNotificationsAsync(int learnerId);
+        Task<ResponseDTO> GetEntranceTestNotificationsAsync(int learnerId, int? classId = null);
     }
 }
