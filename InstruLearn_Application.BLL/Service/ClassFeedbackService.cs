@@ -310,7 +310,7 @@ namespace InstruLearn_Application.BLL.Service
         public async Task<ClassFeedbackDTO> GetFeedbackByClassAndLearnerAsync(int classId, int learnerId)
         {
             var feedback = await _unitOfWork.ClassFeedbackRepository
-                .GetFeedbackByClassAndLearnerAsync(classId, learnerId);
+        .GetFeedbackByClassAndLearnerAsync(classId, learnerId);
 
             if (feedback != null)
             {
@@ -325,6 +325,7 @@ namespace InstruLearn_Application.BLL.Service
 
                     foreach (var evaluation in feedbackWithEval.Evaluations)
                     {
+                        // Just add the achieved percentage directly - no null check needed for decimal (non-nullable)
                         totalPercentage += evaluation.AchievedPercentage;
                     }
 
@@ -333,6 +334,66 @@ namespace InstruLearn_Application.BLL.Service
                 else
                 {
                     feedbackDto.AverageScore = 0;
+                }
+
+                // Check if feedback is not completed or has incomplete evaluations
+                bool isIncomplete = feedback.CompletedAt == null ||
+                    (feedbackWithEval?.Evaluations == null ||
+                     !feedbackWithEval.Evaluations.Any());
+
+                if (isIncomplete)
+                {
+                    // Get class to access level information (avoid name conflict)
+                    var existingClass = await _unitOfWork.ClassRepository.GetByIdAsync(classId);
+                    if (existingClass != null)
+                    {
+                        // Get template directly using the TemplateId from feedback (avoid name conflict)
+                        var existingTemplate = await _unitOfWork.LevelFeedbackTemplateRepository
+                            .GetTemplateWithCriteriaAsync(feedback.TemplateId);
+
+                        if (existingTemplate != null)
+                        {
+
+                            // Ensure template name is set
+                            if (string.IsNullOrEmpty(feedbackDto.TemplateName))
+                            {
+                                feedbackDto.TemplateName = existingTemplate.TemplateName;
+                            }
+
+                            // Process criteria/evaluations
+                            if (existingTemplate.Criteria != null)
+                            {
+                                // Ensure evaluations list exists
+                                if (feedbackDto.Evaluations == null)
+                                {
+                                    feedbackDto.Evaluations = new List<ClassFeedbackEvaluationDTO>();
+                                }
+
+                                // Add missing criteria from template
+                                foreach (var criterion in existingTemplate.Criteria.OrderBy(c => c.DisplayOrder))
+                                {
+                                    // Check if this criterion already exists in the feedback
+                                    var existingEvaluation = feedbackDto.Evaluations
+                                        .FirstOrDefault(e => e.CriterionId == criterion.CriterionId);
+
+                                    if (existingEvaluation == null)
+                                    {
+                                        // Add the missing criterion with null achievement
+                                        feedbackDto.Evaluations.Add(new ClassFeedbackEvaluationDTO
+                                        {
+                                            EvaluationId = 0,
+                                            CriterionId = criterion.CriterionId,
+                                            GradeCategory = criterion.GradeCategory,
+                                            Description = criterion.Description,
+                                            Weight = criterion.Weight,
+                                            AchievedPercentage = null,
+                                            Comment = null
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
 
                 return feedbackDto;
@@ -372,7 +433,7 @@ namespace InstruLearn_Application.BLL.Service
                 TemplateId = template.TemplateId,
                 TemplateName = template.TemplateName,
                 CreatedAt = DateTime.MinValue,
-                CompletedAt = null, 
+                CompletedAt = null,
                 AdditionalComments = null,
                 AverageScore = 0,
                 Evaluations = new List<ClassFeedbackEvaluationDTO>()
@@ -391,7 +452,7 @@ namespace InstruLearn_Application.BLL.Service
                         Description = criterion.Description,
                         Weight = criterion.Weight,
                         AchievedPercentage = null,
-                        Comment = null,
+                        Comment = null
                     });
                 }
             }
