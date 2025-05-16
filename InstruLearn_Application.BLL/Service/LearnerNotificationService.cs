@@ -4,6 +4,7 @@ using InstruLearn_Application.DAL.UoW.IUoW;
 using InstruLearn_Application.Model.Enum;
 using InstruLearn_Application.Model.Models.DTO;
 using InstruLearn_Application.Model.Models.DTO.Notification;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -287,6 +288,88 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     IsSucceed = false,
                     Message = $"Error retrieving email notifications: {ex.Message}"
+                };
+            }
+        }
+
+        public async Task<ResponseDTO> GetEntranceTestNotificationsAsync(int learnerId, int? classId = null)
+        {
+            try
+            {
+                _logger.LogInformation($"Retrieving entrance test notifications for learner ID: {learnerId}" +
+                                      (classId.HasValue ? $", class ID: {classId}" : ""));
+
+                var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(learnerId);
+                if (learner == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Learner not found."
+                    };
+                }
+
+                var query = _unitOfWork.StaffNotificationRepository.GetQuery()
+                    .Where(n => n.LearnerId == learnerId &&
+                                n.Type == NotificationType.EntranceTest);
+
+                if (classId.HasValue)
+                {
+                    // If a specific class ID is provided, filter notifications for that class
+                    var classInfo = await _unitOfWork.ClassRepository.GetByIdAsync(classId.Value);
+                    if (classInfo == null)
+                    {
+                        return new ResponseDTO
+                        {
+                            IsSucceed = false,
+                            Message = $"Class with ID {classId.Value} not found."
+                        };
+                    }
+
+                    query = query.Where(n => n.Title.Contains(classInfo.ClassName));
+                }
+
+                var notifications = await query.OrderByDescending(n => n.CreatedAt).ToListAsync();
+
+                if (notifications == null || !notifications.Any())
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = true,
+                        Message = "No entrance test notifications found for this learner.",
+                        Data = new List<NotificationDTO>()
+                    };
+                }
+
+                var learnerAccount = await _unitOfWork.AccountRepository.GetByIdAsync(learner.AccountId);
+                string email = learnerAccount != null ? learnerAccount.Email : "No email available";
+
+                var notificationDtos = notifications.Select(n => new NotificationDTO
+                {
+                    Title = n.Title,
+                    Message = n.Message,
+                    RecipientEmail = email,
+                    SentDate = n.CreatedAt,
+                    NotificationType = n.Type,
+                    Status = n.Status,
+                }).ToList();
+
+                _logger.LogInformation($"Found {notificationDtos.Count} entrance test notifications for learner ID: {learnerId}");
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = $"Retrieved {notificationDtos.Count} entrance test notifications.",
+                    Data = notificationDtos
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error retrieving entrance test notifications for learner {learnerId}");
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Error retrieving entrance test notifications: {ex.Message}"
                 };
             }
         }

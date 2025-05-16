@@ -640,12 +640,14 @@ namespace InstruLearn_Application.BLL.Service
                     return classScheduleConflict;
                 }
 
+                // Check if learner is already enrolled in this class
                 var existingEnrollments = await _unitOfWork.LearningRegisRepository
                     .GetQuery()
                     .AnyAsync(lr =>
                         lr.LearnerId == paymentDTO.LearnerId &&
                         lr.ClassId == paymentDTO.ClassId &&
-                        (lr.Status == LearningRegis.Pending || lr.Status == LearningRegis.Accepted || lr.Status == LearningRegis.Fourty || lr.Status == LearningRegis.Sixty));
+                        (lr.Status == LearningRegis.Pending || lr.Status == LearningRegis.Accepted ||
+                         lr.Status == LearningRegis.Fourty || lr.Status == LearningRegis.Sixty));
 
                 if (existingEnrollments)
                 {
@@ -656,10 +658,12 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
+                // Begin transaction
                 using var transaction = await _unitOfWork.BeginTransactionAsync();
 
                 try
                 {
+                    // Get class information
                     var classEntity = await _unitOfWork.ClassRepository.GetByIdAsync(paymentDTO.ClassId);
                     if (classEntity == null)
                     {
@@ -681,6 +685,7 @@ namespace InstruLearn_Application.BLL.Service
                         _logger.LogInformation($"Using level ID {levelId} from class {paymentDTO.ClassId}");
                     }
 
+                    // Get learner information
                     var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(paymentDTO.LearnerId);
                     if (learner == null)
                     {
@@ -692,10 +697,11 @@ namespace InstruLearn_Application.BLL.Service
                         };
                     }
 
-                    var existingEnrollment = await _unitOfWork.dbContext.Learner_Classes
+                    // Check for existing enrollment in Learner_Classes table
+                    var existingLearnerClassEnrollment = await _unitOfWork.dbContext.Learner_Classes
                         .FirstOrDefaultAsync(lc => lc.LearnerId == paymentDTO.LearnerId && lc.ClassId == paymentDTO.ClassId);
 
-                    if (existingEnrollment != null)
+                    if (existingLearnerClassEnrollment != null)
                     {
                         _logger.LogWarning($"Learner {paymentDTO.LearnerId} is already enrolled in class {paymentDTO.ClassId}");
                         return new ResponseDTO
@@ -705,6 +711,7 @@ namespace InstruLearn_Application.BLL.Service
                         };
                     }
 
+                    // Calculate payment amount
                     decimal pricePerDay = classEntity.Price;
                     if (pricePerDay <= 0)
                     {
@@ -717,13 +724,11 @@ namespace InstruLearn_Application.BLL.Service
                     }
 
                     decimal totalClassPrice = pricePerDay * classEntity.totalDays;
-
-                    decimal paymentAmount = totalClassPrice * 0.1m;
-
-                    paymentAmount = Math.Round(paymentAmount, 2);
+                    decimal paymentAmount = Math.Round(totalClassPrice * 0.1m, 2);
 
                     _logger.LogInformation($"Class price calculation: {pricePerDay} per day × {classEntity.totalDays} days = {totalClassPrice} total. 10% payment: {paymentAmount}");
 
+                    // Get registration type for center classes
                     var classRegisType = await _unitOfWork.LearningRegisTypeRepository.GetQuery()
                         .FirstOrDefaultAsync(rt => rt.RegisTypeName.Contains("Center"));
 
@@ -737,6 +742,7 @@ namespace InstruLearn_Application.BLL.Service
                         };
                     }
 
+                    // Check wallet balance
                     var wallet = await _unitOfWork.WalletRepository.GetFirstOrDefaultAsync(w => w.LearnerId == paymentDTO.LearnerId);
                     if (wallet == null)
                     {
@@ -758,14 +764,12 @@ namespace InstruLearn_Application.BLL.Service
                         };
                     }
 
+                    // Process payment
                     wallet.Balance -= paymentAmount;
-                    var walletUpdateResult = await _unitOfWork.WalletRepository.UpdateAsync(wallet);
-                    if (!walletUpdateResult)
-                    {
-                        throw new Exception("Failed to update wallet balance");
-                    }
+                    await _unitOfWork.WalletRepository.UpdateAsync(wallet);
                     await _unitOfWork.SaveChangeAsync();
 
+                    // Create wallet transaction record
                     var walletTransaction = new WalletTransaction
                     {
                         TransactionId = Guid.NewGuid().ToString(),
@@ -779,6 +783,7 @@ namespace InstruLearn_Application.BLL.Service
                     await _unitOfWork.WalletTransactionRepository.AddAsync(walletTransaction);
                     await _unitOfWork.SaveChangeAsync();
 
+                    // Create learning registration record
                     var learningRegis = new Learning_Registration
                     {
                         LearnerId = paymentDTO.LearnerId,
@@ -789,30 +794,33 @@ namespace InstruLearn_Application.BLL.Service
                         LevelId = levelId,
                         Status = LearningRegis.Accepted,
                         RequestDate = DateTime.UtcNow,
+                        AcceptedDate = DateTime.UtcNow,
                         Price = totalClassPrice,
                         NumberOfSession = classEntity.totalDays,
                         TimeStart = classEntity.ClassTime,
                         TimeLearning = 120,
                         StartDay = classEntity.StartDate,
                         VideoUrl = string.Empty,
-                        LearningRequest = string.Empty
+                        LearningRequest = string.Empty,
+                        SelfAssessment = string.Empty
                     };
 
                     await _unitOfWork.LearningRegisRepository.AddAsync(learningRegis);
                     await _unitOfWork.SaveChangeAsync();
 
+                    // Create learner class enrollment
                     var learnerClass = new Learner_class
                     {
                         LearnerId = paymentDTO.LearnerId,
                         ClassId = paymentDTO.ClassId
                     };
 
-                    await _unitOfWork.dbContext.Learner_Classes.AddAsync(learnerClass);
+                    _unitOfWork.dbContext.Learner_Classes.Add(learnerClass);
                     await _unitOfWork.SaveChangeAsync();
-
 
                     DateOnly today = DateOnly.FromDateTime(DateTime.Now);
 
+                    // Handle certificate creation
                     if (classEntity.StartDate <= today)
                     {
                         _logger.LogInformation($"Class has already started. Creating certificate immediately for learner {paymentDTO.LearnerId} in class {paymentDTO.ClassId}");
@@ -894,174 +902,29 @@ namespace InstruLearn_Application.BLL.Service
                         _logger.LogInformation($"Certificate creation scheduled for class start date: {classEntity.StartDate}");
                     }
 
-                    var existingLearnerSchedules = await _unitOfWork.ScheduleRepository.GetQuery()
-                        .Where(s => s.ClassId == paymentDTO.ClassId &&
-                                   s.TeacherId == classEntity.TeacherId &&
-                                   s.LearnerId != null)
-                        .OrderBy(s => s.StartDay)
-                        .ToListAsync();
+                    // Create schedules for the learner
+                    await CreateLearnerSchedulesForClass(paymentDTO.LearnerId, paymentDTO.ClassId, classEntity, learningRegis);
 
-                    if (existingLearnerSchedules != null && existingLearnerSchedules.Any())
-                    {
-                        _logger.LogInformation($"Found {existingLearnerSchedules.Count} existing schedules for other learners in class {paymentDTO.ClassId}");
-
-                        var uniqueDates = existingLearnerSchedules
-                            .GroupBy(s => s.StartDay)
-                            .Select(g => g.First())
-                            .OrderBy(s => s.StartDay)
-                            .Take(classEntity.totalDays)
-                            .ToList();
-
-                        var newSchedules = new List<Schedules>();
-
-                        foreach (var existingSchedule in uniqueDates)
-                        {
-                            var newSchedule = new Schedules
-                            {
-                                LearnerId = paymentDTO.LearnerId,
-                                ClassId = paymentDTO.ClassId,
-                                LearningRegisId = learningRegis.LearningRegisId,
-                                TeacherId = classEntity.TeacherId,
-                                StartDay = existingSchedule.StartDay,
-                                TimeStart = classEntity.ClassTime,
-                                TimeEnd = classEntity.ClassTime.AddHours(2),
-                                Mode = ScheduleMode.Center
-                            };
-
-                            newSchedules.Add(newSchedule);
-                        }
-
-                        await _unitOfWork.ScheduleRepository.AddRangeAsync(newSchedules);
-                        await _unitOfWork.SaveChangeAsync();
-                    }
-                    else
-                    {
-                        var existingTeacherSchedules = await _unitOfWork.ScheduleRepository.GetQuery()
-                            .Where(s => s.ClassId == paymentDTO.ClassId &&
-                                       s.TeacherId == classEntity.TeacherId &&
-                                       s.LearnerId == null)
-                            .OrderBy(s => s.StartDay)
-                            .ToListAsync();
-
-                        if (existingTeacherSchedules != null && existingTeacherSchedules.Any())
-                        {
-                            _logger.LogInformation($"Found {existingTeacherSchedules.Count} existing teacher schedules for class {paymentDTO.ClassId}");
-
-                            int schedulesUsed = 0;
-                            var learnerSchedules = new List<Schedules>();
-
-                            foreach (var teacherSchedule in existingTeacherSchedules.OrderBy(s => s.StartDay))
-                            {
-                                if (schedulesUsed >= classEntity.totalDays)
-                                    break;
-
-                                var learnerSchedule = new Schedules
-                                {
-                                    LearnerId = paymentDTO.LearnerId,
-                                    ClassId = paymentDTO.ClassId,
-                                    LearningRegisId = learningRegis.LearningRegisId,
-                                    TeacherId = classEntity.TeacherId,
-                                    StartDay = teacherSchedule.StartDay,
-                                    TimeStart = classEntity.ClassTime,
-                                    TimeEnd = classEntity.ClassTime.AddHours(2),
-                                    Mode = ScheduleMode.Center
-                                };
-
-                                learnerSchedules.Add(learnerSchedule);
-                                schedulesUsed++;
-                            }
-
-                            await _unitOfWork.ScheduleRepository.AddRangeAsync(learnerSchedules);
-                            await _unitOfWork.SaveChangeAsync();
-                        }
-                        else
-                        {
-                            _logger.LogWarning($"No existing schedules found for class {paymentDTO.ClassId}, creating new ones");
-
-                            var classDays = await _unitOfWork.ClassDayRepository.GetQuery()
-                                .Where(cd => cd.ClassId == paymentDTO.ClassId)
-                                .OrderBy(cd => cd.Day)
-                                .ToListAsync();
-
-                            if (classDays.Any())
-                            {
-                                var learnerSchedules = new List<Schedules>();
-                                var startDay = classEntity.StartDate;
-                                int schedulesCreated = 0;
-                                int weekMultiplier = 0;
-
-                                var scheduleDays = new List<DateOnly>();
-
-                                while (scheduleDays.Count < classEntity.totalDays)
-                                {
-                                    foreach (var classDay in classDays.OrderBy(cd => cd.Day))
-                                    {
-                                        if (scheduleDays.Count >= classEntity.totalDays)
-                                            break;
-
-                                        var scheduleDay = GetDateForDayOfWeek(startDay, classDay.Day, weekMultiplier);
-                                        scheduleDays.Add(scheduleDay);
-                                    }
-
-                                    weekMultiplier++;
-                                }
-
-                                foreach (var scheduleDay in scheduleDays.OrderBy(d => d))
-                                {
-                                    var learnerSchedule = new Schedules
-                                    {
-                                        LearnerId = paymentDTO.LearnerId,
-                                        ClassId = paymentDTO.ClassId,
-                                        LearningRegisId = learningRegis.LearningRegisId,
-                                        TeacherId = classEntity.TeacherId,
-                                        StartDay = scheduleDay,
-                                        TimeStart = classEntity.ClassTime,
-                                        TimeEnd = classEntity.ClassTime.AddHours(2),
-                                        Mode = ScheduleMode.Center
-                                    };
-
-                                    learnerSchedules.Add(learnerSchedule);
-                                    schedulesCreated++;
-
-                                    if (schedulesCreated >= classEntity.totalDays)
-                                        break;
-                                }
-
-                                await _unitOfWork.ScheduleRepository.AddRangeAsync(learnerSchedules);
-                                await _unitOfWork.SaveChangeAsync();
-                            }
-                            else
-                            {
-                                _logger.LogWarning($"No class days found for class {paymentDTO.ClassId}. Enrollment may be incomplete.");
-                            }
-                        }
-                    }
-
-                    await _unitOfWork.CommitTransactionAsync();
-
+                    // Create entrance test notification
                     try
                     {
                         string formattedClassTime = classEntity.ClassTime.ToString("HH:mm");
-
                         string formattedTestDay = classEntity.TestDay.ToString("dd/MM/yyyy");
 
-                        string notificationMessage = $@"Chào bạn,
-
-Cảm ơn bạn đã đăng ký tham gia lớp học {classEntity.ClassName} tại InstruLearn.
-Để hoàn tất việc xếp lớp, bạn vui lòng đến trung tâm InstruLearn vào lúc {formattedClassTime} ngày {formattedTestDay} để thực hiện kiểm tra chất lượng đầu vào.
-
-Việc kiểm tra này giúp chúng tôi sắp xếp lớp phù hợp với trình độ hiện tại của bạn và thực hiện thanh toán.
-
-Lưu ý:
-Học viên vui lòng bỏ qua thông báo này nếu:
-- Học viên đã thực hiện kiểm tra chất lượng đầu vào.
-- Đã được chuyển lớp do chưa phù hợp với trình độ lớp đã đăng ký.
-- Đã được chuyển lớp để phù hợp hơn với năng lực hiện tại.
-
-Địa chỉ: 935 Huỳnh Tấn Phát, Phú Thuận, Quận 7, TP.HCM
-
-Trân trọng,
-InstruLearn";
+                        string notificationMessage =
+                            "<p>Chào bạn,</p>" +
+                            "<p>Cảm ơn bạn đã đăng ký tham gia lớp học " + classEntity.ClassName + " tại InstruLearn.</p>" +
+                            "<p>Để hoàn tất việc xếp lớp, bạn vui lòng đến trung tâm InstruLearn vào lúc " + formattedClassTime + " ngày " + formattedTestDay + " để thực hiện kiểm tra chất lượng đầu vào.</p>" +
+                            "<p>Việc kiểm tra này giúp chúng tôi sắp xếp lớp phù hợp với trình độ hiện tại của bạn và thực hiện thanh toán.</p>" +
+                            "<p><strong>Lưu ý:</strong><br>" +
+                            "Học viên vui lòng bỏ qua thông báo này nếu:</p>" +
+                            "<ul>" +
+                            "<li>Học viên đã thực hiện kiểm tra chất lượng đầu vào.</li>" +
+                            "<li>Đã được chuyển lớp do chưa phù hợp với trình độ lớp đã đăng ký.</li>" +
+                            "<li>Đã được chuyển lớp để phù hợp hơn với năng lực hiện tại.</li>" +
+                            "</ul>" +
+                            "<p><strong>Địa chỉ:</strong> 935 Huỳnh Tấn Phát, Phú Thuận, Quận 7, TP.HCM</p>" +
+                            "<p>Trân trọng,<br>InstruLearn</p>";
 
                         var entranceTestNotification = new StaffNotification
                         {
@@ -1082,6 +945,8 @@ InstruLearn";
                     {
                         _logger.LogError(notifEx, $"Failed to create entrance test notification for learner {paymentDTO.LearnerId}");
                     }
+
+                    await _unitOfWork.CommitTransactionAsync();
 
                     _logger.LogInformation($"Learner {paymentDTO.LearnerId} successfully enrolled in class {paymentDTO.ClassId} with payment of {paymentAmount} (10% of total {totalClassPrice})");
 
@@ -1122,6 +987,157 @@ InstruLearn";
                     Message = $"Failed to enroll in class: {ex.Message}",
                     Data = null
                 };
+            }
+        }
+
+        // Helper method to create schedules for a learner in a class
+        private async Task CreateLearnerSchedulesForClass(int learnerId, int classId, Class classEntity, Learning_Registration learningRegis)
+        {
+            // Check for existing schedules with learner IDs in this class
+            var existingLearnerSchedules = await _unitOfWork.ScheduleRepository.GetQuery()
+                .Where(s => s.ClassId == classId &&
+                           s.TeacherId == classEntity.TeacherId &&
+                           s.LearnerId != null)
+                .OrderBy(s => s.StartDay)
+                .ToListAsync();
+
+            if (existingLearnerSchedules != null && existingLearnerSchedules.Any())
+            {
+                _logger.LogInformation($"Found {existingLearnerSchedules.Count} existing schedules for other learners in class {classId}");
+
+                var uniqueDates = existingLearnerSchedules
+                    .GroupBy(s => s.StartDay)
+                    .Select(g => g.First())
+                    .OrderBy(s => s.StartDay)
+                    .Take(classEntity.totalDays)
+                    .ToList();
+
+                var newSchedules = new List<Schedules>();
+
+                foreach (var existingSchedule in uniqueDates)
+                {
+                    var newSchedule = new Schedules
+                    {
+                        LearnerId = learnerId,
+                        ClassId = classId,
+                        LearningRegisId = learningRegis.LearningRegisId,
+                        TeacherId = classEntity.TeacherId,
+                        StartDay = existingSchedule.StartDay,
+                        TimeStart = classEntity.ClassTime,
+                        TimeEnd = classEntity.ClassTime.AddHours(2),
+                        Mode = ScheduleMode.Center,
+                        AttendanceStatus = AttendanceStatus.NotYet
+                    };
+
+                    newSchedules.Add(newSchedule);
+                }
+
+                await _unitOfWork.ScheduleRepository.AddRangeAsync(newSchedules);
+                await _unitOfWork.SaveChangeAsync();
+                return;
+            }
+
+            // Check for teacher schedules without learner IDs
+            var existingTeacherSchedules = await _unitOfWork.ScheduleRepository.GetQuery()
+                .Where(s => s.ClassId == classId &&
+                           s.TeacherId == classEntity.TeacherId &&
+                           s.LearnerId == null)
+                .OrderBy(s => s.StartDay)
+                .ToListAsync();
+
+            if (existingTeacherSchedules != null && existingTeacherSchedules.Any())
+            {
+                _logger.LogInformation($"Found {existingTeacherSchedules.Count} existing teacher schedules for class {classId}");
+
+                int schedulesUsed = 0;
+                var learnerSchedules = new List<Schedules>();
+
+                foreach (var teacherSchedule in existingTeacherSchedules.OrderBy(s => s.StartDay))
+                {
+                    if (schedulesUsed >= classEntity.totalDays)
+                        break;
+
+                    var learnerSchedule = new Schedules
+                    {
+                        LearnerId = learnerId,
+                        ClassId = classId,
+                        LearningRegisId = learningRegis.LearningRegisId,
+                        TeacherId = classEntity.TeacherId,
+                        StartDay = teacherSchedule.StartDay,
+                        TimeStart = classEntity.ClassTime,
+                        TimeEnd = classEntity.ClassTime.AddHours(2),
+                        Mode = ScheduleMode.Center,
+                        AttendanceStatus = AttendanceStatus.NotYet
+                    };
+
+                    learnerSchedules.Add(learnerSchedule);
+                    schedulesUsed++;
+                }
+
+                await _unitOfWork.ScheduleRepository.AddRangeAsync(learnerSchedules);
+                await _unitOfWork.SaveChangeAsync();
+                return;
+            }
+
+            // No existing schedules found, create new ones based on class days
+            _logger.LogWarning($"No existing schedules found for class {classId}, creating new ones");
+
+            var classDays = await _unitOfWork.ClassDayRepository.GetQuery()
+                .Where(cd => cd.ClassId == classId)
+                .OrderBy(cd => cd.Day)
+                .ToListAsync();
+
+            if (classDays.Any())
+            {
+                var learnerSchedules = new List<Schedules>();
+                var startDay = classEntity.StartDate;
+                int schedulesCreated = 0;
+                int weekMultiplier = 0;
+
+                var scheduleDays = new List<DateOnly>();
+
+                while (scheduleDays.Count < classEntity.totalDays)
+                {
+                    foreach (var classDay in classDays.OrderBy(cd => cd.Day))
+                    {
+                        if (scheduleDays.Count >= classEntity.totalDays)
+                            break;
+
+                        var scheduleDay = GetDateForDayOfWeek(startDay, classDay.Day, weekMultiplier);
+                        scheduleDays.Add(scheduleDay);
+                    }
+
+                    weekMultiplier++;
+                }
+
+                foreach (var scheduleDay in scheduleDays.OrderBy(d => d))
+                {
+                    var learnerSchedule = new Schedules
+                    {
+                        LearnerId = learnerId,
+                        ClassId = classId,
+                        LearningRegisId = learningRegis.LearningRegisId,
+                        TeacherId = classEntity.TeacherId,
+                        StartDay = scheduleDay,
+                        TimeStart = classEntity.ClassTime,
+                        TimeEnd = classEntity.ClassTime.AddHours(2),
+                        Mode = ScheduleMode.Center,
+                        AttendanceStatus = AttendanceStatus.NotYet
+                    };
+
+                    learnerSchedules.Add(learnerSchedule);
+                    schedulesCreated++;
+
+                    if (schedulesCreated >= classEntity.totalDays)
+                        break;
+                }
+
+                await _unitOfWork.ScheduleRepository.AddRangeAsync(learnerSchedules);
+                await _unitOfWork.SaveChangeAsync();
+            }
+            else
+            {
+                _logger.LogWarning($"No class days found for class {classId}. Enrollment may be incomplete.");
             }
         }
 
