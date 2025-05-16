@@ -12,7 +12,7 @@ namespace InstruLearn_Application.Model.Models.DTO.ClassFeedbackEvaluation
         public int CriterionId { get; set; }
         public string GradeCategory { get; set; }
         public decimal Weight { get; set; }
-        public decimal AchievedPercentage { get; set; }
+        public decimal? AchievedPercentage { get; set; }
         public string Description { get; set; }
         public string Comment { get; set; }
         public decimal WeightedScore { get; set; }

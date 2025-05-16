@@ -1,9 +1,10 @@
 ﻿using AutoMapper;
 using InstruLearn_Application.BLL.Service.IService;
 using InstruLearn_Application.DAL.UoW.IUoW;
-using InstruLearn_Application.Model.Models.DTO.ClassFeedback;
-using InstruLearn_Application.Model.Models.DTO;
 using InstruLearn_Application.Model.Models;
+using InstruLearn_Application.Model.Models.DTO;
+using InstruLearn_Application.Model.Models.DTO.ClassFeedback;
+using InstruLearn_Application.Model.Models.DTO.ClassFeedbackEvaluation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -308,21 +309,102 @@ namespace InstruLearn_Application.BLL.Service
 
         public async Task<ClassFeedbackDTO> GetFeedbackByClassAndLearnerAsync(int classId, int learnerId)
         {
-            var feedback = await _unitOfWork.ClassFeedbackRepository.GetFeedbackByClassAndLearnerAsync(classId, learnerId);
-            if (feedback == null)
-                return null;
+            var feedback = await _unitOfWork.ClassFeedbackRepository
+                .GetFeedbackByClassAndLearnerAsync(classId, learnerId);
 
-            return _mapper.Map<ClassFeedbackDTO>(feedback);
-        }
+            if (feedback != null)
+            {
+                var feedbackDto = _mapper.Map<ClassFeedbackDTO>(feedback);
 
-        public async Task<ClassFeedbackSummaryDTO> GetFeedbackSummaryForClassAsync(int classId)
-        {
-            // Get class details
+                var feedbackWithEval = await _unitOfWork.ClassFeedbackRepository
+                    .GetFeedbackWithEvaluationsAsync(feedback.FeedbackId);
+
+                if (feedbackWithEval?.Evaluations != null && feedbackWithEval.Evaluations.Any())
+                {
+                    decimal totalPercentage = 0;
+
+                    foreach (var evaluation in feedbackWithEval.Evaluations)
+                    {
+                        totalPercentage += evaluation.AchievedPercentage;
+                    }
+
+                    feedbackDto.AverageScore = totalPercentage;
+                }
+                else
+                {
+                    feedbackDto.AverageScore = 0;
+                }
+
+                return feedbackDto;
+            }
+
             var classEntity = await _unitOfWork.ClassRepository.GetByIdAsync(classId);
             if (classEntity == null)
                 return null;
 
-            // Get all feedbacks for the class
+            var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(learnerId);
+            if (learner == null)
+                return null;
+
+            var learnerSchedules = await _unitOfWork.ScheduleRepository
+                .GetClassSchedulesByLearnerIdAsync(learnerId);
+
+            bool isEnrolled = learnerSchedules != null &&
+                              learnerSchedules.Any(s => s.ClassId == classId);
+
+            if (!isEnrolled)
+                return null;
+
+            var template = await _unitOfWork.LevelFeedbackTemplateRepository
+                .GetTemplateForLevelAsync(classEntity.LevelId.Value);
+
+            if (template == null)
+                return null;
+
+            // Create a template-based DTO with complete information
+            var templateBasedDto = new ClassFeedbackDTO
+            {
+                FeedbackId = 0,
+                ClassId = classId,
+                ClassName = classEntity.ClassName,
+                LearnerId = learnerId,
+                LearnerName = learner.FullName,
+                TemplateId = template.TemplateId,
+                TemplateName = template.TemplateName,
+                CreatedAt = DateTime.MinValue,
+                CompletedAt = null, 
+                AdditionalComments = null,
+                AverageScore = 0,
+                Evaluations = new List<ClassFeedbackEvaluationDTO>()
+            };
+
+            // Add criteria from template with null achievements
+            if (template.Criteria != null)
+            {
+                foreach (var criterion in template.Criteria.OrderBy(c => c.DisplayOrder))
+                {
+                    templateBasedDto.Evaluations.Add(new ClassFeedbackEvaluationDTO
+                    {
+                        EvaluationId = 0,
+                        CriterionId = criterion.CriterionId,
+                        GradeCategory = criterion.GradeCategory,
+                        Description = criterion.Description,
+                        Weight = criterion.Weight,
+                        AchievedPercentage = null,
+                        Comment = null,
+                    });
+                }
+            }
+
+            return templateBasedDto;
+        }
+
+        public async Task<ClassFeedbackSummaryDTO> GetFeedbackSummaryForClassAsync(int classId)
+        {
+            var classEntity = await _unitOfWork.ClassRepository.GetByIdAsync(classId);
+            if (classEntity == null)
+                return null;
+
             var feedbacks = await _unitOfWork.ClassFeedbackRepository.GetFeedbacksByClassIdAsync(classId);
             if (feedbacks == null || !feedbacks.Any())
             {

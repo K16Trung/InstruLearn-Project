@@ -9,7 +9,7 @@ namespace InstruLearn_Application.Model.Models.DTO.ClassFeedbackEvaluation
     public class CreateClassFeedbackEvaluationDTO
     {
         public int CriterionId { get; set; }
-        public decimal AchievedPercentage { get; set; }
+        public decimal? AchievedPercentage { get; set; }
         public string Comment { get; set; }
     }
 }

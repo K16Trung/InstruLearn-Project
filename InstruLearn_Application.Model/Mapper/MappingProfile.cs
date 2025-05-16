@@ -721,9 +721,7 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<ClassFeedbackEvaluation, ClassFeedbackEvaluationDTO>()
                 .ForMember(dest => dest.GradeCategory, opt => opt.MapFrom(src => src.Criterion.GradeCategory))
                 .ForMember(dest => dest.Weight, opt => opt.MapFrom(src => src.Criterion.Weight))
-                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Criterion.Description))
-                .ForMember(dest => dest.WeightedScore, opt => opt.MapFrom(src =>
-                    src.AchievedPercentage * src.Criterion.Weight / 100));
+                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Criterion.Description));
 
             CreateMap<CreateClassFeedbackEvaluationDTO, ClassFeedbackEvaluation>();
             CreateMap<UpdateClassFeedbackEvaluationDTO, ClassFeedbackEvaluation>();

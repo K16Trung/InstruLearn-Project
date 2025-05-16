@@ -31,7 +31,6 @@ namespace InstruLearn_Application.BLL.Service
             {
                 _logger.LogInformation($"Checking feedback notifications for learner ID: {learnerId}");
 
-                // Get active learning registrations for this learner with status Fourty
                 var learningRegs = await _unitOfWork.LearningRegisRepository
                     .GetWithIncludesAsync(
                         x => x.LearnerId == learnerId && x.Status == LearningRegis.Fourty,
@@ -47,11 +46,9 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Get all feedback forms for this learner (both completed and not completed)
                 var allFeedbacks = await _unitOfWork.LearningRegisFeedbackRepository
                     .GetFeedbacksByLearnerIdAsync(learnerId);
 
-                // Get all active feedback questions (only once, as questions are shared)
                 var feedbackQuestions = await _unitOfWork.LearningRegisFeedbackQuestionRepository
                     .GetActiveQuestionsWithOptionsAsync();
 
@@ -61,17 +58,41 @@ namespace InstruLearn_Application.BLL.Service
 
                 foreach (var regis in learningRegs)
                 {
-                    // Check if there's already a feedback for this registration
+                    _logger.LogInformation($"Processing registration {regis.LearningRegisId} for learner {learnerId}");
+
+                    if (regis.HasPendingLearningPath)
+                    {
+                        _logger.LogInformation($"Skipping registration {regis.LearningRegisId} because it has a pending learning path");
+                        continue;
+                    }
+
+                    var completedSessions = regis.Schedules
+                        ?.Count(s => s.AttendanceStatus == AttendanceStatus.Present ||
+                                  s.AttendanceStatus == AttendanceStatus.Absent) ?? 0;
+
+                    int totalSessions = regis.NumberOfSession;
+
+                    int fortyPercentThreshold = (int)Math.Ceiling(totalSessions * 0.4);
+
+                    double progressPercentage = totalSessions > 0
+                        ? (double)completedSessions / totalSessions * 100
+                        : 0;
+
+                    _logger.LogInformation($"Learner {learnerId} progress for registration {regis.LearningRegisId}: " +
+                                          $"{completedSessions}/{totalSessions} sessions completed " +
+                                          $"({progressPercentage:F1}%), threshold: {fortyPercentThreshold} sessions");
+
+                    if (completedSessions < fortyPercentThreshold)
+                    {
+                        _logger.LogInformation($"Skipping registration {regis.LearningRegisId} for learner {learnerId} " +
+                                              $"because they've only completed {completedSessions}/{totalSessions} sessions, " +
+                                              $"which is below the 40% threshold of {fortyPercentThreshold} sessions");
+                        continue;
+                    }
+
                     var existingFeedback = allFeedbacks
                         .FirstOrDefault(f => f.LearningRegistrationId == regis.LearningRegisId);
 
-                    // Add this check before creating feedback notifications
-                    if (regis.HasPendingLearningPath)
-                    {
-                        continue; // Skip if learning path is still pending
-                    }
-
-                    // If no feedback exists, create one for the learner
                     if (existingFeedback == null)
                     {
                         // Create a new feedback record (not a new form)
@@ -121,7 +142,7 @@ namespace InstruLearn_Application.BLL.Service
                         }
 
                         feedbacksToUpdate.Add(existingFeedback);
-                        continue; // Skip displaying this feedback since it's now completed
+                        continue;
                     }
 
                     // Only include notifications for forms that are not completed
@@ -129,19 +150,6 @@ namespace InstruLearn_Application.BLL.Service
                         (existingFeedback.Status == FeedbackStatus.NotStarted ||
                          existingFeedback.Status == FeedbackStatus.InProgress))
                     {
-                        // Get completed sessions count
-                        var completedSessions = regis.Schedules
-                            .Count(s => s.AttendanceStatus == AttendanceStatus.Present ||
-                                      s.AttendanceStatus == AttendanceStatus.Absent);
-
-                        // Total number of sessions
-                        int totalSessions = regis.NumberOfSession;
-
-                        // Calculate progress percentage
-                        double progressPercentage = totalSessions > 0
-                            ? (double)completedSessions / totalSessions * 100
-                            : 0;
-
                         // Calculate remaining payment amount (60% of total)
                         decimal remainingPayment = 0;
                         if (regis.Price.HasValue)
@@ -279,13 +287,11 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Mark feedback as completed
                 feedback.Status = FeedbackStatus.Completed;
                 feedback.CompletedAt = DateTime.Now;
                 await _unitOfWork.LearningRegisFeedbackRepository.UpdateAsync(feedback);
                 await _unitOfWork.SaveChangeAsync();
 
-                // Get the learning registration
                 var learningRegis = await _unitOfWork.LearningRegisRepository
                     .GetByIdAsync(feedback.LearningRegistrationId);
 
@@ -298,10 +304,8 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // If the learner wants to continue studying
                 if (continueStudying)
                 {
-                    // Update learning registration status to indicate readiness for 60% payment
                     if (learningRegis.Status == LearningRegis.Fourty)
                     {
                         learningRegis.Status = LearningRegis.FourtyFeedbackDone;
@@ -324,7 +328,6 @@ namespace InstruLearn_Application.BLL.Service
                 }
                 else
                 {
-                    // Learner doesn't want to continue
                     learningRegis.Status = LearningRegis.Cancelled;
                     await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
                     await _unitOfWork.SaveChangeAsync();
