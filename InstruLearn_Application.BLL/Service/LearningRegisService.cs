@@ -243,7 +243,7 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                _logger.LogInformation("Starting learning registration process.");
+                /*_logger.LogInformation("Starting learning registration process.");
 
                 var scheduleConflict = await _scheduleService.CheckLearnerScheduleConflictAsync(createLearningRegisDTO.LearnerId, createLearningRegisDTO.StartDay.Value, createLearningRegisDTO.TimeStart, createLearningRegisDTO.TimeLearning);
 
@@ -259,6 +259,73 @@ namespace InstruLearn_Application.BLL.Service
                         //r.MajorId == createLearningRegisDTO.MajorId && 
                         r.TimeStart == createLearningRegisDTO.TimeStart &&
                         //r.TimeLearning == createLearningRegisDTO.TimeLearning &&
+                        r.Status == LearningRegis.Pending)
+                    .ToListAsync();
+
+                if (existingRegistrations.Any())
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "You already have a pending registration for this major. Please wait for it to be processed before creating a new one."
+                    };
+                }*/
+
+                _logger.LogInformation("Starting learning registration process.");
+
+                // Check if valid learning days were provided
+                if (createLearningRegisDTO.LearningDays == null || !createLearningRegisDTO.LearningDays.Any())
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Please select at least one day for learning sessions."
+                    };
+                }
+
+                // Calculate the potential schedule dates based on requested days of week
+                var scheduleDates = new List<DateOnly>();
+                var startDate = createLearningRegisDTO.StartDay.Value;
+                var daysOfWeek = createLearningRegisDTO.LearningDays.Select(d => (DayOfWeek)d).ToList();
+
+                // For checking purposes, let's look at sessions over the next 8 weeks (enough to catch conflicts)
+                for (int week = 0; week < 8; week++)
+                {
+                    for (int day = 0; day < 7; day++)
+                    {
+                        var checkDate = startDate.AddDays(week * 7 + day);
+                        if (daysOfWeek.Contains(checkDate.DayOfWeek))
+                        {
+                            scheduleDates.Add(checkDate);
+                        }
+                    }
+                }
+
+                _logger.LogInformation($"Checking potential schedule conflicts across {scheduleDates.Count} session dates");
+
+                foreach (var date in scheduleDates)
+                {
+                    var scheduleConflict = await _scheduleService.CheckLearnerScheduleConflictAsync(
+                        createLearningRegisDTO.LearnerId,
+                        date,
+                        createLearningRegisDTO.TimeStart,
+                        createLearningRegisDTO.TimeLearning);
+
+                    if (!scheduleConflict.IsSucceed)
+                    {
+                        return new ResponseDTO
+                        {
+                            IsSucceed = false,
+                            Message = $"Schedule conflict detected on {date.ToString("yyyy-MM-dd")}: {scheduleConflict.Message}"
+                        };
+                    }
+                }
+
+                var existingRegistrations = await _unitOfWork.LearningRegisRepository
+                    .GetQuery()
+                    .Where(r =>
+                        r.LearnerId == createLearningRegisDTO.LearnerId &&
+                        r.TimeStart == createLearningRegisDTO.TimeStart &&
                         r.Status == LearningRegis.Pending)
                     .ToListAsync();
 
