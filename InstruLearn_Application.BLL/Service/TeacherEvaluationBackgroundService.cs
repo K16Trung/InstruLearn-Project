@@ -29,14 +29,12 @@ namespace InstruLearn_Application.BLL.Service
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            // Default to running once per day at 8 AM
             int checkIntervalHours = _configuration.GetValue<int>("TeacherEvaluation:CheckIntervalHours", 24);
 
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
-                    // Get the current time and calculate time to wait until next run time
                     var now = DateTime.Now;
                     var targetHour = _configuration.GetValue<int>("TeacherEvaluation:CheckHour", 8);
                     var nextRun = now.Hour >= targetHour
@@ -64,13 +62,12 @@ namespace InstruLearn_Application.BLL.Service
                         }
                     }
 
-                    // Wait for the configured interval before checking again (minus processing time)
                     await Task.Delay(TimeSpan.FromHours(checkIntervalHours), stoppingToken);
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
                     _logger.LogError(ex, "Error occurred while checking for last day learner evaluations");
-                    await Task.Delay(TimeSpan.FromMinutes(15), stoppingToken); // Retry after 15 minutes
+                    await Task.Delay(TimeSpan.FromMinutes(15), stoppingToken);
                 }
             }
         }

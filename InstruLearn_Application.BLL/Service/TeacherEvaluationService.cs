@@ -152,8 +152,9 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                var evaluations = await _unitOfWork.TeacherEvaluationRepository.GetByTeacherIdAsync(teacherId);
+                await CheckCompletedSessionsForTeacher(teacherId);
 
+                var evaluations = await _unitOfWork.TeacherEvaluationRepository.GetByTeacherIdAsync(teacherId);
                 var evaluationDTOs = _mapper.Map<List<TeacherEvaluationDTO>>(evaluations);
 
                 foreach (var dto in evaluationDTOs)
@@ -216,8 +217,9 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                var evaluations = await _unitOfWork.TeacherEvaluationRepository.GetByLearnerIdAsync(learnerId);
+                await CheckCompletedSessionsForLearner(learnerId);
 
+                var evaluations = await _unitOfWork.TeacherEvaluationRepository.GetByLearnerIdAsync(learnerId);
                 var evaluationDTOs = _mapper.Map<List<TeacherEvaluationDTO>>(evaluations);
 
                 foreach (var dto in evaluationDTOs)
@@ -741,7 +743,6 @@ namespace InstruLearn_Application.BLL.Service
 
             try
             {
-                // Get all one-on-one active registrations
                 var oneOnOneRegistrations = await _unitOfWork.LearningRegisRepository
                     .GetWithIncludesAsync(
                         x => (x.Status == LearningRegis.Fourty || x.Status == LearningRegis.Sixty) &&
@@ -848,55 +849,124 @@ namespace InstruLearn_Application.BLL.Service
             await CheckAndCreateEvaluationsForLastDayLearnersWithDetails();
         }
 
-        private async Task NotifyLearnersAboutNewQuestion(TeacherEvaluationQuestion question)
+        private async Task CheckCompletedSessionsForTeacher(int teacherId)
         {
             try
             {
-                var activeRegistrations = await _unitOfWork.LearningRegisRepository
+                var registrations = await _unitOfWork.LearningRegisRepository
                     .GetWithIncludesAsync(
-                        x => x.Status == LearningRegis.Fourty || x.Status == LearningRegis.Sixty,
-                        "Learner"
+                        x => (x.Status == LearningRegis.Fourty || x.Status == LearningRegis.Sixty) &&
+                             x.ClassId == null &&
+                             x.TeacherId == teacherId,
+                        "Learner,Teacher"
                     );
 
-                if (activeRegistrations == null || !activeRegistrations.Any())
-                {
-                    _logger.LogInformation("No active learning registrations found for new question notifications");
+                if (registrations == null || !registrations.Any())
                     return;
-                }
 
-                foreach (var registration in activeRegistrations)
+                foreach (var registration in registrations)
                 {
-                    if (registration.LearnerId <= 0)
-                        continue;
-
-                    var existingEvaluation = await _unitOfWork.TeacherEvaluationRepository
+                    bool evaluationExists = await _unitOfWork.TeacherEvaluationRepository
                         .ExistsByLearningRegistrationIdAsync(registration.LearningRegisId);
 
-                    if (!existingEvaluation)
+                    if (evaluationExists)
                         continue;
 
-                    var notification = new StaffNotification
+                    var schedules = await _unitOfWork.ScheduleRepository
+                        .GetSchedulesByLearningRegisIdAsync(registration.LearningRegisId);
+
+                    if (schedules == null || !schedules.Any())
+                        continue;
+
+                    int totalSessions = registration.NumberOfSession;
+                    int completedSessions = schedules.Count(s => s.AttendanceStatus == AttendanceStatus.Present);
+
+                    if (completedSessions == totalSessions && totalSessions > 0)
                     {
-                        LearningRegisId = registration.LearningRegisId,
-                        LearnerId = registration.LearnerId,
-                        Type = NotificationType.Evaluation,
-                        Status = NotificationStatus.Unread,
-                        CreatedAt = DateTime.Now,
-                        Title = "New Evaluation Question Added",
-                        Message = $"A new question has been added to the teacher evaluation form: '{question.QuestionText}'. " +
-                                 $"Please check your evaluation form to provide feedback."
-                    };
+                        var evaluationFeedback = new TeacherEvaluationFeedback
+                        {
+                            TeacherId = teacherId,
+                            LearnerId = registration.LearnerId,
+                            LearningRegistrationId = registration.LearningRegisId,
+                            Status = TeacherEvaluationStatus.InProgress,
+                            CreatedAt = DateTime.Now,
+                            GoalsAchieved = false
+                        };
 
-                    await _unitOfWork.StaffNotificationRepository.AddAsync(notification);
+                        await _unitOfWork.TeacherEvaluationRepository.AddAsync(evaluationFeedback);
+                        await _unitOfWork.SaveChangeAsync();
+
+                        _logger.LogInformation(
+                            "Created evaluation for teacher {TeacherId} to evaluate learner {LearnerId} - All sessions completed ({Completed}/{Total})",
+                            teacherId, registration.LearnerId, completedSessions, totalSessions);
+                    }
                 }
-
-                await _unitOfWork.SaveChangeAsync();
-                _logger.LogInformation("Notifications sent to learners about new evaluation question: {QuestionId}", question.EvaluationQuestionId);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating learner notifications for new evaluation question");
-                throw;
+                _logger.LogError(ex, "Error checking completed sessions for teacher {TeacherId}", teacherId);
+            }
+        }
+
+        private async Task CheckCompletedSessionsForLearner(int learnerId)
+        {
+            try
+            {
+                var registrations = await _unitOfWork.LearningRegisRepository
+                    .GetWithIncludesAsync(
+                        x => (x.Status == LearningRegis.Fourty || x.Status == LearningRegis.Sixty) &&
+                             x.ClassId == null &&
+                             x.LearnerId == learnerId,
+                        "Learner,Teacher"
+                    );
+
+                if (registrations == null || !registrations.Any())
+                    return;
+
+                foreach (var registration in registrations)
+                {
+                    if (registration.TeacherId <= 0)
+                        continue;
+
+                    bool evaluationExists = await _unitOfWork.TeacherEvaluationRepository
+                        .ExistsByLearningRegistrationIdAsync(registration.LearningRegisId);
+
+                    if (evaluationExists)
+                        continue;
+
+                    var schedules = await _unitOfWork.ScheduleRepository
+                        .GetSchedulesByLearningRegisIdAsync(registration.LearningRegisId);
+
+                    if (schedules == null || !schedules.Any())
+                        continue;
+
+                    int totalSessions = registration.NumberOfSession;
+                    int completedSessions = schedules.Count(s => s.AttendanceStatus == AttendanceStatus.Present);
+
+                    if (completedSessions == totalSessions && totalSessions > 0)
+                    {
+                        var evaluationFeedback = new TeacherEvaluationFeedback
+                        {
+                            TeacherId = registration.TeacherId.Value,
+                            LearnerId = learnerId,
+                            LearningRegistrationId = registration.LearningRegisId,
+                            Status = TeacherEvaluationStatus.InProgress,
+                            CreatedAt = DateTime.Now,
+                            GoalsAchieved = false
+                        };
+
+                        await _unitOfWork.TeacherEvaluationRepository.AddAsync(evaluationFeedback);
+                        await _unitOfWork.SaveChangeAsync();
+
+                        _logger.LogInformation(
+                            "Created evaluation for teacher {TeacherId} to evaluate learner {LearnerId} - All sessions completed ({Completed}/{Total})",
+                            registration.TeacherId.Value, learnerId, completedSessions, totalSessions);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking completed sessions for learner {LearnerId}", learnerId);
             }
         }
 
