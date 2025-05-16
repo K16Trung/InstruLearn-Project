@@ -582,7 +582,8 @@ namespace InstruLearn_Application.BLL.Service
                                     LearnerId = regis.LearnerId,
                                     CreatedAt = DateTime.Now,
                                     Status = FeedbackStatus.NotStarted,
-                                    AdditionalComments = ""
+                                    AdditionalComments = "",
+                                    DeadlineDate = DateTime.Now.AddDays(1)
                                 };
 
                                 await _unitOfWork.LearningRegisFeedbackRepository.AddAsync(newFeedback);
