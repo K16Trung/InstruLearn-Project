@@ -320,7 +320,6 @@ namespace InstruLearn_Application.BLL.Service
 
         public async Task<ResponseDTO> ChangeClassForLearnerAsync(ChangeClassDTO changeClassDTO)
         {
-            // Check if learner exists
             var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(changeClassDTO.LearnerId);
             if (learner == null)
             {
@@ -331,7 +330,6 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
-            // Find learner's current class
             var currentLearnerClass = await _unitOfWork.dbContext.Learner_Classes
                 .FirstOrDefaultAsync(lc => lc.LearnerId == changeClassDTO.LearnerId);
 
@@ -344,7 +342,6 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
-            // Check if the new class is the same as the current class
             if (currentLearnerClass.ClassId == changeClassDTO.ClassId)
             {
                 return new ResponseDTO
@@ -354,7 +351,6 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
-            // Get current class details for notification
             var currentClass = await _unitOfWork.ClassRepository.GetByIdAsync(currentLearnerClass.ClassId);
             if (currentClass == null)
             {
@@ -365,7 +361,6 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
-            // Check if new class exists
             var newClass = await _unitOfWork.ClassRepository.GetByIdAsync(changeClassDTO.ClassId);
             if (newClass == null)
             {
@@ -376,7 +371,6 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
-            // Check if the new class has available capacity
             var studentCount = await _unitOfWork.dbContext.Learner_Classes
                 .Where(lc => lc.ClassId == changeClassDTO.ClassId)
                 .CountAsync();
@@ -389,23 +383,71 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
-            // Begin transaction
             using var transaction = await _unitOfWork.BeginTransactionAsync();
 
             try
             {
-                // Update the learner's class
                 currentLearnerClass.ClassId = changeClassDTO.ClassId;
                 await _unitOfWork.SaveChangeAsync();
 
-                // Create a notification for the learner
+                var learningRegistrations = await _unitOfWork.dbContext.Learning_Registrations
+                    .Where(lr => lr.LearnerId == changeClassDTO.LearnerId && lr.ClassId == currentClass.ClassId)
+                    .ToListAsync();
+
+                foreach (var registration in learningRegistrations)
+                {
+                    registration.ClassId = changeClassDTO.ClassId;
+                    registration.TeacherId = newClass.TeacherId;
+                    await _unitOfWork.LearningRegisRepository.UpdateAsync(registration);
+                }
+
+                var schedules = await _unitOfWork.dbContext.Schedules
+                    .Where(s => s.LearnerId == changeClassDTO.LearnerId && s.ClassId == currentClass.ClassId)
+                    .ToListAsync();
+
+                var newClassDays = await _unitOfWork.ClassDayRepository.GetQuery()
+                    .Where(cd => cd.ClassId == newClass.ClassId)
+                    .ToListAsync();
+
+                var currentDate = DateOnly.FromDateTime(DateTime.Now);
+                var futureSchedules = schedules.Where(s => s.StartDay >= currentDate).ToList();
+                int updatedSchedules = 0;
+
+                if (futureSchedules.Any() && newClassDays.Any())
+                {
+                    Dictionary<DateOnly, DateOnly> dateMapping = CreateDateMapping(
+                        futureSchedules.Select(s => s.StartDay).OrderBy(d => d).ToList(),
+                        newClass.StartDate,
+                        newClassDays.Select(cd => cd.Day).ToList()
+                    );
+
+                    foreach (var schedule in futureSchedules)
+                    {
+                        schedule.ClassId = changeClassDTO.ClassId;
+                        schedule.TeacherId = newClass.TeacherId;
+                        schedule.TimeStart = newClass.ClassTime;
+                        schedule.TimeEnd = newClass.ClassTime.AddHours(2);
+
+                        if (dateMapping.TryGetValue(schedule.StartDay, out var newStartDay))
+                        {
+                            schedule.StartDay = newStartDay;
+                        }
+
+                        schedule.ChangeReason = !string.IsNullOrEmpty(changeClassDTO.Reason) ?
+                            changeClassDTO.Reason :
+                            $"Chuyển từ lớp {currentClass.ClassName} sang lớp {newClass.ClassName}";
+
+                        await _unitOfWork.ScheduleRepository.UpdateAsync(schedule);
+                        updatedSchedules++;
+                    }
+                }
+
                 var notificationMessage = $"Bạn đã được chuyển từ lớp {currentClass.ClassName} sang lớp {newClass.ClassName}.";
                 if (!string.IsNullOrEmpty(changeClassDTO.Reason))
                 {
                     notificationMessage += $" Lý do: {changeClassDTO.Reason}";
                 }
 
-                // Create a StaffNotification instead of LearnerNotification
                 var notification = new StaffNotification
                 {
                     LearnerId = changeClassDTO.LearnerId,
@@ -431,7 +473,9 @@ namespace InstruLearn_Application.BLL.Service
                         LearnerId = changeClassDTO.LearnerId,
                         LearnerName = learner.FullName,
                         OldClassName = currentClass.ClassName,
-                        NewClassName = newClass.ClassName
+                        NewClassName = newClass.ClassName,
+                        UpdatedLearningRegistrations = learningRegistrations.Count,
+                        UpdatedSchedules = updatedSchedules
                     }
                 };
             }
@@ -654,6 +698,48 @@ namespace InstruLearn_Application.BLL.Service
                     Message = $"Không tìm thấy lớp có ID {classId}"
                 };
             }
+        }
+
+        private Dictionary<DateOnly, DateOnly> CreateDateMapping(
+    List<DateOnly> oldDates,
+    DateOnly newClassStartDate,
+    List<DayOfWeeks> newClassDays)
+        {
+            var result = new Dictionary<DateOnly, DateOnly>();
+            if (!oldDates.Any() || !newClassDays.Any())
+                return result;
+
+            oldDates.Sort();
+
+            DateOnly currentDate = DateOnly.FromDateTime(DateTime.Now);
+            if (newClassStartDate < currentDate)
+            {
+                while (!newClassDays.Contains((DayOfWeeks)currentDate.DayOfWeek))
+                {
+                    currentDate = currentDate.AddDays(1);
+                }
+            }
+            else
+            {
+                currentDate = newClassStartDate;
+            }
+
+            var newDates = new List<DateOnly>();
+            while (newDates.Count < oldDates.Count)
+            {
+                if (newClassDays.Contains((DayOfWeeks)currentDate.DayOfWeek))
+                {
+                    newDates.Add(currentDate);
+                }
+                currentDate = currentDate.AddDays(1);
+            }
+
+            for (int i = 0; i < Math.Min(oldDates.Count, newDates.Count); i++)
+            {
+                result[oldDates[i]] = newDates[i];
+            }
+
+            return result;
         }
     }
 }
