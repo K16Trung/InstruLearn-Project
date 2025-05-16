@@ -60,19 +60,13 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     _logger.LogInformation($"Processing registration {regis.LearningRegisId} for learner {learnerId}");
 
-                    if (regis.HasPendingLearningPath)
-                    {
-                        _logger.LogInformation($"Skipping registration {regis.LearningRegisId} because it has a pending learning path");
-                        continue;
-                    }
-
                     var completedSessions = regis.Schedules
                         ?.Count(s => s.AttendanceStatus == AttendanceStatus.Present ||
                                   s.AttendanceStatus == AttendanceStatus.Absent) ?? 0;
 
                     int totalSessions = regis.NumberOfSession;
 
-                    int fortyPercentThreshold = (int)Math.Ceiling(totalSessions * 0.4);
+                    int fortyPercentThreshold = Math.Max(1, (int)Math.Ceiling(totalSessions * 0.4));
 
                     double progressPercentage = totalSessions > 0
                         ? (double)completedSessions / totalSessions * 100
@@ -388,13 +382,14 @@ namespace InstruLearn_Application.BLL.Service
                     try
                     {
                         int totalSessions = regis.NumberOfSession;
-                        int fortyPercentThreshold = (int)Math.Ceiling(totalSessions * 0.4);
+
+                        int fortyPercentThreshold = Math.Max(1, (int)Math.Ceiling(totalSessions * 0.4));
 
                         var completedSessions = regis.Schedules
                             ?.Count(s => s.AttendanceStatus == AttendanceStatus.Present ||
                                       s.AttendanceStatus == AttendanceStatus.Absent) ?? 0;
 
-                        if (completedSessions < fortyPercentThreshold || regis.HasPendingLearningPath)
+                        if (completedSessions < fortyPercentThreshold)
                         {
                             continue;
                         }
@@ -535,11 +530,6 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     try
                     {
-                        if (regis.HasPendingLearningPath)
-                        {
-                            _logger.LogInformation($"Skipping registration {regis.LearningRegisId} because it has a pending learning path");
-                            continue;
-                        }
                         // Get completed sessions count (sessions marked as Present or Absent)
                         var completedSessions = regis.Schedules
                             .Count(s => s.AttendanceStatus == AttendanceStatus.Present ||
@@ -555,7 +545,7 @@ namespace InstruLearn_Application.BLL.Service
                         }
 
                         // Calculate the 40% threshold of total learning sessions (round up)
-                        int fortyPercentThreshold = (int)Math.Ceiling(totalSessions * 0.4);
+                        int fortyPercentThreshold = Math.Max(1, (int)Math.Ceiling(totalSessions * 0.4));
 
                         // Calculate progress percentage
                         double progressPercentage = (double)completedSessions / totalSessions * 100;
