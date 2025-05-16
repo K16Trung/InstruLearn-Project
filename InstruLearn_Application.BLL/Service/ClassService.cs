@@ -264,6 +264,38 @@ namespace InstruLearn_Application.BLL.Service
                         .CountAsync();
 
                     classDTO.StudentCount = studentCount;
+
+                    if (studentCount > 0)
+                    {
+                        var students = await _unitOfWork.dbContext.Learner_Classes
+                            .Where(lc => lc.ClassId == classDTO.ClassId)
+                            .Join(
+                                _unitOfWork.dbContext.Learners,
+                                lc => lc.LearnerId,
+                                l => l.LearnerId,
+                                (lc, l) => new { LearnerId = l.LearnerId, Learner = l }
+                            )
+                            .Join(
+                                _unitOfWork.dbContext.Accounts,
+                                join => join.Learner.AccountId,
+                                a => a.AccountId,
+                                (join, a) => new ClassStudentDTO
+                                {
+                                    LearnerId = join.LearnerId,
+                                    FullName = join.Learner.FullName ?? "N/A",
+                                    Email = a.Email ?? "N/A",
+                                    PhoneNumber = a.PhoneNumber ?? "N/A",
+                                    Avatar = a.Avatar ?? "N/A"
+                                }
+                            )
+                            .ToListAsync();
+
+                        classDTO.Students = students;
+                    }
+                    else
+                    {
+                        classDTO.Students = new List<ClassStudentDTO>();
+                    }
                 }
 
                 return new ResponseDTO
