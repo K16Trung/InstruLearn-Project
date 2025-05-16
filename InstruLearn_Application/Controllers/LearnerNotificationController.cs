@@ -40,7 +40,7 @@ namespace InstruLearn_Application.Controllers
         }
 
         [HttpGet("entrance-test-notifications/{learnerId}")]
-        public async Task<ActionResult<ResponseDTO>> GetEntranceTestNotifications(int learnerId, [FromQuery] int? classId = null)
+        public async Task<ActionResult<ResponseDTO>> GetEntranceTestNotifications(int learnerId)
         {
             if (learnerId <= 0)
             {
@@ -51,7 +51,7 @@ namespace InstruLearn_Application.Controllers
                 });
             }
 
-            var result = await _learnerNotificationService.GetEntranceTestNotificationsAsync(learnerId, classId);
+            var result = await _learnerNotificationService.GetEntranceTestNotificationsAsync(learnerId);
 
             if (result.IsSucceed)
             {
