@@ -89,7 +89,6 @@ namespace InstruLearn_Application.BLL.Service
 
                 var evaluationDTO = _mapper.Map<TeacherEvaluationDTO>(evaluation);
 
-                // Load answers if they exist
                 if (evaluation.Answers != null)
                 {
                     evaluationDTO.Answers = _mapper.Map<List<TeacherEvaluationAnswerDTO>>(evaluation.Answers);
@@ -99,14 +98,12 @@ namespace InstruLearn_Application.BLL.Service
                     evaluationDTO.Answers = new List<TeacherEvaluationAnswerDTO>();
                 }
 
-                // Get learning registration details
                 var learningRegis = await _unitOfWork.LearningRegisRepository.GetByIdAsync(learningRegistrationId);
                 if (learningRegis != null)
                 {
                     evaluationDTO.TotalSessions = learningRegis.NumberOfSession;
                     evaluationDTO.LearningRequest = learningRegis.LearningRequest;
 
-                    // Get major name
                     if (learningRegis.MajorId > 0)
                     {
                         var major = await _unitOfWork.MajorRepository.GetByIdAsync(learningRegis.MajorId);
@@ -116,21 +113,17 @@ namespace InstruLearn_Application.BLL.Service
                         }
                     }
 
-                    // Get completed sessions count
                     var schedules = await _unitOfWork.ScheduleRepository
                         .GetSchedulesByLearningRegisIdAsync(learningRegis.LearningRegisId);
 
                     evaluationDTO.CompletedSessions = schedules?.Count(s => s.AttendanceStatus == AttendanceStatus.Present) ?? 0;
 
-                    // Check if attendance is complete but evaluation hasn't started
                     if (evaluationDTO.CompletedSessions == evaluationDTO.TotalSessions &&
                         evaluationDTO.Status == TeacherEvaluationStatus.NotStarted)
                     {
-                        // Update status to InProgress when all sessions are completed
                         evaluationDTO.Status = TeacherEvaluationStatus.InProgress;
-                        evaluationDTO.Answers = new List<TeacherEvaluationAnswerDTO>(); // Ensure empty answers list
+                        evaluationDTO.Answers = new List<TeacherEvaluationAnswerDTO>();
 
-                        // Optionally update the database entity as well
                         evaluation.Status = TeacherEvaluationStatus.InProgress;
                         _unitOfWork.TeacherEvaluationRepository.UpdateAsync(evaluation);
                         await _unitOfWork.SaveChangeAsync();
@@ -768,14 +761,12 @@ namespace InstruLearn_Application.BLL.Service
                     if (registration.LearnerId <= 0 || registration.TeacherId <= 0)
                         continue;
 
-                    // Skip if evaluation already exists
                     bool evaluationExists = await _unitOfWork.TeacherEvaluationRepository
                         .ExistsByLearningRegistrationIdAsync(registration.LearningRegisId);
 
                     if (evaluationExists)
                         continue;
 
-                    // Get schedules to check completion status
                     var schedules = await _unitOfWork.ScheduleRepository
                         .GetSchedulesByLearningRegisIdAsync(registration.LearningRegisId);
 
@@ -785,10 +776,8 @@ namespace InstruLearn_Application.BLL.Service
                     int totalSessions = registration.NumberOfSession;
                     int completedSessions = schedules.Count(s => s.AttendanceStatus == AttendanceStatus.Present);
 
-                    // IMPORTANT CHANGE: Create evaluation when all sessions are completed
                     bool allSessionsCompleted = (completedSessions == totalSessions && totalSessions > 0);
 
-                    // Only proceed if all sessions are completed or it's the last day
                     if (!allSessionsCompleted)
                     {
                         var orderedSchedules = schedules
@@ -798,14 +787,12 @@ namespace InstruLearn_Application.BLL.Service
                         var today = DateOnly.FromDateTime(DateTime.Today);
                         var lastScheduleDate = orderedSchedules.LastOrDefault()?.StartDay;
 
-                        // Check if it's the last day with one remaining session
                         bool isLastDay = (lastScheduleDate == today && (totalSessions - completedSessions) <= 1);
 
                         if (!isLastDay)
                             continue;
                     }
 
-                    // Create the evaluation
                     var evaluationFeedback = new TeacherEvaluationFeedback
                     {
                         TeacherId = registration.TeacherId.Value,
@@ -831,7 +818,6 @@ namespace InstruLearn_Application.BLL.Service
                         "Created evaluation for teacher {TeacherId} to evaluate learner {LearnerId} - Sessions: {Completed}/{Total}",
                         registration.TeacherId.Value, registration.LearnerId, completedSessions, totalSessions);
 
-                    // Add to the returned list for tracking
                     createdEvaluations.Add(new
                     {
                         EvaluationId = evaluationFeedback.EvaluationFeedbackId,
@@ -857,7 +843,6 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
-        // Update existing method to use the new one with details
         private async Task CheckAndCreateEvaluationsForLastDayLearners()
         {
             await CheckAndCreateEvaluationsForLastDayLearnersWithDetails();
@@ -867,7 +852,6 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                // Get all active learning registrations that may need evaluations
                 var activeRegistrations = await _unitOfWork.LearningRegisRepository
                     .GetWithIncludesAsync(
                         x => x.Status == LearningRegis.Fourty || x.Status == LearningRegis.Sixty,
@@ -885,14 +869,12 @@ namespace InstruLearn_Application.BLL.Service
                     if (registration.LearnerId <= 0)
                         continue;
 
-                    // Check if there's already an evaluation for this registration
                     var existingEvaluation = await _unitOfWork.TeacherEvaluationRepository
                         .ExistsByLearningRegistrationIdAsync(registration.LearningRegisId);
 
                     if (!existingEvaluation)
                         continue;
 
-                    // Create notification for the learner
                     var notification = new StaffNotification
                     {
                         LearningRegisId = registration.LearningRegisId,
