@@ -89,23 +89,51 @@ namespace InstruLearn_Application.BLL.Service
 
                 var evaluationDTO = _mapper.Map<TeacherEvaluationDTO>(evaluation);
 
-                if (evaluation.LearningRegistration != null)
+                // Load answers if they exist
+                if (evaluation.Answers != null)
                 {
-                    var registration = await _unitOfWork.LearningRegisRepository
-                        .GetWithIncludesAsync(
-                            x => x.LearningRegisId == learningRegistrationId,
-                            "Schedules"
-                        );
+                    evaluationDTO.Answers = _mapper.Map<List<TeacherEvaluationAnswerDTO>>(evaluation.Answers);
+                }
+                else
+                {
+                    evaluationDTO.Answers = new List<TeacherEvaluationAnswerDTO>();
+                }
 
-                    if (registration != null && registration.Any())
+                // Get learning registration details
+                var learningRegis = await _unitOfWork.LearningRegisRepository.GetByIdAsync(learningRegistrationId);
+                if (learningRegis != null)
+                {
+                    evaluationDTO.TotalSessions = learningRegis.NumberOfSession;
+                    evaluationDTO.LearningRequest = learningRegis.LearningRequest;
+
+                    // Get major name
+                    if (learningRegis.MajorId > 0)
                     {
-                        var regis = registration.First();
+                        var major = await _unitOfWork.MajorRepository.GetByIdAsync(learningRegis.MajorId);
+                        if (major != null)
+                        {
+                            evaluationDTO.MajorName = major.MajorName;
+                        }
+                    }
 
-                        var completedSessions = regis.Schedules
-                            .Count(s => s.AttendanceStatus == AttendanceStatus.Present);
+                    // Get completed sessions count
+                    var schedules = await _unitOfWork.ScheduleRepository
+                        .GetSchedulesByLearningRegisIdAsync(learningRegis.LearningRegisId);
 
-                        evaluationDTO.CompletedSessions = completedSessions;
-                        evaluationDTO.TotalSessions = regis.NumberOfSession;
+                    evaluationDTO.CompletedSessions = schedules?.Count(s => s.AttendanceStatus == AttendanceStatus.Present) ?? 0;
+
+                    // Check if attendance is complete but evaluation hasn't started
+                    if (evaluationDTO.CompletedSessions == evaluationDTO.TotalSessions &&
+                        evaluationDTO.Status == TeacherEvaluationStatus.NotStarted)
+                    {
+                        // Update status to InProgress when all sessions are completed
+                        evaluationDTO.Status = TeacherEvaluationStatus.InProgress;
+                        evaluationDTO.Answers = new List<TeacherEvaluationAnswerDTO>(); // Ensure empty answers list
+
+                        // Optionally update the database entity as well
+                        evaluation.Status = TeacherEvaluationStatus.InProgress;
+                        _unitOfWork.TeacherEvaluationRepository.UpdateAsync(evaluation);
+                        await _unitOfWork.SaveChangeAsync();
                     }
                 }
 
@@ -118,7 +146,7 @@ namespace InstruLearn_Application.BLL.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving evaluation for registration {LearningRegistrationId}", learningRegistrationId);
+                _logger.LogError(ex, "Error retrieving evaluation for learning registration {LearningRegistrationId}", learningRegistrationId);
                 return new ResponseDTO
                 {
                     IsSucceed = false,
@@ -149,9 +177,8 @@ namespace InstruLearn_Application.BLL.Service
                     if (learningRegis != null)
                     {
                         dto.TotalSessions = learningRegis.NumberOfSession;
-                        dto.LearningRequest = learningRegis.LearningRequest; // Add LearningRequest
+                        dto.LearningRequest = learningRegis.LearningRequest;
 
-                        // Get the major name for this learning registration
                         if (learningRegis.MajorId > 0)
                         {
                             var major = await _unitOfWork.MajorRepository.GetByIdAsync(learningRegis.MajorId);
@@ -165,6 +192,12 @@ namespace InstruLearn_Application.BLL.Service
                             .GetSchedulesByLearningRegisIdAsync(learningRegis.LearningRegisId);
 
                         dto.CompletedSessions = schedules?.Count(s => s.AttendanceStatus == AttendanceStatus.Present) ?? 0;
+
+                        if (dto.CompletedSessions == dto.TotalSessions && dto.Status == TeacherEvaluationStatus.NotStarted)
+                        {
+                            dto.Status = TeacherEvaluationStatus.InProgress;
+                            dto.Answers = new List<TeacherEvaluationAnswerDTO>();
+                        }
                     }
                 }
 
@@ -208,9 +241,8 @@ namespace InstruLearn_Application.BLL.Service
                     if (learningRegis != null)
                     {
                         dto.TotalSessions = learningRegis.NumberOfSession;
-                        dto.LearningRequest = learningRegis.LearningRequest; // Add LearningRequest
+                        dto.LearningRequest = learningRegis.LearningRequest;
 
-                        // Get the major name for this learning registration
                         if (learningRegis.MajorId > 0)
                         {
                             var major = await _unitOfWork.MajorRepository.GetByIdAsync(learningRegis.MajorId);
@@ -224,6 +256,12 @@ namespace InstruLearn_Application.BLL.Service
                             .GetSchedulesByLearningRegisIdAsync(learningRegis.LearningRegisId);
 
                         dto.CompletedSessions = schedules?.Count(s => s.AttendanceStatus == AttendanceStatus.Present) ?? 0;
+
+                        if (dto.CompletedSessions == dto.TotalSessions && dto.Status == TeacherEvaluationStatus.NotStarted)
+                        {
+                            dto.Status = TeacherEvaluationStatus.InProgress;
+                            dto.Answers = new List<TeacherEvaluationAnswerDTO>();
+                        }
                     }
                 }
 
@@ -710,6 +748,7 @@ namespace InstruLearn_Application.BLL.Service
 
             try
             {
+                // Get all one-on-one active registrations
                 var oneOnOneRegistrations = await _unitOfWork.LearningRegisRepository
                     .GetWithIncludesAsync(
                         x => (x.Status == LearningRegis.Fourty || x.Status == LearningRegis.Sixty) &&
@@ -729,12 +768,14 @@ namespace InstruLearn_Application.BLL.Service
                     if (registration.LearnerId <= 0 || registration.TeacherId <= 0)
                         continue;
 
+                    // Skip if evaluation already exists
                     bool evaluationExists = await _unitOfWork.TeacherEvaluationRepository
                         .ExistsByLearningRegistrationIdAsync(registration.LearningRegisId);
 
                     if (evaluationExists)
                         continue;
 
+                    // Get schedules to check completion status
                     var schedules = await _unitOfWork.ScheduleRepository
                         .GetSchedulesByLearningRegisIdAsync(registration.LearningRegisId);
 
@@ -743,26 +784,34 @@ namespace InstruLearn_Application.BLL.Service
 
                     int totalSessions = registration.NumberOfSession;
                     int completedSessions = schedules.Count(s => s.AttendanceStatus == AttendanceStatus.Present);
-                    int remainingSessions = totalSessions - completedSessions;
 
-                    var orderedSchedules = schedules
-                        .OrderBy(s => s.StartDay)
-                        .ToList();
+                    // IMPORTANT CHANGE: Create evaluation when all sessions are completed
+                    bool allSessionsCompleted = (completedSessions == totalSessions && totalSessions > 0);
 
-                    var today = DateOnly.FromDateTime(DateTime.Today);
-                    var lastScheduleDate = orderedSchedules.LastOrDefault()?.StartDay;
+                    // Only proceed if all sessions are completed or it's the last day
+                    if (!allSessionsCompleted)
+                    {
+                        var orderedSchedules = schedules
+                            .OrderBy(s => s.StartDay)
+                            .ToList();
 
-                    bool isLastDay = (lastScheduleDate == today && remainingSessions <= 1);
+                        var today = DateOnly.FromDateTime(DateTime.Today);
+                        var lastScheduleDate = orderedSchedules.LastOrDefault()?.StartDay;
 
-                    if (!isLastDay)
-                        continue;
+                        // Check if it's the last day with one remaining session
+                        bool isLastDay = (lastScheduleDate == today && (totalSessions - completedSessions) <= 1);
 
+                        if (!isLastDay)
+                            continue;
+                    }
+
+                    // Create the evaluation
                     var evaluationFeedback = new TeacherEvaluationFeedback
                     {
                         TeacherId = registration.TeacherId.Value,
                         LearnerId = registration.LearnerId,
                         LearningRegistrationId = registration.LearningRegisId,
-                        Status = TeacherEvaluationStatus.NotStarted,
+                        Status = allSessionsCompleted ? TeacherEvaluationStatus.InProgress : TeacherEvaluationStatus.NotStarted,
                         CreatedAt = DateTime.Now,
                         GoalsAchieved = false
                     };
@@ -779,8 +828,8 @@ namespace InstruLearn_Application.BLL.Service
                     );
 
                     _logger.LogInformation(
-                        "Created evaluation for teacher {TeacherId} to evaluate learner {LearnerId} on their last day",
-                        registration.TeacherId.Value, registration.LearnerId);
+                        "Created evaluation for teacher {TeacherId} to evaluate learner {LearnerId} - Sessions: {Completed}/{Total}",
+                        registration.TeacherId.Value, registration.LearnerId, completedSessions, totalSessions);
 
                     // Add to the returned list for tracking
                     createdEvaluations.Add(new
@@ -793,7 +842,8 @@ namespace InstruLearn_Application.BLL.Service
                         LearningRegistrationId = registration.LearningRegisId,
                         TotalSessions = totalSessions,
                         CompletedSessions = completedSessions,
-                        LastScheduleDate = lastScheduleDate.ToString(),
+                        Status = evaluationFeedback.Status.ToString(),
+                        CreationReason = allSessionsCompleted ? "All sessions completed" : "Last day of sessions",
                         LearningRequest = registration.LearningRequest
                     });
                 }
@@ -802,7 +852,7 @@ namespace InstruLearn_Application.BLL.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error checking for learners on their last day for evaluation");
+                _logger.LogError(ex, "Error checking for completed sessions for evaluation");
                 throw;
             }
         }
