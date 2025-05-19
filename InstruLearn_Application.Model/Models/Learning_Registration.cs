@@ -38,7 +38,8 @@ namespace InstruLearn_Application.Model.Models
         public decimal? Price { get; set; }
         public string VideoUrl { get; set; }
         public string? LearningPath { get; set; }
-        public string SelfAssessment { get; set; }
+        public int? SelfAssessmentId { get; set; }
+        public SelfAssessment? SelfAssessment { get; set; }
         [Column(TypeName = "decimal(18,2)")]
         public decimal? RemainingAmount { get; set; }
 

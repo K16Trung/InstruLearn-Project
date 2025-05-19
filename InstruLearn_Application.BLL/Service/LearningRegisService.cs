@@ -379,10 +379,10 @@ namespace InstruLearn_Application.BLL.Service
                     var learningRegis = _mapper.Map<Learning_Registration>(createLearningRegisDTO);
                     learningRegis.Status = LearningRegis.Pending;
 
-                    if (!string.IsNullOrEmpty(createLearningRegisDTO.SelfAssessment))
+                    /*if (!string.IsNullOrEmpty(createLearningRegisDTO.SelfAssessment))
                     {
                         learningRegis.SelfAssessment = createLearningRegisDTO.SelfAssessment;
-                    }
+                    }*/
 
                     await _unitOfWork.LearningRegisRepository.AddAsync(learningRegis);
                     await _unitOfWork.SaveChangeAsync();
@@ -869,7 +869,6 @@ namespace InstruLearn_Application.BLL.Service
                         StartDay = classEntity.StartDate,
                         VideoUrl = string.Empty,
                         LearningRequest = string.Empty,
-                        SelfAssessment = string.Empty
                     };
 
                     await _unitOfWork.LearningRegisRepository.AddAsync(learningRegis);

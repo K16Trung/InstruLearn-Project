@@ -63,6 +63,7 @@ namespace InstruLearn_Application.Model.Data
         public DbSet<LevelFeedbackCriterion> LevelFeedbackCriteria { get; set; }
         public DbSet<ClassFeedback> ClassFeedbacks { get; set; }
         public DbSet<ClassFeedbackEvaluation> ClassFeedbackEvaluations { get; set; }
+        public DbSet<SelfAssessment> SelfAssessments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -672,6 +673,13 @@ namespace InstruLearn_Application.Model.Data
             modelBuilder.Entity<ClassFeedbackEvaluation>()
                 .Property(e => e.AchievedPercentage)
                 .HasColumnType("decimal(5,2)");
+
+            // Configure SelfAssessment entity
+            modelBuilder.Entity<SelfAssessment>()
+                .HasMany(s => s.LearningRegistrations)
+                .WithOne(lr => lr.SelfAssessment)
+                .HasForeignKey(lr => lr.SelfAssessmentId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }
