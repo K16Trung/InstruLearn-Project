@@ -119,7 +119,9 @@ namespace InstruLearn_Application.BLL.Service
                     (learningRegis.Status == LearningRegis.FourtyFeedbackDone) &&
                     !secondPaymentCompleted;
 
-                if (learningRegis.PaymentDeadline.HasValue)
+                bool learningPathConfirmed = !learningRegis.HasPendingLearningPath && learningRegis.PaymentDeadline.HasValue;
+
+                if (learningRegis.PaymentDeadline.HasValue && learningPathConfirmed)
                 {
                     if (isInFirstPaymentPhase)
                     {
@@ -208,40 +210,16 @@ namespace InstruLearn_Application.BLL.Service
                         }
                     }
                 }
-                else if (learningRegis.Status == LearningRegis.Pending || learningRegis.Status == LearningRegis.Accepted)
-                {
-                    if (learningRegis.AcceptedDate.HasValue)
-                    {
-                        firstPaymentDeadline = learningRegis.AcceptedDate.Value.AddDays(3);
-                    }
-                    else
-                    {
-                        firstPaymentDeadline = DateTime.Now.AddDays(3);
-                    }
-
-                    if (firstPaymentDeadline.HasValue)
-                    {
-                        DateTime now = DateTime.Now.Date;
-                        DateTime deadline = firstPaymentDeadline.Value.Date;
-
-                        int daysDifference = (deadline - now).Days;
-
-                        firstPaymentRemainingDays = daysDifference;
-
-                        if (firstPaymentRemainingDays < 0)
-                            firstPaymentRemainingDays = 0;
-                    }
-                }
 
                 var firstPaymentPeriod = new
                 {
                     PaymentPercent = 40,
                     PaymentAmount = firstPaymentAmount,
                     PaymentStatus = firstPaymentStatus,
-                    PaymentDeadline = firstPaymentDeadline?.ToString("yyyy-MM-dd HH:mm:ss"),
+                    PaymentDeadline = learningPathConfirmed ? firstPaymentDeadline?.ToString("yyyy-MM-dd HH:mm:ss") : null,
                     PaymentDate = firstPaymentCompleted ? firstPaymentDate?.ToString("yyyy-MM-dd HH:mm:ss") : null,
-                    RemainingDays = firstPaymentRemainingDays,
-                    IsOverdue = firstPaymentDeadline.HasValue && !firstPaymentCompleted && DateTime.Now > firstPaymentDeadline.Value
+                    RemainingDays = learningPathConfirmed ? firstPaymentRemainingDays : null,
+                    IsOverdue = learningPathConfirmed && firstPaymentDeadline.HasValue && !firstPaymentCompleted && DateTime.Now > firstPaymentDeadline.Value
                 };
 
                 var secondPaymentPeriod = new
@@ -249,10 +227,10 @@ namespace InstruLearn_Application.BLL.Service
                     PaymentPercent = 60,
                     PaymentAmount = secondPaymentAmount,
                     PaymentStatus = secondPaymentStatus,
-                    PaymentDeadline = secondPaymentDeadline?.ToString("yyyy-MM-dd HH:mm:ss"),
+                    PaymentDeadline = learningPathConfirmed ? secondPaymentDeadline?.ToString("yyyy-MM-dd HH:mm:ss") : null,
                     PaymentDate = secondPaymentCompleted ? secondPaymentDate?.ToString("yyyy-MM-dd HH:mm:ss") : null,
-                    RemainingDays = secondPaymentRemainingDays,
-                    IsOverdue = secondPaymentDeadline.HasValue && !secondPaymentCompleted && DateTime.Now > secondPaymentDeadline.Value
+                    RemainingDays = learningPathConfirmed ? secondPaymentRemainingDays : null,
+                    IsOverdue = learningPathConfirmed && secondPaymentDeadline.HasValue && !secondPaymentCompleted && DateTime.Now > secondPaymentDeadline.Value
                 };
 
                 _logger.LogInformation($"Payment info retrieved successfully for learning reg {learningRegisId}. " +
@@ -435,7 +413,10 @@ namespace InstruLearn_Application.BLL.Service
                         {
                             foreach (var kvp in paymentInfoDict)
                             {
-                                enrichedRegistration[kvp.Key] = kvp.Value;
+                                if (kvp.Key == "firstPaymentPeriod" || kvp.Key == "secondPaymentPeriod")
+                                {
+                                    enrichedRegistration[kvp.Key] = kvp.Value;
+                                }
                             }
                         }
 
