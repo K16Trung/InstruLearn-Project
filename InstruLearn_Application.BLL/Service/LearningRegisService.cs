@@ -428,7 +428,6 @@ namespace InstruLearn_Application.BLL.Service
                         Data = new
                         {
                             LearningRegisId = learningRegis.LearningRegisId,
-                            HasSelfAssessment = !string.IsNullOrEmpty(createLearningRegisDTO.SelfAssessment)
                         }
                     };
                 }

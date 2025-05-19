@@ -38,7 +38,9 @@ namespace InstruLearn_Application.Model.Models.DTO.LearningRegistration
         public TimeOnly? TimeEnd { get; set; }
         public DateTime RequestDate { get; set; }
         public int NumberOfSession { get; set; }
-        public string SelfAssessment { get; set; }
+        public string? LearningPath { get; set; }
+        public int? SelfAssessmentId { get; set; }
+        public string Description { get; set; }
         public string VideoUrl { get; set; }
         public string LearningRequest { get; set; }
         public List<string> LearningDays { get; set; }
