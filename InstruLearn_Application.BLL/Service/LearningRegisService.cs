@@ -1237,11 +1237,17 @@ namespace InstruLearn_Application.BLL.Service
                 try
                 {
                     learningRegis.Status = LearningRegis.Rejected;
+                    string responseDescription = "No specific reason provided.";
+                    string responseTypeName = "Other";
 
                     if (responseId.HasValue)
                     {
-                        var response = await _unitOfWork.ResponseRepository.GetByIdAsync(responseId.Value);
-                        if (response == null)
+                        // Get response with its response type to include in notification
+                        var response = await _unitOfWork.ResponseRepository.GetWithIncludesAsync(
+                            r => r.ResponseId == responseId.Value,
+                            "ResponseType");
+
+                        if (response == null || !response.Any())
                         {
                             return new ResponseDTO
                             {
@@ -1250,10 +1256,81 @@ namespace InstruLearn_Application.BLL.Service
                             };
                         }
 
+                        var selectedResponse = response.First();
                         learningRegis.ResponseId = responseId.Value;
+                        responseDescription = selectedResponse.ResponseName ?? responseDescription;
+
+                        // Get the response type name if available
+                        if (selectedResponse.ResponseType != null)
+                        {
+                            responseTypeName = selectedResponse.ResponseType.ResponseTypeName;
+                        }
                     }
 
                     await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
+
+                    // Get learner details for notification
+                    var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(learningRegis.LearnerId);
+                    if (learner != null)
+                    {
+                        // Create notification for the learner
+                        var notification = new StaffNotification
+                        {
+                            LearnerId = learningRegis.LearnerId,
+                            LearningRegisId = learningRegis.LearningRegisId,
+                            Type = NotificationType.RegistrationRejected,
+                            Status = NotificationStatus.Unread,
+                            CreatedAt = DateTime.Now,
+                            Title = "Đơn đăng kí bị từ chối",
+                            Message = $"Đơn đăng kí của bạn (ID: {learningRegis.LearningRegisId}) đã bị từ chối. Lý do: {responseDescription}"
+                        };
+
+                        await _unitOfWork.StaffNotificationRepository.AddAsync(notification);
+
+                        // Send email notification if learner has an email address
+                        var account = learner.Account != null ?
+                            learner.Account :
+                            await _unitOfWork.AccountRepository.GetByIdAsync(learner.AccountId);
+
+                        if (account != null && !string.IsNullOrEmpty(account.Email))
+                        {
+                            try
+                            {
+                                string subject = "Đơn đăng kí bị từ chối";
+                                string body = $@"
+                        <html>
+                        <body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
+                            <div style='background-color: #f7f7f7; padding: 20px; border-radius: 5px;'>
+                                <h2 style='color: #333;'>Xin chào {learner.FullName},</h2>
+                                
+                                <p>Chúng tôi rất tiếc phải thông báo rằng đơn đăng ký học tập của bạn đã bị từ chối.</p>
+                                
+                                <div style='background-color: #f0f0f0; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #ff9800;'>
+                                    <h3 style='margin-top: 0; color: #333;'>Chi tiết đơn đăng ký:</h3>
+                                    <p><strong>ID đăng ký học:</strong> {learningRegis.LearningRegisId}</p>
+                                    <p><strong>Lý do từ chối:</strong> {responseDescription}</p>
+                                </div>
+                                
+                                <p>Nếu bạn có bất kỳ câu hỏi nào hoặc muốn biết thêm thông tin, vui lòng liên hệ với nhóm hỗ trợ của chúng tôi.</p>
+                                
+                                <p>Bạn có thể tạo đơn đăng ký mới hoặc cập nhật thông tin đơn đăng ký hiện tại để nộp lại.</p>
+                                
+                                <p>Trân trọng,<br>Đội ngũ InstruLearn</p>
+                            </div>
+                        </body>
+                        </html>";
+
+                                // Send email notification
+                                await _emailService.SendEmailAsync(account.Email, subject, body, true);
+                                _logger.LogInformation($"Rejection email sent to {account.Email} for learning registration {learningRegisId}");
+                            }
+                            catch (Exception emailEx)
+                            {
+                                _logger.LogError(emailEx, $"Error sending rejection email for learning registration {learningRegisId}");
+                                // Continue with transaction even if email fails
+                            }
+                        }
+                    }
                     await _unitOfWork.SaveChangeAsync();
 
 
