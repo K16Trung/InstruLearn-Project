@@ -13,6 +13,7 @@ namespace InstruLearn_Application.Model.Models.DTO.Course
     public class CourseDTO
     {
         public int CoursePackageId { get; set; }
+        public int CourseTypeId { get; set; }
         public string CourseTypeName { get; set; }
         public string CourseName { get; set; }
         public string? CourseDescription { get; set; }
