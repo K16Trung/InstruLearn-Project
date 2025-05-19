@@ -66,6 +66,12 @@ namespace InstruLearn_Application.BLL.Service
                 return response;
             }
 
+            if (user.IsActive == AccountStatus.Banned)
+            {
+                response.Message = "Tài khoản của bạn đã bị vô hiệu hóa. Vui lòng liên hệ với quản trị viên để biết thêm chi tiết.";
+                return response;
+            }
+
             var token = _jwtHelper.GenerateJwtToken(user);
             var refreshToken = _jwtHelper.GenerateRefreshToken();
 
@@ -207,6 +213,14 @@ namespace InstruLearn_Application.BLL.Service
 
                     existingAccount = account;
                 }
+                else
+                {
+                    if (existingAccount.IsActive == AccountStatus.Banned)
+                    {
+                        response.Message = "Tài khoản của bạn đã bị vô hiệu hóa. Vui lòng liên hệ với quản trị viên để biết thêm chi tiết.";
+                        return response;
+                    }
+                }
 
                 var token = _jwtHelper.GenerateJwtToken(existingAccount);
                 var refreshToken = _jwtHelper.GenerateRefreshToken();
@@ -226,7 +240,6 @@ namespace InstruLearn_Application.BLL.Service
             }
             catch (Exception ex)
             {
-                // Log the full exception details including inner exception
                 Console.WriteLine($"Google login error: {ex.Message}");
                 if (ex.InnerException != null)
                 {
