@@ -18,6 +18,7 @@ namespace InstruLearn_Application.Model.Enum
         FeedbackRequired,
         ClassChange,
         EntranceTest,
-        ClassFeedback
+        ClassFeedback,
+        RegistrationRejected
     }
 }

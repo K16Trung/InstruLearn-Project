@@ -68,7 +68,7 @@ namespace InstruLearn_Application.BLL.Service
                     NotificationType.FeedbackRequired,
                     NotificationType.Certificate,
                     NotificationType.CreateLearningPath,
-                    //NotificationType.TeacherChangeRequest
+                    NotificationType.RegistrationRejected
                 };
 
                 // Filter notifications to include only types relevant for learners
@@ -142,6 +142,32 @@ namespace InstruLearn_Application.BLL.Service
                             statusMessage = "Bạn đã thanh toán đủ 100% học phí. Bạn có thể tiếp tục học tập.";
                             break;
                         case LearningRegis.Rejected:
+                            var rejectionNotification = relevantStaffNotifications
+                                .FirstOrDefault(n => n.LearningRegisId == registration.LearningRegisId &&
+                                                n.Type == NotificationType.RegistrationRejected);
+
+                            if (rejectionNotification != null)
+                            {
+                                continue;
+                            }
+
+                            string rejectionReason = "Không có lý do cụ thể.";
+                            if (registration.ResponseId.HasValue)
+                            {
+                                var response = await _unitOfWork.ResponseRepository.GetWithIncludesAsync(
+                                    r => r.ResponseId == registration.ResponseId.Value, "ResponseType");
+
+                                if (response != null && response.Any())
+                                {
+                                    var selectedResponse = response.First();
+                                    rejectionReason = selectedResponse.ResponseName ?? rejectionReason;
+
+                                    if (selectedResponse.ResponseType != null)
+                                    {
+                                        rejectionReason = $"{selectedResponse.ResponseType.ResponseTypeName}: {rejectionReason}";
+                                    }
+                                }
+                            }
                             statusTitle = "Đăng ký học bị từ chối";
                             statusMessage = "Đăng ký học của bạn đã bị từ chối.";
                             break;
