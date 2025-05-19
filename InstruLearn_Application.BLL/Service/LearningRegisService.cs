@@ -1488,6 +1488,8 @@ namespace InstruLearn_Application.BLL.Service
                         firstPaymentRemainingDays = 0;
                 }
 
+                bool isOverdue = firstPaymentDeadline.HasValue && !firstPaymentCompleted && DateTime.Now > firstPaymentDeadline.Value;
+
                 return new
                 {
                     PaymentPercent = 40,
@@ -1495,7 +1497,8 @@ namespace InstruLearn_Application.BLL.Service
                     PaymentStatus = firstPaymentStatus,
                     PaymentDeadline = firstPaymentDeadline?.ToString("yyyy-MM-dd HH:mm:ss"),
                     PaymentDate = firstPaymentCompleted ? firstPaymentDate?.ToString("yyyy-MM-dd HH:mm:ss") : null,
-                    RemainingDays = firstPaymentRemainingDays
+                    RemainingDays = firstPaymentRemainingDays,
+                    IsOverdue = isOverdue
                 };
             }
             catch (Exception ex)
@@ -1582,6 +1585,8 @@ namespace InstruLearn_Application.BLL.Service
                         secondPaymentRemainingDays = 0;
                 }
 
+                bool isOverdue = secondPaymentDeadline.HasValue && !secondPaymentCompleted && DateTime.Now > secondPaymentDeadline.Value;
+
                 return new
                 {
                     PaymentPercent = 60,
@@ -1589,7 +1594,8 @@ namespace InstruLearn_Application.BLL.Service
                     PaymentStatus = secondPaymentStatus,
                     PaymentDeadline = secondPaymentDeadline?.ToString("yyyy-MM-dd HH:mm:ss"),
                     PaymentDate = secondPaymentCompleted ? secondPaymentDate?.ToString("yyyy-MM-dd HH:mm:ss") : null,
-                    RemainingDays = secondPaymentRemainingDays
+                    RemainingDays = secondPaymentRemainingDays,
+                    IsOverdue = isOverdue
                 };
             }
             catch (Exception ex)
