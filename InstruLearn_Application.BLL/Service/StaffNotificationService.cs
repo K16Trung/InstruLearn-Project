@@ -7,6 +7,7 @@ using InstruLearn_Application.Model.Models.DTO;
 using InstruLearn_Application.Model.Models.DTO.LearningRegistration;
 using InstruLearn_Application.Model.Models.DTO.LearningRegistrationDay;
 using InstruLearn_Application.Model.Models.DTO.StaffNotification;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -697,7 +698,7 @@ namespace InstruLearn_Application.BLL.Service
                     await _unitOfWork.LearningRegisRepository.UpdateAsync(registration);
 
                     var schedules = await _unitOfWork.ScheduleRepository.GetSchedulesByLearningRegisIdAsync(learningRegisId);
-                    var futureSchedules = schedules.Where(s => s.StartDay >= DateOnly.FromDateTime(DateTime.Today)).ToList();
+                    var futureSchedules = schedules.Where(s => s.StartDay >= DateOnly.FromDateTime(DateTime.Today) && s.AttendanceStatus == AttendanceStatus.NotYet).ToList();
 
                     foreach (var schedule in futureSchedules)
                     {
@@ -706,13 +707,29 @@ namespace InstruLearn_Application.BLL.Service
                         await _unitOfWork.ScheduleRepository.UpdateAsync(schedule);
                     }
 
-                    await _unitOfWork.StaffNotificationRepository.MarkAsResolvedAsync(notificationId);
+                    var relatedNotifications = await _unitOfWork.StaffNotificationRepository
+                        .GetQuery()
+                        .Where(n => n.LearningRegisId == learningRegisId &&
+                                   n.Type == NotificationType.TeacherChangeRequest)
+                        .ToListAsync();
+
+                    _logger.LogInformation($"Found {relatedNotifications.Count} teacher change notifications for learning registration {learningRegisId}");
+
+                    foreach (var relatedNotification in relatedNotifications)
+                    {
+                        relatedNotification.Status = NotificationStatus.Resolved;
+                        await _unitOfWork.StaffNotificationRepository.UpdateAsync(relatedNotification);
+                        _logger.LogInformation($"Marked notification {relatedNotification.NotificationId} as resolved");
+                    }
 
                     await _unitOfWork.SaveChangeAsync();
                     await transaction.CommitAsync();
 
-                    // Pass the isSameTeacher flag to the notification method
                     await SendTeacherChangeNotifications(registration, newTeacher, originalTeacher, changeReason, futureSchedules, isSameTeacher);
+
+                    var attendedSessions = schedules.Count(s => s.AttendanceStatus == AttendanceStatus.Present || s.AttendanceStatus == AttendanceStatus.Absent);
+                    var totalSessions = schedules.Count;
+                    var completedPercentage = totalSessions > 0 ? (double)attendedSessions / totalSessions * 100 : 0;
 
                     return new ResponseDTO
                     {
@@ -728,6 +745,9 @@ namespace InstruLearn_Application.BLL.Service
                             OriginalTeacherId = originalTeacherId,
                             OriginalTeacherName = originalTeacher?.Fullname ?? "No previous teacher",
                             UpdatedSchedules = futureSchedules.Count,
+                            CompletedSessions = attendedSessions,
+                            CompletedPercentage = Math.Round(completedPercentage, 1),
+                            RemainingSchedules = totalSessions - attendedSessions,
                             NotificationResolved = true,
                             IsSameTeacher = isSameTeacher
                         }
