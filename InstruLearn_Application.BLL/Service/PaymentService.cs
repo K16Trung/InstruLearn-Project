@@ -76,7 +76,6 @@ namespace InstruLearn_Application.BLL.Service
                 await _unitOfWork.WalletTransactionRepository.AddAsync(walletTransaction);
 
                 // Create Payment Record
-                // FIXED: Use PaymentId for the LearningRegis ID since we don't have a separate property
                 var payment = new Payment
                 {
                     WalletId = wallet.WalletId,
@@ -109,7 +108,7 @@ namespace InstruLearn_Application.BLL.Service
                     await _unitOfWork.StaffNotificationRepository.UpdateAsync(notification);
                 }
 
-                // ✅ Create schedules for learner and teacher
+                // Create schedules for learner and teacher
                 var schedules = DateTimeHelper.GenerateOneOnOneSchedules(learningRegis);
                 await _unitOfWork.ScheduleRepository.AddRangeAsync(schedules);
 
@@ -212,7 +211,6 @@ namespace InstruLearn_Application.BLL.Service
                     PaymentMethod = PaymentMethod.Wallet,
                     PaymentFor = PaymentFor.LearningRegistration,
                     Status = PaymentStatus.Completed
-                    // LearningRegisId property was removed as it doesn't exist
                 };
                 await _unitOfWork.PaymentsRepository.AddAsync(payment);
 
@@ -252,6 +250,117 @@ namespace InstruLearn_Application.BLL.Service
             {
                 await _unitOfWork.RollbackTransactionAsync();
                 return new ResponseDTO { IsSucceed = false, Message = "Payment failed. " + ex.Message };
+            }
+        }
+
+        public async Task<ResponseDTO> RejectPaymentAsync(int learningRegisId)
+        {
+            try
+            {
+                var learningRegis = await _unitOfWork.LearningRegisRepository.GetByIdAsync(learningRegisId);
+                if (learningRegis == null)
+                {
+                    return new ResponseDTO { IsSucceed = false, Message = "Learning Registration not found." };
+                }
+
+                using var transaction = await _unitOfWork.BeginTransactionAsync();
+
+                // Determine whether it's a 40% or 60% payment rejection based on current status
+                bool is40PercentRejection = learningRegis.Status == LearningRegis.Fourty ||
+                                            learningRegis.Status == LearningRegis.FourtyFeedbackDone ||
+                                            learningRegis.Status == LearningRegis.Accepted;
+
+                if (is40PercentRejection)
+                {
+                    learningRegis.Status = LearningRegis.Rejected;
+                    learningRegis.LearningRequest = "Learner has rejected 40% payment";
+
+                    // Delete schedules
+                    var schedules = await _unitOfWork.ScheduleRepository.GetSchedulesByLearningRegisIdAsync(learningRegisId);
+                    foreach (var schedule in schedules)
+                    {
+                        await _unitOfWork.ScheduleRepository.DeleteAsync(schedule.ScheduleId);
+                    }
+
+                    // Delete learning path sessions
+                    var learningPathSessions = await _unitOfWork.LearningPathSessionRepository
+                        .GetByLearningRegisIdAsync(learningRegisId);
+                    foreach (var session in learningPathSessions)
+                    {
+                        await _unitOfWork.LearningPathSessionRepository.DeleteAsync(session.LearningPathSessionId);
+                    }
+
+                    // Clear learning path flag
+                    learningRegis.HasPendingLearningPath = false;
+                }
+                else if (learningRegis.Status == LearningRegis.Sixty)
+                {
+                    // Case 2: Reject 60% payment - Set status to Cancelled
+                    learningRegis.Status = LearningRegis.Cancelled;
+                    learningRegis.LearningRequest = "Learner has rejected 60% payment";
+
+                    // Delete schedules
+                    var schedules = await _unitOfWork.ScheduleRepository.GetSchedulesByLearningRegisIdAsync(learningRegisId);
+                    foreach (var schedule in schedules)
+                    {
+                        await _unitOfWork.ScheduleRepository.DeleteAsync(schedule.ScheduleId);
+                    }
+
+                    // Delete learning path sessions
+                    var learningPathSessions = await _unitOfWork.LearningPathSessionRepository
+                        .GetByLearningRegisIdAsync(learningRegisId);
+                    foreach (var session in learningPathSessions)
+                    {
+                        await _unitOfWork.LearningPathSessionRepository.DeleteAsync(session.LearningPathSessionId);
+                    }
+
+                    // Clear learning path
+                    learningRegis.HasPendingLearningPath = false;
+                }
+                else
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Payment rejection is only applicable for learning registrations with 40% or 60% payment status."
+                    };
+                }
+
+                // Update notifications
+                var notifications = await _unitOfWork.StaffNotificationRepository
+                    .GetQuery()
+                    .Where(n => n.LearningRegisId == learningRegisId &&
+                              n.Status != NotificationStatus.Resolved)
+                    .ToListAsync();
+
+                foreach (var notification in notifications)
+                {
+                    notification.Status = NotificationStatus.Resolved;
+                    await _unitOfWork.StaffNotificationRepository.UpdateAsync(notification);
+                }
+
+                // Update the learning registration
+                await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
+                await _unitOfWork.SaveChangeAsync();
+                await _unitOfWork.CommitTransactionAsync();
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = is40PercentRejection ?
+                        "40% payment has been rejected and learning registration has been marked as rejected." :
+                        "60% payment has been rejected and learning registration has been marked as cancelled.",
+                    Data = new
+                    {
+                        LearningRegisId = learningRegisId,
+                        Status = learningRegis.Status.ToString()
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                return new ResponseDTO { IsSucceed = false, Message = "Payment rejection failed: " + ex.Message };
             }
         }
     }

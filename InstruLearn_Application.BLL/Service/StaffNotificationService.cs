@@ -695,6 +695,7 @@ namespace InstruLearn_Application.BLL.Service
                 try
                 {
                     registration.TeacherId = newTeacherId;
+                    registration.PaymentDeadline = DateTime.Now.AddDays(1);
                     await _unitOfWork.LearningRegisRepository.UpdateAsync(registration);
 
                     var schedules = await _unitOfWork.ScheduleRepository.GetSchedulesByLearningRegisIdAsync(learningRegisId);
@@ -945,62 +946,94 @@ namespace InstruLearn_Application.BLL.Service
                 string learnerSubject = isSameTeacher ? "Teacher Request Processed" : "Teacher Change Notification";
                 string learnerBody;
 
+                // Calculate payment information
+                decimal remainingPayment = registration.Price.HasValue ? registration.Price.Value * 0.6m : 0;
+                string deadlineFormatted = registration.PaymentDeadline?.ToString("dd/MM/yyyy HH:mm") ?? "N/A";
+
                 if (isSameTeacher)
                 {
                     // Custom message when the same teacher continues
                     learnerBody = $@"
                     <html>
-                    <body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
-                        <div style='background-color: #f7f7f7; padding: 20px; border-radius: 5px;'>
-                            <h2 style='color: #333;'>Thông báo về yêu cầu thay đổi giáo viên</h2>
+            <body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
+                <div style='background-color: #f7f7f7; padding: 20px; border-radius: 5px;'>
+                    <h2 style='color: #333;'>Thông báo về yêu cầu thay đổi giáo viên</h2>
+            
+                    <p>Xin chào {registration.Learner.FullName},</p>
+            
+                    <p>Chúng tôi đã nhận được yêu cầu thay đổi giáo viên của bạn và đã xem xét tình huống.</p>
+            
+                    <div style='background-color: #e3f2fd; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #2196F3;'>
+                        <h3 style='margin-top: 0; color: #333;'>Kết quả xem xét:</h3>
+                        <p>Sau khi đánh giá, chúng tôi quyết định rằng giáo viên hiện tại của bạn <strong>{newTeacher.Fullname}</strong> vẫn là phù hợp nhất để tiếp tục dạy bạn.</p>
+                        <p><strong>Lý do:</strong> {changeReason}</p>
+                        <p><strong>Buổi học tiếp theo:</strong> {nextSessionDate}</p>
+                    </div>
                     
-                            <p>Xin chào {registration.Learner.FullName},</p>
+                    <div style='background-color: #fff3cd; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #ff9800;'>
+                        <h3 style='margin-top: 0; color: #333;'>Thông tin thanh toán:</h3>
+                        <p><strong>Số tiền cần thanh toán:</strong> {remainingPayment:N0} VND (60% học phí còn lại)</p>
+                        <p><strong>Hạn thanh toán:</strong> {deadlineFormatted}</p>
+                        <p><strong>ID đăng ký học:</strong> {registration.LearningRegisId}</p>
+                        <p>Nếu không thanh toán trước hạn, đăng ký học của bạn sẽ bị hủy tự động.</p>
+                    </div>
                     
-                            <p>Chúng tôi đã nhận được yêu cầu thay đổi giáo viên của bạn và đã xem xét tình huống.</p>
-                    
-                            <div style='background-color: #e3f2fd; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #2196F3;'>
-                                <h3 style='margin-top: 0; color: #333;'>Kết quả xem xét:</h3>
-                                <p>Sau khi đánh giá, chúng tôi quyết định rằng giáo viên hiện tại của bạn <strong>{newTeacher.Fullname}</strong> vẫn là phù hợp nhất để tiếp tục dạy bạn.</p>
-                                <p><strong>Lý do:</strong> {changeReason}</p>
-                                <p><strong>Buổi học tiếp theo:</strong> {nextSessionDate}</p>
-                            </div>
-                    
-                            <p>Chúng tôi hiểu rằng mỗi học viên có nhu cầu học tập khác nhau. Nếu bạn gặp khó khăn, vui lòng cung cấp thêm chi tiết để chúng tôi có thể hỗ trợ bạn tốt hơn.</p>
-                            <p>Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với nhóm hỗ trợ của chúng tôi.</p>
-                    
-                            <p>Trân trọng,<br>Đội ngũ InstruLearn</p>
-                        </div>
-                    </body>
-                    </html>";
+                    <div style='background-color: #4CAF50; text-align: center; padding: 15px; margin: 20px 0; border-radius: 5px;'>
+                        <a href='https://instrulearn.com/payment/{registration.LearningRegisId}' style='color: white; text-decoration: none; font-weight: bold; font-size: 16px;'>
+                            Thanh Toán Ngay
+                        </a>
+                    </div>
+            
+                    <p>Chúng tôi hiểu rằng mỗi học viên có nhu cầu học tập khác nhau. Nếu bạn gặp khó khăn, vui lòng cung cấp thêm chi tiết để chúng tôi có thể hỗ trợ bạn tốt hơn.</p>
+                    <p>Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với nhóm hỗ trợ của chúng tôi.</p>
+            
+                    <p>Trân trọng,<br>Đội ngũ InstruLearn</p>
+                </div>
+            </body>
+            </html>";
                 }
                 else
                 {
                     // Original notification for teacher change
                     learnerBody = $@"
                     <html>
-                    <body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
-                        <div style='background-color: #f7f7f7; padding: 20px; border-radius: 5px;'>
-                            <h2 style='color: #333;'>Thông báo thay đổi giáo viên</h2>
+            <body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
+                <div style='background-color: #f7f7f7; padding: 20px; border-radius: 5px;'>
+                    <h2 style='color: #333;'>Thông báo thay đổi giáo viên</h2>
+            
+                    <p>Xin chào {registration.Learner.FullName},</p>
+            
+                    <p>Chúng tôi muốn thông báo rằng yêu cầu thay đổi giáo viên của bạn đã được chấp nhận.</p>
+            
+                    <div style='background-color: #fff3cd; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #ffc107;'>
+                        <h3 style='margin-top: 0; color: #333;'>Chi tiết thay đổi:</h3>
+                        <p><strong>Giáo viên cũ:</strong> {originalTeacher?.Fullname ?? "Chưa có giáo viên"}</p>
+                        <p><strong>Giáo viên mới:</strong> {newTeacher.Fullname}</p>
+                        <p><strong>Buổi học tiếp theo:</strong> {nextSessionDate}</p>
+                        <p><strong>Lý do thay đổi:</strong> {changeReason}</p>
+                    </div>
                     
-                            <p>Xin chào {registration.Learner.FullName},</p>
+                    <div style='background-color: #fff3cd; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #ff9800;'>
+                        <h3 style='margin-top: 0; color: #333;'>Thông tin thanh toán:</h3>
+                        <p><strong>Số tiền cần thanh toán:</strong> {remainingPayment:N0} VND (60% học phí còn lại)</p>
+                        <p><strong>Hạn thanh toán:</strong> {deadlineFormatted}</p>
+                        <p><strong>ID đăng ký học:</strong> {registration.LearningRegisId}</p>
+                        <p>Nếu không thanh toán trước hạn, đăng ký học của bạn sẽ bị hủy tự động.</p>
+                    </div>
                     
-                            <p>Chúng tôi muốn thông báo rằng yêu cầu thay đổi giáo viên của bạn đã được chấp nhận.</p>
-                    
-                            <div style='background-color: #fff3cd; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #ffc107;'>
-                                <h3 style='margin-top: 0; color: #333;'>Chi tiết thay đổi:</h3>
-                                <p><strong>Giáo viên cũ:</strong> {originalTeacher?.Fullname ?? "Chưa có giáo viên"}</p>
-                                <p><strong>Giáo viên mới:</strong> {newTeacher.Fullname}</p>
-                                <p><strong>Buổi học tiếp theo:</strong> {nextSessionDate}</p>
-                                <p><strong>Lý do thay đổi:</strong> {changeReason}</p>
-                            </div>
-                    
-                            <p>Tất cả các buổi học sắp tới của bạn sẽ được thực hiện với giáo viên mới.</p>
-                            <p>Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với nhóm hỗ trợ của chúng tôi.</p>
-                    
-                            <p>Trân trọng,<br>Đội ngũ InstruLearn</p>
-                        </div>
-                    </body>
-                    </html>";
+                    <div style='background-color: #4CAF50; text-align: center; padding: 15px; margin: 20px 0; border-radius: 5px;'>
+                        <a href='https://instrulearn.com/payment/{registration.LearningRegisId}' style='color: white; text-decoration: none; font-weight: bold; font-size: 16px;'>
+                            Thanh Toán Ngay
+                        </a>
+                    </div>
+            
+                    <p>Tất cả các buổi học sắp tới của bạn sẽ được thực hiện với giáo viên mới.</p>
+                    <p>Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với nhóm hỗ trợ của chúng tôi.</p>
+            
+                    <p>Trân trọng,<br>Đội ngũ InstruLearn</p>
+                </div>
+            </body>
+            </html>";
                 }
 
                 await _emailService.SendEmailAsync(registration.Learner.Account.Email, learnerSubject, learnerBody, true);

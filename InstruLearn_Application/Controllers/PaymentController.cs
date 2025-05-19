@@ -46,5 +46,17 @@ namespace InstruLearn_Application.Controllers
             return BadRequest(result);
         }
 
+        [HttpPost("reject-payment/{learningRegisId}")]
+        public async Task<IActionResult> RejectPayment(int learningRegisId)
+        {
+            var result = await _paymentService.RejectPaymentAsync(learningRegisId);
+
+            if (result.IsSucceed)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+
     }
 }
