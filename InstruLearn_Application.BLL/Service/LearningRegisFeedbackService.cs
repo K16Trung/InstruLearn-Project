@@ -512,21 +512,12 @@ namespace InstruLearn_Application.BLL.Service
                         
                         <p>Nhân viên của chúng tôi sẽ liên hệ với bạn để sắp xếp giáo viên mới.</p>
                         
-                        <p><strong>Bạn có 1 ngày để thanh toán 60% học phí còn lại.</strong></p>
+                        <p><strong>Sau khi giáo viên mới được chỉ định, bạn sẽ nhận được thông báo và hạn thanh toán cho 60% học phí còn lại.</strong></p>
                         
                         <div style='background-color: #f0f0f0; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #ff9800;'>
                             <h3 style='margin-top: 0; color: #333;'>Thông tin thanh toán:</h3>
                             <p><strong>Số tiền cần thanh toán:</strong> {remainingPayment:N0} VND</p>
-                            <p><strong>Hạn thanh toán:</strong> {deadlineFormatted}</p>
                             <p><strong>ID đăng ký học:</strong> {learningRegis.LearningRegisId}</p>
-                        </div>
-                        
-                        <p>Nếu không thanh toán trước hạn, đăng ký học của bạn sẽ bị hủy tự động.</p>
-                        
-                        <div style='background-color: #4CAF50; text-align: center; padding: 15px; margin: 20px 0; border-radius: 5px;'>
-                            <a href='https://instrulearn.com/payment/{learningRegis.LearningRegisId}' style='color: white; text-decoration: none; font-weight: bold; font-size: 16px;'>
-                                Thanh Toán Ngay
-                            </a>
                         </div>
                         
                         <p>Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với đội ngũ hỗ trợ của chúng tôi.</p>
@@ -556,9 +547,6 @@ namespace InstruLearn_Application.BLL.Service
                             LearningRegisId = learningRegis.LearningRegisId,
                             Status = learningRegis.Status.ToString(),
                             RemainingPayment = learningRegis.Price.HasValue ? learningRegis.Price.Value * 0.6m : 0,
-                            PaymentDeadline = paymentDeadlineStr,
-                            PaymentDeadlineUnix = learningRegis.PaymentDeadline.HasValue ?
-                        new DateTimeOffset(learningRegis.PaymentDeadline.Value).ToUnixTimeSeconds() : 0,
                             TeacherChangeRequested = true
                         }
                     };
