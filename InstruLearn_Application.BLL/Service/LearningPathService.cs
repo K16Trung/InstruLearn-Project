@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
 using InstruLearn_Application.BLL.Service.IService;
 using InstruLearn_Application.DAL.UoW.IUoW;
+using InstruLearn_Application.Model.Enum;
 using InstruLearn_Application.Model.Models.DTO;
 using InstruLearn_Application.Model.Models.DTO.LearningPathSession;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -197,6 +199,27 @@ namespace InstruLearn_Application.BLL.Service
 
                     await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
                     await _unitOfWork.SaveChangeAsync();
+
+                    // Find and mark any related CreateLearningPath notifications as resolved
+                    var notifications = await _unitOfWork.StaffNotificationRepository
+                        .GetQuery()
+                        .Where(n => n.LearningRegisId == learningRegisId &&
+                                   n.Type == NotificationType.CreateLearningPath &&
+                                   n.Status != NotificationStatus.Resolved)
+                        .ToListAsync();
+
+                    if (notifications.Any())
+                    {
+                        _logger.LogInformation($"Marking {notifications.Count} CreateLearningPath notifications as resolved for learning registration {learningRegisId}");
+
+                        foreach (var notification in notifications)
+                        {
+                            notification.Status = NotificationStatus.Resolved;
+                            await _unitOfWork.StaffNotificationRepository.UpdateAsync(notification);
+                        }
+
+                        await _unitOfWork.SaveChangeAsync();
+                    }
 
                     // Get learner details for notification
                     var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(learningRegis.LearnerId);

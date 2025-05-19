@@ -33,7 +33,7 @@ namespace InstruLearn_Application.BLL.Service
 
                 var learningRegs = await _unitOfWork.LearningRegisRepository
                     .GetWithIncludesAsync(
-                        x => x.LearnerId == learnerId && x.Status == LearningRegis.Fourty,
+                        x => x.LearnerId == learnerId && x.Status == LearningRegis.Fourty || x.Status == LearningRegis.FourtyFeedbackDone,
                         "Teacher,Schedules"
                     );
 
@@ -224,6 +224,25 @@ namespace InstruLearn_Application.BLL.Service
                             DeadlineMessage = deadlineMessage,
                             Questions = questions,
                             Message = $"Bạn đã thanh toán 40% học phí. Vui lòng hoàn thành phản hồi này để xác nhận bạn muốn tiếp tục học và thanh toán 60% còn lại."
+                        });
+                    }
+                    // Add a notification for completed feedback
+                    else if (existingFeedback != null && existingFeedback.Status == FeedbackStatus.Completed)
+                    {
+                        feedbackNotifications.Add(new
+                        {
+                            FeedbackId = existingFeedback.FeedbackId,
+                            LearningRegisId = regis.LearningRegisId,
+                            TeacherId = regis.TeacherId,
+                            TeacherName = regis.Teacher?.Fullname ?? "N/A",
+                            TotalSessions = totalSessions,
+                            CompletedSessions = completedSessions,
+                            ProgressPercentage = Math.Round(progressPercentage, 2),
+                            FeedbackStatus = existingFeedback.Status.ToString(),
+                            CreatedAt = existingFeedback.CreatedAt,
+                            CompletedAt = existingFeedback.CompletedAt,
+                            IsCompleted = true,
+                            Message = "Cảm ơn bạn đã hoàn thành phản hồi. Hãy tiếp tục thanh toán 60% còn lại để hoàn thành khóa học của bạn."
                         });
                     }
                 }

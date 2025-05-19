@@ -64,11 +64,12 @@ namespace InstruLearn_Application.BLL.Service
                 // Define notification types that are relevant for learners
                 var learnerRelevantNotificationTypes = new[]
                 {
-            NotificationType.PaymentReminder,
-            NotificationType.FeedbackRequired,
-            NotificationType.Certificate,
-            //NotificationType.TeacherChangeRequest
-        };
+                    NotificationType.PaymentReminder,
+                    NotificationType.FeedbackRequired,
+                    NotificationType.Certificate,
+                    NotificationType.CreateLearningPath,
+                    //NotificationType.TeacherChangeRequest
+                };
 
                 // Filter notifications to include only types relevant for learners
                 var relevantStaffNotifications = allStaffNotifications
@@ -93,7 +94,7 @@ namespace InstruLearn_Application.BLL.Service
 
                 // Rest of the code remains the same
                 var allLearningRegistrations = await _unitOfWork.LearningRegisRepository.GetRegistrationsByLearnerIdAsync(learnerId);
-                var oneOnOneLearningRegistrations = allLearningRegistrations.Where(r => r.RegisTypeId == 1 || r.RegisTypeId == 2).ToList();
+                var oneOnOneLearningRegistrations = allLearningRegistrations.Where(r => r.RegisTypeId == 1).ToList();
                 _logger.LogInformation($"Found {oneOnOneLearningRegistrations.Count} 1:1 learning registrations for learner ID: {learnerId}");
 
                 foreach (var registration in oneOnOneLearningRegistrations)
@@ -152,6 +153,9 @@ namespace InstruLearn_Application.BLL.Service
 
                     if (!string.IsNullOrEmpty(statusMessage))
                     {
+                        var existingStatusNotification = allStaffNotifications
+                            .FirstOrDefault(n => n.LearningRegisId == registration.LearningRegisId &&
+                                             n.Type == NotificationType.SchedulesCreated);
                         var notification = new NotificationDTO
                         {
                             Title = statusTitle,
@@ -159,7 +163,7 @@ namespace InstruLearn_Application.BLL.Service
                             RecipientEmail = learnerAccount.Email,
                             SentDate = DateTime.Now,
                             NotificationType = NotificationType.SchedulesCreated,
-                            Status = NotificationStatus.Unread,
+                            Status = existingStatusNotification?.Status ?? NotificationStatus.Unread,
                             LearningRegisId = registration.LearningRegisId,
                             LearningRequest = registration.LearningRequest
                         };
@@ -177,71 +181,66 @@ namespace InstruLearn_Application.BLL.Service
                     }
 
                     // Learning path confirmation notifications
-                    if (registration.HasPendingLearningPath == false &&
-                        (registration.Status == LearningRegis.Accepted || registration.Status == LearningRegis.Fourty))
+                    if (registration.Status == LearningRegis.Accepted || registration.Status == LearningRegis.Fourty)
                     {
                         try
                         {
-                            _logger.LogInformation($"Processing learning path notification for registration ID: {registration.LearningRegisId}, " +
+                            _logger.LogInformation($"Processing notification for registration ID: {registration.LearningRegisId}, " +
                                                   $"Status: {registration.Status}, HasPendingLearningPath: {registration.HasPendingLearningPath}");
 
-                            int sessionCount = registration.NumberOfSession;
-                            _logger.LogInformation($"Using NumberOfSession directly: {sessionCount}");
+                            // Check if learning paths actually exist
+                            var learningPathSessions = await _unitOfWork.LearningPathSessionRepository
+                                .GetByLearningRegisIdAsync(registration.LearningRegisId);
 
-                            if (sessionCount == 0)
+                            bool hasConfirmedLearningPath = learningPathSessions != null &&
+                                                           learningPathSessions.Any() &&
+                                                           registration.HasPendingLearningPath == false;
+
+                            if (hasConfirmedLearningPath)
                             {
-                                var learningPathSessions = await _unitOfWork.LearningPathSessionRepository
-                                    .GetByLearningRegisIdAsync(registration.LearningRegisId);
+                                // Check if there's already a notification for this learning registration
+                                var existingNotification = allStaffNotifications
+                                    .FirstOrDefault(n => n.LearningRegisId == registration.LearningRegisId &&
+                                                     n.Type == NotificationType.CreateLearningPath);
 
-                                if (learningPathSessions != null && learningPathSessions.Any())
+                                // Learning path exists and has been confirmed - show payment notification
+                                int sessionCount = learningPathSessions.Count;
+                                _logger.LogInformation($"Found {sessionCount} confirmed learning path session(s)");
+
+                                decimal paymentAmount = registration.Price.HasValue ? registration.Price.Value * 0.4m : 0;
+
+                                string teacherName = "Giáo viên";
+                                if (registration.TeacherId.HasValue)
                                 {
-                                    sessionCount = learningPathSessions.Count;
-                                    _logger.LogInformation($"Updated session count from repository: {sessionCount}");
+                                    var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(registration.TeacherId.Value);
+                                    if (teacher != null)
+                                    {
+                                        teacherName = teacher.Fullname;
+                                    }
                                 }
-                                else
+
+                                string deadlineText = registration.PaymentDeadline.HasValue
+                                    ? registration.PaymentDeadline.Value.ToString("dd/MM/yyyy HH:mm")
+                                    : "";
+
+                                emailNotifications.Add(new NotificationDTO
                                 {
-                                    _logger.LogWarning($"No learning path sessions found for registration ID: {registration.LearningRegisId}");
-                                }
+                                    Title = "Lộ trình học tập của bạn đã sẵn sàng",
+                                    Message = $"{teacherName} đã chuẩn bị lộ trình học tập gồm {sessionCount} buổi học cho bạn. " +
+                                              $"Vui lòng thanh toán 40% học phí ({paymentAmount:N0} VND) " +
+                                              (string.IsNullOrEmpty(deadlineText) ? "" : $"trước {deadlineText} ") +
+                                              "để bắt đầu học.",
+                                    RecipientEmail = learnerAccount.Email,
+                                    SentDate = DateTime.Now,
+                                    NotificationType = NotificationType.CreateLearningPath,
+                                    Status = existingNotification?.Status ?? NotificationStatus.Unread,
+                                    LearningRegisId = registration.LearningRegisId,
+                                    Amount = paymentAmount,
+                                    Deadline = registration.PaymentDeadline,
+                                    LearningRequest = registration.LearningRequest
+                                });
                             }
-
-                            if (sessionCount == 0)
-                            {
-                                sessionCount = 1;
-                                _logger.LogWarning($"Using default session count of 1 for registration ID: {registration.LearningRegisId}");
-                            }
-
-                            decimal paymentAmount = registration.Price.HasValue ? registration.Price.Value * 0.4m : 0;
-
-                            string teacherName = "Giáo viên";
-                            if (registration.TeacherId.HasValue)
-                            {
-                                var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(registration.TeacherId.Value);
-                                if (teacher != null)
-                                {
-                                    teacherName = teacher.Fullname;
-                                }
-                            }
-
-                            string deadlineText = registration.PaymentDeadline.HasValue
-                                ? registration.PaymentDeadline.Value.ToString("dd/MM/yyyy HH:mm")
-                                : "";
-
-                            emailNotifications.Add(new NotificationDTO
-                            {
-                                Title = "Lộ trình học tập của bạn đã sẵn sàng",
-                                Message = $"{teacherName} đã chuẩn bị lộ trình học tập gồm {sessionCount} buổi học cho bạn. " +
-                                          $"Vui lòng thanh toán 40% học phí ({paymentAmount:N0} VND) " +
-                                          (string.IsNullOrEmpty(deadlineText) ? "" : $"trước {deadlineText} ") +
-                                          "để bắt đầu học.",
-                                RecipientEmail = learnerAccount.Email,
-                                SentDate = DateTime.Now,
-                                NotificationType = NotificationType.CreateLearningPath,
-                                Status = NotificationStatus.Unread,
-                                LearningRegisId = registration.LearningRegisId,
-                                Amount = paymentAmount,
-                                Deadline = registration.PaymentDeadline,
-                                LearningRequest = registration.LearningRequest
-                            });
+                            // The "registration accepted" notification is already handled in the earlier switch statement
                         }
                         catch (Exception ex)
                         {

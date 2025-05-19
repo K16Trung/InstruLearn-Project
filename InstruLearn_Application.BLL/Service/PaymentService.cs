@@ -1,16 +1,17 @@
-﻿using InstruLearn_Application.BLL.Service.IService;
+﻿using AutoMapper;
+using InstruLearn_Application.BLL.Service.IService;
+using InstruLearn_Application.DAL.UoW.IUoW;
 using InstruLearn_Application.Model.Enum;
-using InstruLearn_Application.Model.Models.DTO.Payment;
-using InstruLearn_Application.Model.Models.DTO;
 using InstruLearn_Application.Model.Models;
+using InstruLearn_Application.Model.Models.DTO;
+using InstruLearn_Application.Model.Models.DTO.Payment;
+using Microsoft.EntityFrameworkCore;
 using Net.payOS.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using AutoMapper;
-using InstruLearn_Application.DAL.UoW.IUoW;
 
 namespace InstruLearn_Application.BLL.Service
 {
@@ -47,8 +48,8 @@ namespace InstruLearn_Application.BLL.Service
                 }
 
                 decimal totalPrice = learningRegis.Price.Value;
-                decimal requiredAmount = totalPrice * 0.4m; // 40% of total price
-                decimal remainingAmount = totalPrice * 0.6m; // 60% of total price
+                decimal requiredAmount = totalPrice * 0.4m;
+                decimal remainingAmount = totalPrice * 0.6m;
 
                 if (wallet.Balance < requiredAmount)
                 {
@@ -93,6 +94,20 @@ namespace InstruLearn_Application.BLL.Service
                 learningRegis.RemainingAmount = remainingAmount;
                 learningRegis.HasPendingLearningPath = true;
                 await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
+
+                // Find and resolve any existing CreateLearningPath notifications
+                var existingNotifications = await _unitOfWork.StaffNotificationRepository
+                    .GetQuery()
+                    .Where(n => n.LearningRegisId == learningRegis.LearningRegisId &&
+                                n.Type == NotificationType.CreateLearningPath &&
+                                n.Status != NotificationStatus.Resolved)
+                    .ToListAsync();
+
+                foreach (var notification in existingNotifications)
+                {
+                    notification.Status = NotificationStatus.Resolved;
+                    await _unitOfWork.StaffNotificationRepository.UpdateAsync(notification);
+                }
 
                 // ✅ Create schedules for learner and teacher
                 var schedules = DateTimeHelper.GenerateOneOnOneSchedules(learningRegis);
@@ -189,7 +204,6 @@ namespace InstruLearn_Application.BLL.Service
                 await _unitOfWork.WalletTransactionRepository.AddAsync(walletTransaction);
 
                 // Create Payment Record
-                // FIXED: Use PaymentId for the LearningRegis ID since we don't have a separate property
                 var payment = new Payment
                 {
                     WalletId = wallet.WalletId,
@@ -206,6 +220,23 @@ namespace InstruLearn_Application.BLL.Service
                 learningRegis.Status = LearningRegis.Sixty;
                 learningRegis.RemainingAmount = 0;
                 await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
+
+                // Find and mark any related PaymentReminder notifications as resolved
+                var notifications = await _unitOfWork.StaffNotificationRepository
+                    .GetQuery()
+                    .Where(n => n.LearningRegisId == learningRegisId &&
+                               n.Type == NotificationType.PaymentReminder &&
+                               n.Status != NotificationStatus.Resolved)
+                    .ToListAsync();
+
+                if (notifications.Any())
+                {
+                    foreach (var notification in notifications)
+                    {
+                        notification.Status = NotificationStatus.Resolved;
+                        await _unitOfWork.StaffNotificationRepository.UpdateAsync(notification);
+                    }
+                }
 
                 await _unitOfWork.SaveChangeAsync();
                 await _unitOfWork.CommitTransactionAsync();

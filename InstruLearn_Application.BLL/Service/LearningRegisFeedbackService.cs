@@ -1,19 +1,20 @@
 ﻿using AutoMapper;
+using InstruLearn_Application.BLL.Service.IService;
 using InstruLearn_Application.DAL.UoW.IUoW;
 using InstruLearn_Application.Model.Enum;
+using InstruLearn_Application.Model.Models;
+using InstruLearn_Application.Model.Models.DTO;
 using InstruLearn_Application.Model.Models.DTO.FeedbackSummary;
 using InstruLearn_Application.Model.Models.DTO.LearningRegisFeedback;
 using InstruLearn_Application.Model.Models.DTO.LearningRegisFeedbackAnswer;
 using InstruLearn_Application.Model.Models.DTO.LearningRegisFeedbackOption;
 using InstruLearn_Application.Model.Models.DTO.LearningRegisFeedbackQuestion;
-using InstruLearn_Application.Model.Models.DTO;
-using InstruLearn_Application.Model.Models;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using InstruLearn_Application.BLL.Service.IService;
 
 namespace InstruLearn_Application.BLL.Service
 {
@@ -391,6 +392,23 @@ namespace InstruLearn_Application.BLL.Service
                         Status = FeedbackStatus.Completed,
                         Answers = new List<LearningRegisFeedbackAnswer>()
                     };
+
+                    // Add the same block here too for newly created feedback
+                    var relatedNotifications = await _unitOfWork.StaffNotificationRepository
+                        .GetQuery()
+                        .Where(n => n.LearningRegisId == createDTO.LearningRegistrationId &&
+                                    n.Type == NotificationType.FeedbackRequired &&
+                                    n.Status != NotificationStatus.Resolved)
+                        .ToListAsync();
+
+                    if (relatedNotifications.Any())
+                    {
+                        foreach (var notification in relatedNotifications)
+                        {
+                            notification.Status = NotificationStatus.Resolved;
+                            await _unitOfWork.StaffNotificationRepository.UpdateAsync(notification);
+                        }
+                    }
 
                     // Add answers
                     foreach (var answerDTO in createDTO.Answers)
