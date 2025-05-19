@@ -34,6 +34,7 @@ namespace InstruLearn_Application.DAL.Repository
                 .Include(l => l.Response.ResponseType)
                 .Include(l => l.LevelAssigned)
                 .Include(x => x.LearningRegistrationDay)
+                .Include(x => x.SelfAssessment)
                 .ToListAsync();
         }
 
@@ -51,6 +52,7 @@ namespace InstruLearn_Application.DAL.Repository
                 .Include(l => l.Response.ResponseType)
                 .Include(l => l.LevelAssigned)
                 .Include(x => x.LearningRegistrationDay)
+                .Include(x => x.SelfAssessment)
                 .ToListAsync();
         }
 
@@ -66,6 +68,7 @@ namespace InstruLearn_Application.DAL.Repository
                 .Include(l => l.Response.ResponseType)
                 .Include(l => l.LevelAssigned)
                 .Include(l => l.LearningRegistrationDay)
+                .Include(x => x.SelfAssessment)
                 .ToListAsync();
         }
 
@@ -81,6 +84,7 @@ namespace InstruLearn_Application.DAL.Repository
                 .Include(l => l.Response.ResponseType)
                 .Include(l => l.LevelAssigned)
                 .Include(l => l.LearningRegistrationDay)
+                .Include(x => x.SelfAssessment)
                 .FirstOrDefaultAsync(l => l.LearningRegisId == id);
         }
 
@@ -107,6 +111,7 @@ namespace InstruLearn_Application.DAL.Repository
                 .Include(l => l.Learner.Account)
                 .Include(x => x.Learning_Registration_Type)
                 .Include(x => x.Major)
+                .Include(x => x.SelfAssessment)
                 .ToListAsync();
         }
 
@@ -123,6 +128,7 @@ namespace InstruLearn_Application.DAL.Repository
                 .Include(l => l.Response.ResponseType)
                 .Include(l => l.LevelAssigned)
                 .Include(x => x.LearningRegistrationDay)
+                .Include(x => x.SelfAssessment)
                 .ToListAsync();
         }
 

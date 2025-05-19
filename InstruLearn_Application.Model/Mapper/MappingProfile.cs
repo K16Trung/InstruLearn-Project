@@ -43,6 +43,7 @@ using InstruLearn_Application.Model.Models.DTO.Response;
 using InstruLearn_Application.Model.Models.DTO.ResponseType;
 using InstruLearn_Application.Model.Models.DTO.ScheduleDays;
 using InstruLearn_Application.Model.Models.DTO.Schedules;
+using InstruLearn_Application.Model.Models.DTO.SelfAssessment;
 using InstruLearn_Application.Model.Models.DTO.Staff;
 using InstruLearn_Application.Model.Models.DTO.StaffNotification;
 using InstruLearn_Application.Model.Models.DTO.Syllabus;
@@ -390,9 +391,6 @@ namespace InstruLearn_Application.Model.Mapper
 
             //🔹 Learning_Registration Mappings
             CreateMap<Learning_Registration, LearningRegisDTO>().ReverseMap();
-            /*.ForMember(dest => dest.LearnerId, opt => opt.MapFrom(src => src.LearnerId))
-            .ForMember(dest => dest.ClassId, opt => opt.MapFrom(src => src.ClassId))
-            .ForMember(dest => dest.RegisTypeId, opt => opt.MapFrom(src => src.RegisTypeId));*/
             CreateMap<CreateLearningRegisDTO, Learning_Registration>().ReverseMap();
 
             CreateMap<Learning_Registration, OneOnOneRegisDTO>()
@@ -401,13 +399,13 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.Learner.Account.PhoneNumber))
                 .ForMember(dest => dest.RegisTypeName, opt => opt.MapFrom(src => src.Learning_Registration_Type.RegisTypeName))
                 .ForMember(dest => dest.MajorName, opt => opt.MapFrom(src => src.Major.MajorName))
-                .ForMember(dest => dest.SelfAssessment, opt => opt.MapFrom(src => src.SelfAssessment))
                 .ForMember(dest => dest.ResponseTypeId, opt => opt.MapFrom(src => src.Response.ResponseType.ResponseTypeId))
                 .ForMember(dest => dest.ResponseTypeName, opt => opt.MapFrom(src => src.Response.ResponseType.ResponseTypeName))
                 .ForMember(dest => dest.ResponseDescription, opt => opt.MapFrom(src => src.Response.ResponseName))
                 .ForMember(dest => dest.LevelName, opt => opt.MapFrom(src => src.LevelAssigned.LevelName))
                 .ForMember(dest => dest.LevelPrice, opt => opt.MapFrom(src => src.LevelAssigned.LevelPrice))
                 .ForMember(dest => dest.SyllabusLink, opt => opt.MapFrom(src => src.LevelAssigned.SyllabusLink))
+                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.SelfAssessment.Description))
                 .ForMember(dest => dest.LearningDays, opt => opt.MapFrom(src =>
                     src.LearningRegistrationDay.Select(ld => DateTimeHelper.GetDayName((int)ld.DayOfWeek)).ToList()))
                 .ForMember(dest => dest.TimeEnd, opt => opt.MapFrom(src => src.TimeStart.AddMinutes(src.TimeLearning)));
@@ -757,6 +755,11 @@ namespace InstruLearn_Application.Model.Mapper
 
             CreateMap<CreateLevelFeedbackCriterionDTO, LevelFeedbackCriterion>();
             CreateMap<UpdateLevelFeedbackCriterionDTO, LevelFeedbackCriterion>();
+
+            // SelfAssessment mappings
+            CreateMap<SelfAssessment, SelfAssessmentDTO>();
+            CreateMap<CreateSelfAssessmentDTO, SelfAssessment>();
+            CreateMap<UpdateSelfAssessmentDTO, SelfAssessment>();
         }
     }
 }
