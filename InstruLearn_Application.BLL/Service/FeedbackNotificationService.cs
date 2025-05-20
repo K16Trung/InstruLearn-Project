@@ -31,229 +31,262 @@ namespace InstruLearn_Application.BLL.Service
             {
                 _logger.LogInformation($"Checking feedback notifications for learner ID: {learnerId}");
 
-                var learningRegs = await _unitOfWork.LearningRegisRepository
-                    .GetWithIncludesAsync(
-                        x => x.LearnerId == learnerId && x.Status == LearningRegis.Fourty || x.Status == LearningRegis.FourtyFeedbackDone,
-                        "Teacher,Schedules"
-                    );
-
-                if (learningRegs == null || !learningRegs.Any())
-                {
-                    return new ResponseDTO
-                    {
-                        IsSucceed = false,
-                        Message = "No active learning registrations found for this learner."
-                    };
-                }
-
+                // Get all completed feedbacks for this learner regardless of registration status
                 var allFeedbacks = await _unitOfWork.LearningRegisFeedbackRepository
                     .GetFeedbacksByLearnerIdAsync(learnerId);
 
-                var feedbackQuestions = await _unitOfWork.LearningRegisFeedbackQuestionRepository
-                    .GetActiveQuestionsWithOptionsAsync();
+                // Get active learning registrations (40%, post-feedback, or 60%)
+                var learningRegs = await _unitOfWork.LearningRegisRepository
+                    .GetWithIncludesAsync(
+                        x => x.LearnerId == learnerId && (x.Status == LearningRegis.Fourty || x.Status == LearningRegis.FourtyFeedbackDone || x.Status == LearningRegis.Sixty),
+                        "Teacher,Schedules"
+                    );
 
                 var feedbackNotifications = new List<object>();
                 var feedbacksToUpdate = new List<LearningRegisFeedback>();
                 var registrationsToUpdate = new List<Learning_Registration>();
 
-                foreach (var regis in learningRegs)
+                // No active learning registrations or feedbacks
+                if ((learningRegs == null || !learningRegs.Any()) &&
+                    (allFeedbacks == null || !allFeedbacks.Any()))
                 {
-                    _logger.LogInformation($"Processing registration {regis.LearningRegisId} for learner {learnerId}");
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "No active learning registrations or feedback records found for this learner."
+                    };
+                }
 
+                // Get feedback questions for all notifications
+                var feedbackQuestions = await _unitOfWork.LearningRegisFeedbackQuestionRepository
+                    .GetActiveQuestionsWithOptionsAsync();
+
+                // Format questions to avoid circular references
+                var questions = feedbackQuestions.Select(q => new
+                {
+                    q.QuestionId,
+                    q.QuestionText,
+                    q.DisplayOrder,
+                    q.IsRequired,
+                    q.IsActive,
+                    Options = q.Options.Select(o => new
+                    {
+                        o.OptionId,
+                        o.OptionText,
+                        o.QuestionId
+                    }).ToList()
+                }).ToList();
+
+                // First, handle all completed feedbacks to ensure they're always included
+                foreach (var completedFeedback in allFeedbacks.Where(f => f.Status == FeedbackStatus.Completed))
+                {
+                    // Get the registration for this feedback
+                    var regis = learningRegs?.FirstOrDefault(r => r.LearningRegisId == completedFeedback.LearningRegistrationId);
+
+                    // If the registration doesn't exist in our active list, fetch it directly
+                    if (regis == null)
+                    {
+                        regis = await _unitOfWork.LearningRegisRepository
+                            .GetWithIncludesAsync(
+                                x => x.LearningRegisId == completedFeedback.LearningRegistrationId,
+                                "Teacher,Schedules"
+                            ).ContinueWith(t => t.Result?.FirstOrDefault());
+
+                        if (regis == null)
+                        {
+                            _logger.LogWarning($"Could not find registration for completed feedback ID {completedFeedback.FeedbackId}");
+                            continue;
+                        }
+                    }
+
+                    // Calculate session information
                     var completedSessions = regis.Schedules
                         ?.Count(s => s.AttendanceStatus == AttendanceStatus.Present ||
                                   s.AttendanceStatus == AttendanceStatus.Absent) ?? 0;
 
                     int totalSessions = regis.NumberOfSession;
-
-                    int fortyPercentThreshold = Math.Max(1, (int)Math.Ceiling(totalSessions * 0.4));
-
                     double progressPercentage = totalSessions > 0
                         ? (double)completedSessions / totalSessions * 100
                         : 0;
 
-                    _logger.LogInformation($"Learner {learnerId} progress for registration {regis.LearningRegisId}: " +
-                                          $"{completedSessions}/{totalSessions} sessions completed " +
-                                          $"({progressPercentage:F1}%), threshold: {fortyPercentThreshold} sessions");
+                    // Get feedback answers
+                    var feedbackAnswers = await _unitOfWork.LearningRegisFeedbackAnswerRepository
+                        .GetAnswersByFeedbackIdAsync(completedFeedback.FeedbackId);
 
-                    if (completedSessions < fortyPercentThreshold)
+                    // Add the completed feedback notification
+                    feedbackNotifications.Add(new
                     {
-                        _logger.LogInformation($"Skipping registration {regis.LearningRegisId} for learner {learnerId} " +
-                                              $"because they've only completed {completedSessions}/{totalSessions} sessions, " +
-                                              $"which is below the 40% threshold of {fortyPercentThreshold} sessions");
-                        continue;
-                    }
-
-                    var existingFeedback = allFeedbacks
-                        .FirstOrDefault(f => f.LearningRegistrationId == regis.LearningRegisId);
-
-                    if (existingFeedback == null)
-                    {
-                        // Create a new feedback record (not a new form)
-                        var newFeedback = new LearningRegisFeedback
+                        FeedbackId = completedFeedback.FeedbackId,
+                        LearningRegisId = regis.LearningRegisId,
+                        TeacherId = regis.TeacherId,
+                        TeacherName = regis.Teacher?.Fullname ?? "N/A",
+                        TotalSessions = totalSessions,
+                        CompletedSessions = completedSessions,
+                        ProgressPercentage = Math.Round(progressPercentage, 2),
+                        FeedbackStatus = completedFeedback.Status.ToString(),
+                        CreatedAt = completedFeedback.CreatedAt,
+                        CompletedAt = completedFeedback.CompletedAt,
+                        IsCompleted = true,
+                        Questions = questions,
+                        Answers = feedbackAnswers.Select(a => new
                         {
-                            LearningRegistrationId = regis.LearningRegisId,
-                            LearnerId = learnerId,
-                            CreatedAt = DateTime.Now,
-                            Status = FeedbackStatus.NotStarted,
-                            AdditionalComments = "",
-                            DeadlineDate = DateTime.Now.AddDays(1)
-                        };
+                            a.AnswerId,
+                            a.QuestionId,
+                            a.SelectedOptionId
+                        }).ToList(),
+                        Message = "Cảm ơn bạn đã hoàn thành phản hồi. Hãy tiếp tục thanh toán 60% còn lại để hoàn thành khóa học của bạn."
+                    });
 
-                        await _unitOfWork.LearningRegisFeedbackRepository.AddAsync(newFeedback);
-                        await _unitOfWork.SaveChangeAsync();
+                    _logger.LogInformation($"Added completed feedback notification for feedback ID {completedFeedback.FeedbackId}, registration {regis.LearningRegisId}");
+                }
 
-                        // Now retrieve the created feedback with its ID
-                        existingFeedback = await _unitOfWork.LearningRegisFeedbackRepository
-                            .GetFeedbackByRegistrationIdAsync(regis.LearningRegisId);
-
-                        _logger.LogInformation($"Created new feedback record with ID {existingFeedback.FeedbackId} for learning registration {regis.LearningRegisId}");
-                    }
-                    else if (existingFeedback.DeadlineDate == null)
+                // Now process active learning registrations for non-completed feedbacks
+                if (learningRegs != null && learningRegs.Any())
+                {
+                    foreach (var regis in learningRegs)
                     {
-                        // Set deadline for existing feedbacks that don't have one
-                        existingFeedback.DeadlineDate = DateTime.Now.AddDays(1);
-                        feedbacksToUpdate.Add(existingFeedback);
-                    }
+                        _logger.LogInformation($"Processing registration {regis.LearningRegisId} for learner {learnerId}");
 
-                    // Check if feedback deadline has passed and update status if needed
-                    if (existingFeedback.DeadlineDate.HasValue &&
-                        DateTime.Now > existingFeedback.DeadlineDate.Value &&
-                        existingFeedback.Status != FeedbackStatus.Completed)
-                    {
-                        _logger.LogInformation($"Feedback deadline passed for feedback ID {existingFeedback.FeedbackId}. Auto-updating status.");
+                        var completedSessions = regis.Schedules
+                            ?.Count(s => s.AttendanceStatus == AttendanceStatus.Present ||
+                                      s.AttendanceStatus == AttendanceStatus.Absent) ?? 0;
 
-                        // Mark feedback as completed automatically
-                        existingFeedback.Status = FeedbackStatus.Completed;
-                        existingFeedback.CompletedAt = DateTime.Now;
-                        existingFeedback.AdditionalComments = "Auto-completed by system due to deadline expiration";
+                        int totalSessions = regis.NumberOfSession;
+                        int fortyPercentThreshold = Math.Max(1, (int)Math.Ceiling(totalSessions * 0.4));
+                        double progressPercentage = totalSessions > 0
+                            ? (double)completedSessions / totalSessions * 100
+                            : 0;
 
-                        // Update the learning registration to FourtyFeedbackDone
-                        if (regis.Status == LearningRegis.Fourty)
+                        var existingFeedback = allFeedbacks
+                            .FirstOrDefault(f => f.LearningRegistrationId == regis.LearningRegisId);
+
+                        // Skip if already processed as completed
+                        if (existingFeedback != null && existingFeedback.Status == FeedbackStatus.Completed)
                         {
-                            regis.Status = LearningRegis.FourtyFeedbackDone;
-                            registrationsToUpdate.Add(regis);
+                            continue;
                         }
 
-                        feedbacksToUpdate.Add(existingFeedback);
-                        continue;
-                    }
-
-                    // Only include notifications for forms that are not completed
-                    if (existingFeedback != null &&
-                        (existingFeedback.Status == FeedbackStatus.NotStarted ||
-                         existingFeedback.Status == FeedbackStatus.InProgress))
-                    {
-                        // Calculate remaining payment amount (60% of total)
-                        decimal remainingPayment = 0;
-                        if (regis.Price.HasValue)
+                        // Skip if below threshold and no completed feedback
+                        if (completedSessions < fortyPercentThreshold)
                         {
-                            remainingPayment = regis.Price.Value * 0.6m;
+                            _logger.LogInformation($"Skipping registration {regis.LearningRegisId} - below 40% threshold");
+                            continue;
                         }
 
-                        // Calculate days remaining until deadline
-                        int daysRemaining = 0;
-                        string deadlineMessage = "";
-                        string formattedDeadlineDate = "N/A";
-
-                        if (existingFeedback.DeadlineDate.HasValue)
+                        // The rest of your existing code for non-completed feedback goes here
+                        // (creating new feedback records, checking deadlines, etc.)
+                        if (existingFeedback == null)
                         {
-                            // Get total days remaining (decimals will be truncated)
-                            TimeSpan timeRemaining = existingFeedback.DeadlineDate.Value - DateTime.Now;
-                            daysRemaining = Math.Max(0, (int)Math.Ceiling(timeRemaining.TotalDays));
-
-                            // Format deadline date for display
-                            formattedDeadlineDate = existingFeedback.DeadlineDate.Value.ToString("dd/MM/yyyy HH:mm");
-
-                            // Customize message based on days remaining
-                            if (daysRemaining < 1)
+                            // Create a new feedback record
+                            var newFeedback = new LearningRegisFeedback
                             {
-                                // Less than a day - show hours
-                                int hoursRemaining = Math.Max(0, (int)Math.Ceiling(timeRemaining.TotalHours));
-                                if (hoursRemaining < 1)
+                                LearningRegistrationId = regis.LearningRegisId,
+                                LearnerId = learnerId,
+                                CreatedAt = DateTime.Now,
+                                Status = FeedbackStatus.NotStarted,
+                                AdditionalComments = "",
+                                DeadlineDate = DateTime.Now.AddDays(1)
+                            };
+
+                            await _unitOfWork.LearningRegisFeedbackRepository.AddAsync(newFeedback);
+                            await _unitOfWork.SaveChangeAsync();
+
+                            existingFeedback = await _unitOfWork.LearningRegisFeedbackRepository
+                                .GetFeedbackByRegistrationIdAsync(regis.LearningRegisId);
+
+                            _logger.LogInformation($"Created new feedback record with ID {existingFeedback.FeedbackId}");
+                        }
+                        else if (existingFeedback.DeadlineDate == null)
+                        {
+                            existingFeedback.DeadlineDate = DateTime.Now.AddDays(1);
+                            feedbacksToUpdate.Add(existingFeedback);
+                        }
+
+                        // Check for expired deadline
+                        if (existingFeedback.DeadlineDate.HasValue &&
+                            DateTime.Now > existingFeedback.DeadlineDate.Value &&
+                            existingFeedback.Status != FeedbackStatus.Completed)
+                        {
+                            _logger.LogInformation($"Feedback deadline passed for ID {existingFeedback.FeedbackId}");
+
+                            existingFeedback.Status = FeedbackStatus.Completed;
+                            existingFeedback.CompletedAt = DateTime.Now;
+                            existingFeedback.AdditionalComments = "Auto-completed by system due to deadline expiration";
+
+                            if (regis.Status == LearningRegis.Fourty)
+                            {
+                                regis.Status = LearningRegis.FourtyFeedbackDone;
+                                registrationsToUpdate.Add(regis);
+                            }
+
+                            feedbacksToUpdate.Add(existingFeedback);
+                            continue;
+                        }
+
+                        // Add notification for feedback in progress
+                        if (existingFeedback.Status == FeedbackStatus.NotStarted ||
+                            existingFeedback.Status == FeedbackStatus.InProgress)
+                        {
+                            decimal remainingPayment = 0;
+                            if (regis.Price.HasValue)
+                            {
+                                remainingPayment = regis.Price.Value * 0.6m;
+                            }
+
+                            // Calculate deadline information
+                            int daysRemaining = 0;
+                            string deadlineMessage = "";
+
+                            if (existingFeedback.DeadlineDate.HasValue)
+                            {
+                                TimeSpan timeRemaining = existingFeedback.DeadlineDate.Value - DateTime.Now;
+                                daysRemaining = Math.Max(0, (int)Math.Ceiling(timeRemaining.TotalDays));
+
+                                // Create deadline message (keep the existing logic)
+                                if (daysRemaining < 1)
                                 {
-                                    deadlineMessage = "Hạn chót hôm nay! Vui lòng hoàn thành ngay.";
+                                    int hoursRemaining = Math.Max(0, (int)Math.Ceiling(timeRemaining.TotalHours));
+                                    deadlineMessage = hoursRemaining < 1
+                                        ? "Hạn chót hôm nay! Vui lòng hoàn thành ngay."
+                                        : $"Còn {hoursRemaining} giờ để hoàn thành phản hồi này.";
                                 }
                                 else
                                 {
-                                    deadlineMessage = $"Còn {hoursRemaining} giờ để hoàn thành phản hồi này.";
+                                    deadlineMessage = daysRemaining == 1
+                                        ? "Còn 1 ngày để hoàn thành phản hồi này."
+                                        : $"Còn {daysRemaining} ngày để hoàn thành phản hồi này.";
                                 }
                             }
-                            else if (daysRemaining == 1)
+
+                            feedbackNotifications.Add(new
                             {
-                                deadlineMessage = "Còn 1 ngày để hoàn thành phản hồi này.";
-                            }
-                            else
-                            {
-                                deadlineMessage = $"Còn {daysRemaining} ngày để hoàn thành phản hồi này.";
-                            }
+                                FeedbackId = existingFeedback.FeedbackId,
+                                LearningRegisId = regis.LearningRegisId,
+                                TeacherId = regis.TeacherId,
+                                TeacherName = regis.Teacher?.Fullname ?? "N/A",
+                                TotalSessions = totalSessions,
+                                CompletedSessions = completedSessions,
+                                ProgressPercentage = Math.Round(progressPercentage, 2),
+                                TotalPrice = regis.Price,
+                                RemainingPayment = remainingPayment,
+                                FeedbackStatus = existingFeedback.Status.ToString(),
+                                CreatedAt = existingFeedback.CreatedAt,
+                                DeadlineDate = existingFeedback.DeadlineDate,
+                                DaysRemaining = daysRemaining,
+                                DeadlineMessage = deadlineMessage,
+                                Questions = questions,
+                                Message = $"Bạn đã thanh toán 40% học phí. Vui lòng hoàn thành phản hồi này để xác nhận bạn muốn tiếp tục học và thanh toán 60% còn lại."
+                            });
                         }
-
-                        // Create a notification with shared questions and without circular references
-                        var questions = feedbackQuestions.Select(q => new
-                        {
-                            q.QuestionId,
-                            q.QuestionText,
-                            q.DisplayOrder,
-                            q.IsRequired,
-                            q.IsActive,
-                            Options = q.Options.Select(o => new
-                            {
-                                o.OptionId,
-                                o.OptionText,
-                                o.QuestionId
-                                // No reference back to Question
-                            }).ToList()
-                        }).ToList();
-
-                        feedbackNotifications.Add(new
-                        {
-                            FeedbackId = existingFeedback.FeedbackId,
-                            LearningRegisId = regis.LearningRegisId,
-                            TeacherId = regis.TeacherId,
-                            TeacherName = regis.Teacher?.Fullname ?? "N/A",
-                            TotalSessions = totalSessions,
-                            CompletedSessions = completedSessions,
-                            ProgressPercentage = Math.Round(progressPercentage, 2),
-                            TotalPrice = regis.Price,
-                            RemainingPayment = remainingPayment,
-                            FeedbackStatus = existingFeedback.Status.ToString(),
-                            CreatedAt = existingFeedback.CreatedAt,
-                            DeadlineDate = existingFeedback.DeadlineDate,
-                            DaysRemaining = daysRemaining,
-                            DeadlineMessage = deadlineMessage,
-                            Questions = questions,
-                            Message = $"Bạn đã thanh toán 40% học phí. Vui lòng hoàn thành phản hồi này để xác nhận bạn muốn tiếp tục học và thanh toán 60% còn lại."
-                        });
-                    }
-                    // Add a notification for completed feedback
-                    else if (existingFeedback != null && existingFeedback.Status == FeedbackStatus.Completed)
-                    {
-                        feedbackNotifications.Add(new
-                        {
-                            FeedbackId = existingFeedback.FeedbackId,
-                            LearningRegisId = regis.LearningRegisId,
-                            TeacherId = regis.TeacherId,
-                            TeacherName = regis.Teacher?.Fullname ?? "N/A",
-                            TotalSessions = totalSessions,
-                            CompletedSessions = completedSessions,
-                            ProgressPercentage = Math.Round(progressPercentage, 2),
-                            FeedbackStatus = existingFeedback.Status.ToString(),
-                            CreatedAt = existingFeedback.CreatedAt,
-                            CompletedAt = existingFeedback.CompletedAt,
-                            IsCompleted = true,
-                            Message = "Cảm ơn bạn đã hoàn thành phản hồi. Hãy tiếp tục thanh toán 60% còn lại để hoàn thành khóa học của bạn."
-                        });
                     }
                 }
 
-                // Save all feedback updates
+                // Save all updates
                 foreach (var feedback in feedbacksToUpdate)
                 {
                     await _unitOfWork.LearningRegisFeedbackRepository.UpdateAsync(feedback);
                 }
 
-                // Save all registration status updates
                 foreach (var registration in registrationsToUpdate)
                 {
                     await _unitOfWork.LearningRegisRepository.UpdateAsync(registration);

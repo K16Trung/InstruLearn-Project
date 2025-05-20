@@ -58,5 +58,17 @@ namespace InstruLearn_Application.Controllers
             return BadRequest(result);
         }
 
+        [HttpGet("class-initial-payments/{classId?}")]
+        public async Task<IActionResult> GetClassInitialPayments(int? classId)
+        {
+            var result = await _paymentService.GetClassInitialPaymentsAsync(classId);
+
+            if (result.IsSucceed)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+
     }
 }

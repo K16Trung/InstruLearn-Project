@@ -696,6 +696,9 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     registration.TeacherId = newTeacherId;
                     registration.PaymentDeadline = DateTime.Now.AddDays(1);
+                    registration.TeacherChangeProcessed = true;
+                    registration.ChangeTeacherRequested = true;
+                    registration.SentTeacherChangeReminder = false;
                     await _unitOfWork.LearningRegisRepository.UpdateAsync(registration);
 
                     var schedules = await _unitOfWork.ScheduleRepository.GetSchedulesByLearningRegisIdAsync(learningRegisId);

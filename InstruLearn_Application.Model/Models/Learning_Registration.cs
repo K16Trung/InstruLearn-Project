@@ -46,6 +46,13 @@ namespace InstruLearn_Application.Model.Models
         public DateTime? AcceptedDate { get; set; }
         public DateTime? PaymentDeadline { get; set; }
         public bool HasPendingLearningPath { get; set; } = false;
+        // Add these properties to Learning_Registration class
+        public DateTime? LastReminderSent { get; set; }
+        public int ReminderCount { get; set; } = 0;
+        public bool ChangeTeacherRequested { get; set; } = false;
+        public bool TeacherChangeProcessed { get; set; } = false;
+        public bool SentTeacherChangeReminder { get; set; } = false;
+        //
 
         // Navigation properties
         public ICollection<LearningRegistrationDay> LearningRegistrationDay { get; set; }

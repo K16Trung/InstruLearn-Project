@@ -363,5 +363,82 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO { IsSucceed = false, Message = "Payment rejection failed: " + ex.Message };
             }
         }
+
+        public async Task<ResponseDTO> GetClassInitialPaymentsAsync(int? classId)
+        {
+            try
+            {
+                // Query for all payment transactions for learning registrations
+                var query = _unitOfWork.PaymentsRepository
+                    .GetQuery()
+                    .Where(p => p.Status == PaymentStatus.Completed &&
+                               p.PaymentFor == PaymentFor.LearningRegistration)
+                    .Include(p => p.Wallet)
+                    .ThenInclude(w => w.Learner)
+                    .Include(p => p.WalletTransaction);
+
+                var payments = await query.ToListAsync();
+
+                // Get all learning registrations with classes
+                var registrations = await _unitOfWork.LearningRegisRepository
+                    .GetQuery()
+                    .Where(lr => lr.ClassId != null)
+                    .Include(lr => lr.Classes)
+                    .ToListAsync();
+
+                // Filter to get only class registrations for the specified class (or all if classId is null)
+                var classRegistrations = registrations
+                    .Where(lr => classId == null || lr.ClassId == classId)
+                    .ToList();
+
+                // Find initial payments (10% payments)
+                var initialPayments = new List<object>();
+
+                foreach (var registration in classRegistrations)
+                {
+                    var classPrice = registration.Classes?.Price ?? 0;
+                    var totalDays = registration.Classes?.totalDays ?? 0;
+                    var totalClassPrice = classPrice * totalDays;
+                    var expectedInitialPayment = Math.Round(totalClassPrice * 0.1m, 2);
+
+                    // Find learner payment matching this registration
+                    var payment = payments.FirstOrDefault(p =>
+                        p.Wallet.LearnerId == registration.LearnerId &&
+                        Math.Abs(p.AmountPaid - expectedInitialPayment) < 0.1m);
+
+                    if (payment != null)
+                    {
+                        initialPayments.Add(new
+                        {
+                            LearnerId = payment.Wallet.LearnerId,
+                            LearnerName = payment.Wallet.Learner?.FullName ?? "Unknown",
+                            ClassId = registration.ClassId,
+                            ClassName = registration.Classes?.ClassName ?? "Unknown",
+                            AmountPaid = payment.AmountPaid,
+                            PaymentDate = payment.WalletTransaction?.TransactionDate,
+                            TransactionId = payment.TransactionId,
+                            PaymentPercentage = "10%",
+                            TotalClassPrice = totalClassPrice,
+                            Status = registration.Status.ToString()
+                        });
+                    }
+                }
+
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = "Initial class payments retrieved successfully",
+                    Data = initialPayments
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Error retrieving initial class payments: {ex.Message}"
+                };
+            }
+        }
     }
 }
