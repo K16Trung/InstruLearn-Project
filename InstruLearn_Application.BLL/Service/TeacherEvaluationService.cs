@@ -521,6 +521,25 @@ namespace InstruLearn_Application.BLL.Service
 
                 if (questionDTO.Options != null && questionDTO.Options.Any())
                 {
+                    var optionIdsInRequest = questionDTO.Options
+                        .Where(o => o.EvaluationOptionId > 0)
+                        .Select(o => o.EvaluationOptionId)
+                        .ToList();
+
+                    var optionsToDelete = existingQuestion.Options
+                        .Where(o => !optionIdsInRequest.Contains(o.EvaluationOptionId))
+                        .ToList();
+
+                    foreach (var option in optionsToDelete)
+                    {
+                        _unitOfWork.dbContext.TeacherEvaluationOptions.Remove(option);
+                    }
+
+                    if (optionsToDelete.Any())
+                    {
+                        await _unitOfWork.SaveChangeAsync();
+                    }
+
                     foreach (var optionDTO in questionDTO.Options)
                     {
                         if (optionDTO.EvaluationOptionId > 0)
@@ -541,6 +560,15 @@ namespace InstruLearn_Application.BLL.Service
                             };
                             await _unitOfWork.TeacherEvaluationRepository.AddOptionAsync(newOption);
                         }
+                    }
+
+                    await _unitOfWork.SaveChangeAsync();
+                }
+                else
+                {
+                    foreach (var option in existingQuestion.Options.ToList())
+                    {
+                        _unitOfWork.dbContext.TeacherEvaluationOptions.Remove(option);
                     }
                     await _unitOfWork.SaveChangeAsync();
                 }
