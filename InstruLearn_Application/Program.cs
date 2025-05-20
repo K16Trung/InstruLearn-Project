@@ -184,12 +184,14 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<IClassFeedbackService, ClassFeedbackService>();
             builder.Services.AddScoped<ILevelFeedbackTemplateService, LevelFeedbackTemplateService>();
             builder.Services.AddScoped<ISelfAssessmentService, SelfAssessmentService>();
+            builder.Services.AddScoped<IPaymentReminderService, PaymentReminderService>();
             builder.Services.AddHostedService<CertificateCreationBackgroundService>();
             builder.Services.AddHostedService<AttendanceStatusBackgroundService>();
             builder.Services.AddAutoMapper(typeof(MappingProfile));
             builder.Services.AddHostedService<PayOSWebhookRegistrationService>();
             builder.Services.AddHostedService<TeacherEvaluationBackgroundService>();
             builder.Services.AddHostedService<ClassFeedbackBackgroundService>();
+            builder.Services.AddHostedService<PaymentReminderService>();
 
             builder.Services.AddControllers()
                 .AddJsonOptions(options =>
