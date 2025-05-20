@@ -8,6 +8,7 @@ namespace InstruLearn_Application.Model.Enum
 {
     public enum PaymentMethod
     {
-        Wallet
+        Wallet,
+        Offline
     }
 }

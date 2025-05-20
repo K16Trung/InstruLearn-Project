@@ -70,5 +70,32 @@ namespace InstruLearn_Application.Controllers
             return BadRequest(result);
         }
 
+        [HttpPost("confirm-class-remaining-payment")]
+        public async Task<IActionResult> ConfirmClassRemainingPayment([FromBody] ClassRemainingPaymentDTO paymentDto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var response = await _paymentService.ConfirmClassRemainingPaymentAsync(
+                paymentDto.LearnerId,
+                paymentDto.ClassId);
+
+            if (!response.IsSucceed)
+            {
+                return BadRequest(response);
+            }
+
+            return Ok(response);
+        }
+
+        [HttpGet("class-fully-paid-learners/{classId}")]
+        public async Task<IActionResult> GetFullyPaidLearnersInClass(int classId)
+        {
+            var response = await _paymentService.GetFullyPaidLearnersInClassAsync(classId);
+            return Ok(response);
+        }
+
     }
 }

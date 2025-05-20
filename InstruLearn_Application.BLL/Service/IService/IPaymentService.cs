@@ -15,6 +15,8 @@ namespace InstruLearn_Application.BLL.Service.IService
         Task<ResponseDTO> ProcessRemainingPaymentAsync(int learningRegisId);
         Task<ResponseDTO> RejectPaymentAsync(int learningRegisId);
         Task<ResponseDTO> GetClassInitialPaymentsAsync(int? classId);
+        Task<ResponseDTO> ConfirmClassRemainingPaymentAsync(int learnerId, int classId);
+        Task<ResponseDTO> GetFullyPaidLearnersInClassAsync(int classId);
 
     }
 }
