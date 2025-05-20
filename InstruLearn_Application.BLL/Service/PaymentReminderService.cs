@@ -116,7 +116,8 @@ namespace InstruLearn_Application.BLL.Service
                     // Check if it's time to send a reminder
                     if ((!registration.LastReminderSent.HasValue ||
                          now - registration.LastReminderSent.Value >= reminderInterval) &&
-                        registration.ReminderCount < maxReminders)
+                        registration.ReminderCount < maxReminders &&
+                        now < registration.PaymentDeadline.Value)
                     {
                         shouldSendReminder = true;
                     }
