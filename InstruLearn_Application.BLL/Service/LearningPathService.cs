@@ -255,7 +255,7 @@ namespace InstruLearn_Application.BLL.Service
                             </div>
                             
                             <div style='background-color: #4CAF50; text-align: center; padding: 15px; margin: 20px 0; border-radius: 5px;'>
-                                <a href='http://localhost:3000/profile/registration-detail/{learningRegisId}' style='color: white; text-decoration: none; font-weight: bold; font-size: 16px;'>
+                                <a href='http://localhost:3000/profile/registration-detail/{learningRegisId}?scrollToLearningPath=true' style='color: white; text-decoration: none; font-weight: bold; font-size: 16px;'>
                                     Xem Lộ Trình Học Tập Của Bạn
                                 </a>
                             </div>
