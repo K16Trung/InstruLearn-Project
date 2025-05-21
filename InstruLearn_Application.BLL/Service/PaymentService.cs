@@ -272,7 +272,7 @@ namespace InstruLearn_Application.BLL.Service
 
                 if (is40PercentRejection)
                 {
-                    learningRegis.Status = LearningRegis.Rejected;
+                    learningRegis.Status = LearningRegis.Payment40Rejected;
                     learningRegis.LearningRequest = "Learner has rejected 40% payment";
 
                     // Delete schedules
@@ -296,7 +296,7 @@ namespace InstruLearn_Application.BLL.Service
                 else if (learningRegis.Status == LearningRegis.Sixty)
                 {
                     // Case 2: Reject 60% payment - Set status to Cancelled
-                    learningRegis.Status = LearningRegis.Cancelled;
+                    learningRegis.Status = LearningRegis.Payment60Rejected;
                     learningRegis.LearningRequest = "Learner has rejected 60% payment";
 
                     // Delete schedules
@@ -756,6 +756,10 @@ namespace InstruLearn_Application.BLL.Service
                 var fullyPaidLearners = registrations
                     .Where(reg => reg.Status == LearningRegis.FullyPaid)
                     .Select(reg => {
+
+                        var classPrice = reg.Classes?.Price ?? 0;
+                        var totalDays = reg.Classes?.totalDays ?? 0;
+                        var totalClassPrice = classPrice * totalDays;
                         // Try to find the wallet for this learner
                         walletByLearnerId.TryGetValue(reg.LearnerId, out var wallet);
 
@@ -777,6 +781,7 @@ namespace InstruLearn_Application.BLL.Service
                             LearnerName = reg.Learner?.FullName ?? "Unknown",
                             LearningRegisId = reg.LearningRegisId,
                             Status = reg.Status.ToString(),
+                            TotalClassPrice = totalClassPrice,
                             TotalAmountPaid = totalPaid,
                             LastPaymentDate = latestPayment?.WalletTransaction?.TransactionDate,
                             PaymentMethod = latestPayment?.PaymentMethod.ToString() ?? "Unknown",
