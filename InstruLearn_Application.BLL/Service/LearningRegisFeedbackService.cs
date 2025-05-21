@@ -471,6 +471,7 @@ namespace InstruLearn_Application.BLL.Service
                     {
                         learningRegis.Status = LearningRegis.FourtyFeedbackDone;
                         learningRegis.PaymentDeadline = DateTime.Now.AddDays(1);
+                        learningRegis.ChangeTeacherRequested = true;
                         await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
                         await _unitOfWork.SaveChangeAsync();
                     }

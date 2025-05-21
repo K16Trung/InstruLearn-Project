@@ -189,6 +189,12 @@ namespace InstruLearn_Application.BLL.Service
                 enrichedDict["firstPaymentPeriod"] = firstPaymentPeriod;
                 enrichedDict["secondPaymentPeriod"] = secondPaymentPeriod;
 
+                enrichedDict["teacherChangeStatus"] = new
+                {
+                    ChangeTeacherRequested = registration.ChangeTeacherRequested,
+                    TeacherChangeProcessed = registration.TeacherChangeProcessed
+                };
+
                 return new ResponseDTO
                 {
                     IsSucceed = true,
@@ -499,6 +505,17 @@ namespace InstruLearn_Application.BLL.Service
 
                     enrichedReg["firstPaymentPeriod"] = firstPaymentPeriod;
                     enrichedReg["secondPaymentPeriod"] = secondPaymentPeriod;
+
+                    // Find the original registration from the collection to access the teacher change flags
+                    var originalRegistration = registrations.FirstOrDefault(r => r.LearningRegisId == regDto.LearningRegisId);
+                    if (originalRegistration != null)
+                    {
+                        enrichedReg["teacherChangeStatus"] = new
+                        {
+                            ChangeTeacherRequested = originalRegistration.ChangeTeacherRequested,
+                            TeacherChangeProcessed = originalRegistration.TeacherChangeProcessed
+                        };
+                    }
 
                     enrichedRegistrations.Add(enrichedReg);
                 }
