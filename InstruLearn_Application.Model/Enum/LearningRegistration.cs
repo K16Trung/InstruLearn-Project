@@ -15,6 +15,8 @@ namespace InstruLearn_Application.Model.Enum
         Rejected,
         FourtyFeedbackDone,
         Cancelled,
-        FullyPaid
+        FullyPaid,
+        Payment40Rejected,
+        Payment60Rejected
     }
 }

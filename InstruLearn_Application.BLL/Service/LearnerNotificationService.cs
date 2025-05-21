@@ -73,7 +73,10 @@ namespace InstruLearn_Application.BLL.Service
 
                 // Filter notifications to include only types relevant for learners
                 var relevantStaffNotifications = allStaffNotifications
-                    .Where(n => learnerRelevantNotificationTypes.Contains(n.Type))
+                    .Where(n =>
+                        learnerRelevantNotificationTypes.Contains(n.Type) &&
+                        !(n.Type == NotificationType.CreateLearningPath &&
+                        n.Message.Contains("Vui lòng tạo lộ trình")))
                     .ToList();
 
                 _logger.LogInformation($"Found {allStaffNotifications.Count} total staff notifications, filtered to {relevantStaffNotifications.Count} relevant notifications for learner ID: {learnerId}");
