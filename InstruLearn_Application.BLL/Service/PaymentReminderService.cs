@@ -20,7 +20,7 @@ namespace InstruLearn_Application.BLL.Service
         private readonly IServiceProvider _serviceProvider;
 
         // Run every hour
-        private readonly TimeSpan _checkInterval = TimeSpan.FromHours(1);
+        private readonly TimeSpan _checkInterval = TimeSpan.FromMinutes(1);
 
         public PaymentReminderService(
             ILogger<PaymentReminderService> logger,
