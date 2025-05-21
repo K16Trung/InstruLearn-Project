@@ -97,5 +97,18 @@ namespace InstruLearn_Application.Controllers
             return Ok(response);
         }
 
+        [HttpGet("class-payment-status/{classId}")]
+        public async Task<IActionResult> GetClassPaymentStatus(int classId)
+        {
+            var response = await _paymentService.GetClassPaymentStatusAsync(classId);
+
+            if (response.IsSucceed)
+            {
+                return Ok(response);
+            }
+
+            return BadRequest(response);
+        }
+
     }
 }

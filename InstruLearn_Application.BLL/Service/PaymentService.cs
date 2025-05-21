@@ -486,12 +486,13 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                // Find the learning registration for this learner and class
                 var registration = await _unitOfWork.LearningRegisRepository
-                    .GetFirstOrDefaultAsync(lr =>
-                        lr.LearnerId == learnerId &&
-                        lr.ClassId == classId &&
-                        lr.Status == LearningRegis.Accepted);
+                    .GetQuery()
+                    .Where(lr => lr.LearnerId == learnerId &&
+                                lr.ClassId == classId &&
+                                lr.Status == LearningRegis.Accepted)
+                    .Include(lr => lr.Classes)
+                    .FirstOrDefaultAsync();
 
                 if (registration == null)
                 {
@@ -690,6 +691,204 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     IsSucceed = false,
                     Message = $"Error retrieving fully paid learners: {ex.Message}"
+                };
+            }
+        }
+
+        public async Task<ResponseDTO> GetClassPaymentStatusAsync(int classId)
+        {
+            try
+            {
+                // Check if the class exists
+                var classEntity = await _unitOfWork.ClassRepository.GetByIdAsync(classId);
+                if (classEntity == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Class not found."
+                    };
+                }
+
+                // Get all learner registrations for this class
+                var registrations = await _unitOfWork.LearningRegisRepository
+                    .GetQuery()
+                    .Where(lr => lr.ClassId == classId)
+                    .Include(lr => lr.Learner)
+                    .Include(lr => lr.Classes)
+                    .ToListAsync();
+
+                if (!registrations.Any())
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = true,
+                        Message = "No learners found for this class.",
+                        Data = new { PartiallyPaid = new List<object>(), FullyPaid = new List<object>() }
+                    };
+                }
+
+                // Get learner IDs from registrations
+                var learnerIds = registrations.Select(r => r.LearnerId).ToList();
+
+                // Get wallets for these learners
+                var wallets = await _unitOfWork.WalletRepository
+                    .GetQuery()
+                    .Where(w => learnerIds.Contains(w.LearnerId))
+                    .ToListAsync();
+
+                var walletIds = wallets.Select(w => w.WalletId).ToList();
+
+                // Get payment records for this class
+                var payments = await _unitOfWork.PaymentsRepository
+                    .GetQuery()
+                    .Where(p => walletIds.Contains(p.WalletId) &&
+                              p.Status == PaymentStatus.Completed &&
+                              (p.PaymentFor == PaymentFor.ClassRegistration ||
+                               p.PaymentFor == PaymentFor.LearningRegistration))
+                    .Include(p => p.WalletTransaction)
+                    .ToListAsync();
+
+                // Map the wallets to learner IDs for easier lookup
+                var walletByLearnerId = wallets.ToDictionary(w => w.LearnerId, w => w);
+
+                // Prepare results for fully paid learners
+                var fullyPaidLearners = registrations
+                    .Where(reg => reg.Status == LearningRegis.FullyPaid)
+                    .Select(reg => {
+                        // Try to find the wallet for this learner
+                        walletByLearnerId.TryGetValue(reg.LearnerId, out var wallet);
+
+                        // Find payments for this learner's wallet
+                        var learnerPayments = wallet != null
+                            ? payments.Where(p => p.WalletId == wallet.WalletId &&
+                                                 p.PaymentFor == PaymentFor.ClassRegistration).ToList()
+                            : new List<Payment>();
+
+                        // Calculate the total amount paid by this learner
+                        decimal totalPaid = learnerPayments.Sum(p => p.AmountPaid);
+
+                        // Find the latest payment date
+                        var latestPayment = learnerPayments.OrderByDescending(p => p.WalletTransaction?.TransactionDate).FirstOrDefault();
+
+                        return new
+                        {
+                            LearnerId = reg.LearnerId,
+                            LearnerName = reg.Learner?.FullName ?? "Unknown",
+                            LearningRegisId = reg.LearningRegisId,
+                            Status = reg.Status.ToString(),
+                            TotalAmountPaid = totalPaid,
+                            LastPaymentDate = latestPayment?.WalletTransaction?.TransactionDate,
+                            PaymentMethod = latestPayment?.PaymentMethod.ToString() ?? "Unknown",
+                            RegistrationDate = reg.RequestDate,
+                            IsFullyPaid = true
+                        };
+                    }).ToList();
+
+                // Process partially paid (10% initial payment) learners
+                var partiallyPaidLearners = registrations
+                    .Where(reg => reg.Status == LearningRegis.Accepted && reg.Status != LearningRegis.FullyPaid)
+                    .Select<Learning_Registration, object>(reg => {
+                        var classPrice = reg.Classes?.Price ?? 0;
+                        var totalDays = reg.Classes?.totalDays ?? 0;
+                        var totalClassPrice = classPrice * totalDays;
+                        var expectedInitialPayment = Math.Round(totalClassPrice * 0.1m, 2);
+
+                        walletByLearnerId.TryGetValue(reg.LearnerId, out var wallet);
+
+                        if (wallet == null)
+                            return null;
+
+                        var matchingPayments = payments.Where(p => p.WalletId == wallet.WalletId &&
+                                                p.PaymentFor == PaymentFor.LearningRegistration &&
+                                                Math.Abs(p.AmountPaid - expectedInitialPayment) < 0.1m &&
+                                                p.WalletTransaction?.TransactionDate >= reg.RequestDate)
+                                            .ToList();
+
+                        var payment = matchingPayments.OrderBy(p => p.WalletTransaction?.TransactionDate).FirstOrDefault();
+
+                        if (payment == null)
+                        {
+                            // Get wallet transactions for this learner that match the amount
+                            var walletTxs = _unitOfWork.WalletTransactionRepository
+                                .GetQuery()
+                                .Where(wt => wt.WalletId == wallet.WalletId &&
+                                        wt.Status == TransactionStatus.Complete &&
+                                        wt.TransactionType == TransactionType.Payment &&
+                                        Math.Abs(wt.Amount - expectedInitialPayment) < 0.1m &&
+                                        wt.TransactionDate >= reg.RequestDate.AddSeconds(-1)) // Add a 1-second buffer
+                                .OrderBy(wt => wt.TransactionDate)
+                                .ToListAsync().Result;
+
+                            if (!walletTxs.Any())
+                                return null;
+
+                            // Use the wallet transaction data directly
+                            return new
+                            {
+                                LearnerId = reg.LearnerId,
+                                LearnerName = reg.Learner?.FullName ?? "Unknown",
+                                LearningRegisId = reg.LearningRegisId,
+                                ClassId = reg.ClassId,
+                                ClassName = reg.Classes?.ClassName ?? "Unknown",
+                                AmountPaid = walletTxs.First().Amount,
+                                PaymentDate = walletTxs.First().TransactionDate,
+                                PaymentPercentage = "10%",
+                                TotalClassPrice = totalClassPrice,
+                                ExpectedPayment = expectedInitialPayment,
+                                Status = reg.Status.ToString(),
+                                RegistrationDate = reg.RequestDate,
+                                IsFullyPaid = false,
+                                RemainingAmount = totalClassPrice * 0.9m,
+                                PaymentSource = "Wallet Transaction"
+                            };
+                        }
+
+                        return new
+                        {
+                            LearnerId = reg.LearnerId,
+                            LearnerName = reg.Learner?.FullName ?? "Unknown",
+                            LearningRegisId = reg.LearningRegisId,
+                            ClassId = reg.ClassId,
+                            ClassName = reg.Classes?.ClassName ?? "Unknown",
+                            AmountPaid = payment.AmountPaid,
+                            PaymentDate = payment.WalletTransaction?.TransactionDate,
+                            PaymentPercentage = "10%",
+                            TotalClassPrice = totalClassPrice,
+                            ExpectedPayment = expectedInitialPayment,
+                            Status = reg.Status.ToString(),
+                            RegistrationDate = reg.RequestDate,
+                            IsFullyPaid = false,
+                            RemainingAmount = totalClassPrice * 0.9m,
+                            PaymentSource = "Payment Record"
+                        };
+                    })
+                    .Where(item => item != null)
+                    .ToList();
+
+                // Return the combined data
+                return new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = $"Payment status for class ID: {classId} retrieved successfully",
+                    Data = new
+                    {
+                        ClassId = classId,
+                        ClassName = classEntity.ClassName,
+                        TotalRegistrations = registrations.Count,
+                        PartiallyPaidCount = partiallyPaidLearners.Count,
+                        FullyPaidCount = fullyPaidLearners.Count,
+                        PartiallyPaidLearners = partiallyPaidLearners,
+                        FullyPaidLearners = fullyPaidLearners
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Error retrieving class payment status: {ex.Message}"
                 };
             }
         }
