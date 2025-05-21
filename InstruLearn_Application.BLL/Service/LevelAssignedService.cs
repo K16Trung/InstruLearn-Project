@@ -84,7 +84,9 @@ namespace InstruLearn_Application.BLL.Service
             var levelAssignedUpdate = await _unitOfWork.LevelAssignedRepository.GetByIdAsync(levelAssignedId);
             if (levelAssignedUpdate != null)
             {
-                levelAssignedUpdate = _mapper.Map(updateLevelAssignedDTO, levelAssignedUpdate);
+                levelAssignedUpdate.LevelPrice = updateLevelAssignedDTO.LevelPrice;
+                levelAssignedUpdate.SyllabusLink = updateLevelAssignedDTO.SyllabusLink;
+
                 await _unitOfWork.LevelAssignedRepository.UpdateAsync(levelAssignedUpdate);
                 var result = await _unitOfWork.SaveChangeAsync();
                 if (result > 0)
