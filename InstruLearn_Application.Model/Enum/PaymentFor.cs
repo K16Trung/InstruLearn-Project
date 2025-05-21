@@ -11,6 +11,7 @@ namespace InstruLearn_Application.Model.Enum
         AddFuns,
         Online_Course,
         LearningRegistration,
-        ApplicationFee
+        ApplicationFee,
+        ClassRegistration
     }
 }
