@@ -18,5 +18,6 @@ namespace InstruLearn_Application.BLL.Service.IService
         Task<ResponseDTO> AddClassAsync (CreateClassDTO createClassDTO);
         Task<ResponseDTO> UpdateClassAsync (int classId, UpdateClassDTO updateClassDTO);
         Task<ResponseDTO> DeleteClassAsync (int classId);
+        Task<ResponseDTO> UpdateLearnerClassEligibilityAsync(LearnerClassEligibilityDTO eligibilityDTO);
     }
 }

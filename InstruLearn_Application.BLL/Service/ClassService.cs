@@ -139,30 +139,7 @@ namespace InstruLearn_Application.BLL.Service
 
                 if (studentCount > 0)
                 {
-                    var students = await _unitOfWork.dbContext.Learner_Classes
-                        .Where(lc => lc.ClassId == id)
-                        .Join(
-                            _unitOfWork.dbContext.Learners,
-                            lc => lc.LearnerId,
-                            l => l.LearnerId,
-                            (lc, l) => new { LearnerId = l.LearnerId, Learner = l }
-                        )
-                        .Join(
-                            _unitOfWork.dbContext.Accounts,
-                            join => join.Learner.AccountId,
-                            a => a.AccountId,
-                            (join, a) => new ClassStudentDTO
-                            {
-                                LearnerId = join.LearnerId,
-                                FullName = join.Learner.FullName ?? "N/A",
-                                Email = a.Email ?? "N/A",
-                                PhoneNumber = a.PhoneNumber ?? "N/A",
-                                Avatar = a.Avatar ?? "N/A"
-                            }
-                        )
-                        .ToListAsync();
-
-                    classDetailDTO.Students = students;
+                    classDetailDTO.Students = await _unitOfWork.ClassRepository.GetClassStudentsWithEligibilityAsync(id);
                 }
                 else
                 {
@@ -267,30 +244,7 @@ namespace InstruLearn_Application.BLL.Service
 
                     if (studentCount > 0)
                     {
-                        var students = await _unitOfWork.dbContext.Learner_Classes
-                            .Where(lc => lc.ClassId == classDTO.ClassId)
-                            .Join(
-                                _unitOfWork.dbContext.Learners,
-                                lc => lc.LearnerId,
-                                l => l.LearnerId,
-                                (lc, l) => new { LearnerId = l.LearnerId, Learner = l }
-                            )
-                            .Join(
-                                _unitOfWork.dbContext.Accounts,
-                                join => join.Learner.AccountId,
-                                a => a.AccountId,
-                                (join, a) => new ClassStudentDTO
-                                {
-                                    LearnerId = join.LearnerId,
-                                    FullName = join.Learner.FullName ?? "N/A",
-                                    Email = a.Email ?? "N/A",
-                                    PhoneNumber = a.PhoneNumber ?? "N/A",
-                                    Avatar = a.Avatar ?? "N/A"
-                                }
-                            )
-                            .ToListAsync();
-
-                        classDTO.Students = students;
+                        classDTO.Students = await _unitOfWork.ClassRepository.GetClassStudentsWithEligibilityAsync(classDTO.ClassId);
                     }
                     else
                     {
@@ -728,6 +682,138 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     IsSucceed = false,
                     Message = $"Không tìm thấy lớp có ID {classId}"
+                };
+            }
+        }
+
+        public async Task<ResponseDTO> UpdateLearnerClassEligibilityAsync(LearnerClassEligibilityDTO eligibilityDTO)
+        {
+            try
+            {
+                var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(eligibilityDTO.LearnerId);
+                if (learner == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Không tìm thấy học viên."
+                    };
+                }
+
+                var classEntity = await _unitOfWork.ClassRepository.GetByIdAsync(eligibilityDTO.ClassId);
+                if (classEntity == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Không tìm thấy lớp học."
+                    };
+                }
+
+                // Check if the learner is enrolled in this class
+                var learnerClass = await _unitOfWork.dbContext.Learner_Classes
+                    .FirstOrDefaultAsync(lc => lc.LearnerId == eligibilityDTO.LearnerId && lc.ClassId == eligibilityDTO.ClassId);
+
+                if (learnerClass == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Học viên không thuộc lớp học này."
+                    };
+                }
+
+                using var transaction = await _unitOfWork.BeginTransactionAsync();
+
+                try
+                {
+                    // Find the learning registration for this learner and class
+                    var learningRegis = await _unitOfWork.dbContext.Learning_Registrations
+                        .FirstOrDefaultAsync(lr => lr.LearnerId == eligibilityDTO.LearnerId &&
+                                                   lr.ClassId == eligibilityDTO.ClassId);
+
+                    if (learningRegis != null)
+                    {
+                        // Simply update the status without trying to set TestResults
+                        learningRegis.Status = eligibilityDTO.IsEligible ?
+                            LearningRegis.Accepted : LearningRegis.Rejected; // Using Rejected instead of TestFailed
+
+                        await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
+                    }
+
+                    // Create notification based on eligibility
+                    string notificationMessage;
+                    NotificationType notificationType;
+                    string notificationTitle;
+
+                    if (eligibilityDTO.IsEligible)
+                    {
+                        notificationType = NotificationType.PaymentReminder;
+                        notificationTitle = $"Đạt kiểm tra đầu vào - Lớp {classEntity.ClassName}";
+
+                        decimal totalClassPrice = classEntity.Price * classEntity.totalDays;
+                        decimal remainingPayment = Math.Round(totalClassPrice * 0.9m, 2);
+
+                        notificationMessage = $"<p>Chúc mừng {learner.FullName}!</p>" +
+                                             $"<p>Bạn đã vượt qua bài kiểm tra đầu vào cho lớp {classEntity.ClassName}. " +
+                                             $"Để hoàn tất quá trình đăng ký, vui lòng thanh toán số tiền còn lại {remainingPayment:N0} VND " +
+                                             $"(90% học phí) tại trung tâm hoặc qua hệ thống thanh toán trực tuyến.</p>" +
+                                             $"<p>Sau khi thanh toán đầy đủ, bạn sẽ chính thức là học viên của lớp {classEntity.ClassName}.</p>";
+                    }
+                    else
+                    {
+                        notificationType = NotificationType.ClassChange;
+                        notificationTitle = $"Kết quả kiểm tra đầu vào - Lớp {classEntity.ClassName}";
+                        notificationMessage = $"<p>Kính gửi {learner.FullName},</p>" +
+                                             $"<p>Cảm ơn bạn đã tham gia bài kiểm tra đầu vào cho lớp {classEntity.ClassName}. " +
+                                             $"Dựa trên kết quả, chúng tôi nhận thấy lớp học này có thể chưa phù hợp với trình độ hiện tại của bạn.</p>" +
+                                             $"<p>Vui lòng liên hệ với nhân viên tư vấn để được hướng dẫn chuyển sang lớp phù hợp hơn.</p>";
+                    }
+
+                    var notification = new StaffNotification
+                    {
+                        LearnerId = eligibilityDTO.LearnerId,
+                        Title = notificationTitle,
+                        Message = notificationMessage,
+                        Type = notificationType,
+                        Status = NotificationStatus.Unread,
+                        CreatedAt = DateTime.Now
+                    };
+
+                    await _unitOfWork.StaffNotificationRepository.AddAsync(notification);
+                    await _unitOfWork.SaveChangeAsync();
+                    await _unitOfWork.CommitTransactionAsync();
+
+                    return new ResponseDTO
+                    {
+                        IsSucceed = true,
+                        Message = eligibilityDTO.IsEligible ?
+                            "Cập nhật trạng thái đạt kiểm tra đầu vào thành công." :
+                            "Cập nhật trạng thái không đạt kiểm tra đầu vào thành công.",
+                        Data = new
+                        {
+                            LearnerId = eligibilityDTO.LearnerId,
+                            ClassId = eligibilityDTO.ClassId,
+                            IsEligible = eligibilityDTO.IsEligible,
+                        }
+                    };
+                }
+                catch (Exception ex)
+                {
+                    await _unitOfWork.RollbackTransactionAsync();
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = $"Lỗi khi cập nhật trạng thái kiểm tra đầu vào: {ex.Message}"
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Lỗi: {ex.Message}"
                 };
             }
         }
