@@ -9,6 +9,7 @@ namespace InstruLearn_Application.Model.Enum
     public enum ClassStatus
     {
         Scheduled,
+        OnTestDay,
         Ongoing,
         Completed
     }
