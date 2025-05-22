@@ -144,7 +144,28 @@ namespace InstruLearn_Application.BLL.Service
         public async Task<ResponseDTO> DeleteLevelAssigned(int levelAssignedId)
         {
             var deleteLevelAssigned = await _unitOfWork.LevelAssignedRepository.GetByIdAsync(levelAssignedId);
-            if (deleteLevelAssigned != null)
+            if (deleteLevelAssigned == null)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Không tìm thấy cấp độ được gán với ID {levelAssignedId}"
+                };
+            }
+
+            var relatedRegistrations = await _unitOfWork.LearningRegisRepository.GetWithIncludesAsync(
+                lr => lr.LevelId == levelAssignedId);
+
+            if (relatedRegistrations.Any())
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Không thể xóa cấp độ được chỉ định. Cấp độ này đang được sử dụng bởi đăng ký học yêu cầu."
+                };
+            }
+
+            try
             {
                 await _unitOfWork.LevelAssignedRepository.DeleteAsync(levelAssignedId);
                 await _unitOfWork.SaveChangeAsync();
@@ -152,15 +173,15 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Level assigned deleted successfully"
+                    Message = "Đã xóa cấp độ được chỉ định thành công"
                 };
             }
-            else
+            catch (Exception ex)
             {
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Level assigned with ID {levelAssignedId} not found"
+                    Message = $"Không xóa được cấp độ đã chỉ định: {ex.Message}"
                 };
             }
         }

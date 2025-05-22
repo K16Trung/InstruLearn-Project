@@ -794,7 +794,7 @@ namespace InstruLearn_Application.BLL.Service
 
                 try
                 {
-                    // Step 1: Get direct notifications (if repository supports this)
+                    // Step 1: Get direct notifications with included Learner entity
                     var directNotifications = await _unitOfWork.StaffNotificationRepository
                         .GetNotificationsByTeacherIdAsync(teacherId, notificationTypes);
 
@@ -825,7 +825,7 @@ namespace InstruLearn_Application.BLL.Service
                                 .GetWithIncludesAsync(n =>
                                     n.LearningRegisId.HasValue &&
                                     learningRegisIds.Contains(n.LearningRegisId.Value) &&
-                                    n.Status != NotificationStatus.Resolved, null);
+                                    n.Status != NotificationStatus.Resolved, "Learner");
 
                             var filteredAdditional = additionalNotifications?
                                 .Where(n => notificationTypes.Contains(n.Type))
@@ -858,7 +858,7 @@ namespace InstruLearn_Application.BLL.Service
                             n.Type == NotificationType.ClassFeedback &&
                             (n.Message.Contains($"teacher {teacherId}") ||
                              n.Title.Contains($"Teacher {teacherId}")) &&
-                            n.Status != NotificationStatus.Resolved, null);
+                            n.Status != NotificationStatus.Resolved, "Learner");
 
                     if (messageBasedNotifications?.Any() == true)
                     {
@@ -875,13 +875,11 @@ namespace InstruLearn_Application.BLL.Service
                 }
                 catch (Exception ex)
                 {
-                    // Log but continue
                     _logger.LogError(ex, "Error getting message-based notifications for teacher {TeacherId}", teacherId);
                 }
 
                 _logger.LogInformation($"Total notifications found: {notifications.Count} for teacher {teacherId}");
 
-                // Return empty list if no notifications found
                 if (notifications.Count == 0)
                 {
                     return new ResponseDTO
@@ -894,8 +892,88 @@ namespace InstruLearn_Application.BLL.Service
 
                 try
                 {
-                    // Map notifications to DTOs
-                    var notificationDTOs = _mapper.Map<List<StaffNotificationDTO>>(notifications);
+                    var learnerIds = notifications
+                        .Where(n => n.LearnerId.HasValue && n.Learner == null)
+                        .Select(n => n.LearnerId.Value)
+                        .Distinct()
+                        .ToList();
+
+                    Dictionary<int, string> learnerNamesById = new Dictionary<int, string>();
+
+                    if (learnerIds.Any())
+                    {
+                        var learners = await _unitOfWork.LearnerRepository
+                            .GetWithIncludesAsync(l => learnerIds.Contains(l.LearnerId), null);
+
+                        foreach (var learner in learners)
+                        {
+                            learnerNamesById[learner.LearnerId] = learner.FullName;
+                        }
+                    }
+
+                    var learningRegisIds = notifications
+                        .Where(n => n.LearningRegisId.HasValue && !n.LearnerId.HasValue)
+                        .Select(n => n.LearningRegisId.Value)
+                        .Distinct()
+                        .ToList();
+
+                    Dictionary<int, (int LearnerId, string LearnerName)> learnerByRegisId =
+                        new Dictionary<int, (int LearnerId, string LearnerName)>();
+
+                    if (learningRegisIds.Any())
+                    {
+                        var registrations = await _unitOfWork.LearningRegisRepository
+                            .GetWithIncludesAsync(lr => learningRegisIds.Contains(lr.LearningRegisId), "Learner");
+
+                        foreach (var reg in registrations)
+                        {
+                            if (reg.Learner != null)
+                            {
+                                learnerByRegisId[reg.LearningRegisId] = (reg.LearnerId, reg.Learner.FullName);
+                            }
+                        }
+                    }
+
+                    var notificationDTOs = new List<StaffNotificationDTO>();
+
+                    foreach (var notification in notifications)
+                    {
+                        var dto = _mapper.Map<StaffNotificationDTO>(notification);
+
+                        if (notification.Learner != null)
+                        {
+                            dto.LearnerName = notification.Learner.FullName;
+                        }
+
+                        else if (notification.LearnerId.HasValue && learnerNamesById.ContainsKey(notification.LearnerId.Value))
+                        {
+                            dto.LearnerName = learnerNamesById[notification.LearnerId.Value];
+                        }
+
+                        else if (notification.LearningRegisId.HasValue && learnerByRegisId.ContainsKey(notification.LearningRegisId.Value))
+                        {
+                            var (learnerId, learnerName) = learnerByRegisId[notification.LearningRegisId.Value];
+                            dto.LearnerId = learnerId;
+                            dto.LearnerName = learnerName;
+                        }
+
+                        else if (dto.LearnerName == "Unknown" && notification.Message != null)
+                        {
+                            if (notification.Message.Contains("viên "))
+                            {
+                                int startIndex = notification.Message.IndexOf("viên ") + 5;
+                                int endIndex = notification.Message.IndexOf(" đã", startIndex);
+
+                                if (endIndex > startIndex && endIndex - startIndex < 50)
+                                {
+                                    string extractedName = notification.Message.Substring(startIndex, endIndex - startIndex);
+                                    dto.LearnerName = extractedName;
+                                }
+                            }
+                        }
+
+                        notificationDTOs.Add(dto);
+                    }
 
                     return new ResponseDTO
                     {
@@ -908,12 +986,11 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     _logger.LogError(ex, "Error mapping notifications to DTOs for teacher {TeacherId}", teacherId);
 
-                    // If mapping fails, still return a valid response but with an error message
                     return new ResponseDTO
                     {
-                        IsSucceed = true, // Still mark as success to prevent CORS issues
+                        IsSucceed = true,
                         Message = $"Retrieved {notifications.Count} notifications but encountered an error during processing: {ex.Message}",
-                        Data = new List<object>() // Empty list as fallback
+                        Data = new List<object>()
                     };
                 }
             }
@@ -925,7 +1002,7 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     IsSucceed = false,
                     Message = $"Error retrieving notifications: {ex.Message}",
-                    Data = new List<object>() // Empty list as fallback
+                    Data = new List<object>()
                 };
             }
         }
@@ -943,19 +1020,16 @@ namespace InstruLearn_Application.BLL.Service
                 ? affectedSchedules.OrderBy(s => s.StartDay).First().StartDay.ToString("dd/MM/yyyy")
                 : "upcoming sessions";
 
-            // 1. Notify the learner
             if (registration.Learner?.Account != null && !string.IsNullOrEmpty(registration.Learner.Account.Email))
             {
                 string learnerSubject = isSameTeacher ? "Teacher Request Processed" : "Teacher Change Notification";
                 string learnerBody;
 
-                // Calculate payment information
                 decimal remainingPayment = registration.Price.HasValue ? registration.Price.Value * 0.6m : 0;
                 string deadlineFormatted = registration.PaymentDeadline?.ToString("dd/MM/yyyy HH:mm") ?? "N/A";
 
                 if (isSameTeacher)
                 {
-                    // Custom message when the same teacher continues
                     learnerBody = $@"
                     <html>
             <body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
@@ -997,7 +1071,6 @@ namespace InstruLearn_Application.BLL.Service
                 }
                 else
                 {
-                    // Original notification for teacher change
                     learnerBody = $@"
                     <html>
             <body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
@@ -1043,7 +1116,6 @@ namespace InstruLearn_Application.BLL.Service
                 _logger.LogInformation("Sent teacher change notification email to learner {LearnerId}", registration.LearnerId);
             }
 
-            // 2. Notify the teacher (whether new or same)
             if (newTeacher.AccountId != null)
             {
                 var teacherAccount = await _unitOfWork.AccountRepository.GetByIdAsync(newTeacher.AccountId);
@@ -1083,7 +1155,6 @@ namespace InstruLearn_Application.BLL.Service
 
                     if (isSameTeacher)
                     {
-                        // Email for same teacher continuing
                         teacherBody = $@"
                         <html>
                         <body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
@@ -1115,7 +1186,6 @@ namespace InstruLearn_Application.BLL.Service
                     }
                     else
                     {
-                        // Original email for new teacher assignment
                         teacherBody = $@"
                         <html>
                         <body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
@@ -1151,7 +1221,6 @@ namespace InstruLearn_Application.BLL.Service
                 }
             }
 
-            // 3. Notify the original teacher only if different from new teacher
             if (!isSameTeacher && originalTeacher != null && originalTeacher.AccountId != null)
             {
                 var originalTeacherAccount = await _unitOfWork.AccountRepository.GetByIdAsync(originalTeacher.AccountId);
