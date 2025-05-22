@@ -175,7 +175,6 @@ namespace InstruLearn_Application.DAL.Repository
                     (registration.Status == LearningRegis.Rejected ? false :
                      registration.Status == LearningRegis.Accepted ||
                      registration.Status == LearningRegis.FullyPaid ? true : null) : null,
-                TestResults = null
             }).ToList();
 
             return result;

@@ -754,20 +754,20 @@ namespace InstruLearn_Application.BLL.Service
                         decimal totalClassPrice = classEntity.Price * classEntity.totalDays;
                         decimal remainingPayment = Math.Round(totalClassPrice * 0.9m, 2);
 
-                        notificationMessage = $"<p>Chúc mừng {learner.FullName}!</p>" +
-                                             $"<p>Bạn đã vượt qua bài kiểm tra đầu vào cho lớp {classEntity.ClassName}. " +
+                        notificationMessage = $"Chúc mừng {learner.FullName}!" +
+                                             $"Bạn đã vượt qua bài kiểm tra đầu vào cho lớp {classEntity.ClassName}. " +
                                              $"Để hoàn tất quá trình đăng ký, vui lòng thanh toán số tiền còn lại {remainingPayment:N0} VND " +
                                              $"(90% học phí) tại trung tâm hoặc qua hệ thống thanh toán trực tuyến.</p>" +
-                                             $"<p>Sau khi thanh toán đầy đủ, bạn sẽ chính thức là học viên của lớp {classEntity.ClassName}.</p>";
+                                             $"Sau khi thanh toán đầy đủ, bạn sẽ chính thức là học viên của lớp {classEntity.ClassName}.";
                     }
                     else
                     {
                         notificationType = NotificationType.ClassChange;
                         notificationTitle = $"Kết quả kiểm tra đầu vào - Lớp {classEntity.ClassName}";
-                        notificationMessage = $"<p>Kính gửi {learner.FullName},</p>" +
-                                             $"<p>Cảm ơn bạn đã tham gia bài kiểm tra đầu vào cho lớp {classEntity.ClassName}. " +
-                                             $"Dựa trên kết quả, chúng tôi nhận thấy lớp học này có thể chưa phù hợp với trình độ hiện tại của bạn.</p>" +
-                                             $"<p>Vui lòng liên hệ với nhân viên tư vấn để được hướng dẫn chuyển sang lớp phù hợp hơn.</p>";
+                        notificationMessage = $"Kính gửi {learner.FullName},</p>" +
+                                             $"Cảm ơn bạn đã tham gia bài kiểm tra đầu vào cho lớp {classEntity.ClassName}. " +
+                                             $"Dựa trên kết quả, chúng tôi nhận thấy lớp học này có thể chưa phù hợp với trình độ hiện tại của bạn." +
+                                             $"Vui lòng liên hệ với nhân viên tư vấn để được hướng dẫn chuyển sang lớp phù hợp hơn.";
                     }
 
                     var notification = new StaffNotification

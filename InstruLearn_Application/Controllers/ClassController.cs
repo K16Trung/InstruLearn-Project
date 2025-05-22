@@ -81,7 +81,7 @@ namespace InstruLearn_Application.Controllers
             return Ok(result);
         }
 
-        [HttpPost("update-learner-eligibility")]
+        [HttpPut("update-learner-eligibility")]
         public async Task<IActionResult> UpdateLearnerClassEligibility([FromBody] LearnerClassEligibilityDTO eligibilityDTO)
         {
             if (!ModelState.IsValid)
