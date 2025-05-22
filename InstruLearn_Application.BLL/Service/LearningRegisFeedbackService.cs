@@ -470,8 +470,9 @@ namespace InstruLearn_Application.BLL.Service
                     if (learningRegis.Status == LearningRegis.Fourty)
                     {
                         learningRegis.Status = LearningRegis.FourtyFeedbackDone;
-                        learningRegis.PaymentDeadline = DateTime.Now.AddDays(1);
+                        learningRegis.PaymentDeadline = null;
                         learningRegis.ChangeTeacherRequested = true;
+                        learningRegis.TeacherChangeProcessed = false;
                         await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
                         await _unitOfWork.SaveChangeAsync();
                     }
@@ -500,7 +501,6 @@ namespace InstruLearn_Application.BLL.Service
                             try
                             {
                                 decimal remainingPayment = learningRegis.Price.HasValue ? learningRegis.Price.Value * 0.6m : 0;
-                                string deadlineFormatted = learningRegis.PaymentDeadline?.ToString("dd/MM/yyyy HH:mm") ?? "N/A";
 
                                 string subject = "Thanh toán học phí còn lại - Hạn chót 1 ngày";
                                 string body = $@"
@@ -548,7 +548,8 @@ namespace InstruLearn_Application.BLL.Service
                             LearningRegisId = learningRegis.LearningRegisId,
                             Status = learningRegis.Status.ToString(),
                             RemainingPayment = learningRegis.Price.HasValue ? learningRegis.Price.Value * 0.6m : 0,
-                            TeacherChangeRequested = true
+                            TeacherChangeRequested = true,
+                            PaymentDeadline = (string)null
                         }
                     };
                 }
@@ -561,6 +562,8 @@ namespace InstruLearn_Application.BLL.Service
                     {
                         learningRegis.Status = LearningRegis.FourtyFeedbackDone;
                         learningRegis.PaymentDeadline = DateTime.Now.AddDays(1);
+                        learningRegis.ChangeTeacherRequested = false;
+                        learningRegis.TeacherChangeProcessed = false;
                         await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
                         await _unitOfWork.SaveChangeAsync();
 

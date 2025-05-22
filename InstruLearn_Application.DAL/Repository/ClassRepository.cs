@@ -2,6 +2,7 @@
 using InstruLearn_Application.Model.Data;
 using InstruLearn_Application.Model.Enum;
 using InstruLearn_Application.Model.Models;
+using InstruLearn_Application.Model.Models.DTO.Class;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -128,6 +129,56 @@ namespace InstruLearn_Application.DAL.Repository
                 .ToListAsync();
 
             _context.Classes.RemoveRange(classesToDelete);
+        }
+
+        public async Task<List<ClassStudentDTO>> GetClassStudentsWithEligibilityAsync(int classId)
+        {
+            var studentsWithAccounts = await _context.Learner_Classes
+                .Where(lc => lc.ClassId == classId)
+                .Join(
+                    _context.Learners,
+                    lc => lc.LearnerId,
+                    l => l.LearnerId,
+                    (lc, l) => new { LearnerId = l.LearnerId, Learner = l }
+                )
+                .Join(
+                    _context.Accounts,
+                    join => join.Learner.AccountId,
+                    a => a.AccountId,
+                    (join, a) => new { join.LearnerId, join.Learner, Account = a }
+                )
+                .Select(joined => new {
+                    joined.LearnerId,
+                    joined.Learner.FullName,
+                    joined.Account.Email,
+                    joined.Account.PhoneNumber,
+                    joined.Account.Avatar
+                })
+                .ToListAsync();
+
+            var registrations = await _context.Learning_Registrations
+                .Where(lr => lr.ClassId == classId)
+                .Select(r => new {
+                    r.LearnerId,
+                    r.Status
+                })
+                .ToDictionaryAsync(r => r.LearnerId);
+
+            var result = studentsWithAccounts.Select(s => new ClassStudentDTO
+            {
+                LearnerId = s.LearnerId,
+                FullName = s.FullName ?? "N/A",
+                Email = s.Email ?? "N/A",
+                PhoneNumber = s.PhoneNumber ?? "N/A",
+                Avatar = s.Avatar ?? "N/A",
+                IsEligible = registrations.TryGetValue(s.LearnerId, out var registration) ?
+                    (registration.Status == LearningRegis.Rejected ? false :
+                     registration.Status == LearningRegis.Accepted ||
+                     registration.Status == LearningRegis.FullyPaid ? true : null) : null,
+                TestResults = null
+            }).ToList();
+
+            return result;
         }
     }
 }

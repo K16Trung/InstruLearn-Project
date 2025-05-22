@@ -1673,26 +1673,41 @@ namespace InstruLearn_Application.BLL.Service
                     (learningRegis.Status == LearningRegis.FourtyFeedbackDone) &&
                     !secondPaymentCompleted;
 
-                if (isInSecondPaymentPhase && learningRegis.PaymentDeadline.HasValue)
+                if (isInSecondPaymentPhase)
                 {
-                    secondPaymentDeadline = learningRegis.PaymentDeadline;
-
-                    DateTime now = DateTime.Now.Date;
-                    DateTime deadline = secondPaymentDeadline.Value.Date;
-
-                    int daysDifference = (deadline - now).Days;
-
-                    if (now.Date == deadline.Date)
+                    // If waiting for teacher change, provide appropriate status
+                    if (learningRegis.ChangeTeacherRequested && !learningRegis.TeacherChangeProcessed)
                     {
-                        secondPaymentRemainingDays = 0;
+                        secondPaymentStatus = "Đang chờ thay đổi giáo viên";
+                        _logger.LogInformation($"Learning registration {learningRegisId} is waiting for teacher change");
                     }
-                    else
+                    else if (learningRegis.PaymentDeadline.HasValue)
                     {
-                        secondPaymentRemainingDays = daysDifference;
-                    }
+                        // Normal case - deadline is set
+                        secondPaymentDeadline = learningRegis.PaymentDeadline;
 
-                    if (secondPaymentRemainingDays < 0)
-                        secondPaymentRemainingDays = 0;
+                        DateTime now = DateTime.Now;
+                        DateTime deadline = secondPaymentDeadline.Value;
+
+                        int daysDifference = (deadline.Date - now.Date).Days;
+
+                        if (now.Date == deadline.Date)
+                        {
+                            secondPaymentRemainingDays = 0;
+                        }
+                        else
+                        {
+                            secondPaymentRemainingDays = daysDifference;
+                        }
+
+                        if (secondPaymentRemainingDays < 0)
+                            secondPaymentRemainingDays = 0;
+
+                        if (daysDifference < 0 && !secondPaymentCompleted)
+                        {
+                            secondPaymentStatus = "Đã quá hạn thanh toán 60%";
+                        }
+                    }
                 }
 
                 bool isOverdue = secondPaymentDeadline.HasValue && !secondPaymentCompleted && DateTime.Now > secondPaymentDeadline.Value;
@@ -1705,7 +1720,8 @@ namespace InstruLearn_Application.BLL.Service
                     PaymentDeadline = secondPaymentDeadline?.ToString("yyyy-MM-dd HH:mm:ss"),
                     PaymentDate = secondPaymentCompleted ? secondPaymentDate?.ToString("yyyy-MM-dd HH:mm:ss") : null,
                     RemainingDays = secondPaymentRemainingDays,
-                    IsOverdue = isOverdue
+                    IsOverdue = isOverdue,
+                    AwaitingTeacherChange = isInSecondPaymentPhase && learningRegis.ChangeTeacherRequested && !learningRegis.TeacherChangeProcessed
                 };
             }
             catch (Exception ex)

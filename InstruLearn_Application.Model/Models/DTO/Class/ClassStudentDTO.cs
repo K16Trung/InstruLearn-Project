@@ -13,5 +13,7 @@ namespace InstruLearn_Application.Model.Models.DTO.Class
         public string Email { get; set; }
         public string PhoneNumber { get; set; }
         public string? Avatar { get; set; }
+        public bool? IsEligible { get; set; }
+        public string? TestResults { get; set; }
     }
 }

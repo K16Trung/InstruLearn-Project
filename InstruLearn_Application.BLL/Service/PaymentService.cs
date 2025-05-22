@@ -268,9 +268,11 @@ namespace InstruLearn_Application.BLL.Service
                 using var transaction = await _unitOfWork.BeginTransactionAsync();
 
                 // Determine whether it's a 40% or 60% payment rejection based on current status
-                bool is40PercentRejection = learningRegis.Status == LearningRegis.Fourty ||
-                                            learningRegis.Status == LearningRegis.FourtyFeedbackDone ||
-                                            learningRegis.Status == LearningRegis.Accepted;
+                bool is40PercentRejection = learningRegis.Status == LearningRegis.Accepted ||
+                                    learningRegis.Status == LearningRegis.Fourty;
+
+                bool is60PercentRejection = learningRegis.Status == LearningRegis.FourtyFeedbackDone ||
+                                            learningRegis.Status == LearningRegis.Sixty;
 
                 if (is40PercentRejection)
                 {
@@ -294,7 +296,7 @@ namespace InstruLearn_Application.BLL.Service
                     // Clear learning path flag
                     learningRegis.HasPendingLearningPath = false;
                 }
-                else if (learningRegis.Status == LearningRegis.Sixty)
+                else if (is60PercentRejection)
                 {
                     // Case 2: Reject 60% payment - Set status to Cancelled
                     learningRegis.Status = LearningRegis.Payment60Rejected;

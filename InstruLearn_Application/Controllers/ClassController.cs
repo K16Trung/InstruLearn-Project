@@ -80,5 +80,21 @@ namespace InstruLearn_Application.Controllers
             var result = await _classService.DeleteClassAsync(id);
             return Ok(result);
         }
+
+        [HttpPost("update-learner-eligibility")]
+        public async Task<IActionResult> UpdateLearnerClassEligibility([FromBody] LearnerClassEligibilityDTO eligibilityDTO)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var result = await _classService.UpdateLearnerClassEligibilityAsync(eligibilityDTO);
+
+            if (!result.IsSucceed)
+                return BadRequest(result);
+
+            return Ok(result);
+        }
     }
 }
