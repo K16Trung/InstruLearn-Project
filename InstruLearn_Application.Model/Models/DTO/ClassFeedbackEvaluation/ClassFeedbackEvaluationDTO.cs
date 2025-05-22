@@ -15,6 +15,6 @@ namespace InstruLearn_Application.Model.Models.DTO.ClassFeedbackEvaluation
         public decimal? AchievedPercentage { get; set; }
         public string Description { get; set; }
         public string Comment { get; set; }
-        public decimal WeightedScore { get; set; }
+        //public decimal WeightedScore { get; set; }
     }
 }

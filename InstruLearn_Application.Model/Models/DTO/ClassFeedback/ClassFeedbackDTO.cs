@@ -21,5 +21,6 @@ namespace InstruLearn_Application.Model.Models.DTO.ClassFeedback
         public string AdditionalComments { get; set; }
         public List<ClassFeedbackEvaluationDTO> Evaluations { get; set; }
         public decimal AverageScore { get; set; }
+        public decimal TotalWeight { get; set; }
     }
 }
