@@ -757,22 +757,33 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Begin transaction
+                // Get class information
+                var classEntity = await _unitOfWork.ClassRepository.GetByIdAsync(paymentDTO.ClassId);
+                if (classEntity == null)
+                {
+                    _logger.LogWarning($"Class with ID {paymentDTO.ClassId} not found");
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = $"Class with ID {paymentDTO.ClassId} not found."
+                    };
+                }
+
+                DateOnly today = DateOnly.FromDateTime(DateTime.Now);
+                if (classEntity.TestDay == today)
+                {
+                    _logger.LogWarning($"Learner {paymentDTO.LearnerId} attempted to join class {paymentDTO.ClassId} on test day");
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Không thể đăng ký vào lớp học này vào ngày hôm nay vì hôm nay là ngày kiểm tra đầu vào. Vui lòng liên hệ trung tâm để biết thông tin về các kỳ thi tiếp theo."
+                    };
+                }
+
                 using var transaction = await _unitOfWork.BeginTransactionAsync();
 
                 try
                 {
-                    // Get class information
-                    var classEntity = await _unitOfWork.ClassRepository.GetByIdAsync(paymentDTO.ClassId);
-                    if (classEntity == null)
-                    {
-                        _logger.LogWarning($"Class with ID {paymentDTO.ClassId} not found");
-                        return new ResponseDTO
-                        {
-                            IsSucceed = false,
-                            Message = $"Class with ID {paymentDTO.ClassId} not found."
-                        };
-                    }
 
                     int? levelId = classEntity.LevelId;
                     if (!levelId.HasValue)
@@ -915,8 +926,6 @@ namespace InstruLearn_Application.BLL.Service
 
                     _unitOfWork.dbContext.Learner_Classes.Add(learnerClass);
                     await _unitOfWork.SaveChangeAsync();
-
-                    DateOnly today = DateOnly.FromDateTime(DateTime.Now);
 
                     // Handle certificate creation
                     if (classEntity.StartDate <= today)

@@ -21,15 +21,18 @@ namespace InstruLearn_Application.BLL.Service
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly ILearnerNotificationService _learnerNotificationService;
+        private readonly IScheduleService _scheduleService;
 
         public ClassService(
-            IUnitOfWork unitOfWork, 
-            IMapper mapper, 
-            ILearnerNotificationService learnerNotificationService)
+            IUnitOfWork unitOfWork,
+            IMapper mapper,
+            ILearnerNotificationService learnerNotificationService,
+            IScheduleService scheduleService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _learnerNotificationService = learnerNotificationService;
+            _scheduleService = scheduleService;
         }
 
         public async Task<List<ClassDTO>> GetAllClassAsync()
@@ -478,6 +481,17 @@ namespace InstruLearn_Application.BLL.Service
 
         public async Task<ResponseDTO> AddClassAsync(CreateClassDTO createClassDTO)
         {
+
+            DateOnly today = DateOnly.FromDateTime(DateTime.Now);
+            if (createClassDTO.TestDay == today)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Không thể tạo lớp có ngày kiểm tra vào ngày hôm nay. Các học viên cần thời gian để chuẩn bị cho bài kiểm tra đầu vào."
+                };
+            }
+
             var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(createClassDTO.TeacherId);
             if (teacher == null)
             {
@@ -542,13 +556,15 @@ namespace InstruLearn_Application.BLL.Service
 
             DateOnly endDate = DateTimeHelper.CalculateEndDate(createClassDTO.StartDate, createClassDTO.totalDays, createClassDTO.ClassDays);
 
-            DateTime now = DateTime.Now;
-            if (createClassDTO.StartDate.ToDateTime(new TimeOnly(0, 0)) > now)
+            if (today == createClassDTO.TestDay)
+            {
+                classObj.Status = ClassStatus.OnTestDay;
+            }
+            else if (createClassDTO.StartDate > today)
             {
                 classObj.Status = ClassStatus.Scheduled;
             }
-            else if (createClassDTO.StartDate.ToDateTime(new TimeOnly(0, 0)) <= now &&
-                     endDate.ToDateTime(new TimeOnly(23, 59)) >= now)
+            else if (createClassDTO.StartDate <= today && endDate >= today)
             {
                 classObj.Status = ClassStatus.Ongoing;
             }
