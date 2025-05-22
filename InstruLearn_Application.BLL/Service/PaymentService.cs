@@ -263,6 +263,8 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO { IsSucceed = false, Message = "Learning Registration not found." };
                 }
 
+                string originalLearningRequest = learningRegis.LearningRequest;
+
                 using var transaction = await _unitOfWork.BeginTransactionAsync();
 
                 // Determine whether it's a 40% or 60% payment rejection based on current status
@@ -275,7 +277,6 @@ namespace InstruLearn_Application.BLL.Service
                 if (is40PercentRejection)
                 {
                     learningRegis.Status = LearningRegis.Payment40Rejected;
-                    learningRegis.LearningRequest = "Learner has rejected 40% payment";
 
                     // Delete schedules
                     var schedules = await _unitOfWork.ScheduleRepository.GetSchedulesByLearningRegisIdAsync(learningRegisId);
@@ -299,7 +300,6 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     // Case 2: Reject 60% payment - Set status to Cancelled
                     learningRegis.Status = LearningRegis.Payment60Rejected;
-                    learningRegis.LearningRequest = "Learner has rejected 60% payment";
 
                     // Delete schedules
                     var schedules = await _unitOfWork.ScheduleRepository.GetSchedulesByLearningRegisIdAsync(learningRegisId);

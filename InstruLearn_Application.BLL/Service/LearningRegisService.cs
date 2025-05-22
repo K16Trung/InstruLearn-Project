@@ -2,26 +2,27 @@
 using InstruLearn_Application.BLL.Service.IService;
 using InstruLearn_Application.DAL.Repository.IRepository;
 using InstruLearn_Application.DAL.UoW.IUoW;
-using InstruLearn_Application.Model.Models.DTO;
-using InstruLearn_Application.Model.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using InstruLearn_Application.Model.Models.DTO.LearningRegistration;
 using InstruLearn_Application.Model.Enum;
-using System.Transactions;
-using Microsoft.Extensions.Logging;
-using InstruLearn_Application.Model.Models.DTO.Syllabus;
+using InstruLearn_Application.Model.Models;
+using InstruLearn_Application.Model.Models.DTO;
+using InstruLearn_Application.Model.Models.DTO.Certification;
+using InstruLearn_Application.Model.Models.DTO.LearnerClass;
+using InstruLearn_Application.Model.Models.DTO.LearningPathSession;
+using InstruLearn_Application.Model.Models.DTO.LearningRegistration;
 using InstruLearn_Application.Model.Models.DTO.ScheduleDays;
 using InstruLearn_Application.Model.Models.DTO.Schedules;
-using InstruLearn_Application.Model.Models.DTO.LearnerClass;
+using InstruLearn_Application.Model.Models.DTO.Syllabus;
 using Microsoft.EntityFrameworkCore;
-using InstruLearn_Application.Model.Models.DTO.Certification;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
 using System.Dynamic;
+using System.Linq;
+using System.Text;
 using System.Text.Json;
+using System.Threading.Tasks;
+using System.Transactions;
 
 namespace InstruLearn_Application.BLL.Service
 {
@@ -74,6 +75,15 @@ namespace InstruLearn_Application.BLL.Service
 
                     if (registration != null)
                     {
+                        var learningPathSessions = await _unitOfWork.LearningPathSessionRepository
+                            .GetByLearningRegisIdAsync(regDto.LearningRegisId);
+
+                        if (learningPathSessions != null && learningPathSessions.Any())
+                        {
+                            var learningPathSessionDTOs = _mapper.Map<List<LearningPathSessionDTO>>(learningPathSessions);
+                            enrichedReg["LearningPath"] = learningPathSessionDTOs;
+                        }
+
                         var availableDayValues = new List<DayOfWeek>();
                         if (registration.LearningRegistrationDay != null && registration.LearningRegistrationDay.Any())
                         {
@@ -156,7 +166,6 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
-
         public async Task<ResponseDTO> GetLearningRegisByIdAsync(int learningRegisId)
         {
             try
@@ -188,6 +197,15 @@ namespace InstruLearn_Application.BLL.Service
 
                 enrichedDict["firstPaymentPeriod"] = firstPaymentPeriod;
                 enrichedDict["secondPaymentPeriod"] = secondPaymentPeriod;
+
+                var learningPathSessions = await _unitOfWork.LearningPathSessionRepository
+                    .GetByLearningRegisIdAsync(learningRegisId);
+
+                if (learningPathSessions != null && learningPathSessions.Any())
+                {
+                    var learningPathSessionDTOs = _mapper.Map<List<LearningPathSessionDTO>>(learningPathSessions);
+                    enrichedDict["LearningPath"] = learningPathSessionDTOs;
+                }
 
                 enrichedDict["teacherChangeStatus"] = new
                 {
@@ -572,8 +590,6 @@ namespace InstruLearn_Application.BLL.Service
 
                 learningRegis.Status = LearningRegis.Accepted;
                 learningRegis.AcceptedDate = DateTime.Now;
-
-                learningRegis.LearningPath = levelAssigned.SyllabusLink;
 
                 await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
                 await _unitOfWork.SaveChangeAsync();
