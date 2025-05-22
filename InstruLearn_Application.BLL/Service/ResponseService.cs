@@ -196,7 +196,19 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Response not found."
+                        Message = "Không tìm thấy phản hồi."
+                    };
+                }
+
+                var relatedRegistrations = await _unitOfWork.LearningRegisRepository.GetWithIncludesAsync(
+                    lr => lr.ResponseId == responseId);
+
+                if (relatedRegistrations.Any())
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = $"Không thể xóa phản hồi. Phản hồi đang được sử dụng bởi đăng ký học theo yêu cầu."
                     };
                 }
 
@@ -206,7 +218,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Response deleted successfully."
+                    Message = "Phản hồi đã được xóa thành công."
                 };
             }
             catch (Exception ex)
@@ -214,7 +226,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Failed to delete response: {ex.Message}"
+                    Message = $"Không xóa được phản hồi: {ex.Message}"
                 };
             }
         }

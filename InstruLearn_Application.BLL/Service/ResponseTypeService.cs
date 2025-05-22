@@ -93,44 +93,52 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "Response type updated successfully!"
+                        Message = "Đã cập nhật loại phản hồi thành công!"
                     };
                 }
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Response type update failed!"
+                    Message = "Cập nhật loại phản hồi không thành công!"
                 };
             }
             return new ResponseDTO
             {
                 IsSucceed = false,
-                Message = "Response type not found!"
+                Message = "Không tìm thấy loại phản hồi!"
             };
         }
 
         public async Task<ResponseDTO> DeleteResponseType(int responseTypeId)
         {
             var deleteResponseType = await _unitOfWork.ResponseTypeRepository.GetByIdAsync(responseTypeId);
-            if (deleteResponseType != null)
-            {
-                await _unitOfWork.ResponseTypeRepository.DeleteAsync(responseTypeId);
-                await _unitOfWork.SaveChangeAsync();
-
-                return new ResponseDTO
-                {
-                    IsSucceed = true,
-                    Message = "Response type deleted successfully"
-                };
-            }
-            else
+            if (deleteResponseType == null)
             {
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Response type with ID {responseTypeId} not found"
+                    Message = $"Không tìm thấy loại phản hồi có ID {responseTypeId}"
                 };
             }
+
+            var relatedResponses = await _unitOfWork.ResponseRepository.GetWithIncludesAsync(r => r.ResponseTypeId == responseTypeId);
+            if (relatedResponses.Any())
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Không thể xóa loại phản hồi. Đang có phản hồi vẫn đang sử dụng loại này."
+                };
+            }
+
+            await _unitOfWork.ResponseTypeRepository.DeleteAsync(responseTypeId);
+            await _unitOfWork.SaveChangeAsync();
+
+            return new ResponseDTO
+            {
+                IsSucceed = true,
+                Message = "Đã xóa loại phản hồi thành công"
+            };
         }
     }
 }
