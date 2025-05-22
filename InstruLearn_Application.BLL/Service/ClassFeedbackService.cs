@@ -5,6 +5,7 @@ using InstruLearn_Application.Model.Models;
 using InstruLearn_Application.Model.Models.DTO;
 using InstruLearn_Application.Model.Models.DTO.ClassFeedback;
 using InstruLearn_Application.Model.Models.DTO.ClassFeedbackEvaluation;
+using InstruLearn_Application.Model.Models.DTO.Feedback;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -277,7 +278,32 @@ namespace InstruLearn_Application.BLL.Service
         public async Task<List<ClassFeedbackDTO>> GetFeedbacksByClassIdAsync(int classId)
         {
             var feedbacks = await _unitOfWork.ClassFeedbackRepository.GetFeedbacksByClassIdAsync(classId);
-            return _mapper.Map<List<ClassFeedbackDTO>>(feedbacks);
+            var feedbackDTOs = _mapper.Map<List<ClassFeedbackDTO>>(feedbacks);
+
+            foreach (var feedbackDTO in feedbackDTOs)
+            {
+                var feedbackWithEval = await _unitOfWork.ClassFeedbackRepository.GetFeedbackWithEvaluationsAsync(feedbackDTO.FeedbackId);
+                if (feedbackWithEval?.Evaluations == null || !feedbackWithEval.Evaluations.Any())
+                {
+                    feedbackDTO.AverageScore = 0;
+                    feedbackDTO.TotalWeight = 0;
+                    continue;
+                }
+
+                decimal totalPercentage = 0;
+                decimal totalWeight = 0;
+
+                foreach (var evaluation in feedbackWithEval.Evaluations)
+                {
+                    totalPercentage += evaluation.AchievedPercentage;
+                    totalWeight += evaluation.Criterion.Weight;
+                }
+
+                feedbackDTO.AverageScore = totalPercentage;
+                feedbackDTO.TotalWeight = totalWeight;
+            }
+
+            return feedbackDTOs;
         }
 
         public async Task<List<ClassFeedbackDTO>> GetFeedbacksByLearnerIdAsync(int learnerId)
@@ -291,17 +317,21 @@ namespace InstruLearn_Application.BLL.Service
                 if (feedbackWithEval?.Evaluations == null || !feedbackWithEval.Evaluations.Any())
                 {
                     feedbackDTO.AverageScore = 0;
+                    feedbackDTO.TotalWeight = 0;
                     continue;
                 }
 
                 decimal totalPercentage = 0;
+                decimal totalWeight = 0;
 
                 foreach (var evaluation in feedbackWithEval.Evaluations)
                 {
                     totalPercentage += evaluation.AchievedPercentage;
+                    totalWeight += evaluation.Criterion.Weight;
                 }
 
                 feedbackDTO.AverageScore = totalPercentage;
+                feedbackDTO.TotalWeight = totalWeight;
             }
 
             return feedbackDTOs;
@@ -322,18 +352,22 @@ namespace InstruLearn_Application.BLL.Service
                 if (feedbackWithEval?.Evaluations != null && feedbackWithEval.Evaluations.Any())
                 {
                     decimal totalPercentage = 0;
+                    decimal totalWeight = 0;
 
                     foreach (var evaluation in feedbackWithEval.Evaluations)
                     {
                         // Just add the achieved percentage directly - no null check needed for decimal (non-nullable)
                         totalPercentage += evaluation.AchievedPercentage;
+                        totalWeight += evaluation.Criterion.Weight;
                     }
 
                     feedbackDto.AverageScore = totalPercentage;
+                    feedbackDto.TotalWeight = totalWeight;
                 }
                 else
                 {
                     feedbackDto.AverageScore = 0;
+                    feedbackDto.TotalWeight = 0;
                 }
 
                 // Check if feedback is not completed or has incomplete evaluations
@@ -436,12 +470,14 @@ namespace InstruLearn_Application.BLL.Service
                 CompletedAt = null,
                 AdditionalComments = null,
                 AverageScore = 0,
-                Evaluations = new List<ClassFeedbackEvaluationDTO>()
+                Evaluations = new List<ClassFeedbackEvaluationDTO>(),
+                TotalWeight = 0
             };
 
             // Add criteria from template with null achievements
             if (template.Criteria != null)
             {
+                templateBasedDto.TotalWeight = template.Criteria.Sum(c => c.Weight);
                 foreach (var criterion in template.Criteria.OrderBy(c => c.DisplayOrder))
                 {
                     templateBasedDto.Evaluations.Add(new ClassFeedbackEvaluationDTO
