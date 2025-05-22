@@ -769,6 +769,24 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
+                if (classEntity.Status != ClassStatus.Scheduled)
+                {
+                    string statusMessage = classEntity.Status switch
+                    {
+                        ClassStatus.OnTestDay => "class is on test day",
+                        ClassStatus.Ongoing => "class has already started",
+                        ClassStatus.Completed => "class has already completed",
+                        _ => "class is not in an enrollable state"
+                    };
+
+                    _logger.LogWarning($"Learner {paymentDTO.LearnerId} attempted to join class {paymentDTO.ClassId} but {statusMessage}");
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = $"Cannot enroll in this class as the {statusMessage}. Only classes with 'Scheduled' status are available for enrollment."
+                    };
+                }
+
                 DateOnly today = DateOnly.FromDateTime(DateTime.Now);
                 if (classEntity.TestDay == today)
                 {
@@ -784,7 +802,6 @@ namespace InstruLearn_Application.BLL.Service
 
                 try
                 {
-
                     int? levelId = classEntity.LevelId;
                     if (!levelId.HasValue)
                     {
@@ -927,10 +944,10 @@ namespace InstruLearn_Application.BLL.Service
                     _unitOfWork.dbContext.Learner_Classes.Add(learnerClass);
                     await _unitOfWork.SaveChangeAsync();
 
-                    // Handle certificate creation
-                    if (classEntity.StartDate <= today)
+                    // Handle certificate creation based on class start date
+                    if (classEntity.StartDate == today)
                     {
-                        _logger.LogInformation($"Class has already started. Creating certificate immediately for learner {paymentDTO.LearnerId} in class {paymentDTO.ClassId}");
+                        _logger.LogInformation($"Class starts today. Creating temporary certificate for learner {paymentDTO.LearnerId} in class {paymentDTO.ClassId}");
 
                         try
                         {
@@ -967,7 +984,7 @@ namespace InstruLearn_Application.BLL.Service
                                 LearnerId = paymentDTO.LearnerId,
                                 ClassId = paymentDTO.ClassId,
                                 CertificationType = CertificationType.CenterLearning,
-                                CertificationName = $"Center Learning Certificate - {classEntity.ClassName}",
+                                CertificationName = $"[TEMPORARY] Center Learning Certificate - {classEntity.ClassName}",
                                 TeacherName = teacherName,
                                 Subject = majorName
                             };
@@ -977,17 +994,49 @@ namespace InstruLearn_Application.BLL.Service
 
                             if (certResult.IsSucceed)
                             {
-                                _logger.LogInformation($"Certificate created successfully for learner {paymentDTO.LearnerId} in class {paymentDTO.ClassId}");
+                                _logger.LogInformation($"Temporary certificate created successfully for learner {paymentDTO.LearnerId} in class {paymentDTO.ClassId}");
+
+                                // Schedule a notification for certificate verification after attendance is recorded
+                                var staffNotification = new StaffNotification
+                                {
+                                    Title = "Certificate Eligibility Verification Required",
+                                    Message = $"Learner {learner.FullName} (ID: {paymentDTO.LearnerId}) received a temporary certificate for class {classEntity.ClassName} (ID: {paymentDTO.ClassId}). Verify 75% attendance before finalizing certificate.",
+                                    LearnerId = paymentDTO.LearnerId,
+                                    CreatedAt = DateTime.Now.AddDays(classEntity.totalDays / 2), // Set future date to verify halfway through course
+                                    Status = NotificationStatus.Unread,
+                                    Type = NotificationType.Certificate
+                                };
+
+                                await _unitOfWork.StaffNotificationRepository.AddAsync(staffNotification);
+                                await _unitOfWork.SaveChangeAsync();
                             }
                             else
                             {
-                                _logger.LogWarning($"Failed to create certificate: {certResult.Message}");
+                                _logger.LogWarning($"Failed to create temporary certificate: {certResult.Message}");
                             }
                         }
                         catch (Exception certEx)
                         {
-                            _logger.LogError(certEx, $"Error creating certificate for learner {paymentDTO.LearnerId} in class {paymentDTO.ClassId}");
+                            _logger.LogError(certEx, $"Error creating temporary certificate for learner {paymentDTO.LearnerId} in class {paymentDTO.ClassId}");
                         }
+                    }
+                    else if (classEntity.StartDate < today)
+                    {
+                        _logger.LogInformation($"Class has already started on {classEntity.StartDate}, but learner is joining today ({today}). No certificate will be created immediately.");
+
+                        // Create notification to check attendance later
+                        var staffNotification = new StaffNotification
+                        {
+                            Title = "Late Enrollment - Certificate Eligibility Check Needed",
+                            Message = $"Learner {learner.FullName} (ID: {paymentDTO.LearnerId}) joined class {classEntity.ClassName} (ID: {paymentDTO.ClassId}) after the start date. The class started on {classEntity.StartDate} and learner joined on {today}. Check attendance before issuing certificate.",
+                            LearnerId = paymentDTO.LearnerId,
+                            CreatedAt = DateTime.Now.AddDays(classEntity.totalDays / 2),
+                            Status = NotificationStatus.Unread,
+                            Type = NotificationType.Certificate
+                        };
+
+                        await _unitOfWork.StaffNotificationRepository.AddAsync(staffNotification);
+                        await _unitOfWork.SaveChangeAsync();
                     }
                     else
                     {
@@ -1005,8 +1054,6 @@ namespace InstruLearn_Application.BLL.Service
 
                         await _unitOfWork.StaffNotificationRepository.AddAsync(staffNotification);
                         await _unitOfWork.SaveChangeAsync();
-
-                        _logger.LogInformation($"Certificate creation scheduled for class start date: {classEntity.StartDate}");
                     }
 
                     // Create schedules for the learner
@@ -1057,6 +1104,21 @@ namespace InstruLearn_Application.BLL.Service
 
                     _logger.LogInformation($"Learner {paymentDTO.LearnerId} successfully enrolled in class {paymentDTO.ClassId} with payment of {paymentAmount} (10% of total {totalClassPrice})");
 
+                    // Updated certificate status message based on when learner joins relative to class start date
+                    string certificateStatus;
+                    if (classEntity.StartDate == today)
+                    {
+                        certificateStatus = "Temporary Certificate Created";
+                    }
+                    else if (classEntity.StartDate < today)
+                    {
+                        certificateStatus = "Will be evaluated based on attendance";
+                    }
+                    else
+                    {
+                        certificateStatus = $"Scheduled for {classEntity.StartDate}";
+                    }
+
                     return new ResponseDTO
                     {
                         IsSucceed = true,
@@ -1068,7 +1130,7 @@ namespace InstruLearn_Application.BLL.Service
                             ClassId = paymentDTO.ClassId,
                             AmountPaid = paymentAmount,
                             TotalClassPrice = totalClassPrice,
-                            CertificateStatus = classEntity.StartDate <= today ? "Created" : $"Scheduled for {classEntity.StartDate}"
+                            CertificateStatus = certificateStatus
                         }
                     };
                 }
