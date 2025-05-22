@@ -20,6 +20,6 @@ namespace InstruLearn_Application.Model.Models.DTO.StaffNotification
 
         [Required]
         [StringLength(500)]
-        public string ChangeReason { get; set; }
+        public string? ChangeReason { get; set; }
     }
 }

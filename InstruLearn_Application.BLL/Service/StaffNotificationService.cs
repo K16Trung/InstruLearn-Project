@@ -641,7 +641,7 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
-        public async Task<ResponseDTO> ChangeTeacherForLearningRegistrationAsync(int notificationId, int learningRegisId, int newTeacherId, string changeReason)
+        public async Task<ResponseDTO> ChangeTeacherForLearningRegistrationAsync(int notificationId, int learningRegisId, int newTeacherId, string? changeReason)
         {
             try
             {
@@ -691,6 +691,16 @@ namespace InstruLearn_Application.BLL.Service
                 bool isSameTeacher = originalTeacherId.HasValue && originalTeacherId.Value == newTeacherId;
                 _logger.LogInformation($"Teacher change request: Old teacher ID: {originalTeacherId}, New teacher ID: {newTeacherId}, Same teacher: {isSameTeacher}");
 
+                // Validate change reason based on whether it's the same teacher
+                if (isSameTeacher && string.IsNullOrWhiteSpace(changeReason))
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "A reason must be provided when deciding to keep the same teacher."
+                    };
+                }
+
                 using var transaction = await _unitOfWork.BeginTransactionAsync();
                 try
                 {
@@ -707,7 +717,11 @@ namespace InstruLearn_Application.BLL.Service
                     foreach (var schedule in futureSchedules)
                     {
                         schedule.TeacherId = newTeacherId;
-                        schedule.ChangeReason = changeReason;
+                        schedule.ChangeReason = isSameTeacher ?
+                            changeReason :
+                            (string.IsNullOrWhiteSpace(changeReason) ?
+                                "Teacher change requested by learner" :
+                                changeReason);
                         await _unitOfWork.ScheduleRepository.UpdateAsync(schedule);
                     }
 
@@ -728,6 +742,12 @@ namespace InstruLearn_Application.BLL.Service
 
                     await _unitOfWork.SaveChangeAsync();
                     await transaction.CommitAsync();
+
+                    string effectiveReason = isSameTeacher ?
+                        changeReason! :
+                        (string.IsNullOrWhiteSpace(changeReason) ?
+                            "Teacher change requested by learner" :
+                            changeReason);
 
                     await SendTeacherChangeNotifications(registration, newTeacher, originalTeacher, changeReason, futureSchedules, isSameTeacher);
 
@@ -1012,10 +1032,16 @@ namespace InstruLearn_Application.BLL.Service
             Learning_Registration registration,
             Teacher newTeacher,
             Teacher originalTeacher,
-            string changeReason,
+            string? changeReason,
             List<Schedules> affectedSchedules,
             bool isSameTeacher = false)
         {
+            string effectiveReason = isSameTeacher
+                ? changeReason ?? "Teacher has been evaluated as the best fit for this learner"
+                : string.IsNullOrWhiteSpace(changeReason)
+                    ? "Teacher change requested by learner"
+                    : changeReason;
+
             var nextSessionDate = affectedSchedules.Any()
                 ? affectedSchedules.OrderBy(s => s.StartDay).First().StartDay.ToString("dd/MM/yyyy")
                 : "upcoming sessions";
@@ -1043,7 +1069,7 @@ namespace InstruLearn_Application.BLL.Service
                     <div style='background-color: #e3f2fd; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #2196F3;'>
                         <h3 style='margin-top: 0; color: #333;'>Kết quả xem xét:</h3>
                         <p>Sau khi đánh giá, chúng tôi quyết định rằng giáo viên hiện tại của bạn <strong>{newTeacher.Fullname}</strong> vẫn là phù hợp nhất để tiếp tục dạy bạn.</p>
-                        <p><strong>Lý do:</strong> {changeReason}</p>
+                        <p><strong>Lý do:</strong> {effectiveReason}</p>
                         <p><strong>Buổi học tiếp theo:</strong> {nextSessionDate}</p>
                     </div>
                     
@@ -1086,7 +1112,7 @@ namespace InstruLearn_Application.BLL.Service
                         <p><strong>Giáo viên cũ:</strong> {originalTeacher?.Fullname ?? "Chưa có giáo viên"}</p>
                         <p><strong>Giáo viên mới:</strong> {newTeacher.Fullname}</p>
                         <p><strong>Buổi học tiếp theo:</strong> {nextSessionDate}</p>
-                        <p><strong>Lý do thay đổi:</strong> {changeReason}</p>
+                        {(!string.IsNullOrWhiteSpace(effectiveReason) ? $"<p><strong>Lý do thay đổi:</strong> {effectiveReason}</p>" : "")}
                     </div>
                     
                     <div style='background-color: #fff3cd; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #ff9800;'>
