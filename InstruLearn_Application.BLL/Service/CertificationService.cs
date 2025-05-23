@@ -45,7 +45,7 @@ namespace InstruLearn_Application.BLL.Service
                 responseList.Add(new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Certificate list retrieved successfully.",
+                    Message = "Đã lấy lại danh sách chứng chỉ thành công.",
                     Data = certificationDto
                 });
             }
@@ -60,14 +60,14 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Certificate not found.",
+                    Message = "Không tìm thấy chứng chỉ.",
                 };
             }
             var certificationDto = _mapper.Map<CertificationDTO>(certification);
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Certificate retrieved successfully.",
+                Message = "Đã lấy lại chứng chỉ thành công.",
                 Data = certificationDto
             };
         }
@@ -82,7 +82,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Learner not found",
+                        Message = "Không tìm thấy học viên",
                     };
                 }
 
@@ -91,7 +91,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Only CenterLearning certificate type is supported.",
+                        Message = "Chỉ hỗ trợ loại chứng chỉ cho lớp học trung tâm.",
                     };
                 }
 
@@ -113,13 +113,13 @@ namespace InstruLearn_Application.BLL.Service
 
                     try
                     {
-                        Console.WriteLine($"Attempting to get class with ID: {classId}");
+                        Console.WriteLine($"Đang cố gắng lấy lớp có ID: {classId}");
 
                         var classDetail = await _unitOfWork.ClassRepository.GetByIdAsync(classId);
 
                         if (classDetail != null)
                         {
-                            Console.WriteLine($"Class found with ID: {classId}, ClassName: {classDetail.ClassName}, TeacherId: {classDetail.TeacherId}, MajorId: {classDetail.MajorId}");
+                            Console.WriteLine($"Tìm thấy lớp có ID: {classId}, ClassName: {classDetail.ClassName}, TeacherId: {classDetail.TeacherId}, MajorId: {classDetail.MajorId}");
 
                             if (classDetail.Teacher != null)
                             {
@@ -206,7 +206,7 @@ namespace InstruLearn_Application.BLL.Service
 
                 if (string.IsNullOrEmpty(certificationObj.CertificationName))
                 {
-                    certificationObj.CertificationName = $"Center Learning Certificate - {certificationObj.Subject}";
+                    certificationObj.CertificationName = $"Chứng chỉ học tập trung tâm - {certificationObj.Subject}";
                 }
 
                 await _unitOfWork.CertificationRepository.AddAsync(certificationObj);
@@ -254,7 +254,7 @@ namespace InstruLearn_Application.BLL.Service
                 var response = new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = $"Certificate created successfully. {googleSheetsMessage}",
+                    Message = $"Chứng chỉ đã được tạo thành công. {googleSheetsMessage}",
                     Data = new
                     {
                         Certificate = _mapper.Map<CertificationDTO>(certificationObj),
@@ -293,19 +293,19 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "Certificate updated successfully!"
+                        Message = "Chứng chỉ đã được cập nhật thành công!"
                     };
                 }
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Failed to update certificate!"
+                    Message = "Không cập nhật được chứng chỉ!"
                 };
             }
             return new ResponseDTO
             {
                 IsSucceed = false,
-                Message = "Certificate not found!"
+                Message = "Không tìm thấy chứng chỉ!"
             };
         }
 
@@ -320,7 +320,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Certificate deleted successfully"
+                    Message = "Đã xóa chứng chỉ thành công"
                 };
             }
             else
@@ -328,7 +328,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Certificate with ID {certificationId} not found"
+                    Message = $"Không tìm thấy chứng chỉ có ID {certificationId}"
                 };
             }
         }
@@ -343,7 +343,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Learner not found"
+                        Message = "Không tìm thấy học viên"
                     };
                 }
 
@@ -353,7 +353,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Learner's certificates retrieved successfully",
+                    Message = "Đã lấy lại chứng chỉ của học viên thành công",
                     Data = certificationsDTO
                 };
             }
@@ -362,7 +362,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error retrieving learner's certificates: {ex.Message}"
+                    Message = $"Lỗi khi lấy chứng chỉ của học viên: {ex.Message}"
                 };
             }
         }
@@ -376,7 +376,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Only CenterLearning certificate type is supported.",
+                        Message = "Chỉ hỗ trợ loại chứng chỉ học tập trung tâm.",
                         Data = new { IsEligible = false }
                     };
                 }
@@ -386,7 +386,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Learning registration ID is required for center learning certificate eligibility check",
+                        Message = "Mã số đăng ký học tập là bắt buộc để kiểm tra đủ điều kiện cấp chứng chỉ học tập của trung tâm",
                         Data = new { IsEligible = false }
                     };
                 }
@@ -402,7 +402,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Learning registration not found for this learner",
+                        Message = "Không tìm thấy đăng ký học cho học viên này",
                         Data = new { IsEligible = false }
                     };
                 }
@@ -412,7 +412,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "The provided registration is for one-on-one learning, not center learning",
+                        Message = "Đăng ký được cung cấp là để học theo yêu cầu, không phải học tại trung tâm",
                         Data = new { IsEligible = false }
                     };
                 }
@@ -434,8 +434,8 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     IsSucceed = true,
                     Message = attendanceEligible ?
-                        (certificateExists ? "Certificate already exists for this registration" : "Learner is eligible for certificate") :
-                        "Insufficient attendance for certificate",
+                        (certificateExists ? "Đã có chứng chỉ cho đăng ký này" : "Người học đủ điều kiện để được cấp chứng chỉ") :
+                    "Không đủ số người tham dự để cấp chứng chỉ",
                     Data = new
                     {
                         IsEligible = attendanceEligible && !certificateExists,
@@ -452,7 +452,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error checking certificate eligibility: {ex.Message}",
+                    Message = $"Lỗi kiểm tra tính đủ điều kiện của chứng chỉ: {ex.Message}",
                     Data = new { IsEligible = false }
                 };
             }
