@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using InstruLearn_Application.BLL.Service.IService;
 using InstruLearn_Application.DAL.UoW.IUoW;
+using InstruLearn_Application.Model.Enum;
 using InstruLearn_Application.Model.Models;
 using InstruLearn_Application.Model.Models.DTO;
 using InstruLearn_Application.Model.Models.DTO.ClassFeedback;
@@ -99,6 +100,9 @@ namespace InstruLearn_Application.BLL.Service
             var createdFeedback = await _unitOfWork.ClassFeedbackRepository.GetFeedbackByClassAndLearnerAsync(
                 feedbackDTO.ClassId, feedbackDTO.LearnerId);
 
+            decimal totalPercentage = 0;
+            decimal totalWeight = 0;
+
             // Add evaluations
             if (feedbackDTO.Evaluations != null && feedbackDTO.Evaluations.Any())
             {
@@ -114,10 +118,86 @@ namespace InstruLearn_Application.BLL.Service
                     var evaluation = _mapper.Map<ClassFeedbackEvaluation>(evaluationDTO);
                     evaluation.FeedbackId = createdFeedback.FeedbackId;
 
+                    // Calculate the total percentage score
+                    if (evaluationDTO.AchievedPercentage.HasValue)
+                    {
+                        totalPercentage += evaluationDTO.AchievedPercentage.Value;
+                        totalWeight += criterion.Weight;
+                    }
+
                     await _unitOfWork.ClassFeedbackEvaluationRepository.AddAsync(evaluation);
                 }
 
                 await _unitOfWork.SaveChangeAsync();
+            }
+
+            // Check if the feedback score is greater than 50% to issue a real certification
+            if (totalPercentage > 50)
+            {
+                // Check if the learner already has a certification for this class
+                var existingCertificates = await _unitOfWork.CertificationRepository.GetByLearnerIdAsync(feedbackDTO.LearnerId);
+                bool hasCertification = existingCertificates.Any(c =>
+                    c.CertificationType == CertificationType.CenterLearning &&
+                    c.CertificationName != null &&
+                    c.CertificationName.Contains(classEntity.ClassId.ToString()));
+
+                if (!hasCertification)
+                {
+                    // Get teacher and subject information
+                    string teacherName = "Unknown Teacher";
+                    if (classEntity.Teacher != null)
+                    {
+                        teacherName = classEntity.Teacher.Fullname;
+                    }
+                    else
+                    {
+                        var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(classEntity.TeacherId);
+                        if (teacher != null)
+                        {
+                            teacherName = teacher.Fullname;
+                        }
+                    }
+
+                    string majorName = "Unknown Subject";
+                    if (classEntity.Major != null)
+                    {
+                        majorName = classEntity.Major.MajorName;
+                    }
+                    else
+                    {
+                        var major = await _unitOfWork.MajorRepository.GetByIdAsync(classEntity.MajorId);
+                        if (major != null)
+                        {
+                            majorName = major.MajorName;
+                        }
+                    }
+
+                    // Create a new certification
+                    var certification = new Certification
+                    {
+                        LearnerId = feedbackDTO.LearnerId,
+                        CertificationType = CertificationType.CenterLearning,
+                        CertificationName = $"Center Learning Certificate - {classEntity.ClassName} (Class ID: {classEntity.ClassId})",
+                        TeacherName = teacherName,
+                        Subject = majorName,
+                        IssueDate = DateTime.Now
+                    };
+
+                    await _unitOfWork.CertificationRepository.AddAsync(certification);
+                    await _unitOfWork.SaveChangeAsync();
+
+                    return new ResponseDTO
+                    {
+                        IsSucceed = true,
+                        Message = "Feedback created successfully and certification issued due to high score",
+                        Data = new
+                        {
+                            FeedbackId = createdFeedback.FeedbackId,
+                            CertificationIssued = true,
+                            Score = totalPercentage
+                        }
+                    };
+                }
             }
 
             return new ResponseDTO

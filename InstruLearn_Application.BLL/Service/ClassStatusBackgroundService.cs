@@ -33,6 +33,13 @@ namespace InstruLearn_Application.BLL.Service
         {
             int checkIntervalHours = _configuration.GetValue<int>("ClassStatus:CheckIntervalHours", 24);
 
+            _logger.LogInformation("Running initial class status check at startup");
+            using (var scope = _serviceProvider.CreateScope())
+            {
+                var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                await UpdateAllClassStatusesAsync(unitOfWork);
+            }
+
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
@@ -88,6 +95,7 @@ namespace InstruLearn_Application.BLL.Service
                         classDays.Select(cd => cd.Day).ToList());
 
                     ClassStatus newStatus;
+                    ClassStatus oldStatus = classEntity.Status;
 
                     if (classEntity.TestDay == today)
                     {
@@ -106,14 +114,14 @@ namespace InstruLearn_Application.BLL.Service
                         newStatus = ClassStatus.Completed;
                     }
 
-                    if (classEntity.Status != newStatus)
+                    if (oldStatus != newStatus)
                     {
                         classEntity.Status = newStatus;
                         await unitOfWork.ClassRepository.UpdateAsync(classEntity);
                         updatedClasses++;
 
                         _logger.LogInformation("Updated class {ClassId} status from {OldStatus} to {NewStatus}",
-                            classEntity.ClassId, classEntity.Status, newStatus);
+                            classEntity.ClassId, oldStatus, newStatus);
                     }
                 }
 
