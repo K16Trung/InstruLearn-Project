@@ -400,6 +400,8 @@ namespace InstruLearn_Application.BLL.Service
                 currentRegistration.ClassId = changeClassDTO.ClassId;
                 currentRegistration.TeacherId = newClass.TeacherId;
                 currentRegistration.RemainingAmount = remainingAmount;
+
+                currentRegistration.Status = LearningRegis.FullyPaid;
                 await _unitOfWork.LearningRegisRepository.UpdateAsync(currentRegistration);
 
                 var schedules = await _unitOfWork.dbContext.Schedules
@@ -480,7 +482,8 @@ namespace InstruLearn_Application.BLL.Service
                         InitialPaymentMade = initialPaymentMade,
                         RemainingAmount = remainingAmount,
                         TotalNewClassPrice = newClassPrice,
-                        UpdatedSchedules = updatedSchedules
+                        UpdatedSchedules = updatedSchedules,
+                        IsEligible = true
                     }
                 };
             }
