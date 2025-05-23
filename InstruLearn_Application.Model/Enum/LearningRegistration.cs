@@ -17,6 +17,7 @@ namespace InstruLearn_Application.Model.Enum
         Cancelled,
         FullyPaid,
         Payment40Rejected,
-        Payment60Rejected
+        Payment60Rejected,
+        TestFailed
     }
 }

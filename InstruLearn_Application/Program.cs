@@ -192,6 +192,7 @@ namespace InstruLearn_Application
             builder.Services.AddHostedService<TeacherEvaluationBackgroundService>();
             builder.Services.AddHostedService<ClassFeedbackBackgroundService>();
             builder.Services.AddHostedService<PaymentReminderService>();
+            builder.Services.AddHostedService<ClassStatusBackgroundService>();
 
             builder.Services.AddControllers()
                 .AddJsonOptions(options =>

@@ -372,6 +372,24 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
+            var currentRegistration = await _unitOfWork.dbContext.Learning_Registrations
+                .FirstOrDefaultAsync(lr => lr.LearnerId == changeClassDTO.LearnerId &&
+                                          lr.ClassId == currentClass.ClassId);
+
+            if (currentRegistration == null)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Không tìm thấy thông tin đăng ký học hiện tại."
+                };
+            }
+
+            decimal currentClassPrice = currentClass.Price * currentClass.totalDays;
+            decimal newClassPrice = newClass.Price * newClass.totalDays;
+            decimal initialPaymentMade = currentClassPrice * 0.1m;
+            decimal remainingAmount = newClassPrice - initialPaymentMade;
+
             using var transaction = await _unitOfWork.BeginTransactionAsync();
 
             try
@@ -379,16 +397,10 @@ namespace InstruLearn_Application.BLL.Service
                 currentLearnerClass.ClassId = changeClassDTO.ClassId;
                 await _unitOfWork.SaveChangeAsync();
 
-                var learningRegistrations = await _unitOfWork.dbContext.Learning_Registrations
-                    .Where(lr => lr.LearnerId == changeClassDTO.LearnerId && lr.ClassId == currentClass.ClassId)
-                    .ToListAsync();
-
-                foreach (var registration in learningRegistrations)
-                {
-                    registration.ClassId = changeClassDTO.ClassId;
-                    registration.TeacherId = newClass.TeacherId;
-                    await _unitOfWork.LearningRegisRepository.UpdateAsync(registration);
-                }
+                currentRegistration.ClassId = changeClassDTO.ClassId;
+                currentRegistration.TeacherId = newClass.TeacherId;
+                currentRegistration.RemainingAmount = remainingAmount;
+                await _unitOfWork.LearningRegisRepository.UpdateAsync(currentRegistration);
 
                 var schedules = await _unitOfWork.dbContext.Schedules
                     .Where(s => s.LearnerId == changeClassDTO.LearnerId && s.ClassId == currentClass.ClassId)
@@ -431,16 +443,19 @@ namespace InstruLearn_Application.BLL.Service
                     }
                 }
 
-                var notificationMessage = $"Bạn đã được chuyển từ lớp {currentClass.ClassName} sang lớp {newClass.ClassName}.";
+                var notificationMessage = $"Bạn đã được chuyển từ lớp {currentClass.ClassName} sang lớp {newClass.ClassName}. " +
+                                         $"Số tiền bạn đã thanh toán ({initialPaymentMade:N0} VND) đã được tính vào học phí mới. " +
+                                         $"Vui lòng thanh toán số tiền còn lại {remainingAmount:N0} VND để tiếp tục học tập.";
+
                 if (!string.IsNullOrEmpty(changeClassDTO.Reason))
                 {
-                    notificationMessage += $" Lý do: {changeClassDTO.Reason}";
+                    notificationMessage += $" Lý do chuyển lớp: {changeClassDTO.Reason}";
                 }
 
                 var notification = new StaffNotification
                 {
                     LearnerId = changeClassDTO.LearnerId,
-                    Title = "Thay đổi lớp học",
+                    Title = "Thay đổi lớp học và thông tin thanh toán",
                     Message = notificationMessage,
                     Type = NotificationType.ClassChange,
                     Status = NotificationStatus.Unread,
@@ -450,7 +465,6 @@ namespace InstruLearn_Application.BLL.Service
                 await _unitOfWork.StaffNotificationRepository.AddAsync(notification);
                 await _unitOfWork.SaveChangeAsync();
 
-                // Commit transaction
                 await _unitOfWork.CommitTransactionAsync();
 
                 return new ResponseDTO
@@ -463,7 +477,9 @@ namespace InstruLearn_Application.BLL.Service
                         LearnerName = learner.FullName,
                         OldClassName = currentClass.ClassName,
                         NewClassName = newClass.ClassName,
-                        UpdatedLearningRegistrations = learningRegistrations.Count,
+                        InitialPaymentMade = initialPaymentMade,
+                        RemainingAmount = remainingAmount,
+                        TotalNewClassPrice = newClassPrice,
                         UpdatedSchedules = updatedSchedules
                     }
                 };
@@ -752,7 +768,7 @@ namespace InstruLearn_Application.BLL.Service
                     {
                         // Simply update the status without trying to set TestResults
                         learningRegis.Status = eligibilityDTO.IsEligible ?
-                            LearningRegis.Accepted : LearningRegis.Rejected; // Using Rejected instead of TestFailed
+                            LearningRegis.Accepted : LearningRegis.TestFailed;
 
                         await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
                     }
