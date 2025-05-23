@@ -16,5 +16,10 @@ namespace InstruLearn_Application.Model.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal RegisPrice { get; set; }
         public ICollection<Learning_Registration> Learning_Registrations { get; set; }
+        public const int CustomLearningTypeId = 1;
+        public const string CustomLearningTypeName = "Đăng kí học theo yêu cầu";
+
+        public const int CenterLearningTypeId = 2;
+        public const string CenterLearningTypeName = "Center";
     }
 }

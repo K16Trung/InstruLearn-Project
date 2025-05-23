@@ -298,6 +298,21 @@ namespace InstruLearn_Application.Model.Data
                 .HasForeignKey(lrt => lrt.RegisTypeId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<Learning_Registration_Type>().HasData(
+                new Learning_Registration_Type
+                {
+                    RegisTypeId = Learning_Registration_Type.CustomLearningTypeId,
+                    RegisTypeName = Learning_Registration_Type.CustomLearningTypeName,
+                    RegisPrice = 0.00m
+                },
+                new Learning_Registration_Type
+                {
+                    RegisTypeId = Learning_Registration_Type.CenterLearningTypeId,
+                    RegisTypeName = Learning_Registration_Type.CenterLearningTypeName,
+                    RegisPrice = 0.00m
+                }
+            );
+
             // Configure Purchase Entity
 
             modelBuilder.Entity<Purchase>()
