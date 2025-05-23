@@ -172,9 +172,10 @@ namespace InstruLearn_Application.DAL.Repository
                 PhoneNumber = s.PhoneNumber ?? "N/A",
                 Avatar = s.Avatar ?? "N/A",
                 IsEligible = registrations.TryGetValue(s.LearnerId, out var registration) ?
-                    (registration.Status == LearningRegis.Rejected ? false :
+                    (registration.Status == LearningRegis.Rejected || registration.Status == LearningRegis.TestFailed ? false :
                      registration.Status == LearningRegis.FullyPaid ? true :
-                     registration.Status == LearningRegis.Accepted ? true : null) : false,
+                     // Changed: Make Accepted status return false by default
+                     registration.Status == LearningRegis.Accepted ? false : false) : false,
             }).ToList();
 
             return result;
