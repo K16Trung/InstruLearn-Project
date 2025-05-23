@@ -1193,10 +1193,13 @@ namespace InstruLearn_Application.BLL.Service
 
         public async Task<ResponseDTO> UpdateScheduleForMakeupAsync(int scheduleId, DateOnly newDate, TimeOnly newTimeStart, int timeLearning, string changeReason)
         {
+            // Start a transaction to ensure atomicity
+            using var transaction = await _unitOfWork.BeginTransactionAsync();
+
             try
             {
+                // 1. Validate the original schedule exists and is marked as absent
                 var originalSchedule = await _unitOfWork.ScheduleRepository.GetByIdAsync(scheduleId);
-
                 if (originalSchedule == null)
                 {
                     return new ResponseDTO
@@ -1215,6 +1218,7 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
+                // 2. Check if THIS schedule already has a makeup class
                 if (originalSchedule.PreferenceStatus == PreferenceStatus.MakeupClass)
                 {
                     return new ResponseDTO
@@ -1224,9 +1228,13 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                var existingMakeupSchedules = await _unitOfWork.ScheduleRepository.GetWhereAsync(
-                    s => s.LearningRegisId == originalSchedule.LearningRegisId &&
-                         s.PreferenceStatus == PreferenceStatus.MakeupClass);
+                // 3. Check if there are ANY makeup classes linked to this learning registration
+                if (originalSchedule.LearningRegisId.HasValue)
+                {
+                    // Check for schedules that are explicitly marked as makeup classes
+                    var makeupSchedules = await _unitOfWork.ScheduleRepository.GetWhereAsync(
+                        s => s.LearningRegisId == originalSchedule.LearningRegisId &&
+                             s.PreferenceStatus == PreferenceStatus.MakeupClass);
 
                     if (makeupSchedules.Any())
                     {
@@ -1238,6 +1246,7 @@ namespace InstruLearn_Application.BLL.Service
                     }
                 }
 
+                // 4. Validate that new date is in the future
                 DateOnly today = DateOnly.FromDateTime(DateTime.Now);
                 if (newDate < today)
                 {
@@ -1248,7 +1257,7 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Check if the new date has the same day of week as the old date
+                // 5. Validate the day of week is different
                 if (originalSchedule.StartDay.DayOfWeek == newDate.DayOfWeek)
                 {
                     return new ResponseDTO
@@ -1258,6 +1267,7 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
+                // 6. Check for schedule conflicts with the learner's other classes
                 var learner = originalSchedule.LearnerId.HasValue
                     ? await _unitOfWork.LearnerRepository.GetByIdAsync(originalSchedule.LearnerId.Value)
                     : null;
@@ -1278,12 +1288,13 @@ namespace InstruLearn_Application.BLL.Service
                     }
                 }
 
+                // Store original schedule info for notifications
                 var oldDate = originalSchedule.StartDay;
                 var oldTimeStart = originalSchedule.TimeStart;
                 var oldTimeEnd = originalSchedule.TimeEnd;
                 var oldDayOfWeek = oldDate.DayOfWeek;
 
-                // Create a new schedule for makeup class instead of modifying the original one
+                // 7. Create a new makeup schedule
                 var makeupSchedule = new Schedules
                 {
                     TeacherId = originalSchedule.TeacherId,
@@ -1299,14 +1310,15 @@ namespace InstruLearn_Application.BLL.Service
                     PreferenceStatus = PreferenceStatus.MakeupClass
                 };
 
-                // Mark the original schedule as having a makeup class
+                // 8. Mark the original schedule as having a makeup class
                 originalSchedule.PreferenceStatus = PreferenceStatus.MakeupClass;
 
-                // Add the new schedule and update the original
+                // 9. Save both schedules in a single transaction
                 await _unitOfWork.ScheduleRepository.UpdateAsync(originalSchedule);
                 await _unitOfWork.ScheduleRepository.AddAsync(makeupSchedule);
                 await _unitOfWork.SaveChangeAsync();
 
+                // Format dates and times for notifications
                 string oldFormattedDate = oldDate.ToString("dd/MM/yyyy");
                 string oldFormattedTimeStart = oldTimeStart.ToString("HH:mm");
                 string oldFormattedTimeEnd = oldTimeEnd.ToString("HH:mm");
@@ -1315,52 +1327,47 @@ namespace InstruLearn_Application.BLL.Service
                 string newFormattedTimeStart = newTimeStart.ToString("HH:mm");
                 string newFormattedTimeEnd = makeupSchedule.TimeEnd.ToString("HH:mm");
 
-                // Send the notification emails
-                if (originalSchedule.LearnerId.HasValue)
+                // 10. Send notifications to learner
+                if (originalSchedule.LearnerId.HasValue && learner?.Account != null && !string.IsNullOrEmpty(learner.Account.Email))
                 {
-                    var learnerAccount = learner?.Account;
+                    string subject = "Your Makeup Class Has Been Scheduled";
+                    string body = $@"
+<html>
+<body>
+    <h2>Lịch học bù đã được xác nhận</h2>
+    <p>Xin chào {learnerName},</p>
+    <p>Chúng tôi xác nhận lịch học bù của bạn đã được thay đổi.</p>
+    
+    <div style='background-color: #f0f0f0; padding: 15px; margin: 20px 0; border-radius: 5px;'>
+        <h3>Thông tin lịch học cũ:</h3>
+        <p><strong>Ngày:</strong> {oldFormattedDate} ({oldDayOfWeek})</p>
+        <p><strong>Thời gian:</strong> {oldFormattedTimeStart} - {oldFormattedTimeEnd}</p>
+    </div>
+    
+    <div style='background-color: #e8f5e9; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #4CAF50;'>
+        <h3>Thông tin lịch học mới:</h3>
+        <p><strong>Ngày:</strong> {newFormattedDate} ({newDate.DayOfWeek})</p>
+        <p><strong>Thời gian:</strong> {newFormattedTimeStart} - {newFormattedTimeEnd}</p>
+        <p><strong>Thời gian học:</strong> {timeLearning} phút</p>
+        <p><strong>Lý do thay đổi:</strong> {changeReason}</p>
+    </div>
+    
+    <p>Vui lòng đảm bảo bạn có mặt đúng giờ cho buổi học bù này.</p>
+    <p>Nếu bạn có bất kì câu hỏi nào, vui lòng liên hệ với nhóm hỗ trợ của chúng tôi.</p>
+    <p>Cảm ơn bạn đã sử dụng dịch vụ InstruLearn!</p>
+    <p>Trân trọng,<br/>The InstruLearn Team</p>
+</body>
+</html>";
 
-                    if (learnerAccount != null && !string.IsNullOrEmpty(learnerAccount.Email))
-                    {
-                        string subject = "Your Makeup Class Has Been Scheduled";
-                        string body = $@"
-                <html>
-                <body>
-                    <h2>Lịch học bù đã được xác nhận</h2>
-                    <p>Xin chào {learnerName},</p>
-                    <p>Chúng tôi xác nhận lịch học bù của bạn đã được thay đổi.</p>
-                    
-                    <div style='background-color: #f0f0f0; padding: 15px; margin: 20px 0; border-radius: 5px;'>
-                        <h3>Thông tin lịch học cũ:</h3>
-                        <p><strong>Ngày:</strong> {oldFormattedDate} ({oldDayOfWeek})</p>
-                        <p><strong>Thời gian:</strong> {oldFormattedTimeStart} - {oldFormattedTimeEnd}</p>
-                    </div>
-                    
-                    <div style='background-color: #e8f5e9; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #4CAF50;'>
-                        <h3>Thông tin lịch học mới:</h3>
-                        <p><strong>Ngày:</strong> {newFormattedDate} ({newDate.DayOfWeek})</p>
-                        <p><strong>Thời gian:</strong> {newFormattedTimeStart} - {newFormattedTimeEnd}</p>
-                        <p><strong>Thời gian học:</strong> {timeLearning} phút</p>
-                        <p><strong>Lý do thay đổi:</strong> {changeReason}</p>
-                    </div>
-                    
-                    <p>Vui lòng đảm bảo bạn có mặt đúng giờ cho buổi học bù này.</p>
-                    <p>Nếu bạn có bất kì câu hỏi nào, vui lòng liên hệ với nhóm hỗ trợ của chúng tôi.</p>
-                    <p>Cảm ơn bạn đã sử dụng dịch vụ InstruLearn!</p>
-                    <p>Trân trọng,<br/>The InstruLearn Team</p>
-                </body>
-                </html>";
-
-                        await _emailService.SendEmailAsync(learnerAccount.Email, subject, body);
-                    }
+                    await _emailService.SendEmailAsync(learner.Account.Email, subject, body);
                 }
 
+                // 11. Send notifications to teacher
                 if (originalSchedule.TeacherId.HasValue)
                 {
-                    // Rest of the method remains the same with teacher notifications
                     var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(originalSchedule.TeacherId.Value);
 
-                    if (teacher != null && teacher.AccountId != null)
+                    if (teacher?.AccountId != null)
                     {
                         var teacherAccount = await _unitOfWork.AccountRepository.GetByIdAsync(teacher.AccountId);
 
@@ -1368,38 +1375,40 @@ namespace InstruLearn_Application.BLL.Service
                         {
                             string subject = "Makeup Class Schedule Update";
                             string body = $@"
-                    <html>
-                    <body>
-                        <h2>Thông báo lịch dạy bù</h2>
-                        <p>Xin chào {teacher.Fullname},</p>
-                        <p>Lịch dạy bù của bạn đã được cập nhật như sau:</p>
-                        
-                        <div style='background-color: #f0f0f0; padding: 15px; margin: 20px 0; border-radius: 5px;'>
-                            <h3>Thông tin lịch dạy cũ:</h3>
-                            <p><strong>Ngày:</strong> {oldFormattedDate} ({oldDayOfWeek})</p>
-                            <p><strong>Thời gian:</strong> {oldFormattedTimeStart} - {oldFormattedTimeEnd}</p>
-                            <p><strong>Học viên:</strong> {learnerName}</p>
-                        </div>
-                        
-                        <div style='background-color: #e8f5e9; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #4CAF50;'>
-                            <h3>Thông tin lịch dạy mới:</h3>
-                            <p><strong>Ngày:</strong> {newFormattedDate} ({newDate.DayOfWeek})</p>
-                            <p><strong>Thời gian:</strong> {newFormattedTimeStart} - {newFormattedTimeEnd}</p>
-                            <p><strong>Thời gian dạy:</strong> {timeLearning} phút</p>
-                            <p><strong>Học viên:</strong> {learnerName}</p>
-                            <p><strong>Lý do thay đổi:</strong> {changeReason}</p>
-                        </div>
-                        
-                        <p>Vui lòng đảm bảo bạn có mặt đúng giờ cho buổi dạy bù này.</p>
-                        <p>Nếu bạn có bất kì câu hỏi nào, vui lòng liên hệ với quản trị viên.</p>
-                        <p>Trân trọng,<br/>The InstruLearn Team</p>
-                    </body>
-                    </html>";
+<html>
+<body>
+    <h2>Thông báo lịch dạy bù</h2>
+    <p>Xin chào {teacher.Fullname},</p>
+    <p>Lịch dạy bù của bạn đã được cập nhật như sau:</p>
+    
+    <div style='background-color: #f0f0f0; padding: 15px; margin: 20px 0; border-radius: 5px;'>
+        <h3>Thông tin lịch dạy cũ:</h3>
+        <p><strong>Ngày:</strong> {oldFormattedDate} ({oldDayOfWeek})</p>
+        <p><strong>Thời gian:</strong> {oldFormattedTimeStart} - {oldFormattedTimeEnd}</p>
+        <p><strong>Học viên:</strong> {learnerName}</p>
+    </div>
+    
+    <div style='background-color: #e8f5e9; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #4CAF50;'>
+        <h3>Thông tin lịch dạy mới:</h3>
+        <p><strong>Ngày:</strong> {newFormattedDate} ({newDate.DayOfWeek})</p>
+        <p><strong>Thời gian:</strong> {newFormattedTimeStart} - {newFormattedTimeEnd}</p>
+        <p><strong>Thời gian dạy:</strong> {timeLearning} phút</p>
+        <p><strong>Học viên:</strong> {learnerName}</p>
+        <p><strong>Lý do thay đổi:</strong> {changeReason}</p>
+    </div>
+    
+    <p>Vui lòng đảm bảo bạn có mặt đúng giờ cho buổi dạy bù này.</p>
+    <p>Nếu bạn có bất kì câu hỏi nào, vui lòng liên hệ với quản trị viên.</p>
+    <p>Trân trọng,<br/>The InstruLearn Team</p>
+</body>
+</html>";
 
                             await _emailService.SendEmailAsync(teacherAccount.Email, subject, body);
                         }
                     }
                 }
+
+                // 12. Commit the transaction
                 await _unitOfWork.CommitTransactionAsync();
 
                 return new ResponseDTO
@@ -1426,7 +1435,9 @@ namespace InstruLearn_Application.BLL.Service
             }
             catch (Exception ex)
             {
+                // 13. Rollback transaction on any error
                 await _unitOfWork.RollbackTransactionAsync();
+
                 return new ResponseDTO
                 {
                     IsSucceed = false,
