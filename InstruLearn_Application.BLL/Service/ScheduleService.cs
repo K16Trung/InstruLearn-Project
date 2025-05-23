@@ -698,7 +698,7 @@ namespace InstruLearn_Application.BLL.Service
             };
         }
 
-        public async Task<ResponseDTO> CheckClassAttendanceAsync(int scheduleId, AttendanceStatus status)
+        public async Task<ResponseDTO> CheckClassAttendanceAsync(int scheduleId, AttendanceStatus status, DateOnly currentDate)
         {
             try
             {
@@ -709,6 +709,15 @@ namespace InstruLearn_Application.BLL.Service
                     {
                         IsSucceed = false,
                         Message = "Schedule not found"
+                    };
+                }
+
+                if (schedule.StartDay != currentDate)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Attendance can only be updated for today's sessions."
                     };
                 }
 

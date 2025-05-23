@@ -24,7 +24,7 @@ namespace InstruLearn_Application.BLL.Service.IService
         Task<ResponseDTO> GetClassAttendanceAsync(int classId);
         Task<ResponseDTO> GetOneOnOneAttendanceAsync(int learnerId);
         Task<ResponseDTO> UpdateAttendanceAsync(int scheduleId, AttendanceStatus status, PreferenceStatus preferenceStatus);
-        Task<ResponseDTO> CheckClassAttendanceAsync(int scheduleId, AttendanceStatus status);
+        Task<ResponseDTO> CheckClassAttendanceAsync(int scheduleId, AttendanceStatus status, DateOnly currentDate);
         Task<ResponseDTO> CheckLearnerScheduleConflictAsync(int learnerId, DateOnly startDay, TimeOnly timeStart, int durationMinutes);
         Task<ResponseDTO> CheckLearnerClassScheduleConflictAsync(int learnerId, int classId);
         Task<ResponseDTO> GetLearnerAttendanceStatsAsync(int learnerId);

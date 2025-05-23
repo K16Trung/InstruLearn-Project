@@ -192,10 +192,19 @@ namespace InstruLearn_Application.Controllers
                     Message = "Invalid request data."
                 });
             }
+            DateOnly today = DateOnly.FromDateTime(DateTime.Today);
 
+            // The service method will validate if the schedule is for today
             var result = await _scheduleService.CheckClassAttendanceAsync(
                 scheduleId,
-                model.Status);
+                model.Status,
+                today); // Pass today's date for validation
+
+            // Return BadRequest if the result indicates failure due to date mismatch
+            if (!result.IsSucceed && result.Message.Contains("today"))
+            {
+                return BadRequest(result);
+            }
 
             return Ok(result);
         }
