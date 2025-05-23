@@ -788,7 +788,8 @@ namespace InstruLearn_Application.BLL.Service
                             LastPaymentDate = latestPayment?.WalletTransaction?.TransactionDate,
                             PaymentMethod = latestPayment?.PaymentMethod.ToString() ?? "Unknown",
                             RegistrationDate = reg.RequestDate,
-                            IsFullyPaid = true
+                            IsFullyPaid = true,
+                            IsEligible = true
                         };
                     }).ToList();
 
@@ -847,7 +848,8 @@ namespace InstruLearn_Application.BLL.Service
                                 RegistrationDate = reg.RequestDate,
                                 IsFullyPaid = false,
                                 RemainingAmount = totalClassPrice * 0.9m,
-                                PaymentSource = "Wallet Transaction"
+                                PaymentSource = "Wallet Transaction",
+                                IsEligible = false
                             };
                         }
 
