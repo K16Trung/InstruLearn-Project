@@ -1220,7 +1220,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "A makeup class has already been scheduled for this absent class. Only one makeup class is allowed per absence."
+                        Message = "This schedule already has a makeup class. Only one makeup class is allowed per absence."
                     };
                 }
 
@@ -1228,13 +1228,14 @@ namespace InstruLearn_Application.BLL.Service
                     s => s.LearningRegisId == originalSchedule.LearningRegisId &&
                          s.PreferenceStatus == PreferenceStatus.MakeupClass);
 
-                if (existingMakeupSchedules.Any())
-                {
-                    return new ResponseDTO
+                    if (makeupSchedules.Any())
                     {
-                        IsSucceed = false,
-                        Message = "A makeup class has already been scheduled for this learning registration. Only one makeup class is allowed."
-                    };
+                        return new ResponseDTO
+                        {
+                            IsSucceed = false,
+                            Message = "A makeup class already exists for this learning registration. Only one makeup class is allowed."
+                        };
+                    }
                 }
 
                 DateOnly today = DateOnly.FromDateTime(DateTime.Now);
