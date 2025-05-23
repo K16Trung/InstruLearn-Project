@@ -174,7 +174,7 @@ namespace InstruLearn_Application.DAL.Repository
                 IsEligible = registrations.TryGetValue(s.LearnerId, out var registration) ?
             (registration.Status == LearningRegis.Rejected ? false :
              registration.Status == LearningRegis.FullyPaid ? true :
-             registration.Status == LearningRegis.Accepted ? false : null) : false,
+             registration.Status == LearningRegis.Accepted ? true : null) : false,
             }).ToList();
 
             return result;
