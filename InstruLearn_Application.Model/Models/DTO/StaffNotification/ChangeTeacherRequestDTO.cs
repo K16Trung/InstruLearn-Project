@@ -18,7 +18,6 @@ namespace InstruLearn_Application.Model.Models.DTO.StaffNotification
         [Required]
         public int NewTeacherId { get; set; }
 
-        [Required]
         [StringLength(500)]
         public string? ChangeReason { get; set; }
     }
