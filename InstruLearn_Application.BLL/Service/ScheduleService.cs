@@ -1226,7 +1226,6 @@ namespace InstruLearn_Application.BLL.Service
 
                 var existingMakeupSchedules = await _unitOfWork.ScheduleRepository.GetWhereAsync(
                     s => s.LearningRegisId == originalSchedule.LearningRegisId &&
-                         s.ScheduleId != scheduleId &&
                          s.PreferenceStatus == PreferenceStatus.MakeupClass);
 
                 if (existingMakeupSchedules.Any())
@@ -1400,6 +1399,7 @@ namespace InstruLearn_Application.BLL.Service
                         }
                     }
                 }
+                await _unitOfWork.CommitTransactionAsync();
 
                 return new ResponseDTO
                 {
@@ -1425,6 +1425,7 @@ namespace InstruLearn_Application.BLL.Service
             }
             catch (Exception ex)
             {
+                await _unitOfWork.RollbackTransactionAsync();
                 return new ResponseDTO
                 {
                     IsSucceed = false,
