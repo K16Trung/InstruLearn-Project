@@ -113,6 +113,13 @@ namespace InstruLearn_Application.BLL.Service
                     var feedbackAnswers = await _unitOfWork.LearningRegisFeedbackAnswerRepository
                         .GetAnswersByFeedbackIdAsync(completedFeedback.FeedbackId);
 
+                    decimal totalPrice = regis.Price ?? 0;
+                    decimal remainingPayment = 0;
+                    if (regis.Status == LearningRegis.FourtyFeedbackDone)
+                    {
+                        remainingPayment = Math.Round(totalPrice * 0.6m, 2);
+                    }
+
                     // Add the completed feedback notification
                     feedbackNotifications.Add(new
                     {
@@ -127,6 +134,8 @@ namespace InstruLearn_Application.BLL.Service
                         CreatedAt = completedFeedback.CreatedAt,
                         CompletedAt = completedFeedback.CompletedAt,
                         IsCompleted = true,
+                        TotalPrice = totalPrice,
+                        RemainingPayment = remainingPayment,
                         Questions = questions,
                         Answers = feedbackAnswers.Select(a => new
                         {
