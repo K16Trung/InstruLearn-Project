@@ -1598,7 +1598,8 @@ namespace InstruLearn_Application.BLL.Service
 
                 if (learningRegis.Status == LearningRegis.Fourty ||
                     learningRegis.Status == LearningRegis.FourtyFeedbackDone ||
-                    learningRegis.Status == LearningRegis.Sixty)
+                    learningRegis.Status == LearningRegis.Sixty ||
+                    learningRegis.Status == LearningRegis.Payment60Rejected)
                 {
                     _logger.LogInformation($"Learning reg status is {learningRegis.Status}. Setting first payment as completed.");
                     firstPaymentCompleted = true;
