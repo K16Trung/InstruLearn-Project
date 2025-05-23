@@ -1224,26 +1224,21 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "This schedule already has a makeup class. Only one makeup class is allowed per absence."
+                        Message = "A makeup class has already been scheduled for this absent class. Only one makeup class is allowed per absence."
                     };
                 }
 
-                // 3. Check if there are ANY makeup classes linked to this learning registration
-                if (originalSchedule.LearningRegisId.HasValue)
-                {
-                    // Check for schedules that are explicitly marked as makeup classes
-                    var makeupSchedules = await _unitOfWork.ScheduleRepository.GetWhereAsync(
-                        s => s.LearningRegisId == originalSchedule.LearningRegisId &&
-                             s.PreferenceStatus == PreferenceStatus.MakeupClass);
+                var existingMakeupSchedules = await _unitOfWork.ScheduleRepository.GetWhereAsync(
+                    s => s.LearningRegisId == originalSchedule.LearningRegisId &&
+                        s.PreferenceStatus == PreferenceStatus.MakeupClass);
 
-                    if (makeupSchedules.Any())
+                if (existingMakeupSchedules.Any())
+                {
+                    return new ResponseDTO
                     {
-                        return new ResponseDTO
-                        {
-                            IsSucceed = false,
-                            Message = "A makeup class already exists for this learning registration. Only one makeup class is allowed."
-                        };
-                    }
+                        IsSucceed = false,
+                        Message = "A makeup class has already been scheduled for this learning registration. Only one makeup class is allowed."
+                    };
                 }
 
                 // 4. Validate that new date is in the future
