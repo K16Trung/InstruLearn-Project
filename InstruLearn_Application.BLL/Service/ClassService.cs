@@ -771,7 +771,7 @@ namespace InstruLearn_Application.BLL.Service
                     {
                         // Simply update the status without trying to set TestResults
                         learningRegis.Status = eligibilityDTO.IsEligible ?
-                            LearningRegis.Accepted : LearningRegis.TestFailed;
+                            LearningRegis.FullyPaid : LearningRegis.TestFailed;
 
                         await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
                     }
