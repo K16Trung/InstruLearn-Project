@@ -236,7 +236,7 @@ namespace InstruLearn_Application.BLL.Service
                         try
                         {
                             // Construct email content with payment details
-                            string subject = "Your Learning Path is Now Available";
+                            string subject = "Lộ trình học tập của bạn đã được cập nhật";
                             string body = $@"
                     <html>
                     <body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>

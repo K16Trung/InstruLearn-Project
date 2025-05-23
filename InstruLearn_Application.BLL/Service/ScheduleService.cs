@@ -1215,6 +1215,39 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
+                if (originalSchedule.PreferenceStatus == PreferenceStatus.MakeupClass)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "A makeup class has already been scheduled for this absent class. Only one makeup class is allowed per absence."
+                    };
+                }
+
+                var existingMakeupSchedules = await _unitOfWork.ScheduleRepository.GetWhereAsync(
+                    s => s.LearningRegisId == originalSchedule.LearningRegisId &&
+                         s.ScheduleId != scheduleId &&
+                         s.PreferenceStatus == PreferenceStatus.MakeupClass);
+
+                if (existingMakeupSchedules.Any())
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "A makeup class has already been scheduled for this learning registration. Only one makeup class is allowed."
+                    };
+                }
+
+                DateOnly today = DateOnly.FromDateTime(DateTime.Now);
+                if (newDate < today)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Makeup class must be scheduled for a future date."
+                    };
+                }
+
                 // Check if the new date has the same day of week as the old date
                 if (originalSchedule.StartDay.DayOfWeek == newDate.DayOfWeek)
                 {
