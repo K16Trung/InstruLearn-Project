@@ -183,20 +183,20 @@ namespace InstruLearn_Application.BLL.Service
 
                 var dto = _mapper.Map<OneOnOneRegisDTO>(registration);
 
+                var registrationDict = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(
+                    JsonSerializer.Serialize(dto));
+
                 var firstPaymentPeriod = await GetFirstPaymentPeriodInfoAsync(learningRegisId);
                 var secondPaymentPeriod = await GetSecondPaymentPeriodInfoAsync(learningRegisId);
 
-                dynamic enrichedDto = new ExpandoObject();
-                var enrichedDict = (IDictionary<string, object>)enrichedDto;
-
-                var dtoProps = typeof(OneOnOneRegisDTO).GetProperties();
-                foreach (var prop in dtoProps)
+                var enrichedReg = new Dictionary<string, object>();
+                foreach (var kvp in registrationDict)
                 {
-                    enrichedDict[prop.Name] = prop.GetValue(dto);
+                    enrichedReg[kvp.Key] = JsonSerializer.Deserialize<object>(kvp.Value.GetRawText());
                 }
 
-                enrichedDict["firstPaymentPeriod"] = firstPaymentPeriod;
-                enrichedDict["secondPaymentPeriod"] = secondPaymentPeriod;
+                enrichedReg["firstPaymentPeriod"] = firstPaymentPeriod;
+                enrichedReg["secondPaymentPeriod"] = secondPaymentPeriod;
 
                 var learningPathSessions = await _unitOfWork.LearningPathSessionRepository
                     .GetByLearningRegisIdAsync(learningRegisId);
@@ -204,10 +204,10 @@ namespace InstruLearn_Application.BLL.Service
                 if (learningPathSessions != null && learningPathSessions.Any())
                 {
                     var learningPathSessionDTOs = _mapper.Map<List<LearningPathSessionDTO>>(learningPathSessions);
-                    enrichedDict["LearningPath"] = learningPathSessionDTOs;
+                    enrichedReg["LearningPath"] = learningPathSessionDTOs;
                 }
 
-                enrichedDict["teacherChangeStatus"] = new
+                enrichedReg["teacherChangeStatus"] = new
                 {
                     ChangeTeacherRequested = registration.ChangeTeacherRequested,
                     TeacherChangeProcessed = registration.TeacherChangeProcessed
@@ -217,7 +217,7 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     IsSucceed = true,
                     Message = "Learning registration retrieved successfully.",
-                    Data = enrichedDto
+                    Data = enrichedReg
                 };
             }
             catch (Exception ex)
