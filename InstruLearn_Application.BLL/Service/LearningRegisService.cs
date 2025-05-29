@@ -267,34 +267,6 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                /*_logger.LogInformation("Starting learning registration process.");
-
-                var scheduleConflict = await _scheduleService.CheckLearnerScheduleConflictAsync(createLearningRegisDTO.LearnerId, createLearningRegisDTO.StartDay.Value, createLearningRegisDTO.TimeStart, createLearningRegisDTO.TimeLearning);
-
-                if (!scheduleConflict.IsSucceed)
-                {
-                    return scheduleConflict;
-                }
-
-                var existingRegistrations = await _unitOfWork.LearningRegisRepository
-                    .GetQuery()
-                    .Where(r =>
-                        r.LearnerId == createLearningRegisDTO.LearnerId &&
-                        //r.MajorId == createLearningRegisDTO.MajorId && 
-                        r.TimeStart == createLearningRegisDTO.TimeStart &&
-                        //r.TimeLearning == createLearningRegisDTO.TimeLearning &&
-                        r.Status == LearningRegis.Pending)
-                    .ToListAsync();
-
-                if (existingRegistrations.Any())
-                {
-                    return new ResponseDTO
-                    {
-                        IsSucceed = false,
-                        Message = "You already have a pending registration for this major. Please wait for it to be processed before creating a new one."
-                    };
-                }*/
-
                 _logger.LogInformation("Starting learning registration process.");
 
                 // Check if valid learning days were provided
@@ -402,11 +374,10 @@ namespace InstruLearn_Application.BLL.Service
 
                     var learningRegis = _mapper.Map<Learning_Registration>(createLearningRegisDTO);
                     learningRegis.Status = LearningRegis.Pending;
-
-                    /*if (!string.IsNullOrEmpty(createLearningRegisDTO.SelfAssessment))
-                    {
-                        learningRegis.SelfAssessment = createLearningRegisDTO.SelfAssessment;
-                    }*/
+                    
+                    // Set the request date to Vietnam time zone (UTC+7)
+                    var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+                    learningRegis.RequestDate = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vietnamTimeZone);
 
                     await _unitOfWork.LearningRegisRepository.AddAsync(learningRegis);
                     await _unitOfWork.SaveChangeAsync();
