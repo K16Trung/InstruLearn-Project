@@ -36,10 +36,12 @@ namespace InstruLearn_Application.BLL.Service
         // Get All Teachers
         public async Task<List<ResponseDTO>> GetAllTeachersAsync()
         {
-            // Update to include Account data with Teacher
+            // Update to include Account data and Majors with Teacher
             var teacherList = await _unitOfWork.TeacherRepository
                 .GetQuery()
                 .Include(t => t.Account)
+                .Include(t => t.TeacherMajors)
+                    .ThenInclude(tm => tm.Major)
                 .ToListAsync();
 
             var teacherDtos = _mapper.Map<IEnumerable<TeacherDTO>>(teacherList);
@@ -63,7 +65,14 @@ namespace InstruLearn_Application.BLL.Service
         {
             var response = new ResponseDTO();
 
-            var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(teacherId);
+            // Use query with includes instead of GetByIdAsync
+            var teacher = await _unitOfWork.TeacherRepository
+                .GetQuery()
+                .Include(t => t.Account)
+                .Include(t => t.TeacherMajors)
+                    .ThenInclude(tm => tm.Major)
+                .FirstOrDefaultAsync(t => t.TeacherId == teacherId);
+
             if (teacher == null)
             {
                 response.Message = "Teacher not found.";
