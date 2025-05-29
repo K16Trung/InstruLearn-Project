@@ -1,5 +1,6 @@
 ﻿using InstruLearn_Application.Model.Models.DTO;
 using InstruLearn_Application.Model.Models.DTO.Class;
+using InstruLearn_Application.Model.Models.DTO.LearnerClass;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,5 +20,6 @@ namespace InstruLearn_Application.BLL.Service.IService
         Task<ResponseDTO> UpdateClassAsync (int classId, UpdateClassDTO updateClassDTO);
         Task<ResponseDTO> DeleteClassAsync (int classId);
         Task<ResponseDTO> UpdateLearnerClassEligibilityAsync(LearnerClassEligibilityDTO eligibilityDTO);
+        Task<ResponseDTO> RemoveLearnerFromClassAsync(RemoveLearnerFromClassDTO removalDTO);
     }
 }

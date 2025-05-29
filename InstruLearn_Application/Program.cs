@@ -133,6 +133,7 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<ILevelFeedbackCriterionRepository, LevelFeedbackCriterionRepository>();
             builder.Services.AddScoped<ILevelFeedbackTemplateRepository, LevelFeedbackTemplateRepository>();
             builder.Services.AddScoped<ISelfAssessmentRepository, SelfAssessmentRepository>();
+            builder.Services.AddScoped<ILearnerClassRepository, LearnerClassRepository>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             builder.Services.AddScoped<IAuthService, AuthService>();

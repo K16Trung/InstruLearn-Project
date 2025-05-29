@@ -7,6 +7,7 @@ using InstruLearn_Application.Model.Models.DTO;
 using InstruLearn_Application.Model.Models.DTO.Class;
 using InstruLearn_Application.Model.Models.DTO.ClassDay;
 using InstruLearn_Application.Model.Models.DTO.Feedback;
+using InstruLearn_Application.Model.Models.DTO.LearnerClass;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -849,6 +850,121 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     IsSucceed = false,
                     Message = $"Lỗi: {ex.Message}"
+                };
+            }
+        }
+
+        public async Task<ResponseDTO> RemoveLearnerFromClassAsync(RemoveLearnerFromClassDTO removalDTO)
+        {
+            try
+            {
+                var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(removalDTO.LearnerId);
+                if (learner == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Không tìm thấy học viên."
+                    };
+                }
+
+                var classEntity = await _unitOfWork.ClassRepository.GetByIdAsync(removalDTO.ClassId);
+                if (classEntity == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Không tìm thấy lớp học."
+                    };
+                }
+
+                // Check if the learner is actually enrolled in this class
+                var learnerClass = await _unitOfWork.LearnerClassRepository.GetByLearnerAndClassAsync(
+                    removalDTO.LearnerId, removalDTO.ClassId);
+
+                if (learnerClass == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Học viên không thuộc lớp học này."
+                    };
+                }
+
+                using var transaction = await _unitOfWork.BeginTransactionAsync();
+                try
+                {
+                    // 1. Remove from Learner_Classes table
+                    await _unitOfWork.LearnerClassRepository.RemoveByLearnerAndClassAsync(
+                        removalDTO.LearnerId, removalDTO.ClassId);
+                    await _unitOfWork.SaveChangeAsync();
+
+                    // 2. Delete Learning Registration records
+                    var registrations = await _unitOfWork.LearningRegisRepository.GetQuery()
+                        .Where(lr => lr.LearnerId == removalDTO.LearnerId &&
+                                   lr.ClassId == removalDTO.ClassId)
+                        .ToListAsync();
+
+                    foreach (var registration in registrations)
+                    {
+                        await _unitOfWork.LearningRegisRepository.DeleteAsync(registration.LearningRegisId);
+                    }
+                    await _unitOfWork.SaveChangeAsync();
+
+                    // 3. Remove associated schedules
+                    var schedules = await _unitOfWork.ScheduleRepository.GetQuery()
+                        .Where(s => s.LearnerId == removalDTO.LearnerId &&
+                                  s.ClassId == removalDTO.ClassId)
+                        .ToListAsync();
+
+                    foreach (var schedule in schedules)
+                    {
+                        await _unitOfWork.ScheduleRepository.DeleteAsync(schedule.ScheduleId);
+                    }
+                    await _unitOfWork.SaveChangeAsync();
+
+                    // 4. Create notification for the learner
+                    var notification = new StaffNotification
+                    {
+                        LearnerId = removalDTO.LearnerId,
+                        Title = $"Thông báo xóa khỏi lớp {classEntity.ClassName}",
+                        Message = $"Bạn đã bị xóa khỏi lớp {classEntity.ClassName}.",
+                        Type = NotificationType.ClassChange,
+                        Status = NotificationStatus.Unread,
+                        CreatedAt = DateTime.Now
+                    };
+
+                    await _unitOfWork.StaffNotificationRepository.AddAsync(notification);
+                    await _unitOfWork.SaveChangeAsync();
+
+                    await _unitOfWork.CommitTransactionAsync();
+
+                    return new ResponseDTO
+                    {
+                        IsSucceed = true,
+                        Message = $"Học viên {learner.FullName} đã bị xóa khỏi lớp {classEntity.ClassName} thành công.",
+                        Data = new
+                        {
+                            LearnerId = removalDTO.LearnerId,
+                            LearnerName = learner.FullName,
+                            ClassId = removalDTO.ClassId,
+                            ClassName = classEntity.ClassName,
+                            RemovalDate = DateTime.Now
+                        }
+                    };
+                }
+                catch (Exception ex)
+                {
+                    await _unitOfWork.RollbackTransactionAsync();
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Lỗi xảy ra khi xóa học viên khỏi lớp học: {ex.Message}"
                 };
             }
         }
