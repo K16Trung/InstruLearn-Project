@@ -746,6 +746,16 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
+                DateOnly currentDate = DateOnly.FromDateTime(DateTime.Now);
+                if (currentDate > classEntity.TestDay)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Không thể cập nhật trạng thái kiểm tra đầu vào sau khi ngày kiểm tra đã qua."
+                    };
+                }
+
                 // Check if the learner is enrolled in this class
                 var learnerClass = await _unitOfWork.dbContext.Learner_Classes
                     .FirstOrDefaultAsync(lc => lc.LearnerId == eligibilityDTO.LearnerId && lc.ClassId == eligibilityDTO.ClassId);
