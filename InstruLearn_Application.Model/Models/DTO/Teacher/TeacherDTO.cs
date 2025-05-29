@@ -14,6 +14,7 @@ namespace InstruLearn_Application.Model.Models.DTO.Teacher
         public int TeacherId { get; set; }
         public string AccountId { get; set; }
         public string Email { get; set; }
+        public string Username { get; set; }
         public string Fullname { get; set; }
         public string? Heading { get; set; }
         public string? Details { get; set; }

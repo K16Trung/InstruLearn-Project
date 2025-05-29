@@ -36,7 +36,12 @@ namespace InstruLearn_Application.BLL.Service
         // Get All Teachers
         public async Task<List<ResponseDTO>> GetAllTeachersAsync()
         {
-            var teacherList = await _unitOfWork.TeacherRepository.GetAllAsync();
+            // Update to include Account data with Teacher
+            var teacherList = await _unitOfWork.TeacherRepository
+                .GetQuery()
+                .Include(t => t.Account)
+                .ToListAsync();
+
             var teacherDtos = _mapper.Map<IEnumerable<TeacherDTO>>(teacherList);
 
             var responseList = new List<ResponseDTO>();
@@ -87,15 +92,23 @@ namespace InstruLearn_Application.BLL.Service
                         return new ResponseDTO
                         {
                             IsSucceed = false,
-                            Message = "One or more Majors not found",
+                            Message = "Một hoặc nhiều chuyên ngành không tồn tại",
                         };
                     }
 
-                    var accounts = _unitOfWork.AccountRepository.GetFilter(x => x.Email == createTeacherDTO.Email);
-                    var existingAccount = accounts.Items.FirstOrDefault();
-                    if (existingAccount != null)
+                    // Kiểm tra email tồn tại
+                    var accountsByEmail = _unitOfWork.AccountRepository.GetFilter(x => x.Email == createTeacherDTO.Email);
+                    if (accountsByEmail.Items.Any())
                     {
-                        response.Message = "Email already exists.";
+                        response.Message = "Email đã tồn tại.";
+                        return response;
+                    }
+
+                    // Kiểm tra tên đăng nhập tồn tại
+                    var accountsByUsername = _unitOfWork.AccountRepository.GetFilter(x => x.Username == createTeacherDTO.Username);
+                    if (accountsByUsername.Items.Any())
+                    {
+                        response.Message = "Tên đăng nhập đã tồn tại.";
                         return response;
                     }
 
@@ -143,14 +156,14 @@ namespace InstruLearn_Application.BLL.Service
                     await transaction.CommitAsync();
 
                     response.IsSucceed = true;
-                    response.Message = "Teacher created successfully!";
+                    response.Message = "Tạo giáo viên thành công!";
                     return response;
                 }
                 catch (Exception ex)
                 {
                     await transaction.RollbackAsync();
                     response.IsSucceed = false;
-                    response.Message = $"Error: {ex.InnerException?.Message ?? ex.Message}";
+                    response.Message = $"Lỗi: {ex.InnerException?.Message ?? ex.Message}";
                     return response;
                 }
             }

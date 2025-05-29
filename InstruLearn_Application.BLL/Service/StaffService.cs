@@ -45,6 +45,7 @@ namespace InstruLearn_Application.BLL.Service
             response.Data = staffDTOs;
             return response;
         }
+
         public async Task<ResponseDTO> GetStaffByIdAsync(int staffId)
         {
             var response = new ResponseDTO();
@@ -72,6 +73,13 @@ namespace InstruLearn_Application.BLL.Service
                 return response;
             }
 
+            var accountsByUsername = _unitOfWork.AccountRepository.GetFilter(x => x.Username == createStaffDTO.Username);
+            if (accountsByUsername.Items.Any())
+            {
+                response.Message = "Tên đăng nhập đã tồn tại.";
+                return response;
+            }
+
             var account = new Account
             {
                 AccountId = Guid.NewGuid().ToString(),
@@ -82,7 +90,7 @@ namespace InstruLearn_Application.BLL.Service
                 PhoneNumber = createStaffDTO.PhoneNumber,
                 DateOfEmployment = DateOnly.FromDateTime(DateTime.Now),
                 IsActive = AccountStatus.Active,
-
+                IsEmailVerified = true,
                 RefreshToken = _jwtHelper.GenerateRefreshToken(),
                 RefreshTokenExpires = DateTime.Now.AddDays(7)
             };
@@ -103,6 +111,7 @@ namespace InstruLearn_Application.BLL.Service
             response.IsSucceed = true;
             response.Message = "Nhân viên đã được tạo thành công!";
             return response;
+
         }
         public async Task<ResponseDTO> UpdateStaffAsync(int staffId, UpdateStaffDTO updateStaffDTO)
         {

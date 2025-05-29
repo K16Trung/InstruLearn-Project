@@ -179,6 +179,7 @@ namespace InstruLearn_Application.Model.Mapper
             CreateMap<Teacher, TeacherDTO>()
                 .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.Account.IsActive))
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Account.Email))
+                .ForMember(dest => dest.Username, opt => opt.MapFrom(src => src.Account.Username))
                 .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.Account.PhoneNumber))
                 .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => src.Account.Gender))
                 .ForMember(dest => dest.Avatar, opt => opt.MapFrom(src => src.Account.Avatar))

@@ -99,6 +99,13 @@ namespace InstruLearn_Application.BLL.Service
             var existingUserName = await _authRepository.GetByUserName(registerDTO.Username);
             if (existingUserName != null)
             {
+                if (!existingUserName.IsEmailVerified &&
+                    existingUserName.EmailVerificationTokenExpires > DateTime.Now)
+                {
+                    response.Message = "Tên người dùng đã tồn tại nhưng email chưa được xác minh, vui lòng thử lại sau vài phút.";
+                    return response;
+                }
+
                 response.Message = "Người dùng đã tồn tại!";
                 return response;
             }
@@ -106,6 +113,13 @@ namespace InstruLearn_Application.BLL.Service
             var existingEmail = await _authRepository.GetByEmail(registerDTO.Email);
             if (existingEmail != null)
             {
+                if (!existingEmail.IsEmailVerified &&
+                    existingEmail.EmailVerificationTokenExpires > DateTime.Now)
+                {
+                    response.Message = "Email đã được đăng ký nhưng chưa xác minh, vui lòng kiểm tra hộp thư hoặc thử lại sau vài phút.";
+                    return response;
+                }
+
                 response.Message = "Email đã tồn tại!";
                 return response;
             }
@@ -149,7 +163,7 @@ namespace InstruLearn_Application.BLL.Service
             );
 
             response.IsSucceed = true;
-            response.Message = "Đăng ký thành công! Vui lòng kiểm tra email để xác minh tài khoản của bạn.";
+            response.Message = "Đăng ký thành công! Vui lòng kiểm tra email để xác minh tài khoản trong vòng 2 phút.";
             response.Data = true;
             return response;
         }
@@ -348,11 +362,17 @@ namespace InstruLearn_Application.BLL.Service
                 return response;
             }
 
-            if (account.EmailVerificationToken != verifyEmailDTO.Token ||
-                account.EmailVerificationTokenExpires == null ||
-                account.EmailVerificationTokenExpires < DateTime.Now)
+            if (account.EmailVerificationTokenExpires < DateTime.Now)
             {
-                response.Message = "Mã xác minh không hợp lệ hoặc đã hết hạn. Vui lòng đăng ký lại.";
+                await DeleteUnverifiedAccount(account);
+
+                response.Message = "Mã xác minh đã hết hạn. Tài khoản đã bị xóa, vui lòng đăng ký lại.";
+                return response;
+            }
+
+            if (account.EmailVerificationToken != verifyEmailDTO.Token)
+            {
+                response.Message = "Mã xác minh không hợp lệ. Vui lòng kiểm tra lại.";
                 return response;
             }
 
@@ -367,6 +387,7 @@ namespace InstruLearn_Application.BLL.Service
             response.Message = "Email đã được xác minh thành công.";
             return response;
         }
+
         public async Task<ResponseDTO> ResendVerificationEmailAsync(string email)
         {
             var response = new ResponseDTO();
@@ -420,6 +441,24 @@ namespace InstruLearn_Application.BLL.Service
 
             return new string(password);
         }
+
+        private async Task DeleteUnverifiedAccount(Account account)
+        {
+            var learner = await _learnerRepository.FirstOrDefaultAsync(l => l.AccountId == account.AccountId);
+            if (learner != null)
+            {
+                var wallet = await _walletRepository.GetFirstOrDefaultAsync(w => w.LearnerId == learner.LearnerId);
+                if (wallet != null)
+                {
+                    await _walletRepository.DeleteAsync(wallet.WalletId);
+                }
+
+                await _learnerRepository.DeleteAsync(learner.LearnerId);
+            }
+
+            await _authRepository.DeleteAsync(account.AccountId);
+        }
+
         private string HashPassword(string password)
         {
             return BCrypt.Net.BCrypt.HashPassword(password); 

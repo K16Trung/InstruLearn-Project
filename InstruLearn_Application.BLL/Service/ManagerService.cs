@@ -66,11 +66,17 @@ namespace InstruLearn_Application.BLL.Service
         {
             var response = new ResponseDTO();
 
-            var accounts = _unitOfWork.AccountRepository.GetFilter(x => x.Email == createManagerDTO.Email);
-            var existingAccount = accounts.Items.FirstOrDefault();
-            if (existingAccount != null)
+            var accountsByEmail = _unitOfWork.AccountRepository.GetFilter(x => x.Email == createManagerDTO.Email);
+            if (accountsByEmail.Items.Any())
             {
-                response.Message = "Email already exists.";
+                response.Message = "Email đã tồn tại.";
+                return response;
+            }
+
+            var accountsByUsername = _unitOfWork.AccountRepository.GetFilter(x => x.Username == createManagerDTO.Username);
+            if (accountsByUsername.Items.Any())
+            {
+                response.Message = "Tên đăng nhập đã tồn tại.";
                 return response;
             }
 
@@ -103,7 +109,7 @@ namespace InstruLearn_Application.BLL.Service
             await _unitOfWork.ManagerRepository.AddAsync(manager);
 
             response.IsSucceed = true;
-            response.Message = "Manager created successfully!";
+            response.Message = "Tạo quản lý thành công!";
             return response;
         }
 
