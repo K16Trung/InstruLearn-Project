@@ -81,7 +81,6 @@ namespace InstruLearn_Application.BLL.Service
 
                 foreach (var classEntity in classes)
                 {
-                    // Replace the non-existent GetByClassIdAsync method with GetQuery and filter
                     var classDays = await unitOfWork.ClassDayRepository.GetQuery()
                         .Where(cd => cd.ClassId == classEntity.ClassId)
                         .ToListAsync();
@@ -98,6 +97,10 @@ namespace InstruLearn_Application.BLL.Service
                     ClassStatus oldStatus = classEntity.Status;
 
                     if (classEntity.TestDay == today)
+                    {
+                        newStatus = ClassStatus.OnTestDay;
+                    }
+                    else if (oldStatus == ClassStatus.OnTestDay && classEntity.StartDate > today)
                     {
                         newStatus = ClassStatus.OnTestDay;
                     }
