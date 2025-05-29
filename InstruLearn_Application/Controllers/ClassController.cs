@@ -1,5 +1,8 @@
 ﻿using InstruLearn_Application.BLL.Service.IService;
+using InstruLearn_Application.Model.Models.DTO;
 using InstruLearn_Application.Model.Models.DTO.Class;
+using InstruLearn_Application.Model.Models.DTO.LearnerClass;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -95,6 +98,27 @@ namespace InstruLearn_Application.Controllers
                 return BadRequest(result);
 
             return Ok(result);
+        }
+        [HttpPost("remove-learner")]
+        public async Task<ActionResult<ResponseDTO>> RemoveLearnerFromClass([FromBody] RemoveLearnerFromClassDTO removalDTO)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Invalid removal request data."
+                });
+            }
+
+            var result = await _classService.RemoveLearnerFromClassAsync(removalDTO);
+
+            if (result.IsSucceed)
+            {
+                return Ok(result);
+            }
+
+            return BadRequest(result);
         }
     }
 }
