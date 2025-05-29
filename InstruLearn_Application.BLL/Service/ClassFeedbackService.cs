@@ -38,6 +38,28 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
+            var classDayValues = classEntity.ClassDays.Select(cd => cd.Day).ToList();
+            if (!classDayValues.Any())
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Class schedule information not found"
+                };
+            }
+
+            var endDate = DateTimeHelper.CalculateEndDate(classEntity.StartDate, classEntity.totalDays, classDayValues);
+            var today = DateOnly.FromDateTime(DateTime.Today);
+
+            if (today < endDate)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = $"Feedback can only be created on or after the last day of class ({endDate:yyyy-MM-dd})"
+                };
+            }
+
             // Verify learner exists
             var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(feedbackDTO.LearnerId);
             if (learner == null)
