@@ -125,6 +125,12 @@ namespace InstruLearn_Application.BLL.Service
             decimal totalPercentage = 0;
             decimal totalWeight = 0;
 
+            var criteria = await _unitOfWork.LevelFeedbackCriterionRepository.GetCriteriaByTemplateIdAsync(template.TemplateId);
+            if (criteria != null)
+            {
+                totalWeight = criteria.Sum(c => c.Weight);
+            }
+
             // Add evaluations
             if (feedbackDTO.Evaluations != null && feedbackDTO.Evaluations.Any())
             {
@@ -144,7 +150,10 @@ namespace InstruLearn_Application.BLL.Service
                     if (evaluationDTO.AchievedPercentage.HasValue)
                     {
                         totalPercentage += evaluationDTO.AchievedPercentage.Value;
-                        totalWeight += criterion.Weight;
+                    }
+                    else
+                    {
+                        evaluation.AchievedPercentage = 0;
                     }
 
                     await _unitOfWork.ClassFeedbackEvaluationRepository.AddAsync(evaluation);
@@ -443,44 +452,50 @@ namespace InstruLearn_Application.BLL.Service
             foreach (var feedbackDTO in feedbackDTOs)
             {
                 var feedbackWithEval = await _unitOfWork.ClassFeedbackRepository.GetFeedbackWithEvaluationsAsync(feedbackDTO.FeedbackId);
-                if (feedbackWithEval?.Evaluations == null || !feedbackWithEval.Evaluations.Any())
-                {
-                    feedbackDTO.AverageScore = 0;
-                    feedbackDTO.TotalWeight = 0;
+                if (feedbackWithEval == null)
                     continue;
+
+                var template = await _unitOfWork.LevelFeedbackTemplateRepository
+                    .GetTemplateWithCriteriaAsync(feedbackWithEval.TemplateId);
+
+                if (template?.Criteria != null)
+                {
+                    feedbackDTO.TotalWeight = template.Criteria.Sum(c => c.Weight);
+                }
+                else
+                {
+                    feedbackDTO.TotalWeight = 0;
                 }
 
                 decimal totalPercentage = 0;
-                decimal totalWeight = 0;
 
                 if (feedbackDTO.Evaluations == null)
                 {
                     feedbackDTO.Evaluations = new List<ClassFeedbackEvaluationDTO>();
                 }
 
-                foreach (var evaluation in feedbackWithEval.Evaluations)
+                if (feedbackWithEval?.Evaluations != null && feedbackWithEval.Evaluations.Any())
                 {
-                    totalPercentage += evaluation.AchievedPercentage;
-                    totalWeight += evaluation.Criterion.Weight;
-
-                    // Add the evaluation details to the DTO
-                    feedbackDTO.Evaluations.Add(new ClassFeedbackEvaluationDTO
+                    foreach (var evaluation in feedbackWithEval.Evaluations)
                     {
-                        EvaluationId = evaluation.EvaluationId,
-                        CriterionId = evaluation.CriterionId,
-                        Description = evaluation.Criterion?.Description,
-                        GradeCategory = evaluation.Criterion?.GradeCategory,
-                        Weight = evaluation.Criterion?.Weight ?? 0,
-                        AchievedPercentage = evaluation.AchievedPercentage,
-                        Comment = evaluation.Comment
-                    });
+                        totalPercentage += evaluation.AchievedPercentage;
+
+                        feedbackDTO.Evaluations.Add(new ClassFeedbackEvaluationDTO
+                        {
+                            EvaluationId = evaluation.EvaluationId,
+                            CriterionId = evaluation.CriterionId,
+                            Description = evaluation.Criterion?.Description,
+                            GradeCategory = evaluation.Criterion?.GradeCategory,
+                            Weight = evaluation.Criterion?.Weight ?? 0,
+                            AchievedPercentage = evaluation.AchievedPercentage,
+                            Comment = evaluation.Comment
+                        });
+                    }
                 }
 
                 feedbackDTO.TeacherId = feedbackWithEval.Class?.TeacherId ?? 0;
                 feedbackDTO.TeacherName = feedbackWithEval.Class?.Teacher?.Fullname ?? "Unknown";
-
                 feedbackDTO.AverageScore = totalPercentage;
-                feedbackDTO.TotalWeight = totalWeight;
             }
 
             return feedbackDTOs;
@@ -489,7 +504,7 @@ namespace InstruLearn_Application.BLL.Service
         public async Task<ClassFeedbackDTO> GetFeedbackByClassAndLearnerAsync(int classId, int learnerId)
         {
             var feedback = await _unitOfWork.ClassFeedbackRepository
-        .GetFeedbackByClassAndLearnerAsync(classId, learnerId);
+                .GetFeedbackByClassAndLearnerAsync(classId, learnerId);
 
             if (feedback != null)
             {
@@ -498,81 +513,68 @@ namespace InstruLearn_Application.BLL.Service
                 var feedbackWithEval = await _unitOfWork.ClassFeedbackRepository
                     .GetFeedbackWithEvaluationsAsync(feedback.FeedbackId);
 
-                if (feedbackWithEval?.Evaluations != null && feedbackWithEval.Evaluations.Any())
+                var existingTemplate = await _unitOfWork.LevelFeedbackTemplateRepository
+                    .GetTemplateWithCriteriaAsync(feedback.TemplateId);
+
+                if (existingTemplate?.Criteria != null)
                 {
-                    decimal totalPercentage = 0;
-                    decimal totalWeight = 0;
-
-                    foreach (var evaluation in feedbackWithEval.Evaluations)
-                    {
-                        // Just add the achieved percentage directly - no null check needed for decimal (non-nullable)
-                        totalPercentage += evaluation.AchievedPercentage;
-                        totalWeight += evaluation.Criterion.Weight;
-                    }
-
-                    feedbackDto.AverageScore = totalPercentage;
-                    feedbackDto.TotalWeight = totalWeight;
+                    feedbackDto.TotalWeight = existingTemplate.Criteria.Sum(c => c.Weight);
                 }
                 else
                 {
-                    feedbackDto.AverageScore = 0;
                     feedbackDto.TotalWeight = 0;
                 }
 
-                // Check if feedback is not completed or has incomplete evaluations
+                decimal totalPercentage = 0;
+
+                if (feedbackWithEval?.Evaluations != null && feedbackWithEval.Evaluations.Any())
+                {
+                    foreach (var evaluation in feedbackWithEval.Evaluations)
+                    {
+                        totalPercentage += evaluation.AchievedPercentage;
+                    }
+                }
+
+                feedbackDto.AverageScore = totalPercentage;
+
                 bool isIncomplete = feedback.CompletedAt == null ||
                     (feedbackWithEval?.Evaluations == null ||
                      !feedbackWithEval.Evaluations.Any());
 
                 if (isIncomplete)
                 {
-                    // Get class to access level information (avoid name conflict)
                     var existingClass = await _unitOfWork.ClassRepository.GetByIdAsync(classId);
                     if (existingClass != null)
                     {
-                        // Get template directly using the TemplateId from feedback (avoid name conflict)
-                        var existingTemplate = await _unitOfWork.LevelFeedbackTemplateRepository
-                            .GetTemplateWithCriteriaAsync(feedback.TemplateId);
-
-                        if (existingTemplate != null)
+                        if (existingTemplate?.Criteria != null)
                         {
-
-                            // Ensure template name is set
                             if (string.IsNullOrEmpty(feedbackDto.TemplateName))
                             {
                                 feedbackDto.TemplateName = existingTemplate.TemplateName;
                             }
 
-                            // Process criteria/evaluations
-                            if (existingTemplate.Criteria != null)
+                            if (feedbackDto.Evaluations == null)
                             {
-                                // Ensure evaluations list exists
-                                if (feedbackDto.Evaluations == null)
-                                {
-                                    feedbackDto.Evaluations = new List<ClassFeedbackEvaluationDTO>();
-                                }
+                                feedbackDto.Evaluations = new List<ClassFeedbackEvaluationDTO>();
+                            }
 
-                                // Add missing criteria from template
-                                foreach (var criterion in existingTemplate.Criteria.OrderBy(c => c.DisplayOrder))
-                                {
-                                    // Check if this criterion already exists in the feedback
-                                    var existingEvaluation = feedbackDto.Evaluations
-                                        .FirstOrDefault(e => e.CriterionId == criterion.CriterionId);
+                            foreach (var criterion in existingTemplate.Criteria.OrderBy(c => c.DisplayOrder))
+                            {
+                                var existingEvaluation = feedbackDto.Evaluations
+                                    .FirstOrDefault(e => e.CriterionId == criterion.CriterionId);
 
-                                    if (existingEvaluation == null)
+                                if (existingEvaluation == null)
+                                {
+                                    feedbackDto.Evaluations.Add(new ClassFeedbackEvaluationDTO
                                     {
-                                        // Add the missing criterion with null achievement
-                                        feedbackDto.Evaluations.Add(new ClassFeedbackEvaluationDTO
-                                        {
-                                            EvaluationId = 0,
-                                            CriterionId = criterion.CriterionId,
-                                            GradeCategory = criterion.GradeCategory,
-                                            Description = criterion.Description,
-                                            Weight = criterion.Weight,
-                                            AchievedPercentage = null,
-                                            Comment = null
-                                        });
-                                    }
+                                        EvaluationId = 0,
+                                        CriterionId = criterion.CriterionId,
+                                        GradeCategory = criterion.GradeCategory,
+                                        Description = criterion.Description,
+                                        Weight = criterion.Weight,
+                                        AchievedPercentage = null,
+                                        Comment = null
+                                    });
                                 }
                             }
                         }
@@ -582,6 +584,7 @@ namespace InstruLearn_Application.BLL.Service
                 return feedbackDto;
             }
 
+            // Template-based DTO creation for when no feedback exists (unchanged code)
             var classEntity = await _unitOfWork.ClassRepository.GetByIdAsync(classId);
             if (classEntity == null)
                 return null;
@@ -594,7 +597,7 @@ namespace InstruLearn_Application.BLL.Service
                 .GetClassSchedulesByLearnerIdAsync(learnerId);
 
             bool isEnrolled = learnerSchedules != null &&
-                              learnerSchedules.Any(s => s.ClassId == classId);
+                               learnerSchedules.Any(s => s.ClassId == classId);
 
             if (!isEnrolled)
                 return null;
