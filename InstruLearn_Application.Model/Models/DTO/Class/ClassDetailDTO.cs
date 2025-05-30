@@ -21,6 +21,7 @@ namespace InstruLearn_Application.Model.Models.DTO.Class
         public string? SyllabusLink { get; set; }
         public DateOnly TestDay { get; set; }
         public TimeOnly ClassTime { get; set; }
+        public TimeOnly ClassEndTime { get; set; }
         public int MaxStudents { get; set; }
         public int TotalDays { get; set; }
         public ClassStatus Status { get; set; }
