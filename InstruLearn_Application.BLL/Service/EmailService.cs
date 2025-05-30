@@ -53,7 +53,6 @@ namespace InstruLearn_Application.BLL.Service
                  <p>Xin chào {username},</p>
                  <p>Cảm ơn bạn đã đăng ký với InstruLearn. Mã xác minh email của bạn là:</p>
                  <h3 style=""font-size: 24px; padding: 10px; background-color: #f0f0f0; text-align: center; letter-spacing: 5px;"">{token}</h3>
-                 <p>Mã này sẽ hết hạn sau 24 giờ.</p>
                  <p>Nếu bạn không tạo tài khoản, vui lòng bỏ qua email này.</p>
                  <p>Trân trọng,</p>
                  <p>InstruLearn</p>
