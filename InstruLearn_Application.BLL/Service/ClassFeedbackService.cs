@@ -122,6 +122,15 @@ namespace InstruLearn_Application.BLL.Service
             var createdFeedback = await _unitOfWork.ClassFeedbackRepository.GetFeedbackByClassAndLearnerAsync(
                 feedbackDTO.ClassId, feedbackDTO.LearnerId);
 
+            if (createdFeedback == null)
+            {
+                return new ResponseDTO
+                {
+                    IsSucceed = false,
+                    Message = "Failed to retrieve created feedback"
+                };
+            }
+
             decimal totalPercentage = 0;
             decimal totalWeight = 0;
 
@@ -474,8 +483,11 @@ namespace InstruLearn_Application.BLL.Service
                     feedbackDTO.Evaluations = new List<ClassFeedbackEvaluationDTO>();
                 }
 
+                bool hasEvaluations = false;
+
                 if (feedbackWithEval?.Evaluations != null && feedbackWithEval.Evaluations.Any())
                 {
+                    hasEvaluations = true;
                     foreach (var evaluation in feedbackWithEval.Evaluations)
                     {
                         totalPercentage += evaluation.AchievedPercentage;
@@ -489,6 +501,23 @@ namespace InstruLearn_Application.BLL.Service
                             Weight = evaluation.Criterion?.Weight ?? 0,
                             AchievedPercentage = evaluation.AchievedPercentage,
                             Comment = evaluation.Comment
+                        });
+                    }
+                }
+
+                if (!hasEvaluations && template?.Criteria != null)
+                {
+                    foreach (var criterion in template.Criteria.OrderBy(c => c.DisplayOrder))
+                    {
+                        feedbackDTO.Evaluations.Add(new ClassFeedbackEvaluationDTO
+                        {
+                            EvaluationId = 0,
+                            CriterionId = criterion.CriterionId,
+                            GradeCategory = criterion.GradeCategory,
+                            Description = criterion.Description,
+                            Weight = criterion.Weight,
+                            AchievedPercentage = null,
+                            Comment = null
                         });
                     }
                 }
@@ -525,6 +554,15 @@ namespace InstruLearn_Application.BLL.Service
                     feedbackDto.TotalWeight = 0;
                 }
 
+                if (feedbackDto.Evaluations == null)
+                {
+                    feedbackDto.Evaluations = new List<ClassFeedbackEvaluationDTO>();
+                }
+                else
+                {
+                    feedbackDto.Evaluations.Clear();
+                }
+
                 decimal totalPercentage = 0;
 
                 if (feedbackWithEval?.Evaluations != null && feedbackWithEval.Evaluations.Any())
@@ -532,10 +570,28 @@ namespace InstruLearn_Application.BLL.Service
                     foreach (var evaluation in feedbackWithEval.Evaluations)
                     {
                         totalPercentage += evaluation.AchievedPercentage;
+
+                        // Add each evaluation to the DTO with all details
+                        feedbackDto.Evaluations.Add(new ClassFeedbackEvaluationDTO
+                        {
+                            EvaluationId = evaluation.EvaluationId,
+                            CriterionId = evaluation.CriterionId,
+                            Description = evaluation.Criterion?.Description,
+                            GradeCategory = evaluation.Criterion?.GradeCategory,
+                            Weight = evaluation.Criterion?.Weight ?? 0,
+                            AchievedPercentage = evaluation.AchievedPercentage,
+                            Comment = evaluation.Comment
+                        });
                     }
                 }
 
                 feedbackDto.AverageScore = totalPercentage;
+
+                if (feedbackWithEval?.Class != null)
+                {
+                    feedbackDto.TeacherId = feedbackWithEval.Class.TeacherId;
+                    feedbackDto.TeacherName = feedbackWithEval.Class.Teacher?.Fullname ?? "Unknown";
+                }
 
                 bool isIncomplete = feedback.CompletedAt == null ||
                     (feedbackWithEval?.Evaluations == null ||
