@@ -51,7 +51,7 @@ namespace InstruLearn_Application.BLL.Service
             var endDate = DateTimeHelper.CalculateEndDate(classEntity.StartDate, classEntity.totalDays, classDayValues);
             var today = DateOnly.FromDateTime(DateTime.Today);
 
-            if (today == endDate)
+            if (today != endDate)
             {
                 return new ResponseDTO
                 {
@@ -252,7 +252,7 @@ namespace InstruLearn_Application.BLL.Service
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Feedback created successfully",
+                Message = "Feedback thành công",
                 Data = createdFeedback.FeedbackId
             };
         }
