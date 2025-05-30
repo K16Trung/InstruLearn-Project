@@ -51,12 +51,12 @@ namespace InstruLearn_Application.BLL.Service
             var endDate = DateTimeHelper.CalculateEndDate(classEntity.StartDate, classEntity.totalDays, classDayValues);
             var today = DateOnly.FromDateTime(DateTime.Today);
 
-            if (today < endDate)
+            if (today == endDate)
             {
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Phản hồi chỉ có thể được tạo vào hoặc sau ngày cuối cùng của lớp học ({endDate:yyyy-MM-dd})"
+                    Message = $"Phản hồi chỉ có thể được tạo vào ngày cuối cùng của lớp học ({endDate:yyyy-MM-dd})"
                 };
             }
 
