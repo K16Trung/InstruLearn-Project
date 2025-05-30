@@ -110,6 +110,8 @@ namespace InstruLearn_Application.BLL.Service
 
                 var classDetailDTO = _mapper.Map<ClassDetailDTO>(classEntity);
 
+                classDetailDTO.ClassEndTime = classDetailDTO.ClassTime.AddHours(2);
+
                 if (string.IsNullOrEmpty(classDetailDTO.SyllabusLink))
                 {
                     var level = await _unitOfWork.LevelAssignedRepository.GetByIdAsync(classDetailDTO.LevelId);
