@@ -27,7 +27,6 @@ namespace InstruLearn_Application.BLL.Service
         }
         public async Task<ResponseDTO> CreateFeedbackAsync(CreateClassFeedbackDTO feedbackDTO)
         {
-            // Verify class exists
             var classEntity = await _unitOfWork.ClassRepository.GetByIdAsync(feedbackDTO.ClassId);
             if (classEntity == null)
             {
@@ -60,7 +59,6 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
-            // Verify learner exists
             var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(feedbackDTO.LearnerId);
             if (learner == null)
             {
@@ -71,7 +69,6 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
-            // Check if feedback already exists
             var existingFeedback = await _unitOfWork.ClassFeedbackRepository
                 .GetFeedbackByClassAndLearnerAsync(feedbackDTO.ClassId, feedbackDTO.LearnerId);
 
@@ -84,41 +81,56 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
-            // Get the feedback template for this class level
-            var level = await _unitOfWork.LevelAssignedRepository.GetWithIncludesAsync(
-                l => l.MajorId == classEntity.MajorId);
+            int templateId = 0;
 
-            if (!level.Any())
+            if (feedbackDTO.Evaluations != null && feedbackDTO.Evaluations.Any())
             {
-                return new ResponseDTO
+                var firstCriterionId = feedbackDTO.Evaluations.First().CriterionId;
+                var criterion = await _unitOfWork.LevelFeedbackCriterionRepository.GetByIdAsync(firstCriterionId);
+
+                if (criterion != null)
                 {
-                    IsSucceed = false,
-                    Message = "No level found for class major"
-                };
+                    templateId = criterion.TemplateId;
+                }
             }
 
-            var template = await _unitOfWork.LevelFeedbackTemplateRepository
-                .GetTemplateForLevelAsync(level.First().LevelId);
-
-            if (template == null)
+            if (templateId == 0)
             {
-                return new ResponseDTO
+                var level = await _unitOfWork.LevelAssignedRepository.GetWithIncludesAsync(
+                    l => l.MajorId == classEntity.MajorId);
+
+                if (!level.Any())
                 {
-                    IsSucceed = false,
-                    Message = "No active feedback template found for this class level"
-                };
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "No level found for class major"
+                    };
+                }
+
+                var template = await _unitOfWork.LevelFeedbackTemplateRepository
+                    .GetTemplateForLevelAsync(level.First().LevelId);
+
+                if (template == null)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "No active feedback template found for this class level"
+                    };
+                }
+
+                templateId = template.TemplateId;
             }
 
-            // Create the feedback
             var feedback = _mapper.Map<ClassFeedback>(feedbackDTO);
-            feedback.TemplateId = template.TemplateId;
+            feedback.TemplateId = templateId;
             feedback.CreatedAt = DateTime.Now;
             feedback.CompletedAt = DateTime.Now;
 
             await _unitOfWork.ClassFeedbackRepository.AddAsync(feedback);
             await _unitOfWork.SaveChangeAsync();
 
-            // Get the newly created feedback ID
             var createdFeedback = await _unitOfWork.ClassFeedbackRepository.GetFeedbackByClassAndLearnerAsync(
                 feedbackDTO.ClassId, feedbackDTO.LearnerId);
 
@@ -134,35 +146,32 @@ namespace InstruLearn_Application.BLL.Service
             decimal totalPercentage = 0;
             decimal totalWeight = 0;
 
-            var criteria = await _unitOfWork.LevelFeedbackCriterionRepository.GetCriteriaByTemplateIdAsync(template.TemplateId);
+            var criteria = await _unitOfWork.LevelFeedbackCriterionRepository.GetCriteriaByTemplateIdAsync(templateId);
             if (criteria != null)
             {
                 totalWeight = criteria.Sum(c => c.Weight);
             }
 
-            // Add evaluations
             if (feedbackDTO.Evaluations != null && feedbackDTO.Evaluations.Any())
             {
                 foreach (var evaluationDTO in feedbackDTO.Evaluations)
                 {
-                    // Verify criterion exists and belongs to the template
                     var criterion = await _unitOfWork.LevelFeedbackCriterionRepository.GetByIdAsync(evaluationDTO.CriterionId);
-                    if (criterion == null || criterion.TemplateId != template.TemplateId)
+                    if (criterion == null)
+                        continue;
+
+                    // Create evaluation without template validation since we picked template based on the criteria
+                    var evaluation = new ClassFeedbackEvaluation
                     {
-                        continue; // Skip invalid criteria
-                    }
+                        FeedbackId = createdFeedback.FeedbackId,
+                        CriterionId = evaluationDTO.CriterionId,
+                        AchievedPercentage = evaluationDTO.AchievedPercentage ?? 0,
+                        Comment = evaluationDTO.Comment
+                    };
 
-                    var evaluation = _mapper.Map<ClassFeedbackEvaluation>(evaluationDTO);
-                    evaluation.FeedbackId = createdFeedback.FeedbackId;
-
-                    // Calculate the total percentage score
                     if (evaluationDTO.AchievedPercentage.HasValue)
                     {
                         totalPercentage += evaluationDTO.AchievedPercentage.Value;
-                    }
-                    else
-                    {
-                        evaluation.AchievedPercentage = 0;
                     }
 
                     await _unitOfWork.ClassFeedbackEvaluationRepository.AddAsync(evaluation);
@@ -171,10 +180,8 @@ namespace InstruLearn_Application.BLL.Service
                 await _unitOfWork.SaveChangeAsync();
             }
 
-            // Check if the feedback score is greater than 50% to issue a real certification
             if (totalPercentage > 50)
             {
-                // Check if the learner already has a certification for this class
                 var existingCertificates = await _unitOfWork.CertificationRepository.GetByLearnerIdAsync(feedbackDTO.LearnerId);
 
                 var existingCertForClass = existingCertificates.FirstOrDefault(c =>
@@ -182,14 +189,11 @@ namespace InstruLearn_Application.BLL.Service
                     c.CertificationName != null &&
                     c.CertificationName.Contains(classEntity.ClassId.ToString()));
 
-                // Check if it's a temporary certificate that needs upgrading
                 bool isTemporaryCert = existingCertForClass != null &&
                     existingCertForClass.CertificationName.Contains("[TEMPORARY]");
 
-                // If no certificate exists, create a new one
                 if (existingCertForClass == null)
                 {
-                    // Get teacher and subject information
                     string teacherName = "Unknown Teacher";
                     if (classEntity.Teacher != null)
                     {
@@ -218,7 +222,6 @@ namespace InstruLearn_Application.BLL.Service
                         }
                     }
 
-                    // Create a new certification
                     var certification = new Certification
                     {
                         LearnerId = feedbackDTO.LearnerId,
@@ -246,7 +249,6 @@ namespace InstruLearn_Application.BLL.Service
                 }
                 else if (isTemporaryCert)
                 {
-                    // Update the temporary certificate to a permanent one
                     existingCertForClass.CertificationName = existingCertForClass.CertificationName.Replace("[TEMPORARY] ", "");
                     existingCertForClass.IssueDate = DateTime.Now; // Update issue date to today
 
