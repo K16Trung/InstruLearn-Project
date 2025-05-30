@@ -48,7 +48,7 @@ namespace InstruLearn_Application.API.Controllers
                 });
             }
 
-            var response = await _configurationService.UpdateConfigurationAsync(key, updateDTO.Value, updateDTO.Description);
+            var response = await _configurationService.UpdateConfigurationAsync(key, updateDTO.Value);
             if (response.IsSucceed)
             {
                 return Ok(response);

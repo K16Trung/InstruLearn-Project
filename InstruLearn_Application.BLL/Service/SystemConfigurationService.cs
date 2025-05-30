@@ -39,7 +39,6 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     Key = c.Key,
                     Value = c.Value,
-                    Description = c.Description,
                     LastUpdated = c.LastUpdated
                 });
 
@@ -86,7 +85,6 @@ namespace InstruLearn_Application.BLL.Service
                     {
                         Key = config.Key,
                         Value = config.Value,
-                        Description = config.Description,
                         LastUpdated = config.LastUpdated
                     }
                 };
@@ -116,7 +114,6 @@ namespace InstruLearn_Application.BLL.Service
                     {
                         Key = key,
                         Value = value,
-                        Description = description ?? $"Configuration for {key}",
                         LastUpdated = DateTime.Now
                     };
 
@@ -126,10 +123,6 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     // Update existing configuration
                     config.Value = value;
-                    if (description != null)
-                    {
-                        config.Description = description;
-                    }
                     config.LastUpdated = DateTime.Now;
 
                     await _unitOfWork.SystemConfigurationRepository.UpdateAsync(config);
@@ -145,7 +138,6 @@ namespace InstruLearn_Application.BLL.Service
                     {
                         Key = config.Key,
                         Value = config.Value,
-                        Description = config.Description,
                         LastUpdated = config.LastUpdated
                     }
                 };
