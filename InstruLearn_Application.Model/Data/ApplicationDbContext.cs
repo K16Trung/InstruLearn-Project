@@ -64,6 +64,7 @@ namespace InstruLearn_Application.Model.Data
         public DbSet<ClassFeedback> ClassFeedbacks { get; set; }
         public DbSet<ClassFeedbackEvaluation> ClassFeedbackEvaluations { get; set; }
         public DbSet<SelfAssessment> SelfAssessments { get; set; }
+        public DbSet<SystemConfiguration> SystemConfigurations { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

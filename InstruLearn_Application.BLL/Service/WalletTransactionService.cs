@@ -5,6 +5,7 @@ using InstruLearn_Application.Model.Enum;
 using InstruLearn_Application.Model.Models;
 using InstruLearn_Application.Model.Models.DTO.WalletTransaction;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,11 +17,19 @@ namespace InstruLearn_Application.BLL.Service
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly ILogger<WalletTransactionService> _logger;
+        private readonly ISystemConfigurationService _configService;
 
-        public WalletTransactionService(IUnitOfWork unitOfWork, IMapper mapper)
+        public WalletTransactionService(
+            IUnitOfWork unitOfWork, 
+            IMapper mapper, 
+            ILogger<WalletTransactionService> logger,
+            ISystemConfigurationService configService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _logger = logger;
+            _configService = configService;
         }
 
         public async Task<List<WalletTransactionDTO>> GetAllTransactionsAsync()
@@ -32,7 +41,7 @@ namespace InstruLearn_Application.BLL.Service
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error retrieving transactions: {ex.Message}");
+                _logger.LogError(ex, "Error retrieving transactions");
                 return new List<WalletTransactionDTO>();
             }
         }
@@ -46,7 +55,7 @@ namespace InstruLearn_Application.BLL.Service
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error retrieving transactions by wallet ID: {ex.Message}");
+                _logger.LogError(ex, $"Error retrieving transactions by wallet ID: {walletId}");
                 return new List<WalletTransactionDTO>();
             }
         }
@@ -66,7 +75,7 @@ namespace InstruLearn_Application.BLL.Service
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error retrieving transactions by learner ID: {ex.Message}");
+                _logger.LogError(ex, $"Error retrieving transactions by learner ID: {learnerId}");
                 return new List<WalletTransactionDTO>();
             }
         }
@@ -77,6 +86,24 @@ namespace InstruLearn_Application.BLL.Service
 
             try
             {
+                // Get the registration deposit amount from configuration
+                decimal registrationDepositAmount = 50000; // Default value
+                var configResponse = await _configService.GetConfigurationAsync("RegistrationDepositAmount");
+                
+                if (configResponse.IsSucceed && configResponse.Data != null)
+                {
+                    var configData = configResponse.Data.GetType().GetProperty("Value")?.GetValue(configResponse.Data)?.ToString();
+                    if (decimal.TryParse(configData, out decimal configAmount))
+                    {
+                        registrationDepositAmount = configAmount;
+                        _logger.LogInformation($"Using configured registration deposit amount: {registrationDepositAmount}");
+                    }
+                }
+                else
+                {
+                    _logger.LogInformation($"Using default registration deposit amount: {registrationDepositAmount}");
+                }
+
                 var transactionIds = transactions.Select(t => t.TransactionId).ToList();
                 var payments = await _unitOfWork.PaymentsRepository
                     .GetQuery()
@@ -163,7 +190,8 @@ namespace InstruLearn_Application.BLL.Service
                     }
                     else
                     {
-                        if (dto.TransactionType?.ToLower() == "payment" && Math.Abs(dto.Amount - 50000) < 0.1m)
+                        // Use the configurable registration deposit amount instead of hardcoded 50000
+                        if (dto.TransactionType?.ToLower() == "payment" && Math.Abs(dto.Amount - registrationDepositAmount) < 0.1m)
                         {
                             dto.PaymentType = "Phí đăng ký";
                         }
@@ -201,7 +229,7 @@ namespace InstruLearn_Application.BLL.Service
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error enriching transactions: {ex.Message}");
+                _logger.LogError(ex, "Error enriching transactions");
 
                 foreach (var dto in transactionDtos)
                 {

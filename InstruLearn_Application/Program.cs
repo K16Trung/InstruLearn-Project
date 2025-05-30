@@ -134,6 +134,7 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<ILevelFeedbackTemplateRepository, LevelFeedbackTemplateRepository>();
             builder.Services.AddScoped<ISelfAssessmentRepository, SelfAssessmentRepository>();
             builder.Services.AddScoped<ILearnerClassRepository, LearnerClassRepository>();
+            builder.Services.AddScoped<ISystemConfigurationRepository, SystemConfigurationRepository>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             builder.Services.AddScoped<IAuthService, AuthService>();
@@ -186,6 +187,7 @@ namespace InstruLearn_Application
             builder.Services.AddScoped<ILevelFeedbackTemplateService, LevelFeedbackTemplateService>();
             builder.Services.AddScoped<ISelfAssessmentService, SelfAssessmentService>();
             builder.Services.AddScoped<IPaymentReminderService, PaymentReminderService>();
+            builder.Services.AddScoped<ISystemConfigurationService, SystemConfigurationService>();
             builder.Services.AddHostedService<CertificateCreationBackgroundService>();
             builder.Services.AddHostedService<AttendanceStatusBackgroundService>();
             builder.Services.AddAutoMapper(typeof(MappingProfile));

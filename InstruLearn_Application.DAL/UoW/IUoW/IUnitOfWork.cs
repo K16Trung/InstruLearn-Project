@@ -59,6 +59,7 @@ namespace InstruLearn_Application.DAL.UoW.IUoW
         IClassFeedbackEvaluationRepository ClassFeedbackEvaluationRepository { get; }
         ISelfAssessmentRepository SelfAssessmentRepository { get; }
         ILearnerClassRepository LearnerClassRepository { get; }
+        ISystemConfigurationRepository SystemConfigurationRepository { get; }
         ApplicationDbContext dbContext { get; }
         public Task<int> SaveChangeAsync();
         Task<IDbContextTransaction> BeginTransactionAsync();
