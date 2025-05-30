@@ -11,6 +11,7 @@ namespace InstruLearn_Application.BLL.Service.IService
     public interface ICertificationService
     {
         Task<List<ResponseDTO>> GetAllCertificationAsync();
+        Task<ResponseDTO> GetCertificationByLearnerIdAsync(int learnerId);
         Task<ResponseDTO> GetCertificationByIdAsync(int certificationId);
         Task<ResponseDTO> CreateCertificationAsync(CreateCertificationDTO createCertificationDTO);
         Task<ResponseDTO> UpdateCertificationAsync(int certificationId, UpdateCertificationDTO updateCertificationDTO);

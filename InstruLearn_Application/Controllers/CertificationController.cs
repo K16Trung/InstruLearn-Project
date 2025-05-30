@@ -56,6 +56,17 @@ namespace InstruLearn_Application.Controllers
             var response = await _certificationService.GetCertificationByIdAsync(id);
             return Ok(response);
         }
+        
+        [HttpGet("GetByLearnerId/{learnerId}")]
+        public async Task<IActionResult> GetByLearnerId(int learnerId)
+        {
+            var result = await _certificationService.GetLearnerCertificationsAsync(learnerId);
+            if (!result.IsSucceed)
+            {
+                return NotFound(result);
+            }
+            return Ok(result);
+        }
 
         [HttpPost("create")]
         public async Task<IActionResult> AddCertificationback([FromBody] CreateCertificationDTO createDto)
