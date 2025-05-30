@@ -57,7 +57,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = $"Retrieved {evaluationDTOs.Count} evaluations.",
+                    Message = $"Đã truy xuất {evaluationDTOs.Count} đánh giá.",
                     Data = evaluationDTOs
                 };
             }
@@ -67,7 +67,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error retrieving evaluations: {ex.Message}"
+                    Message = $"Lỗi khi truy xuất đánh giá: {ex.Message}"
                 };
             }
         }
@@ -83,7 +83,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = $"No evaluation found for learning registration ID {learningRegistrationId}."
+                        Message = $"Không tìm thấy đánh giá cho ID đăng ký học {learningRegistrationId}."
                     };
                 }
 
@@ -133,7 +133,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Evaluation retrieved successfully.",
+                    Message = "Đã truy xuất đánh giá thành công.",
                     Data = evaluationDTO
                 };
             }
@@ -143,7 +143,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error retrieving evaluation: {ex.Message}"
+                    Message = $"Lỗi khi truy xuất đánh giá: {ex.Message}"
                 };
             }
         }
@@ -198,7 +198,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = $"Retrieved {evaluationDTOs.Count} evaluations for teacher ID {teacherId}.",
+                    Message = $"Đã truy xuất {evaluationDTOs.Count} đánh giá cho giáo viên có ID {teacherId}.",
                     Data = evaluationDTOs
                 };
             }
@@ -208,7 +208,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error retrieving evaluations: {ex.Message}"
+                    Message = $"Lỗi khi truy xuất đánh giá: {ex.Message}"
                 };
             }
         }
@@ -263,7 +263,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = $"Retrieved {evaluationDTOs.Count} evaluations for learner ID {learnerId}.",
+                    Message = $"Đã truy xuất {evaluationDTOs.Count} đánh giá cho học viên có ID {learnerId}.",
                     Data = evaluationDTOs
                 };
             }
@@ -273,7 +273,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error retrieving evaluations: {ex.Message}"
+                    Message = $"Lỗi khi truy xuất đánh giá: {ex.Message}"
                 };
             }
         }
@@ -289,7 +289,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = $"Question with ID {questionId} not found."
+                        Message = $"Không tìm thấy câu hỏi với ID {questionId}."
                     };
                 }
 
@@ -298,7 +298,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Question retrieved successfully.",
+                    Message = "Đã truy xuất câu hỏi thành công.",
                     Data = questionDTO
                 };
             }
@@ -308,7 +308,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error retrieving question: {ex.Message}"
+                    Message = $"Lỗi khi truy xuất câu hỏi: {ex.Message}"
                 };
             }
         }
@@ -324,7 +324,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "No active evaluation questions found.",
+                        Message = "Không tìm thấy câu hỏi đánh giá đang hoạt động nào.",
                         Data = new List<TeacherEvaluationQuestionDTO>()
                     };
                 }
@@ -334,7 +334,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = $"Retrieved {questionDTOs.Count} active evaluation questions.",
+                    Message = $"Đã truy xuất {questionDTOs.Count} câu hỏi đánh giá đang hoạt động.",
                     Data = questionDTOs
                 };
             }
@@ -344,7 +344,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error retrieving active evaluation questions: {ex.Message}"
+                    Message = $"Lỗi khi truy xuất câu hỏi đánh giá đang hoạt động: {ex.Message}"
                 };
             }
         }
@@ -360,7 +360,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = $"Question with ID {questionId} not found."
+                        Message = $"Không tìm thấy câu hỏi với ID {questionId}."
                     };
                 }
 
@@ -369,7 +369,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = $"Question with ID {questionId} is already active."
+                        Message = $"Câu hỏi với ID {questionId} đã đang hoạt động."
                     };
                 }
 
@@ -380,7 +380,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = $"Question with ID {questionId} has been activated successfully."
+                    Message = $"Câu hỏi với ID {questionId} đã được kích hoạt thành công."
                 };
             }
             catch (Exception ex)
@@ -389,7 +389,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error activating question: {ex.Message}"
+                    Message = $"Lỗi khi kích hoạt câu hỏi: {ex.Message}"
                 };
             }
         }
@@ -405,7 +405,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = $"Question with ID {questionId} not found."
+                        Message = $"Không tìm thấy câu hỏi với ID {questionId}."
                     };
                 }
 
@@ -414,7 +414,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = $"Question with ID {questionId} is already inactive."
+                        Message = $"Câu hỏi với ID {questionId} đã ở trạng thái không hoạt động."
                     };
                 }
 
@@ -425,7 +425,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = $"Question with ID {questionId} has been deactivated successfully."
+                    Message = $"Câu hỏi với ID {questionId} đã được vô hiệu hóa thành công."
                 };
             }
             catch (Exception ex)
@@ -434,7 +434,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error deactivating question: {ex.Message}"
+                    Message = $"Lỗi khi vô hiệu hóa câu hỏi: {ex.Message}"
                 };
             }
         }
@@ -481,7 +481,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Question created successfully. Evaluations will appear for teachers when learners reach their last day of one-on-one sessions.",
+                    Message = "Câu hỏi đã được tạo thành công. Các đánh giá sẽ xuất hiện cho giáo viên khi học viên đến ngày cuối cùng của các buổi học one-on-one.",
                     Data = response
                 };
             }
@@ -491,7 +491,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error creating question: {ex.Message}"
+                    Message = $"Lỗi khi tạo câu hỏi: {ex.Message}"
                 };
             }
         }
@@ -507,7 +507,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = $"Question with ID {questionId} not found."
+                        Message = $"Không tìm thấy câu hỏi với ID {questionId}."
                     };
                 }
 
@@ -579,7 +579,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Question updated successfully.",
+                    Message = "Câu hỏi đã được cập nhật thành công.",
                     Data = updatedQuestionDTO
                 };
             }
@@ -589,7 +589,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error updating question: {ex.Message}"
+                    Message = $"Lỗi khi cập nhật câu hỏi: {ex.Message}"
                 };
             }
         }
@@ -605,7 +605,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = $"Question with ID {questionId} not found."
+                        Message = $"Không tìm thấy câu hỏi với ID {questionId}."
                     };
                 }
 
@@ -620,7 +620,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = $"Cannot delete question with ID {questionId} as it is already used in evaluations. Consider setting it as inactive instead."
+                        Message = $"Không thể xóa câu hỏi với ID {questionId} vì nó đã được sử dụng trong các đánh giá. Hãy xem xét đặt nó thành không hoạt động thay vì xóa."
                     };
                 }
 
@@ -630,7 +630,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = $"Question with ID {questionId} and all its options have been deleted successfully."
+                    Message = $"Câu hỏi với ID {questionId} và tất cả các lựa chọn của nó đã được xóa thành công."
                 };
             }
             catch (Exception ex)
@@ -639,7 +639,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error deleting question: {ex.Message}"
+                    Message = $"Lỗi khi xóa câu hỏi: {ex.Message}"
                 };
             }
         }
@@ -656,7 +656,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Evaluation not found for the specified learning registration."
+                        Message = "Không tìm thấy đánh giá cho đăng ký học đã chỉ định."
                     };
                 }
 
@@ -665,7 +665,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "The provided learner ID does not match the evaluation record."
+                        Message = "ID học viên được cung cấp không khớp với hồ sơ đánh giá."
                     };
                 }
 
@@ -715,7 +715,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Evaluation submitted successfully.",
+                    Message = "Đã gửi đánh giá thành công.",
                     Data = _mapper.Map<TeacherEvaluationDTO>(evaluation)
                 };
             }
@@ -725,7 +725,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error submitting evaluation: {ex.Message}"
+                    Message = $"Lỗi khi gửi đánh giá: {ex.Message}"
                 };
             }
         }
@@ -741,7 +741,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = $"Successfully created {evaluationsCreated.Count} evaluations for learners on their last day",
+                        Message = $"Đã tạo thành công {evaluationsCreated.Count} đánh giá cho học viên vào ngày cuối cùng của họ",
                         Data = evaluationsCreated
                     };
                 }
@@ -750,7 +750,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "No learners on their last day found for evaluation creation"
+                        Message = "Không tìm thấy học viên nào vào ngày cuối cùng để tạo đánh giá"
                     };
                 }
             }
@@ -760,7 +760,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error checking for last day evaluations: {ex.Message}"
+                    Message = $"Lỗi khi kiểm tra đánh giá ngày cuối cùng: {ex.Message}"
                 };
             }
         }
@@ -1017,10 +1017,10 @@ namespace InstruLearn_Application.BLL.Service
                     Type = NotificationType.Evaluation,
                     Status = NotificationStatus.Unread,
                     CreatedAt = DateTime.Now,
-                    Title = "Student Evaluation Required",
-                    Message = $"Please complete an evaluation for {learnerName}. " +
-                             $"Learning goals: {learningGoals}. " +
-                             $"Evaluation ID: {evaluationId}"
+                    Title = "Yêu cầu đánh giá học viên",
+                    Message = $"Vui lòng hoàn thành đánh giá cho {learnerName}. " +
+                             $"Mục tiêu học tập: {learningGoals}. " +
+                             $"ID đánh giá: {evaluationId}"
                 };
 
                 await _unitOfWork.StaffNotificationRepository.AddAsync(notification);
@@ -1054,10 +1054,10 @@ namespace InstruLearn_Application.BLL.Service
                     Type = NotificationType.Evaluation,
                     Status = NotificationStatus.Unread,
                     CreatedAt = DateTime.Now,
-                    Title = "Teacher Evaluation Form Completed",
-                    Message = $"{teacherName} has completed your learning evaluation. " +
-                             $"You can now view your evaluation results and feedback. " +
-                             $"Evaluation ID: {evaluationId}"
+                    Title = "Giáo viên đã hoàn thành mẫu đánh giá",
+                    Message = $"{teacherName} đã hoàn thành đánh giá học tập của bạn. " +
+                             $"Bạn có thể xem kết quả đánh giá và phản hồi ngay bây giờ. " +
+                             $"ID đánh giá: {evaluationId}"
                 };
 
                 await _unitOfWork.StaffNotificationRepository.AddAsync(notification);

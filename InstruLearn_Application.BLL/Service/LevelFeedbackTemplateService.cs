@@ -31,7 +31,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Level not found"
+                    Message = "Không tìm thấy cấp độ"
                 };
             }
 
@@ -48,7 +48,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Duplicate criteria grade categories detected. Please ensure all criteria are unique."
+                        Message = "Đã phát hiện tiêu chí đánh giá trùng lặp. Vui lòng đảm bảo tất cả các tiêu chí là duy nhất."
                     };
                 }
             }
@@ -60,7 +60,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "An active feedback template already exists for this level"
+                    Message = "Đã tồn tại một mẫu phản hồi đang hoạt động cho cấp độ này"
                 };
             }
 
@@ -114,7 +114,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "Feedback template created successfully",
+                        Message = "Đã tạo mẫu phản hồi thành công",
                         Data = createdTemplate.TemplateId
                     };
                 }
@@ -124,7 +124,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = $"Error creating template: {ex.Message}"
+                        Message = $"Lỗi khi tạo mẫu: {ex.Message}"
                     };
                 }
             }
@@ -138,7 +138,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Template not found"
+                    Message = "Không tìm thấy mẫu"
                 };
             }
 
@@ -208,7 +208,7 @@ namespace InstruLearn_Application.BLL.Service
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Feedback template updated successfully"
+                Message = "Đã cập nhật mẫu phản hồi thành công"
             };
         }
 
@@ -221,7 +221,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Template not found"
+                    Message = "Không tìm thấy mẫu"
                 };
             }
 
@@ -232,7 +232,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Cannot delete template as it is used in existing feedback entries"
+                    Message = "Không thể xóa mẫu vì nó đang được sử dụng trong các mục phản hồi hiện có"
                 };
             }
 
@@ -250,7 +250,7 @@ namespace InstruLearn_Application.BLL.Service
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Feedback template deleted successfully"
+                Message = "Đã xóa mẫu phản hồi thành công"
             };
         }
 
@@ -262,7 +262,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Template not found"
+                    Message = "Không tìm thấy mẫu"
                 };
             }
 
@@ -284,7 +284,7 @@ namespace InstruLearn_Application.BLL.Service
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Feedback template activated successfully"
+                Message = "Đã kích hoạt mẫu phản hồi thành công"
             };
         }
 
@@ -296,7 +296,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Template not found"
+                    Message = "Không tìm thấy mẫu"
                 };
             }
 
@@ -307,7 +307,7 @@ namespace InstruLearn_Application.BLL.Service
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Feedback template deactivated successfully"
+                Message = "Đã vô hiệu hóa mẫu phản hồi thành công"
             };
         }
 

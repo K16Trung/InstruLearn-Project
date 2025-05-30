@@ -42,7 +42,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Learner not found."
+                        Message = "Không tìm thấy học viên."
                     };
                 }
 
@@ -52,7 +52,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Learner has no associated email account."
+                        Message = "Học viên không có tài khoản email liên kết."
                     };
                 }
 
@@ -305,7 +305,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = $"Retrieved {sortedNotifications.Count} email notifications for learner.",
+                    Message = $"Đã lấy {sortedNotifications.Count} thông báo email cho học viên.",
                     Data = sortedNotifications
                 };
             }
@@ -315,7 +315,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error retrieving email notifications: {ex.Message}"
+                    Message = $"Lỗi khi lấy thông báo email: {ex.Message}"
                 };
             }
         }
@@ -333,7 +333,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Learner not found."
+                        Message = "Không tìm thấy học viên."
                     };
                 }
 
@@ -350,7 +350,7 @@ namespace InstruLearn_Application.BLL.Service
                         return new ResponseDTO
                         {
                             IsSucceed = false,
-                            Message = $"Class with ID {classId.Value} not found."
+                            Message = $"Không tìm thấy lớp với ID {classId.Value}."
                         };
                     }
 
@@ -364,13 +364,13 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "No entrance test notifications found for this learner.",
+                        Message = "Không tìm thấy thông báo kiểm tra đầu vào cho học viên này.",
                         Data = new List<NotificationDTO>()
                     };
                 }
 
                 var learnerAccount = await _unitOfWork.AccountRepository.GetByIdAsync(learner.AccountId);
-                string email = learnerAccount != null ? learnerAccount.Email : "No email available";
+                string email = learnerAccount != null ? learnerAccount.Email : "Không có email";
 
                 var notificationDtos = notifications.Select(n => new NotificationDTO
                 {
@@ -387,7 +387,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = $"Retrieved {notificationDtos.Count} entrance test notifications.",
+                    Message = $"Đã lấy {notificationDtos.Count} thông báo kiểm tra đầu vào.",
                     Data = notificationDtos
                 };
             }
@@ -397,7 +397,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error retrieving entrance test notifications: {ex.Message}"
+                    Message = $"Lỗi khi lấy thông báo kiểm tra đầu vào: {ex.Message}"
                 };
             }
         }

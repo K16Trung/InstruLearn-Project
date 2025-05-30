@@ -33,7 +33,7 @@ namespace InstruLearn_Application.BLL.Service
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Learning Registration Type retrieved successfully.",
+                Message = "Đã lấy loại đăng ký học tập thành công.",
                 Data = typeDtos
             };
         }
@@ -45,14 +45,14 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Learning type Type not found."
+                    Message = "Không tìm thấy loại đăng ký học tập."
                 };
             }
             var typeDtos = _mapper.Map<RegisTypeDTO>(type);
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Learning type Type retrieved successfully.",
+                Message = "Đã lấy loại đăng ký học tập thành công.",
                 Data = typeDtos
             };
         }
@@ -63,7 +63,7 @@ namespace InstruLearn_Application.BLL.Service
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Learning type added successfully.",
+                Message = "Đã thêm loại đăng ký học tập thành công.",
             };
         }
         public async Task<ResponseDTO> DeleteLearningRegisTypeAsync(int learningRegisTypeId)
@@ -74,14 +74,14 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Learning type Type not found."
+                    Message = "Không tìm thấy loại đăng ký học tập."
                 };
             }
             await _unitOfWork.LearningRegisTypeRepository.DeleteAsync(learningRegisTypeId);
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Learning type deleted successfully.",
+                Message = "Đã xóa loại đăng ký học tập thành công.",
             };
         }
     }

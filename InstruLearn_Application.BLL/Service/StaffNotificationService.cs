@@ -45,7 +45,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "No teacher change requests found.",
+                        Message = "Không tìm thấy yêu cầu thay đổi giáo viên nào.",
                         Data = new List<StaffNotificationDTO>()
                     };
                 }
@@ -79,7 +79,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "No teacher change requests found with FourtyFeedbackDone status.",
+                        Message = "Không tìm thấy yêu cầu thay đổi giáo viên nào có trạng thái FourtyFeedbackDone.",
                         Data = new List<StaffNotificationDTO>()
                     };
                 }
@@ -144,7 +144,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = $"Retrieved {notifications.Count} teacher change requests.",
+                    Message = $"Đã truy xuất {notifications.Count} yêu cầu thay đổi giáo viên.",
                     Data = notificationDTOs
                 };
             }
@@ -154,7 +154,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error retrieving teacher change requests: {ex.Message}"
+                    Message = $"Lỗi khi truy xuất yêu cầu thay đổi giáo viên: {ex.Message}"
                 };
             }
         }
@@ -173,7 +173,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "No teacher change requests found.",
+                        Message = "Không tìm thấy yêu cầu thay đổi giáo viên nào.",
                         Data = new List<object>()
                     };
                 }
@@ -189,7 +189,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "No learning registrations associated with teacher change requests.",
+                        Message = "Không tìm thấy đăng ký học nào liên quan đến yêu cầu thay đổi giáo viên.",
                         Data = new List<object>()
                     };
                 }
@@ -375,7 +375,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = $"Retrieved {registrationDTOs.Count} learning registrations with teacher change requests.",
+                    Message = $"Đã truy xuất {registrationDTOs.Count} đăng ký học có yêu cầu thay đổi giáo viên.",
                     Data = registrationDTOs
                 };
             }
@@ -385,7 +385,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error retrieving teacher change request learning registrations: {ex.Message}"
+                    Message = $"Lỗi khi truy xuất đăng ký học có yêu cầu thay đổi giáo viên: {ex.Message}"
                 };
             }
         }
@@ -408,7 +408,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = $"No teacher change request found for learning registration ID: {learningRegisId}",
+                        Message = $"Không tìm thấy yêu cầu thay đổi giáo viên nào cho ID đăng ký học: {learningRegisId}",
                         Data = null
                     };
                 }
@@ -423,7 +423,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = $"Learning registration with ID {learningRegisId} not found or not in FourtyFeedbackDone status.",
+                        Message = $"Đăng ký học với ID {learningRegisId} không tìm thấy hoặc không ở trạng thái FourtyFeedbackDone.",
                         Data = null
                     };
                 }
@@ -585,7 +585,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = $"Retrieved teacher change request learning registration with ID: {learningRegisId}",
+                    Message = $"Đã truy xuất đăng ký học có yêu cầu thay đổi giáo viên với ID: {learningRegisId}",
                     Data = dto
                 };
             }
@@ -595,7 +595,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error retrieving teacher change request learning registration: {ex.Message}"
+                    Message = $"Lỗi khi truy xuất đăng ký học có yêu cầu thay đổi giáo viên: {ex.Message}"
                 };
             }
         }
@@ -609,7 +609,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Notification marked as read."
+                    Message = "Thông báo đã được đánh dấu là đã đọc."
                 };
             }
             catch (Exception ex)
@@ -618,7 +618,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error marking notification as read: {ex.Message}"
+                    Message = $"Lỗi khi đánh dấu thông báo là đã đọc: {ex.Message}"
                 };
             }
         }
@@ -631,7 +631,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Notification marked as resolved."
+                    Message = "Thông báo đã được đánh dấu là đã giải quyết."
                 };
             }
             catch (Exception ex)
@@ -640,7 +640,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error marking notification as resolved: {ex.Message}"
+                    Message = $"Lỗi khi đánh dấu thông báo là đã giải quyết: {ex.Message}"
                 };
             }
         }
@@ -658,7 +658,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Invalid notification or notification doesn't match the learning registration."
+                        Message = "Thông báo không hợp lệ hoặc không khớp với đăng ký học."
                     };
                 }
 
@@ -671,7 +671,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Learning registration not found or not in appropriate status."
+                        Message = "Không tìm thấy đăng ký học hoặc không ở trạng thái thích hợp."
                     };
                 }
 
@@ -683,7 +683,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "New teacher not found."
+                        Message = "Không tìm thấy giáo viên mới."
                     };
                 }
 
@@ -701,7 +701,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "A reason must be provided when deciding to keep the same teacher."
+                        Message = "Phải cung cấp lý do khi quyết định giữ nguyên giáo viên."
                     };
                 }
 
@@ -763,8 +763,8 @@ namespace InstruLearn_Application.BLL.Service
                     {
                         IsSucceed = true,
                         Message = isSameTeacher
-                            ? "Teacher request processed. The same teacher will continue teaching this learner. Notifications sent."
-                            : "Teacher changed successfully for the learning registration and all future schedules. Notifications sent.",
+                            ? "Yêu cầu về giáo viên đã được xử lý. Giáo viên hiện tại sẽ tiếp tục dạy học viên này. Đã gửi thông báo."
+                            : "Đã thay đổi giáo viên thành công cho đăng ký học và tất cả các lịch học trong tương lai. Đã gửi thông báo.",
                         Data = new
                         {
                             LearningRegisId = learningRegisId,
@@ -795,7 +795,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Failed to change teacher: {ex.Message}"
+                    Message = $"Không thể thay đổi giáo viên: {ex.Message}"
                 };
             }
         }
@@ -808,10 +808,10 @@ namespace InstruLearn_Application.BLL.Service
                 _logger.LogInformation($"Retrieving notifications for teacher ID: {teacherId}");
 
                 var notificationTypes = new[] {
-            NotificationType.CreateLearningPath,
-            NotificationType.SchedulesCreated,
-            NotificationType.ClassFeedback
-        };
+                    NotificationType.CreateLearningPath,
+                    NotificationType.SchedulesCreated,
+                    NotificationType.ClassFeedback
+                };
 
                 // Initialize with empty list to avoid null reference exceptions
                 List<StaffNotification> notifications = new List<StaffNotification>();
@@ -909,7 +909,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "No notifications found for this teacher.",
+                        Message = "Không tìm thấy thông báo nào cho giáo viên này.",
                         Data = new List<StaffNotificationDTO>()
                     };
                 }
@@ -1002,7 +1002,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = $"Retrieved {notifications.Count} notifications for teacher ID: {teacherId}",
+                        Message = $"Đã truy xuất {notifications.Count} thông báo cho giáo viên có ID: {teacherId}",
                         Data = notificationDTOs
                     };
                 }
@@ -1025,7 +1025,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error retrieving notifications: {ex.Message}",
+                    Message = $"Lỗi khi truy xuất thông báo: {ex.Message}",
                     Data = new List<object>()
                 };
             }

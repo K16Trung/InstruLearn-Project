@@ -947,7 +947,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Course package retrieved successfully.",
+                    Message = "Đã lấy gói khóa học thành công.",
                     Data = coursePackageDetailsList[0]
                 };
             }
@@ -956,7 +956,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error retrieving course package: {ex.Message}"
+                    Message = $"Lỗi khi lấy gói khóa học: {ex.Message}"
                 };
             }
         }

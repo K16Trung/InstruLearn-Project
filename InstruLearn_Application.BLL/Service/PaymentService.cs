@@ -33,18 +33,18 @@ namespace InstruLearn_Application.BLL.Service
                 var learningRegis = await _unitOfWork.LearningRegisRepository.GetByIdAsync(paymentDTO.LearningRegisId);
                 if (learningRegis == null)
                 {
-                    return new ResponseDTO { IsSucceed = false, Message = "Learning Registration not found." };
+                    return new ResponseDTO { IsSucceed = false, Message = "Không tìm thấy đăng ký học tập." };
                 }
 
                 if (learningRegis.Price == null || learningRegis.Price <= 0)
                 {
-                    return new ResponseDTO { IsSucceed = false, Message = "Invalid learning registration price." };
+                    return new ResponseDTO { IsSucceed = false, Message = "Giá đăng ký học tập không hợp lệ." };
                 }
 
                 var wallet = await _unitOfWork.WalletRepository.GetFirstOrDefaultAsync(w => w.LearnerId == learningRegis.LearnerId);
                 if (wallet == null)
                 {
-                    return new ResponseDTO { IsSucceed = false, Message = "Wallet not found." };
+                    return new ResponseDTO { IsSucceed = false, Message = "Không tìm thấy ví tiền." };
                 }
 
                 decimal totalPrice = learningRegis.Price.Value;
@@ -53,7 +53,7 @@ namespace InstruLearn_Application.BLL.Service
 
                 if (wallet.Balance < requiredAmount)
                 {
-                    return new ResponseDTO { IsSucceed = false, Message = "Insufficient balance in wallet." };
+                    return new ResponseDTO { IsSucceed = false, Message = "Số dư trong ví không đủ." };
                 }
 
                 using var transaction = await _unitOfWork.BeginTransactionAsync();
@@ -145,14 +145,14 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "40% payment successful for Learning Registration.",
+                    Message = "Thanh toán 40% cho đăng ký học tập thành công.",
                     Data = paymentResponse
                 };
             }
             catch (Exception ex)
             {
                 await _unitOfWork.RollbackTransactionAsync();
-                return new ResponseDTO { IsSucceed = false, Message = "Payment failed. " + ex.Message };
+                return new ResponseDTO { IsSucceed = false, Message = "Thanh toán thất bại. " + ex.Message };
             }
         }
 
@@ -164,23 +164,23 @@ namespace InstruLearn_Application.BLL.Service
                 var learningRegis = await _unitOfWork.LearningRegisRepository.GetByIdAsync(learningRegisId);
                 if (learningRegis == null)
                 {
-                    return new ResponseDTO { IsSucceed = false, Message = "Learning Registration not found." };
+                    return new ResponseDTO { IsSucceed = false, Message = "Không tìm thấy đăng ký học tập." };
                 }
 
                 if (learningRegis.RemainingAmount == null || learningRegis.RemainingAmount <= 0)
                 {
-                    return new ResponseDTO { IsSucceed = false, Message = "No remaining payment required." };
+                    return new ResponseDTO { IsSucceed = false, Message = "Không cần thanh toán thêm." };
                 }
 
                 var wallet = await _unitOfWork.WalletRepository.GetFirstOrDefaultAsync(w => w.LearnerId == learningRegis.LearnerId);
                 if (wallet == null)
                 {
-                    return new ResponseDTO { IsSucceed = false, Message = "Wallet not found." };
+                    return new ResponseDTO { IsSucceed = false, Message = "Không tìm thấy ví tiền." };
                 }
 
                 if (wallet.Balance < learningRegis.RemainingAmount)
                 {
-                    return new ResponseDTO { IsSucceed = false, Message = "Insufficient balance in wallet." };
+                    return new ResponseDTO { IsSucceed = false, Message = "Số dư trong ví không đủ." };
                 }
 
                 using var transaction = await _unitOfWork.BeginTransactionAsync();
@@ -242,14 +242,14 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Remaining payment successful.",
+                    Message = "Thanh toán số tiền còn lại thành công.",
                     Data = null
                 };
             }
             catch (Exception ex)
             {
                 await _unitOfWork.RollbackTransactionAsync();
-                return new ResponseDTO { IsSucceed = false, Message = "Payment failed. " + ex.Message };
+                return new ResponseDTO { IsSucceed = false, Message = "Thanh toán thất bại. " + ex.Message };
             }
         }
 
@@ -260,7 +260,7 @@ namespace InstruLearn_Application.BLL.Service
                 var learningRegis = await _unitOfWork.LearningRegisRepository.GetByIdAsync(learningRegisId);
                 if (learningRegis == null)
                 {
-                    return new ResponseDTO { IsSucceed = false, Message = "Learning Registration not found." };
+                    return new ResponseDTO { IsSucceed = false, Message = "Không tìm thấy đăng ký học tập." };
                 }
 
                 string originalLearningRequest = learningRegis.LearningRequest;
@@ -324,7 +324,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Payment rejection is only applicable for learning registrations with 40% or 60% payment status."
+                        Message = "Việc từ chối thanh toán chỉ áp dụng cho các đăng ký học tập có trạng thái thanh toán 40% hoặc 60%."
                     };
                 }
 
@@ -350,8 +350,8 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     IsSucceed = true,
                     Message = is40PercentRejection ?
-                        "40% payment has been rejected and learning registration has been marked as rejected." :
-                        "60% payment has been rejected and learning registration has been marked as cancelled.",
+                        "Thanh toán 40% đã bị từ chối và đăng ký học tập đã được đánh dấu là bị từ chối." :
+                        "Thanh toán 60% đã bị từ chối và đăng ký học tập đã được đánh dấu là bị hủy.",
                     Data = new
                     {
                         LearningRegisId = learningRegisId,
@@ -362,7 +362,7 @@ namespace InstruLearn_Application.BLL.Service
             catch (Exception ex)
             {
                 await _unitOfWork.RollbackTransactionAsync();
-                return new ResponseDTO { IsSucceed = false, Message = "Payment rejection failed: " + ex.Message };
+                return new ResponseDTO { IsSucceed = false, Message = "Từ chối thanh toán thất bại: " + ex.Message };
             }
         }
 
@@ -470,7 +470,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Class registrations with detailed payment information retrieved successfully",
+                    Message = "Đã lấy thông tin đăng ký lớp học với chi tiết thanh toán thành công",
                     Data = registrationResults
                 };
             }
@@ -479,7 +479,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error retrieving class registrations: {ex.Message}"
+                    Message = $"Lỗi khi lấy đăng ký lớp học: {ex.Message}"
                 };
             }
         }
@@ -501,7 +501,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Learning registration not found or not in accepted status."
+                        Message = "Không tìm thấy đăng ký học tập hoặc không ở trạng thái đã chấp nhận."
                     };
                 }
 
@@ -514,7 +514,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Wallet not found for this learner."
+                        Message = "Không tìm thấy ví tiền của học viên này."
                     };
                 }
 
@@ -562,7 +562,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "Remaining 90% class payment confirmed successfully.",
+                        Message = "Đã xác nhận thanh toán 90% còn lại của lớp học thành công.",
                         Data = new
                         {
                             LearnerId = learnerId,
@@ -572,7 +572,7 @@ namespace InstruLearn_Application.BLL.Service
                             AmountPaid = remainingAmount,
                             TransactionId = walletTransaction.TransactionId,
                             PaymentDate = walletTransaction.TransactionDate,
-                            Status = "Payment Completed"
+                            Status = "Đã Hoàn Thành Thanh Toán"
                         }
                     };
                 }
@@ -582,7 +582,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = $"Error confirming payment: {ex.Message}"
+                        Message = $"Lỗi khi xác nhận thanh toán: {ex.Message}"
                     };
                 }
             }
@@ -591,7 +591,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error processing payment confirmation: {ex.Message}"
+                    Message = $"Lỗi khi xử lý xác nhận thanh toán: {ex.Message}"
                 };
             }
         }
@@ -607,7 +607,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Class not found."
+                        Message = "Không tìm thấy lớp học."
                     };
                 }
 
@@ -623,7 +623,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "No fully paid learners found for this class.",
+                        Message = "Không tìm thấy học viên đã thanh toán đầy đủ cho lớp học này.",
                         Data = new List<object>()
                     };
                 }
@@ -683,7 +683,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = $"Found {fullyPaidLearners.Count} fully paid learners for class ID: {classId}",
+                    Message = $"Đã tìm thấy {fullyPaidLearners.Count} học viên đã thanh toán đầy đủ cho lớp học ID: {classId}",
                     Data = fullyPaidLearners
                 };
             }
@@ -692,7 +692,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error retrieving fully paid learners: {ex.Message}"
+                    Message = $"Lỗi khi lấy danh sách học viên đã thanh toán đầy đủ: {ex.Message}"
                 };
             }
         }
@@ -708,7 +708,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Class not found."
+                        Message = "Không tìm thấy lớp học."
                     };
                 }
 
@@ -725,7 +725,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "No learners found for this class.",
+                        Message = "Không tìm thấy học viên nào cho lớp học này.",
                         Data = new { PartiallyPaid = new List<object>(), FullyPaid = new List<object>() }
                     };
                 }
@@ -879,7 +879,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = $"Payment status for class ID: {classId} retrieved successfully",
+                    Message = $"Đã lấy trạng thái thanh toán cho lớp học ID: {classId} thành công",
                     Data = new
                     {
                         ClassId = classId,
@@ -897,7 +897,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error retrieving class payment status: {ex.Message}"
+                    Message = $"Lỗi khi lấy trạng thái thanh toán của lớp học: {ex.Message}"
                 };
             }
         }

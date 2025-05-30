@@ -357,7 +357,8 @@ namespace InstruLearn_Application.Model.Mapper
                     )
                 ))
                 .ForMember(dest => dest.ClassEndTime, opt => opt.MapFrom(src => src.ClassTime.AddHours(2)))
-                .ForMember(dest => dest.ClassDays, opt => opt.MapFrom(src => src.ClassDays));
+                .ForMember(dest => dest.ClassDays, opt => opt.MapFrom(src => src.ClassDays))
+                .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.ImageUrl));
 
             CreateMap<CreateClassDTO, Class>()
                 .ForMember(dest => dest.ClassDays, opt => opt.MapFrom(src => src.ClassDays.Select(day => new Models.ClassDay { Day = day })))
@@ -375,6 +376,7 @@ namespace InstruLearn_Application.Model.Mapper
                 .ForMember(dest => dest.LevelName, opt => opt.MapFrom(src => src.Level != null ? src.Level.LevelName : "N/A"))
                 .ForMember(dest => dest.SyllabusLink, opt => opt.MapFrom(src => src.Level != null ? src.Level.SyllabusLink : null))
                 .ForMember(dest => dest.TotalDays, opt => opt.MapFrom(src => src.totalDays))
+                .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.ImageUrl))
                 .ForMember(dest => dest.ClassDays, opt => opt.Ignore())
                 .ForMember(dest => dest.StudentCount, opt => opt.Ignore())
                 .ForMember(dest => dest.Students, opt => opt.Ignore());

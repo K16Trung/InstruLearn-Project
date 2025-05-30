@@ -41,7 +41,7 @@ namespace InstruLearn_Application.BLL.Service
             var managerDTOs = _mapper.Map<IEnumerable<ManagerDTO>>(managers);
 
             response.IsSucceed = true;
-            response.Message = "data retrieved successfully";
+            response.Message = "Đã lấy dữ liệu thành công";
             response.Data = managerDTOs;
             return response;
         }
@@ -52,12 +52,12 @@ namespace InstruLearn_Application.BLL.Service
             var manager = await _unitOfWork.ManagerRepository.GetByIdAsync(managerId);
             if (manager == null)
             {
-                response.Message = "Manager not found.";
+                response.Message = "Không tìm thấy quản lý.";
                 return response;
             }
             var managerDTO = _mapper.Map<ManagerDTO>(manager);
             response.IsSucceed = true;
-            response.Message = "Manager retrieved successfully";
+            response.Message = "Đã lấy thông tin quản lý thành công";
             response.Data = managerDTO;
             return response;
         }
@@ -120,7 +120,7 @@ namespace InstruLearn_Application.BLL.Service
             var manager = await _unitOfWork.ManagerRepository.GetByIdAsync(managerId);
             if (manager == null)
             {
-                response.Message = "Manager not found.";
+                response.Message = "Không tìm thấy quản lý.";
                 return response;
             }
 
@@ -130,12 +130,12 @@ namespace InstruLearn_Application.BLL.Service
 
             if (!updated)
             {
-                response.Message = "Failed to update manager.";
+                response.Message = "Cập nhật quản lý thất bại.";
                 return response;
             }
 
             response.IsSucceed = true;
-            response.Message = "Manager updated successfully!";
+            response.Message = "Cập nhật quản lý thành công!";
             return response;
         }
 
@@ -151,7 +151,7 @@ namespace InstruLearn_Application.BLL.Service
             var manager = await _unitOfWork.ManagerRepository.GetByIdAsync(managerId);
             if (manager == null)
             {
-                response.Message = "Manager not found.";
+                response.Message = "Không tìm thấy quản lý.";
                 return response;
             }
 
@@ -162,12 +162,12 @@ namespace InstruLearn_Application.BLL.Service
 
             if (!updated)
             {
-                response.Message = "Failed to delete manager.";
+                response.Message = "Xóa quản lý thất bại.";
                 return response;
             }
 
             response.IsSucceed = true;
-            response.Message = "Manager delete successfully!";
+            response.Message = "Xóa quản lý thành công!";
             return response;
         }
 
@@ -178,7 +178,7 @@ namespace InstruLearn_Application.BLL.Service
             var manager = await _unitOfWork.ManagerRepository.GetByIdAsync(managerId);
             if (manager == null)
             {
-                response.Message = "Manager not found.";
+                response.Message = "Không tìm thấy quản lý.";
                 return response;
             }
 
@@ -190,12 +190,12 @@ namespace InstruLearn_Application.BLL.Service
 
             if (!updated)
             {
-                response.Message = "Failed to unban manager.";
+                response.Message = "Mở khóa quản lý thất bại.";
                 return response;
             }
 
             response.IsSucceed = true;
-            response.Message = "Manager unban successfully!";
+            response.Message = "Mở khóa quản lý thành công!";
             return response;
         }
     }

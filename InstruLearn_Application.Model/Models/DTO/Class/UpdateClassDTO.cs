@@ -11,5 +11,6 @@ namespace InstruLearn_Application.Model.Models.DTO.Class
     public class UpdateClassDTO
     {
         public ClassStatus Status { get; set; }
+        public string ImageUrl { get; set; }
     }
 }

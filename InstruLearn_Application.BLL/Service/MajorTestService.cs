@@ -39,7 +39,7 @@ namespace InstruLearn_Application.BLL.Service
                 responseList.Add(new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Major test retrieved successfully.",
+                    Message = "Đã lấy bài kiểm tra chuyên ngành thành công.",
                     Data = majorTestDto
                 });
             }
@@ -54,14 +54,14 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Major Test not found.",
+                    Message = "Không tìm thấy bài kiểm tra chuyên ngành.",
                 };
             }
             var majorTestDto = _mapper.Map<MajorTestDTO>(majorTest);
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Major Test retrieved successfully.",
+                Message = "Đã lấy bài kiểm tra chuyên ngành thành công.",
                 Data = majorTestDto
             };
         }
@@ -75,7 +75,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "No Major Tests found for this MajorId."
+                    Message = "Không tìm thấy bài kiểm tra chuyên ngành cho ID chuyên ngành này."
                 };
             }
 
@@ -84,7 +84,7 @@ namespace InstruLearn_Application.BLL.Service
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Major Tests retrieved successfully.",
+                Message = "Đã lấy danh sách bài kiểm tra chuyên ngành thành công.",
                 Data = majorTestDtos
             };
         }
@@ -97,7 +97,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Major not found",
+                    Message = "Không tìm thấy chuyên ngành",
                 };
             }
             var majorTestDto = _mapper.Map<MajorTest>(createMajorTestDTO);
@@ -107,7 +107,7 @@ namespace InstruLearn_Application.BLL.Service
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Test Result created successfully.",
+                Message = "Đã tạo kết quả kiểm tra thành công.",
                 Data = _mapper.Map<MajorTestDTO>(majorTestDto)
             };
         }
@@ -125,19 +125,19 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "Major Test update successfully!"
+                        Message = "Cập nhật bài kiểm tra chuyên ngành thành công!"
                     };
                 }
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Major Test update failed!"
+                    Message = "Cập nhật bài kiểm tra chuyên ngành thất bại!"
                 };
             }
             return new ResponseDTO
             {
                 IsSucceed = false,
-                Message = "Major Test not found!"
+                Message = "Không tìm thấy bài kiểm tra chuyên ngành!"
             };
         }
 
@@ -151,7 +151,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Major Test deleted successfully"
+                    Message = "Đã xóa bài kiểm tra chuyên ngành thành công"
                 };
             }
             else
@@ -159,7 +159,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Major Test with ID {majorTestId} not found"
+                    Message = $"Không tìm thấy bài kiểm tra chuyên ngành với ID {majorTestId}"
                 };
             }
 

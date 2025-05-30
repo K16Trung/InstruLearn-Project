@@ -23,6 +23,7 @@ namespace InstruLearn_Application.Model.Models
         public int totalDays { get; set; }
         public ClassStatus Status { get; set; }
         public decimal Price { get; set; }
+        public string ImageUrl { get; set; }
 
         // Navigation properties
         public Teacher Teacher { get; set; }
