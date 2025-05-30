@@ -1,5 +1,6 @@
 ﻿using InstruLearn_Application.DAL.UoW.IUoW;
 using InstruLearn_Application.Model.Enum;
+using InstruLearn_Application.Model.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -61,12 +62,14 @@ namespace InstruLearn_Application.BLL.Service
                         await UpdateAllClassStatusesAsync(unitOfWork);
                     }
 
-                    await Task.Delay(TimeSpan.FromHours(checkIntervalHours), stoppingToken);
+                    //await Task.Delay(TimeSpan.FromHours(checkIntervalHours), stoppingToken);
+                    await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
                     _logger.LogError(ex, "Error occurred while updating class statuses");
-                    await Task.Delay(TimeSpan.FromMinutes(15), stoppingToken);
+                    //await Task.Delay(TimeSpan.FromMinutes(15), stoppingToken);
+                    await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
                 }
             }
         }
@@ -125,6 +128,12 @@ namespace InstruLearn_Application.BLL.Service
 
                         _logger.LogInformation("Updated class {ClassId} status from {OldStatus} to {NewStatus}",
                             classEntity.ClassId, oldStatus, newStatus);
+
+                        // Create temporary certificates when class status changes to Ongoing
+                        if (oldStatus == ClassStatus.Scheduled && newStatus == ClassStatus.Ongoing)
+                        {
+                            await CreateTemporaryCertificatesForClass(unitOfWork, classEntity);
+                        }
                     }
                 }
 
@@ -141,6 +150,109 @@ namespace InstruLearn_Application.BLL.Service
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating class statuses");
+            }
+        }
+
+        private async Task CreateTemporaryCertificatesForClass(IUnitOfWork unitOfWork, Class classEntity)
+        {
+            try
+            {
+                // Get all learners in this class
+                var learners = await unitOfWork.dbContext.Learner_Classes
+                    .Where(lc => lc.ClassId == classEntity.ClassId)
+                    .Select(lc => lc.LearnerId)
+                    .ToListAsync();
+
+                if (!learners.Any())
+                {
+                    _logger.LogInformation("No learners found in class {ClassId} - no certificates to create", classEntity.ClassId);
+                    return;
+                }
+
+                _logger.LogInformation("Creating temporary certificates for {Count} learners in class {ClassId}",
+                    learners.Count, classEntity.ClassId);
+
+                // Get teacher info
+                string teacherName = "Unknown Teacher";
+                if (classEntity.Teacher != null)
+                {
+                    teacherName = classEntity.Teacher.Fullname;
+                }
+                else
+                {
+                    var teacher = await unitOfWork.TeacherRepository.GetByIdAsync(classEntity.TeacherId);
+                    if (teacher != null)
+                    {
+                        teacherName = teacher.Fullname;
+                    }
+                }
+
+                // Get subject info
+                string majorName = "Unknown Subject";
+                if (classEntity.Major != null)
+                {
+                    majorName = classEntity.Major.MajorName;
+                }
+                else
+                {
+                    var major = await unitOfWork.MajorRepository.GetByIdAsync(classEntity.MajorId);
+                    if (major != null)
+                    {
+                        majorName = major.MajorName;
+                    }
+                }
+
+                // Create certificates for each learner
+                foreach (var learnerId in learners)
+                {
+                    // Check if learner already has a certificate for this class
+                    var existingCertificates = await unitOfWork.CertificationRepository.GetByLearnerIdAsync(learnerId);
+                    bool hasCertification = existingCertificates.Any(c =>
+                        c.CertificationType == CertificationType.CenterLearning &&
+                        c.CertificationName != null &&
+                        c.CertificationName.Contains(classEntity.ClassId.ToString()));
+
+                    if (hasCertification)
+                    {
+                        _logger.LogInformation("Learner {LearnerId} already has a certificate for class {ClassId}", learnerId, classEntity.ClassId);
+                        continue;
+                    }
+
+                    // Create a new temporary certification
+                    var certification = new Certification
+                    {
+                        LearnerId = learnerId,
+                        CertificationType = CertificationType.CenterLearning,
+                        CertificationName = $"[TEMPORARY] Center Learning Certificate - {classEntity.ClassName} (Class ID: {classEntity.ClassId})",
+                        TeacherName = teacherName,
+                        Subject = majorName,
+                        IssueDate = DateTime.Now
+                    };
+
+                    await unitOfWork.CertificationRepository.AddAsync(certification);
+                    _logger.LogInformation("Created temporary certificate for learner {LearnerId} in class {ClassId}", learnerId, classEntity.ClassId);
+
+                    // Create a notification for attendance verification
+                    var learner = await unitOfWork.LearnerRepository.GetByIdAsync(learnerId);
+                    var staffNotification = new StaffNotification
+                    {
+                        Title = "Temporary Certificate Created",
+                        Message = $"Learner {learner?.FullName ?? "Unknown"} (ID: {learnerId}) received a temporary certificate for class {classEntity.ClassName} (ID: {classEntity.ClassId}). Verify 75% attendance before finalizing certificate.",
+                        LearnerId = learnerId,
+                        CreatedAt = DateTime.Now.AddDays(classEntity.totalDays / 2),
+                        Status = NotificationStatus.Unread,
+                        Type = NotificationType.Certificate
+                    };
+
+                    await unitOfWork.StaffNotificationRepository.AddAsync(staffNotification);
+                }
+
+                await unitOfWork.SaveChangeAsync();
+                _logger.LogInformation("Successfully created temporary certificates for class {ClassId}", classEntity.ClassId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating temporary certificates for class {ClassId}", classEntity.ClassId);
             }
         }
     }
