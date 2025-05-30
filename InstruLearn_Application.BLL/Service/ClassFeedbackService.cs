@@ -453,10 +453,27 @@ namespace InstruLearn_Application.BLL.Service
                 decimal totalPercentage = 0;
                 decimal totalWeight = 0;
 
+                if (feedbackDTO.Evaluations == null)
+                {
+                    feedbackDTO.Evaluations = new List<ClassFeedbackEvaluationDTO>();
+                }
+
                 foreach (var evaluation in feedbackWithEval.Evaluations)
                 {
                     totalPercentage += evaluation.AchievedPercentage;
                     totalWeight += evaluation.Criterion.Weight;
+
+                    // Add the evaluation details to the DTO
+                    feedbackDTO.Evaluations.Add(new ClassFeedbackEvaluationDTO
+                    {
+                        EvaluationId = evaluation.EvaluationId,
+                        CriterionId = evaluation.CriterionId,
+                        Description = evaluation.Criterion?.Description,
+                        GradeCategory = evaluation.Criterion?.GradeCategory,
+                        Weight = evaluation.Criterion?.Weight ?? 0,
+                        AchievedPercentage = evaluation.AchievedPercentage,
+                        Comment = evaluation.Comment
+                    });
                 }
 
                 feedbackDTO.TeacherId = feedbackWithEval.Class?.TeacherId ?? 0;
