@@ -480,34 +480,35 @@ namespace InstruLearn_Application.BLL.Service
 
                 decimal totalPercentage = 0;
 
-                if (feedbackDTO.Evaluations == null)
-                {
-                    feedbackDTO.Evaluations = new List<ClassFeedbackEvaluationDTO>();
-                }
+                feedbackDTO.Evaluations = new List<ClassFeedbackEvaluationDTO>();
 
                 bool hasEvaluations = false;
 
-                if (feedbackWithEval?.Evaluations != null && feedbackWithEval.Evaluations.Any())
+                var evaluations = await _unitOfWork.ClassFeedbackEvaluationRepository
+                    .GetEvaluationsByFeedbackIdAsync(feedbackDTO.FeedbackId);
+
+                if (evaluations != null && evaluations.Any())
                 {
                     hasEvaluations = true;
-                    foreach (var evaluation in feedbackWithEval.Evaluations)
+                    foreach (var evaluation in evaluations)
                     {
                         totalPercentage += evaluation.AchievedPercentage;
+
+                        var criterion = await _unitOfWork.LevelFeedbackCriterionRepository.GetByIdAsync(evaluation.CriterionId);
 
                         feedbackDTO.Evaluations.Add(new ClassFeedbackEvaluationDTO
                         {
                             EvaluationId = evaluation.EvaluationId,
                             CriterionId = evaluation.CriterionId,
-                            Description = evaluation.Criterion?.Description,
-                            GradeCategory = evaluation.Criterion?.GradeCategory,
-                            Weight = evaluation.Criterion?.Weight ?? 0,
+                            Description = criterion?.Description,
+                            GradeCategory = criterion?.GradeCategory,
+                            Weight = criterion?.Weight ?? 0,
                             AchievedPercentage = evaluation.AchievedPercentage,
                             Comment = evaluation.Comment
                         });
                     }
                 }
-
-                if (!hasEvaluations && template?.Criteria != null)
+                else if (!hasEvaluations && template?.Criteria != null)
                 {
                     foreach (var criterion in template.Criteria.OrderBy(c => c.DisplayOrder))
                     {
