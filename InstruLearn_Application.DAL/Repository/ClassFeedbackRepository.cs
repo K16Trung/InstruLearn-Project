@@ -24,6 +24,7 @@ namespace InstruLearn_Application.DAL.Repository
         {
             return await _context.ClassFeedbacks
                 .Include(f => f.Class)
+                    .ThenInclude(c => c.Teacher)
                 .Include(f => f.Learner)
                 .Include(f => f.Template)
                 .Include(f => f.Evaluations)
@@ -35,6 +36,7 @@ namespace InstruLearn_Application.DAL.Repository
         {
             return await _context.ClassFeedbacks
                 .Include(f => f.Class)
+                   .ThenInclude(c => c.Teacher)
                 .Include(f => f.Learner)
                 .Include(f => f.Template)
                 .Include(f => f.Evaluations)
@@ -47,6 +49,7 @@ namespace InstruLearn_Application.DAL.Repository
         {
             return await _context.ClassFeedbacks
                 .Include(f => f.Class)
+                   .ThenInclude(c => c.Teacher)
                 .Include(f => f.Learner)
                 .Include(f => f.Template)
                 .Include(f => f.Evaluations)
@@ -59,6 +62,7 @@ namespace InstruLearn_Application.DAL.Repository
         {
             return await _context.ClassFeedbacks
                 .Include(f => f.Class)
+                   .ThenInclude(c => c.Teacher)
                 .Include(f => f.Learner)
                 .Include(f => f.Template)
                 .Include(f => f.Evaluations)

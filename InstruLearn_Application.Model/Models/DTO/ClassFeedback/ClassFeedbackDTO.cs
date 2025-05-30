@@ -12,6 +12,8 @@ namespace InstruLearn_Application.Model.Models.DTO.ClassFeedback
         public int FeedbackId { get; set; }
         public int ClassId { get; set; }
         public string ClassName { get; set; }
+        public int TeacherId { get; set; }
+        public string TeacherName { get; set; }
         public int LearnerId { get; set; }
         public string LearnerName { get; set; }
         public int TemplateId { get; set; }

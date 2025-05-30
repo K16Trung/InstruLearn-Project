@@ -158,12 +158,18 @@ namespace InstruLearn_Application.BLL.Service
             {
                 // Check if the learner already has a certification for this class
                 var existingCertificates = await _unitOfWork.CertificationRepository.GetByLearnerIdAsync(feedbackDTO.LearnerId);
-                bool hasCertification = existingCertificates.Any(c =>
+
+                var existingCertForClass = existingCertificates.FirstOrDefault(c =>
                     c.CertificationType == CertificationType.CenterLearning &&
                     c.CertificationName != null &&
                     c.CertificationName.Contains(classEntity.ClassId.ToString()));
 
-                if (!hasCertification)
+                // Check if it's a temporary certificate that needs upgrading
+                bool isTemporaryCert = existingCertForClass != null &&
+                    existingCertForClass.CertificationName.Contains("[TEMPORARY]");
+
+                // If no certificate exists, create a new one
+                if (existingCertForClass == null)
                 {
                     // Get teacher and subject information
                     string teacherName = "Unknown Teacher";
@@ -216,6 +222,27 @@ namespace InstruLearn_Application.BLL.Service
                         {
                             FeedbackId = createdFeedback.FeedbackId,
                             CertificationIssued = true,
+                            Score = totalPercentage
+                        }
+                    };
+                }
+                else if (isTemporaryCert)
+                {
+                    // Update the temporary certificate to a permanent one
+                    existingCertForClass.CertificationName = existingCertForClass.CertificationName.Replace("[TEMPORARY] ", "");
+                    existingCertForClass.IssueDate = DateTime.Now; // Update issue date to today
+
+                    await _unitOfWork.CertificationRepository.UpdateAsync(existingCertForClass);
+                    await _unitOfWork.SaveChangeAsync();
+
+                    return new ResponseDTO
+                    {
+                        IsSucceed = true,
+                        Message = "Feedback created successfully and temporary certification upgraded to permanent due to high score",
+                        Data = new
+                        {
+                            FeedbackId = createdFeedback.FeedbackId,
+                            CertificationUpgraded = true,
                             Score = totalPercentage
                         }
                     };
@@ -431,6 +458,9 @@ namespace InstruLearn_Application.BLL.Service
                     totalPercentage += evaluation.AchievedPercentage;
                     totalWeight += evaluation.Criterion.Weight;
                 }
+
+                feedbackDTO.TeacherId = feedbackWithEval.Class?.TeacherId ?? 0;
+                feedbackDTO.TeacherName = feedbackWithEval.Class?.Teacher?.Fullname ?? "Unknown";
 
                 feedbackDTO.AverageScore = totalPercentage;
                 feedbackDTO.TotalWeight = totalWeight;
