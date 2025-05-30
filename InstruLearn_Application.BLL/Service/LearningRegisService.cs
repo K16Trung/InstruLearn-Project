@@ -336,6 +336,23 @@ namespace InstruLearn_Application.BLL.Service
 
                 using (var transaction = await _unitOfWork.BeginTransactionAsync())
                 {
+                    // Get the registration deposit amount from the system configuration
+                    const string depositConfigKey = "RegistrationDepositAmount";
+                    var depositConfig = await _unitOfWork.SystemConfigurationRepository.GetByKeyAsync(depositConfigKey);
+
+                    // Default to 50000 if configuration doesn't exist
+                    decimal depositAmount = 50000;
+
+                    if (depositConfig != null && decimal.TryParse(depositConfig.Value, out decimal configValue))
+                    {
+                        depositAmount = configValue;
+                        _logger.LogInformation($"Using configured deposit amount: {depositAmount}");
+                    }
+                    else
+                    {
+                        _logger.LogInformation($"Using default deposit amount: {depositAmount}");
+                    }
+
                     var wallet = await _unitOfWork.WalletRepository.GetFirstOrDefaultAsync(w => w.LearnerId == createLearningRegisDTO.LearnerId);
 
                     if (wallet == null)
@@ -350,17 +367,17 @@ namespace InstruLearn_Application.BLL.Service
 
                     _logger.LogInformation($"Wallet found for learnerId: {createLearningRegisDTO.LearnerId}, balance: {wallet.Balance}");
 
-                    if (wallet.Balance < 50000)
+                    if (wallet.Balance < depositAmount)
                     {
-                        _logger.LogWarning($"Insufficient balance for learnerId: {createLearningRegisDTO.LearnerId}. Current balance: {wallet.Balance}");
+                        _logger.LogWarning($"Insufficient balance for learnerId: {createLearningRegisDTO.LearnerId}. Current balance: {wallet.Balance}, Required deposit: {depositAmount}");
                         return new ResponseDTO
                         {
                             IsSucceed = false,
-                            Message = "Số dư trong ví không đủ."
+                            Message = $"Số dư trong ví không đủ. Cần {depositAmount} VND để đặt cọc đăng ký."
                         };
                     }
 
-                    wallet.Balance -= 50000;
+                    wallet.Balance -= depositAmount;
                     await _unitOfWork.WalletRepository.UpdateAsync(wallet);
 
                     if (createLearningRegisDTO.TimeLearning != 45 && createLearningRegisDTO.TimeLearning != 60 && createLearningRegisDTO.TimeLearning != 90 && createLearningRegisDTO.TimeLearning != 120)
@@ -374,7 +391,7 @@ namespace InstruLearn_Application.BLL.Service
 
                     var learningRegis = _mapper.Map<Learning_Registration>(createLearningRegisDTO);
                     learningRegis.Status = LearningRegis.Pending;
-                    
+
                     // Set the request date to Vietnam time zone (UTC+7)
                     var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
                     learningRegis.RequestDate = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vietnamTimeZone);
@@ -400,7 +417,7 @@ namespace InstruLearn_Application.BLL.Service
                     {
                         TransactionId = Guid.NewGuid().ToString(),
                         WalletId = wallet.WalletId,
-                        Amount = 50000,
+                        Amount = depositAmount,
                         TransactionType = TransactionType.Payment,
                         Status = Model.Enum.TransactionStatus.Complete,
                         TransactionDate = DateTime.UtcNow
@@ -411,7 +428,7 @@ namespace InstruLearn_Application.BLL.Service
 
                     await transaction.CommitAsync();
 
-                    _logger.LogInformation("Learning registration added successfully. Wallet balance updated.");
+                    _logger.LogInformation($"Learning registration added successfully. Wallet balance updated with deposit amount: {depositAmount}");
 
                     var timeEnd = learningRegis.TimeStart.AddMinutes(createLearningRegisDTO.TimeLearning);
                     var timeEndFormatted = timeEnd.ToString("HH:mm");
@@ -419,10 +436,11 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "Đăng ký học tập đã được thêm thành công. Số dư ví đã được cập nhật. Trạng thái được đặt là Đang chờ xử lý.",
+                        Message = $"Đăng ký học tập đã được thêm thành công. Đã khấu trừ {depositAmount} VND tiền đặt cọc từ ví của bạn. Trạng thái được đặt là Đang chờ xử lý.",
                         Data = new
                         {
                             LearningRegisId = learningRegis.LearningRegisId,
+                            DepositAmount = depositAmount
                         }
                     };
                 }
@@ -437,7 +455,6 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
         }
-
 
         public async Task<ResponseDTO> DeleteLearningRegisAsync(int learningRegisId)
         {

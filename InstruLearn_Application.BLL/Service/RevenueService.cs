@@ -18,11 +18,13 @@ namespace InstruLearn_Application.BLL.Service
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<RevenueService> _logger;
+        private readonly ISystemConfigurationService _configService;
 
-        public RevenueService(IUnitOfWork unitOfWork, ILogger<RevenueService> logger)
+        public RevenueService(IUnitOfWork unitOfWork, ILogger<RevenueService> logger, ISystemConfigurationService configService)
         {
             _unitOfWork = unitOfWork;
             _logger = logger;
+            _configService = configService;
         }
 
         public async Task<ResponseDTO> GetTotalRevenueAsync()
@@ -30,6 +32,9 @@ namespace InstruLearn_Application.BLL.Service
             try
             {
                 _logger.LogInformation("Đang tính tổng doanh thu trên tất cả các loại");
+
+                // Get the configurable registration deposit amount
+                decimal registrationDepositAmount = await GetRegistrationDepositAmountAsync();
 
                 var successfulTransactions = await _unitOfWork.WalletTransactionRepository
                     .GetQuery()
@@ -82,7 +87,7 @@ namespace InstruLearn_Application.BLL.Service
                         ReservationFees = new
                         {
                             TotalAmount = reservationFees,
-                            Count = (int)(reservationFees / 50000)
+                            Count = registrationDepositAmount > 0 ? (int)(reservationFees / registrationDepositAmount) : 0
                         },
                         OneOnOnePaymentPhases = new
                         {
@@ -114,6 +119,36 @@ namespace InstruLearn_Application.BLL.Service
                     Message = $"Lỗi khi tính toán tổng doanh thu: {ex.Message}"
                 };
             }
+        }
+
+        // Add this new helper method to get the registration deposit amount
+        private async Task<decimal> GetRegistrationDepositAmountAsync()
+        {
+            decimal depositAmount = 50000; // Default value
+            try
+            {
+                var configResponse = await _configService.GetConfigurationAsync("RegistrationDepositAmount");
+                
+                if (configResponse.IsSucceed && configResponse.Data != null)
+                {
+                    var configData = configResponse.Data.GetType().GetProperty("Value")?.GetValue(configResponse.Data)?.ToString();
+                    if (decimal.TryParse(configData, out decimal configAmount))
+                    {
+                        depositAmount = configAmount;
+                        _logger.LogInformation($"Using configured registration deposit amount: {depositAmount}");
+                    }
+                }
+                else
+                {
+                    _logger.LogInformation($"Using default registration deposit amount: {depositAmount}");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving registration deposit amount from configuration. Using default value.");
+            }
+            
+            return depositAmount;
         }
 
         public async Task<ResponseDTO> GetMonthlybyYearRevenueAsync(int year)
@@ -337,6 +372,9 @@ namespace InstruLearn_Application.BLL.Service
             {
                 _logger.LogInformation($"Đang lấy doanh thu theo ngày cho {date:yyyy-MM-dd}");
 
+                // Get the configurable registration deposit amount
+                decimal registrationDepositAmount = await GetRegistrationDepositAmountAsync();
+
                 DateTime startTime = date.Date;
                 DateTime endTime = date.Date.AddDays(1).AddMilliseconds(-1);
 
@@ -413,7 +451,7 @@ namespace InstruLearn_Application.BLL.Service
                             ReservationFees = new
                             {
                                 TotalAmount = reservationFees,
-                                Count = (int)Math.Round(reservationFees / 50000, 0)
+                                Count = registrationDepositAmount > 0 ? (int)Math.Round(reservationFees / registrationDepositAmount, 0) : 0
                             },
                             OneOnOnePaymentPhases = new
                             {
@@ -536,6 +574,8 @@ namespace InstruLearn_Application.BLL.Service
 
         private async Task<decimal> GetReservationFeesAsync(DateTime? startDate = null, DateTime? endDate = null)
         {
+            decimal registrationDepositAmount = await GetRegistrationDepositAmountAsync();
+
             var query = _unitOfWork.LearningRegisRepository
                 .GetQuery()
                 .Where(lr => lr.Status != LearningRegis.Rejected);
@@ -554,71 +594,101 @@ namespace InstruLearn_Application.BLL.Service
                 .Where(lr => lr.ClassId == null)
                 .CountAsync();
 
-            return count * 50000;
+            return count * registrationDepositAmount;
         }
 
         private async Task<(object Phase40, object Phase60)> GetOneOnOnePaymentPhasesAsync(
             DateTime? startDate = null, DateTime? endDate = null)
         {
-            var query = _unitOfWork.PaymentsRepository
-                .GetQuery()
-                .Where(p => p.Status == PaymentStatus.Completed &&
-                           p.PaymentFor == PaymentFor.LearningRegistration);
-
-            if (startDate.HasValue)
+            try
             {
-                query = query.Where(p => p.WalletTransaction.TransactionDate >= startDate.Value);
-            }
+                var query = _unitOfWork.PaymentsRepository
+                    .GetQuery()
+                    .Where(p => p.Status == PaymentStatus.Completed &&
+                               p.PaymentFor == PaymentFor.LearningRegistration);
 
-            if (endDate.HasValue)
-            {
-                query = query.Where(p => p.WalletTransaction.TransactionDate <= endDate.Value);
-            }
-
-            var payments = await query
-                .Include(p => p.WalletTransaction)
-                .ToListAsync();
-
-            var learningRegistrations = await _unitOfWork.LearningRegisRepository
-                .GetQuery()
-                .Where(lr => lr.ClassId == null)
-                .ToListAsync();
-
-            var averagePrice = learningRegistrations.Where(lr => lr.Price.HasValue).Average(lr => lr.Price ?? 0);
-            var threshold = averagePrice / 2;
-
-            var smallerPayments = payments
-                .Where(p => p.AmountPaid < threshold)
-                .Select(p => new
+                if (startDate.HasValue)
                 {
-                    AmountPaid = p.AmountPaid,
-                    TransactionDate = p.WalletTransaction.TransactionDate
-                })
-                .ToList();
-
-            var largerPayments = payments
-                .Where(p => p.AmountPaid >= threshold)
-                .Select(p => new
-                {
-                    AmountPaid = p.AmountPaid,
-                    TransactionDate = p.WalletTransaction.TransactionDate
-                })
-                .ToList();
-
-            return (
-                new
-                {
-                    Count = smallerPayments.Count,
-                    TotalAmount = smallerPayments.Sum(p => p.AmountPaid),
-                    Payments = smallerPayments
-                },
-                new
-                {
-                    Count = largerPayments.Count,
-                    TotalAmount = largerPayments.Sum(p => p.AmountPaid),
-                    Payments = largerPayments
+                    query = query.Where(p => p.WalletTransaction.TransactionDate >= startDate.Value);
                 }
-            );
+
+                if (endDate.HasValue)
+                {
+                    query = query.Where(p => p.WalletTransaction.TransactionDate <= endDate.Value);
+                }
+
+                var payments = await query
+                    .Include(p => p.WalletTransaction)
+                    .ToListAsync();
+
+                // Check if there are any payments
+                if (payments.Count == 0)
+                {
+                    // Return empty data when no payments exist
+                    return (
+                        new { Count = 0, TotalAmount = 0m, Payments = new List<object>() },
+                        new { Count = 0, TotalAmount = 0m, Payments = new List<object>() }
+                    );
+                }
+
+                var learningRegistrations = await _unitOfWork.LearningRegisRepository
+                    .GetQuery()
+                    .Where(lr => lr.ClassId == null)
+                    .ToListAsync();
+
+                // Set a default threshold if no registrations with price exist
+                decimal threshold = 500000; // Default threshold
+                
+                // Only calculate average if there are registrations with price
+                if (learningRegistrations.Any(lr => lr.Price.HasValue)) 
+                {
+                    var averagePrice = learningRegistrations.Where(lr => lr.Price.HasValue)
+                        .Average(lr => lr.Price.Value);
+                    threshold = averagePrice / 2;
+                }
+
+                var smallerPayments = payments
+                    .Where(p => p.AmountPaid < threshold)
+                    .Select(p => new
+                    {
+                        AmountPaid = p.AmountPaid,
+                        TransactionDate = p.WalletTransaction.TransactionDate
+                    })
+                    .ToList();
+
+                var largerPayments = payments
+                    .Where(p => p.AmountPaid >= threshold)
+                    .Select(p => new
+                    {
+                        AmountPaid = p.AmountPaid,
+                        TransactionDate = p.WalletTransaction.TransactionDate
+                    })
+                    .ToList();
+
+                return (
+                    new
+                    {
+                        Count = smallerPayments.Count,
+                        TotalAmount = smallerPayments.Sum(p => p.AmountPaid),
+                        Payments = smallerPayments
+                    },
+                    new
+                    {
+                        Count = largerPayments.Count,
+                        TotalAmount = largerPayments.Sum(p => p.AmountPaid),
+                        Payments = largerPayments
+                    }
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in GetOneOnOnePaymentPhasesAsync");
+                // Return empty data in case of error
+                return (
+                    new { Count = 0, TotalAmount = 0m, Payments = new List<object>() },
+                    new { Count = 0, TotalAmount = 0m, Payments = new List<object>() }
+                );
+            }
         }
 
         private async Task<object> GetCenterClassInitialPaymentsAsync(DateTime? startDate = null, DateTime? endDate = null)
@@ -936,7 +1006,17 @@ namespace InstruLearn_Application.BLL.Service
                 .ToListAsync();
 
 
-            var averagePrice = oneOnOneRegistrations.Where(lr => lr.Price.HasValue).Average(lr => lr.Price ?? 0);
+            // Add this check before calculating averagePrice
+            decimal averagePrice = 0;
+            if (oneOnOneRegistrations.Any(lr => lr.Price.HasValue))
+            {
+                averagePrice = oneOnOneRegistrations.Where(lr => lr.Price.HasValue).Average(lr => lr.Price ?? 0);
+            }
+            else
+            {
+                averagePrice = 500000; // Set a default value
+            }
+
             var phase40Threshold = averagePrice * 0.4m * 1.2m;
 
             var phase40Details = payments
@@ -1072,7 +1152,17 @@ namespace InstruLearn_Application.BLL.Service
                 .Where(lr => lr.ClassId == null)
                 .ToListAsync();
 
-            var averagePrice = oneOnOneRegistrations.Where(lr => lr.Price.HasValue).Average(lr => lr.Price ?? 0);
+            // Add this check before calculating averagePrice
+            decimal averagePrice = 0;
+            if (oneOnOneRegistrations.Any(lr => lr.Price.HasValue))
+            {
+                averagePrice = oneOnOneRegistrations.Where(lr => lr.Price.HasValue).Average(lr => lr.Price ?? 0);
+            }
+            else
+            {
+                averagePrice = 500000; // Set a default value
+            }
+
             var phase40Threshold = averagePrice * 0.4m * 1.2m;
 
             var monthlyData = payments
