@@ -151,7 +151,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "All learning registrations retrieved successfully.",
+                    Message = "Đã lấy tất cả đăng ký học tập thành công.",
                     Data = enrichedRegistrations
                 };
             }
@@ -161,7 +161,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error retrieving learning registrations: {ex.Message}"
+                    Message = $"Lỗi khi lấy danh sách đăng ký học tập: {ex.Message}"
                 };
             }
         }
@@ -176,7 +176,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Learning registration not found.",
+                        Message = "Không tìm thấy đăng ký học tập.",
                         Data = null
                     };
                 }
@@ -216,7 +216,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Learning registration retrieved successfully.",
+                    Message = "Lấy thông tin đăng ký học tập thành công.",
                     Data = enrichedReg
                 };
             }
@@ -226,7 +226,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error retrieving learning registration: {ex.Message}",
+                    Message = $"Lỗi khi lấy thông tin đăng ký học tập: {ex.Message}",
                     Data = null
                 };
             }
@@ -248,7 +248,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = $"Filtered registrations for Teacher ID {teacherId} retrieved successfully.",
+                    Message = $"Đã lọc thành công các đăng ký học tập cho giáo viên ID {teacherId}.",
                     Data = registrationDtos
                 };
             }
@@ -258,7 +258,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error retrieving registrations: {ex.Message}"
+                    Message = $"Lỗi khi lấy danh sách đăng ký học tập: {ex.Message}"
                 };
             }
         }
@@ -275,7 +275,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Please select at least one day for learning sessions."
+                        Message = "Vui lòng chọn ít nhất một ngày cho buổi học."
                     };
                 }
 
@@ -312,7 +312,7 @@ namespace InstruLearn_Application.BLL.Service
                         return new ResponseDTO
                         {
                             IsSucceed = false,
-                            Message = $"Schedule conflict detected on {date.ToString("yyyy-MM-dd")}: {scheduleConflict.Message}"
+                            Message = $"Phát hiện xung đột lịch học vào ngày {date.ToString("yyyy-MM-dd")}: {scheduleConflict.Message}"
                         };
                     }
                 }
@@ -330,7 +330,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "You already have a pending registration for this major. Please wait for it to be processed before creating a new one."
+                        Message = "Bạn đã có một đăng ký đang chờ xử lý cho môn học này. Vui lòng đợi cho đến khi nó được xử lý trước khi tạo đăng ký mới."
                     };
                 }
 
@@ -344,7 +344,7 @@ namespace InstruLearn_Application.BLL.Service
                         return new ResponseDTO
                         {
                             IsSucceed = false,
-                            Message = "Wallet not found for the learner."
+                            Message = "Không tìm thấy ví tiền cho học viên."
                         };
                     }
 
@@ -356,7 +356,7 @@ namespace InstruLearn_Application.BLL.Service
                         return new ResponseDTO
                         {
                             IsSucceed = false,
-                            Message = "Insufficient balance in the wallet."
+                            Message = "Số dư trong ví không đủ."
                         };
                     }
 
@@ -368,7 +368,7 @@ namespace InstruLearn_Application.BLL.Service
                         return new ResponseDTO
                         {
                             IsSucceed = false,
-                            Message = "Invalid learning duration. Please select 45, 60, 90 or 120 minutes."
+                            Message = "Thời lượng học không hợp lệ. Vui lòng chọn 45, 60, 90 hoặc 120 phút."
                         };
                     }
 
@@ -419,7 +419,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "Learning Registration added successfully. Wallet balance updated. Status set to Pending.",
+                        Message = "Đăng ký học tập đã được thêm thành công. Số dư ví đã được cập nhật. Trạng thái được đặt là Đang chờ xử lý.",
                         Data = new
                         {
                             LearningRegisId = learningRegis.LearningRegisId,
@@ -433,7 +433,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"An error occurred: {ex.Message}"
+                    Message = $"Đã xảy ra lỗi: {ex.Message}"
                 };
             }
         }
@@ -447,14 +447,14 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Learning Registration not found."
+                    Message = "Không tìm thấy đăng ký học tập."
                 };
             }
             await _unitOfWork.LearningRegisRepository.DeleteAsync(learningRegisId);
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Learning Registration deleted successfully."
+                Message = "Xóa đăng ký học tập thành công."
             };
         }
 
@@ -465,7 +465,7 @@ namespace InstruLearn_Application.BLL.Service
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Pending learning registrations retrieved successfully.",
+                Message = "Lấy danh sách đăng ký học tập đang chờ xử lý thành công.",
                 Data = pendingDtos
             };
         }
@@ -512,7 +512,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = $"All registrations for Learner ID {learnerId} retrieved successfully.",
+                    Message = $"Đã lấy tất cả đăng ký học tập cho học viên ID {learnerId} thành công.",
                     Data = enrichedRegistrations
                 };
             }
@@ -522,7 +522,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error retrieving learning registrations: {ex.Message}"
+                    Message = $"Lỗi khi lấy danh sách đăng ký học tập: {ex.Message}"
                 };
             }
         }
@@ -537,7 +537,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Learning Registration not found."
+                        Message = "Không tìm thấy đăng ký học tập."
                     };
                 }
 
@@ -547,7 +547,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Level Assigned not found."
+                        Message = "Không tìm thấy cấp độ được chỉ định."
                     };
                 }
 
@@ -676,7 +676,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = $"Learning Registration updated successfully with total price {totalPrice:F2} VND. Notification email sent to learner.",
+                    Message = $"Cập nhật đăng ký học tập thành công với tổng giá {totalPrice:F2} VND. Đã gửi email thông báo đến học viên.",
                     Data = new
                     {
                         LearningRegisId = learningRegis.LearningRegisId,
@@ -693,7 +693,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Failed to update Learning Registration. " + ex.Message
+                    Message = "Không thể cập nhật đăng ký học tập. " + ex.Message
                 };
             }
         }
@@ -724,7 +724,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "You already have an enrollment or pending enrollment for this class."
+                        Message = "Bạn đã có đăng ký hoặc đăng ký đang chờ xử lý cho lớp học này."
                     };
                 }
 

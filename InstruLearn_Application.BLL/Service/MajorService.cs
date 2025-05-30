@@ -31,7 +31,7 @@ namespace InstruLearn_Application.BLL.Service
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Major retrieved successfully.",
+                Message = "Đã lấy chuyên ngành thành công.",
                 Data = majorDtos
             };
         }
@@ -44,14 +44,14 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Major not found."
+                    Message = "Không tìm thấy chuyên ngành."
                 };
             }
             var majorDtos = _mapper.Map<MajorDTO>(major);
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Major retrieved successfully.",
+                Message = "Đã lấy chuyên ngành thành công.",
                 Data = majorDtos
             };
         }
@@ -64,7 +64,7 @@ namespace InstruLearn_Application.BLL.Service
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Major added successfully.",
+                Message = "Đã thêm chuyên ngành thành công.",
             };
         }
 
@@ -76,7 +76,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Major not found."
+                    Message = "Không tìm thấy chuyên ngành."
                 };
             }
             _mapper.Map(updateDto, existingMajor);
@@ -84,7 +84,7 @@ namespace InstruLearn_Application.BLL.Service
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Major updated successfully."
+                Message = "Đã cập nhật chuyên ngành thành công."
             };
         }
         public async Task<ResponseDTO> UpdateStatusMajorAvailableAsync(int majorId)
@@ -94,7 +94,7 @@ namespace InstruLearn_Application.BLL.Service
             var major = await _unitOfWork.MajorRepository.GetByIdAsync(majorId);
             if (major == null)
             {
-                response.Message = "Major not found.";
+                response.Message = "Không tìm thấy chuyên ngành.";
                 return response;
             }
 
@@ -104,12 +104,12 @@ namespace InstruLearn_Application.BLL.Service
 
             if (!updated)
             {
-                response.Message = "Failed to change status.";
+                response.Message = "Thay đổi trạng thái thất bại.";
                 return response;
             }
 
             response.IsSucceed = true;
-            response.Message = "Change status major successfully!";
+            response.Message = "Thay đổi trạng thái chuyên ngành thành công!";
             return response;
         }
 
@@ -120,7 +120,7 @@ namespace InstruLearn_Application.BLL.Service
             var major = await _unitOfWork.MajorRepository.GetByIdAsync(majorId);
             if (major == null)
             {
-                response.Message = "Major not found.";
+                response.Message = "Không tìm thấy chuyên ngành.";
                 return response;
             }
 
@@ -130,12 +130,12 @@ namespace InstruLearn_Application.BLL.Service
 
             if (!updated)
             {
-                response.Message = "Failed to change status.";
+                response.Message = "Thay đổi trạng thái thất bại.";
                 return response;
             }
 
             response.IsSucceed = true;
-            response.Message = "Change status major successfully!";
+            response.Message = "Thay đổi trạng thái chuyên ngành thành công!";
             return response;
         }
 
@@ -147,14 +147,14 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Major not found."
+                    Message = "Không tìm thấy chuyên ngành."
                 };
             }
             await _unitOfWork.MajorRepository.DeleteAsync(majorId);
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Major deleted successfully."
+                Message = "Đã xóa chuyên ngành thành công."
             };
         }
     }

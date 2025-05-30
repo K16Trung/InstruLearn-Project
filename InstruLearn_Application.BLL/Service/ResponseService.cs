@@ -49,7 +49,7 @@ namespace InstruLearn_Application.BLL.Service
                 responseList.Add(new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Response retrieved successfully.",
+                    Message = "Đã lấy phản hồi thành công.",
                     Data = responseDto
                 });
             }
@@ -65,7 +65,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Response not found.",
+                    Message = "Không tìm thấy phản hồi.",
                 };
             }
 
@@ -82,7 +82,7 @@ namespace InstruLearn_Application.BLL.Service
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Response retrieved successfully.",
+                Message = "Đã lấy phản hồi thành công.",
                 Data = responseDto
             };
         }
@@ -97,7 +97,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = $"Response Type with ID {createResponseDTO.ResponseTypeId} not found."
+                        Message = $"Không tìm thấy loại phản hồi với ID {createResponseDTO.ResponseTypeId}."
                     };
                 }
 
@@ -125,7 +125,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Response created successfully.",
+                    Message = "Đã tạo phản hồi thành công.",
                 };
             }
             catch (Exception ex)
@@ -133,7 +133,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Failed to create response: {ex.Message}"
+                    Message = $"Không thể tạo phản hồi: {ex.Message}"
                 };
             }
         }
@@ -148,7 +148,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Response not found."
+                        Message = "Không tìm thấy phản hồi."
                     };
                 }
 
@@ -173,7 +173,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Response updated successfully.",
+                    Message = "Đã cập nhật phản hồi thành công.",
                 };
             }
             catch (Exception ex)
@@ -181,7 +181,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Failed to update response: {ex.Message}"
+                    Message = $"Không thể cập nhật phản hồi: {ex.Message}"
                 };
             }
         }

@@ -32,7 +32,7 @@ namespace InstruLearn_Application.BLL.Service
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("Payment Reminder Service started at: {time}", DateTimeOffset.Now);
+            _logger.LogInformation("Dịch vụ nhắc nhở thanh toán bắt đầu lúc: {time}", DateTimeOffset.Now);
 
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -42,7 +42,7 @@ namespace InstruLearn_Application.BLL.Service
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error occurred while processing payment reminders");
+                    _logger.LogError(ex, "Đã xảy ra lỗi khi xử lý nhắc nhở thanh toán");
                 }
 
                 // Wait for the next check interval
@@ -52,7 +52,7 @@ namespace InstruLearn_Application.BLL.Service
 
         private async Task ProcessPaymentRemindersAsync()
         {
-            _logger.LogInformation("Checking for pending payments that need reminders at: {time}", DateTimeOffset.Now);
+            _logger.LogInformation("Kiểm tra các khoản thanh toán đang chờ cần nhắc nhở lúc: {time}", DateTimeOffset.Now);
 
             using var scope = _serviceProvider.CreateScope();
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
@@ -68,11 +68,11 @@ namespace InstruLearn_Application.BLL.Service
 
             if (registrations == null || !registrations.Any())
             {
-                _logger.LogInformation("No registrations found that need payment reminders");
+                _logger.LogInformation("Không tìm thấy đăng ký học tập nào cần nhắc nhở thanh toán");
                 return;
             }
 
-            _logger.LogInformation("Found {count} registrations that might need payment reminders", registrations.Count);
+            _logger.LogInformation("Tìm thấy {count} đăng ký học tập có thể cần nhắc nhở thanh toán", registrations.Count);
 
             int remindersSent = 0;
             DateTime now = DateTime.Now;
@@ -155,19 +155,19 @@ namespace InstruLearn_Application.BLL.Service
                             await unitOfWork.SaveChangeAsync();
 
                             remindersSent++;
-                            _logger.LogInformation("Sent payment reminder {count} of {max} for registration {id}, type: {type}",
+                            _logger.LogInformation("Đã gửi nhắc nhở thanh toán {count} trong tổng số {max} cho đăng ký {id}, loại: {type}",
                                 registration.ReminderCount, maxReminders, registration.LearningRegisId, reminderType);
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error processing payment reminder for registration {id}",
+                    _logger.LogError(ex, "Lỗi xử lý nhắc nhở thanh toán cho đăng ký {id}",
                         registration.LearningRegisId);
                 }
             }
 
-            _logger.LogInformation("Payment reminder check completed. Sent {count} reminders", remindersSent);
+            _logger.LogInformation("Kiểm tra nhắc nhở thanh toán hoàn tất. Đã gửi {count} nhắc nhở", remindersSent);
         }
 
         private async Task<bool> SendPaymentReminderEmailAsync(
@@ -179,7 +179,7 @@ namespace InstruLearn_Application.BLL.Service
             // Check if learner has valid email
             if (registration.Learner?.Account?.Email == null)
             {
-                _logger.LogWarning("Cannot send reminder to learner {id} - no email address found", registration.LearnerId);
+                _logger.LogWarning("Không thể gửi nhắc nhở đến học viên {id} - không tìm thấy địa chỉ email", registration.LearnerId);
                 return false;
             }
 
@@ -362,7 +362,7 @@ namespace InstruLearn_Application.BLL.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to send payment reminder email to learner {id} at {email}",
+                _logger.LogError(ex, "Không thể gửi email nhắc nhở thanh toán đến học viên {id} tại {email}",
                     registration.LearnerId, learnerEmail);
                 return false;
             }
@@ -387,7 +387,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Learning registration not found"
+                        Message = "Không tìm thấy đăng ký học tập"
                     };
                 }
 
@@ -397,7 +397,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = $"Learning registration status {registration.Status} is not eligible for payment reminders"
+                        Message = $"Trạng thái đăng ký học tập {registration.Status} không đủ điều kiện để gửi nhắc nhở thanh toán"
                     };
                 }
 
@@ -421,7 +421,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "Payment reminder sent successfully",
+                        Message = "Đã gửi nhắc nhở thanh toán thành công",
                         Data = new
                         {
                             LearningRegisId = registration.LearningRegisId,
@@ -437,7 +437,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Failed to send payment reminder"
+                        Message = "Không thể gửi nhắc nhở thanh toán"
                     };
                 }
             }
@@ -447,7 +447,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error sending payment reminder: {ex.Message}"
+                    Message = $"Lỗi gửi nhắc nhở thanh toán: {ex.Message}"
                 };
             }
         }
@@ -472,7 +472,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "No pending payment registrations found",
+                        Message = "Không tìm thấy đăng ký thanh toán đang chờ",
                         Data = new
                         {
                             TotalCount = 0,
@@ -527,7 +527,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = $"Retrieved payment reminder statistics for {pendingRegistrations.Count} registrations",
+                    Message = $"Đã lấy thống kê nhắc nhở thanh toán cho {pendingRegistrations.Count} đăng ký",
                     Data = stats
                 };
             }
@@ -537,7 +537,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error retrieving payment reminder statistics: {ex.Message}"
+                    Message = $"Lỗi khi lấy thống kê nhắc nhở thanh toán: {ex.Message}"
                 };
             }
         }

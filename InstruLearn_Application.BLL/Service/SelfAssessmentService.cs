@@ -39,7 +39,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = $"Retrieved {selfAssessmentDTOs.Count} self assessments.",
+                    Message = $"Đã truy xuất {selfAssessmentDTOs.Count} bài tự đánh giá.",
                     Data = selfAssessmentDTOs
                 };
             }
@@ -49,7 +49,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error retrieving self assessments: {ex.Message}"
+                    Message = $"Lỗi khi truy xuất các bài tự đánh giá: {ex.Message}"
                 };
             }
         }
@@ -64,7 +64,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = $"Self assessment with ID {id} not found."
+                        Message = $"Không tìm thấy bài tự đánh giá với ID {id}."
                     };
                 }
 
@@ -73,7 +73,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Self assessment retrieved successfully.",
+                    Message = "Đã truy xuất bài tự đánh giá thành công.",
                     Data = selfAssessmentDTO
                 };
             }
@@ -83,7 +83,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error retrieving self assessment: {ex.Message}"
+                    Message = $"Lỗi khi truy xuất bài tự đánh giá: {ex.Message}"
                 };
             }
         }
@@ -102,7 +102,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Self assessment created successfully.",
+                    Message = "Bài tự đánh giá đã được tạo thành công.",
                     Data = selfAssessmentDTO
                 };
             }
@@ -112,7 +112,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error creating self assessment: {ex.Message}"
+                    Message = $"Lỗi khi tạo bài tự đánh giá: {ex.Message}"
                 };
             }
         }
@@ -128,7 +128,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = $"Self assessment with ID {id} not found."
+                        Message = $"Không tìm thấy bài tự đánh giá với ID {id}."
                     };
                 }
 
@@ -142,7 +142,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Self assessment updated successfully.",
+                    Message = "Bài tự đánh giá đã được cập nhật thành công.",
                     Data = selfAssessmentDTO
                 };
             }
@@ -152,7 +152,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error updating self assessment: {ex.Message}"
+                    Message = $"Lỗi khi cập nhật bài tự đánh giá: {ex.Message}"
                 };
             }
         }
@@ -168,7 +168,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = $"Self assessment with ID {id} not found."
+                        Message = $"Không tìm thấy bài tự đánh giá với ID {id}."
                     };
                 }
 
@@ -180,7 +180,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = $"Self assessment with ID {id} has been deactivated because it is associated with learning registrations."
+                        Message = $"Bài tự đánh giá với ID {id} đã bị vô hiệu hóa vì nó liên kết với các đăng ký học tập."
                     };
                 }
 
@@ -190,7 +190,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = $"Self assessment with ID {id} has been deleted successfully."
+                    Message = $"Bài tự đánh giá với ID {id} đã được xóa thành công."
                 };
             }
             catch (Exception ex)
@@ -199,7 +199,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error deleting self assessment: {ex.Message}"
+                    Message = $"Lỗi khi xóa bài tự đánh giá: {ex.Message}"
                 };
             }
         }
@@ -215,7 +215,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = $"Self assessment with ID {id} not found."
+                        Message = $"Không tìm thấy bài tự đánh giá với ID {id}."
                     };
                 }
 
@@ -225,7 +225,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Self assessment retrieved successfully.",
+                    Message = "Đã truy xuất bài tự đánh giá thành công.",
                     Data = new
                     {
                         SelfAssessment = selfAssessmentDTO,
@@ -239,7 +239,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error retrieving self assessment: {ex.Message}"
+                    Message = $"Lỗi khi truy xuất bài tự đánh giá: {ex.Message}"
                 };
             }
         }

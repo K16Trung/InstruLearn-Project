@@ -46,12 +46,12 @@ namespace InstruLearn_Application.BLL.Service
             {
                 if (string.IsNullOrEmpty(classDTO.MajorName))
                 {
-                    classDTO.MajorName = "Not Assigned";
+                    classDTO.MajorName = "Chưa được gán";
                 }
 
                 if (string.IsNullOrEmpty(classDTO.LevelName))
                 {
-                    classDTO.LevelName = "Not Assigned";
+                    classDTO.LevelName = "Chưa được gán";
                 }
 
                 // Set the SyllabusLink from the Level association
@@ -177,7 +177,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Teacher not found.",
+                        Message = "Không tìm thấy giáo viên.",
                         Data = null
                     };
                 }
@@ -189,7 +189,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "No classes found for this teacher.",
+                        Message = "Không tìm thấy lớp học nào của giáo viên này.",
                         Data = new List<ClassDTO>()
                     };
                 }
@@ -200,12 +200,12 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     if (string.IsNullOrEmpty(classDTO.MajorName))
                     {
-                        classDTO.MajorName = "Not Assigned";
+                        classDTO.MajorName = "Chưa được gán";
                     }
 
                     if (string.IsNullOrEmpty(classDTO.LevelName))
                     {
-                        classDTO.LevelName = "Not Assigned";
+                        classDTO.LevelName = "Chưa được gán";
                     }
 
                     // Set the SyllabusLink from the Level association
@@ -259,7 +259,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = $"Retrieved {classDTOs.Count} classes for teacher ID: {teacherId}.",
+                    Message = $"Đã lấy {classDTOs.Count} lớp học của giáo viên ID: {teacherId}.",
                     Data = classDTOs
                 };
             }
@@ -268,7 +268,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error retrieving classes for teacher: {ex.Message}",
+                    Message = $"Lỗi khi lấy danh sách lớp học của giáo viên: {ex.Message}",
                     Data = null
                 };
             }
@@ -303,7 +303,7 @@ namespace InstruLearn_Application.BLL.Service
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Classes retrieved successfully.",
+                Message = "Đã lấy danh sách lớp học thành công.",
                 Data = classDtos
             };
         }

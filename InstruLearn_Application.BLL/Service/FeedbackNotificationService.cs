@@ -29,7 +29,7 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                _logger.LogInformation($"Checking feedback notifications for learner ID: {learnerId}");
+                _logger.LogInformation($"Kiểm tra thông báo phản hồi cho ID học viên: {learnerId}");
 
                 // Get all completed feedbacks for this learner regardless of registration status
                 var allFeedbacks = await _unitOfWork.LearningRegisFeedbackRepository
@@ -53,7 +53,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "No active learning registrations or feedback records found for this learner."
+                        Message = "Không tìm thấy đăng ký học tập hoạt động hoặc hồ sơ phản hồi cho học viên này."
                     };
                 }
 
@@ -94,7 +94,7 @@ namespace InstruLearn_Application.BLL.Service
 
                         if (regis == null)
                         {
-                            _logger.LogWarning($"Could not find registration for completed feedback ID {completedFeedback.FeedbackId}");
+                            _logger.LogWarning($"Không tìm thấy đăng ký tương ứng với phản hồi đã hoàn tất ID {completedFeedback.FeedbackId}");
                             continue;
                         }
                     }
@@ -146,7 +146,7 @@ namespace InstruLearn_Application.BLL.Service
                         Message = "Cảm ơn bạn đã hoàn thành phản hồi. Hãy tiếp tục thanh toán 60% còn lại để hoàn thành khóa học của bạn."
                     });
 
-                    _logger.LogInformation($"Added completed feedback notification for feedback ID {completedFeedback.FeedbackId}, registration {regis.LearningRegisId}");
+                    _logger.LogInformation($"                                                                                    ID {completedFeedback.FeedbackId}, registration {regis.LearningRegisId}");
                 }
 
                 // Now process active learning registrations for non-completed feedbacks
@@ -178,7 +178,7 @@ namespace InstruLearn_Application.BLL.Service
                         // Skip if below threshold and no completed feedback
                         if (completedSessions < fortyPercentThreshold)
                         {
-                            _logger.LogInformation($"Skipping registration {regis.LearningRegisId} - below 40% threshold");
+                            _logger.LogInformation($"Bỏ qua bản đăng ký {regis.LearningRegisId} vì tỷ lệ hoàn thành dưới 40%");
                             continue;
                         }
 
@@ -220,7 +220,7 @@ namespace InstruLearn_Application.BLL.Service
 
                             existingFeedback.Status = FeedbackStatus.Completed;
                             existingFeedback.CompletedAt = DateTime.Now;
-                            existingFeedback.AdditionalComments = "Auto-completed by system due to deadline expiration";
+                            existingFeedback.AdditionalComments = "Tự động hoàn thành bởi hệ thống do hết hạn";
 
                             if (regis.Status == LearningRegis.Fourty)
                             {
@@ -310,8 +310,8 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     IsSucceed = true,
                     Message = feedbackNotifications.Any()
-                        ? "Feedback notifications available."
-                        : "No feedback notifications at this time.",
+                        ? "Có thông báo phản hồi."
+                        : "Không có thông báo phản hồi vào lúc này.",
                     Data = feedbackNotifications
                 };
             }
@@ -321,7 +321,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error checking feedback notifications: {ex.Message}"
+                    Message = $"Lỗi khi kiểm tra thông báo phản hồi: {ex.Message}"
                 };
             }
         }
@@ -338,7 +338,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Feedback form not found."
+                        Message = "Không tìm thấy biểu mẫu phản hồi."
                     };
                 }
 
@@ -355,7 +355,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Learning registration not found."
+                        Message = "Không tìm thấy đăng ký học tập."
                     };
                 }
 
@@ -371,7 +371,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "Feedback completed. Your learning registration is now ready for the remaining 60% payment to continue learning.",
+                        Message = "Đã hoàn thành phản hồi. Đăng ký học tập của bạn hiện đã sẵn sàng cho khoản thanh toán 60% còn lại để tiếp tục học.",
                         Data = new
                         {
                             FeedbackId = feedbackId,
@@ -390,7 +390,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "Feedback completed. Your learning registration has been cancelled as requested.",
+                        Message = "Đã hoàn thành phản hồi. Đăng ký học tập của bạn đã bị hủy theo yêu cầu.",
                         Data = new
                         {
                             FeedbackId = feedbackId,
@@ -406,7 +406,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error processing feedback completion: {ex.Message}"
+                    Message = $"Lỗi khi xử lý hoàn thành phản hồi: {ex.Message}"
                 };
             }
         }
@@ -428,7 +428,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "No learners with 40% payment status found."
+                        Message = "Không tìm thấy học viên có trạng thái thanh toán 40%."
                     };
                 }
 
@@ -529,7 +529,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = $"Processed {learnersWithFortyStatus.Count} registrations with 40% payment status. Sent {notificationsSent} email notifications.",
+                    Message = $"Đã xử lý {learnersWithFortyStatus.Count} đăng ký có trạng thái thanh toán 40%. Đã gửi {notificationsSent} email thông báo.",
                     Data = results
                 };
             }
@@ -539,7 +539,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error in automatic feedback notification process: {ex.Message}"
+                    Message = $"Lỗi trong quá trình thông báo phản hồi tự động: {ex.Message}"
                 };
             }
         }
@@ -579,7 +579,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "No learning registrations with Fourty status found."
+                        Message = "Không tìm thấy đăng ký học tập có trạng thái Bốn mươi phần trăm."
                     };
                 }
 
@@ -705,7 +705,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = $"Processed {fortyStatusRegistrations.Count} registrations with Fourty status. Sent {notificationCount} feedback notifications.",
+                    Message = $"Đã xử lý {fortyStatusRegistrations.Count} đăng ký có trạng thái Bốn mươi phần trăm. Đã gửi {notificationCount} thông báo phản hồi.",
                     Data = results
                 };
             }
@@ -715,7 +715,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error in learner progress check process: {ex.Message}"
+                    Message = $"Lỗi trong quá trình kiểm tra tiến độ học viên: {ex.Message}"
                 };
             }
         }
@@ -740,7 +740,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "No expired feedbacks found."
+                        Message = "Không tìm thấy phản hồi đã hết hạn."
                     };
                 }
 
@@ -755,7 +755,7 @@ namespace InstruLearn_Application.BLL.Service
                         feedback.Status = FeedbackStatus.Completed;
                         feedback.CompletedAt = DateTime.Now;
                         feedback.AdditionalComments = (feedback.AdditionalComments ?? "") +
-                                                     "\nAuto-completed by system due to deadline expiration";
+                                                     "\nTự động hoàn thành bởi hệ thống do hết hạn";
 
                         await _unitOfWork.LearningRegisFeedbackRepository.UpdateAsync(feedback);
 
@@ -795,7 +795,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = $"Updated {updatedCount} expired feedbacks.",
+                    Message = $"Đã cập nhật {updatedCount} phản hồi đã hết hạn.",
                     Data = results
                 };
             }
@@ -805,7 +805,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error checking for expired feedbacks: {ex.Message}"
+                    Message = $"Lỗi khi kiểm tra phản hồi đã hết hạn: {ex.Message}"
                 };
             }
         }
@@ -836,7 +836,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "No classes with registration type 1002 found for feedback creation.",
+                        Message = "Không tìm thấy lớp học với loại đăng ký 1002 để tạo phản hồi.",
                         Data = new List<object>()
                     };
                 }
@@ -852,7 +852,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "No active or recently completed classes found for feedback creation."
+                        Message = "Không tìm thấy lớp học đang hoạt động hoặc mới hoàn thành để tạo phản hồi."
                     };
                 }
 
@@ -911,7 +911,7 @@ namespace InstruLearn_Application.BLL.Service
                                         LearnerId = learnerClass.LearnerId,
                                         LearnerName = learnerClass.Learner?.FullName ?? "Unknown",
                                         FeedbackId = existingFeedback.FeedbackId,
-                                        Status = "Already exists"
+                                        Status = "Đã tồn tại"
                                     });
                                     continue;
                                 }
@@ -954,8 +954,8 @@ namespace InstruLearn_Application.BLL.Service
                                     Type = NotificationType.ClassFeedback,
                                     Status = NotificationStatus.Unread,
                                     CreatedAt = DateTime.Now,
-                                    Title = $"Feedback for class '{classEntity.ClassName}'",
-                                    Message = $"Please provide your feedback for the class '{classEntity.ClassName}' taught by {classEntity.Teacher.Fullname}."
+                                    Title = $"Phản hồi cho lớp '{classEntity.ClassName}'",
+                                    Message = $"Vui lòng đưa ra phản hồi của bạn cho lớp '{classEntity.ClassName}' được giảng dạy bởi {classEntity.Teacher.Fullname}."
                                 };
 
                                 await _unitOfWork.StaffNotificationRepository.AddAsync(notification);
@@ -968,7 +968,7 @@ namespace InstruLearn_Application.BLL.Service
                                     LearnerId = learnerClass.LearnerId,
                                     LearnerName = learnerClass.Learner?.FullName ?? "Unknown",
                                     FeedbackId = newFeedback.FeedbackId,
-                                    Status = "Created"
+                                    Status = "Đã tạo"
                                 });
                             }
 
@@ -976,7 +976,7 @@ namespace InstruLearn_Application.BLL.Service
                             {
                                 if (classEntity.TeacherId > 0)
                                 {
-                                    int newFeedbacksCount = learnersWithFeedback.Count(f => ((dynamic)f).Status == "Created");
+                                    int newFeedbacksCount = learnersWithFeedback.Count(f => ((dynamic)f).Status == "Đã tạo");
 
                                     if (newFeedbacksCount > 0)
                                     {
@@ -995,10 +995,10 @@ namespace InstruLearn_Application.BLL.Service
                                                 Type = NotificationType.ClassFeedback,
                                                 Status = NotificationStatus.Unread,
                                                 CreatedAt = DateTime.Now,
-                                                Title = $"Student Feedback Required for Class: {classEntity.ClassId}_{classEntity.ClassName}",
-                                                Message = $"Please complete feedback forms for {newFeedbacksCount} students in your {classEntity.Level?.LevelName ?? "N/A"} " +
-                                                        $"{classEntity.Major?.MajorName ?? "N/A"} class '{classEntity.ClassName}' (ID: {classEntity.ClassId}). " +
-                                                        $"This class has reached its last day. All feedback forms have been prepared with the template '{template.TemplateName}'."
+                                                Title = $"Yêu cầu phản hồi học viên cho lớp: {classEntity.ClassId}_{classEntity.ClassName}",
+                                                Message = $"Vui lòng hoàn thành biểu mẫu phản hồi cho {newFeedbacksCount} học viên trong lớp {classEntity.Level?.LevelName ?? "N/A"} " +
+                                                        $"{classEntity.Major?.MajorName ?? "N/A"} '{classEntity.ClassName}' (ID: {classEntity.ClassId}). " +
+                                                        $"Lớp học này đã đến ngày cuối cùng. Tất cả các biểu mẫu phản hồi đã được chuẩn bị với mẫu '{template.TemplateName}'."
                                             };
 
                                             await _unitOfWork.StaffNotificationRepository.AddAsync(teacherNotification);
@@ -1031,7 +1031,7 @@ namespace InstruLearn_Application.BLL.Service
                                     TemplateId = template.TemplateId,
                                     TemplateName = template.TemplateName,
                                     LearnersCount = classEntity.Learner_Classes.Count,
-                                    FeedbacksCreated = learnersWithFeedback.Count(f => ((dynamic)f).Status == "Created"),
+                                    FeedbacksCreated = learnersWithFeedback.Count(f => ((dynamic)f).Status == "Đã tạo"),
                                     LearnerFeedbacks = learnersWithFeedback
                                 });
                             }
@@ -1046,7 +1046,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = $"Processed {classesProcessed.Count} classes (on last day or recently ended). Created {feedbacksCreated} feedback forms.",
+                    Message = $"Đã xử lý {classesProcessed.Count} lớp học (vào ngày cuối cùng hoặc gần đây đã kết thúc). Đã tạo {feedbacksCreated} biểu mẫu phản hồi.",
                     Data = classesProcessed
                 };
             }
@@ -1056,14 +1056,14 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error checking for classes needing feedback: {ex.Message}"
+                    Message = $"Lỗi khi kiểm tra các lớp học cần phản hồi: {ex.Message}"
                 };
             }
         }
 
         private async Task SendFeedbackEmailNotification(string email, string learnerName, int feedbackId, string teacherName, decimal remainingPayment)
         {
-            string subject = "Feedback Required: Continue Your Learning Journey";
+            string subject = "Yêu cầu phản hồi: Tiếp tục hành trình học tập của bạn";
 
             string body = $@"
                 <html>

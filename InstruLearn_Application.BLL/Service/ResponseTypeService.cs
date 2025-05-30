@@ -40,7 +40,7 @@ namespace InstruLearn_Application.BLL.Service
                 responseList.Add(new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Response type retrieved successfully.",
+                    Message = "Đã lấy loại phản hồi thành công.",
                     Data = responseTypeDto
                 });
             }
@@ -55,14 +55,14 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Response type not found.",
+                    Message = "Không tìm thấy loại phản hồi.",
                 };
             }
             var responseTypeDto = _mapper.Map<ReponseTypeDTO>(responseType);
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Response type retrieved successfully.",
+                Message = "Đã lấy loại phản hồi thành công.",
                 Data = responseTypeDto
             };
         }
@@ -76,7 +76,7 @@ namespace InstruLearn_Application.BLL.Service
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Response type created successfully.",
+                Message = "Đã tạo loại phản hồi thành công.",
             };
         }
 

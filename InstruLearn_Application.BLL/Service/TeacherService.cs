@@ -53,7 +53,7 @@ namespace InstruLearn_Application.BLL.Service
                 responseList.Add(new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Teacher retrieved successfully.",
+                    Message = "Đã truy xuất thông tin giáo viên thành công.",
                     Data = teacherDto
                 });
             }
@@ -75,7 +75,7 @@ namespace InstruLearn_Application.BLL.Service
 
             if (teacher == null)
             {
-                response.Message = "Teacher not found.";
+                response.Message = "Không tìm thấy giáo viên.";
                 return response;
             }
 
@@ -186,7 +186,7 @@ namespace InstruLearn_Application.BLL.Service
             var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(teacherId);
             if (teacher == null)
             {
-                response.Message = "Teacher not found.";
+                response.Message = "Không tìm thấy giáo viên.";
                 return response;
             }
 
@@ -194,7 +194,7 @@ namespace InstruLearn_Application.BLL.Service
             var account = await _unitOfWork.AccountRepository.GetByIdAsync(teacher.AccountId);
             if (account == null)
             {
-                response.Message = "Teacher account not found.";
+                response.Message = "Không tìm thấy tài khoản giáo viên.";
                 return response;
             }
 
@@ -212,12 +212,12 @@ namespace InstruLearn_Application.BLL.Service
 
             if (!teacherUpdated || !accountUpdated)
             {
-                response.Message = "Failed to update teacher.";
+                response.Message = "Không thể cập nhật thông tin giáo viên.";
                 return response;
             }
 
             response.IsSucceed = true;
-            response.Message = "Teacher updated successfully!";
+            response.Message = "Cập nhật thông tin giáo viên thành công!";
             return response;
         }
 
@@ -296,7 +296,7 @@ namespace InstruLearn_Application.BLL.Service
             var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(teacherId);
             if (teacher == null)
             {
-                response.Message = "Teacher not found.";
+                response.Message = "Không tìm thấy giáo viên.";
                 return response;
             }
 
@@ -308,12 +308,12 @@ namespace InstruLearn_Application.BLL.Service
 
             if (!updated)
             {
-                response.Message = "Failed to delete teacher.";
+                response.Message = "Không thể xóa giáo viên.";
                 return response;
             }
 
             response.IsSucceed = true;
-            response.Message = "Teacher banned successfully!";
+            response.Message = "Cấm giáo viên thành công!";
             return response;
         }
 
@@ -325,7 +325,7 @@ namespace InstruLearn_Application.BLL.Service
             var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(teacherId);
             if (teacher == null)
             {
-                response.Message = "Teacher not found.";
+                response.Message = "Không tìm thấy giáo viên.";
                 return response;
             }
 
@@ -337,12 +337,12 @@ namespace InstruLearn_Application.BLL.Service
 
             if (!updated)
             {
-                response.Message = "Failed to unban teacher.";
+                response.Message = "Không thể bỏ cấm giáo viên.";
                 return response;
             }
 
             response.IsSucceed = true;
-            response.Message = "Teacher unban successfully!";
+            response.Message = "Bỏ cấm giáo viên thành công!";
             return response;
         }
 
@@ -357,7 +357,7 @@ namespace InstruLearn_Application.BLL.Service
                 var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(teacherId);
                 if (teacher == null)
                 {
-                    return new ResponseDTO { IsSucceed = false, Message = "Teacher not found" };
+                    return new ResponseDTO { IsSucceed = false, Message = "Không tìm thấy giáo viên" };
                 }
 
                 await using var transaction = await _unitOfWork.BeginTransactionAsync();
@@ -370,7 +370,7 @@ namespace InstruLearn_Application.BLL.Service
 
                     if (!teacherMajorsToDelete.Any())
                     {
-                        return new ResponseDTO { IsSucceed = false, Message = "No matching majors found for this teacher" };
+                        return new ResponseDTO { IsSucceed = false, Message = "Không tìm thấy chuyên ngành phù hợp cho giáo viên này" };
                     }
 
                     // Remove the selected majors
@@ -389,7 +389,7 @@ namespace InstruLearn_Application.BLL.Service
                     var response = new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = $"Successfully removed {teacherMajorsToDelete.Count} major(s) from teacher",
+                        Message = $"Đã xóa thành công {teacherMajorsToDelete.Count} chuyên ngành từ giáo viên",
                         Data = new
                         {
                             TeacherId = teacher.TeacherId,
@@ -416,7 +416,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Error removing majors from teacher: {ex.Message}"
+                    Message = $"Lỗi khi xóa chuyên ngành từ giáo viên: {ex.Message}"
                 };
             }
         }

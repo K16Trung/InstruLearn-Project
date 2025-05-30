@@ -39,7 +39,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Learning Registration not found."
+                        Message = "Không tìm thấy đăng ký học tập."
                     };
                 }
 
@@ -49,7 +49,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Learning path sessions retrieved successfully.",
+                    Message = "Lấy các buổi học trong lộ trình thành công.",
                     Data = learningPathSessionDTOs
                 };
             }
@@ -59,7 +59,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Failed to retrieve learning path sessions: " + ex.Message
+                    Message = "Không thể lấy các buổi học trong lộ trình: " + ex.Message
                 };
             }
         }
@@ -75,7 +75,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Learning path session not found."
+                        Message = "Không tìm thấy buổi học trong lộ trình."
                     };
                 }
 
@@ -87,7 +87,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = $"Session completion status {(isCompleted ? "marked as completed" : "marked as incomplete")} successfully."
+                    Message = $"Trạng thái hoàn thành buổi học {(isCompleted ? "đã được đánh dấu hoàn thành" : "đã được đánh dấu chưa hoàn thành")} thành công."
                 };
             }
             catch (Exception ex)
@@ -96,7 +96,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Failed to update session completion status: " + ex.Message
+                    Message = "Không thể cập nhật trạng thái hoàn thành buổi học: " + ex.Message
                 };
             }
         }
@@ -112,7 +112,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Learning path session not found."
+                        Message = "Không tìm thấy buổi học trong lộ trình."
                     };
                 }
 
@@ -128,7 +128,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Learning path session updated successfully.",
+                    Message = "Cập nhật buổi học trong lộ trình thành công.",
                     Data = new
                     {
                         LearningPathSessionId = session.LearningPathSessionId,
@@ -145,7 +145,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Failed to update learning path session: " + ex.Message
+                    Message = "Không thể cập nhật buổi học trong lộ trình: " + ex.Message
                 };
             }
         }
@@ -160,7 +160,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Learning Registration not found."
+                        Message = "Không tìm thấy đăng ký học tập."
                     };
                 }
 
@@ -173,7 +173,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "No learning path sessions found for this registration. Please create sessions before confirming."
+                        Message = "Không tìm thấy buổi học nào trong lộ trình học tập này. Vui lòng tạo buổi học trước khi xác nhận."
                     };
                 }
 
@@ -289,7 +289,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "Learning path confirmed and is now visible to the learner.",
+                        Message = "Lộ trình học tập đã được xác nhận và hiện tại hiển thị cho học viên.",
                         Data = new
                         {
                             LearningRegisId = learningRegisId,
@@ -313,7 +313,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Failed to confirm learning path: {ex.Message}"
+                    Message = $"Không thể xác nhận lộ trình học tập: {ex.Message}"
                 };
             }
         }

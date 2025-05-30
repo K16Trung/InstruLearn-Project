@@ -41,13 +41,13 @@ namespace InstruLearn_Application.BLL.Service
         {
             if (amount <= 0)
             {
-                return new ResponseDTO { IsSucceed = false, Message = "Amount must be greater than zero." };
+                return new ResponseDTO { IsSucceed = false, Message = "Số tiền phải lớn hơn không." };
             }
 
             var wallet = await _unitOfWork.WalletRepository.FirstOrDefaultAsync(w => w.LearnerId == learnerId);
             if (wallet == null)
             {
-                return new ResponseDTO { IsSucceed = false, Message = "Wallet not found" };
+                return new ResponseDTO { IsSucceed = false, Message = "Không tìm thấy ví" };
             }
 
             long orderCode = new Random().Next(100000, 999999);
@@ -89,7 +89,7 @@ namespace InstruLearn_Application.BLL.Service
             {
                 transaction.Status = TransactionStatus.Failed;
                 await _unitOfWork.SaveChangeAsync();
-                return new ResponseDTO { IsSucceed = false, Message = "Failed to generate payment link" };
+                return new ResponseDTO { IsSucceed = false, Message = "Không thể tạo đường dẫn thanh toán" };
             }
 
             transaction.OrderCode = createPayment.orderCode;
@@ -109,7 +109,7 @@ namespace InstruLearn_Application.BLL.Service
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Payment link created",
+                Message = "Đã tạo đường dẫn thanh toán",
                 Data = new
                 {
                     TransactionId = transaction.TransactionId,
@@ -123,13 +123,13 @@ namespace InstruLearn_Application.BLL.Service
         {
             if (amount <= 0)
             {
-                return new ResponseDTO { IsSucceed = false, Message = "Amount must be greater than zero." };
+                return new ResponseDTO { IsSucceed = false, Message = "Số tiền phải lớn hơn không." };
             }
 
             var wallet = await _unitOfWork.WalletRepository.FirstOrDefaultAsync(w => w.LearnerId == learnerId);
             if (wallet == null)
             {
-                return new ResponseDTO { IsSucceed = false, Message = "Wallet not found" };
+                return new ResponseDTO { IsSucceed = false, Message = "Không tìm thấy ví" };
             }
 
             string transactionId = Guid.NewGuid().ToString();
@@ -162,7 +162,7 @@ namespace InstruLearn_Application.BLL.Service
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "VNPay payment link created",
+                Message = "Đã tạo đường dẫn thanh toán VNPay",
                 Data = new
                 {
                     TransactionId = transaction.TransactionId,
@@ -180,7 +180,7 @@ namespace InstruLearn_Application.BLL.Service
 
             if (transaction == null)
             {
-                return new ResponseDTO { IsSucceed = false, Message = "Transaction not found" };
+                return new ResponseDTO { IsSucceed = false, Message = "Không tìm thấy giao dịch" };
             }
 
             if (transaction.Status == TransactionStatus.Complete)
@@ -188,7 +188,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Transaction is already completed"
+                    Message = "Giao dịch đã hoàn thành"
                 };
             }
 
@@ -202,12 +202,12 @@ namespace InstruLearn_Application.BLL.Service
                 await _unitOfWork.SaveChangeAsync();
                 await dbTransaction.CommitAsync();
 
-                return new ResponseDTO { IsSucceed = true, Message = "Payment completed successfully" };
+                return new ResponseDTO { IsSucceed = true, Message = "Thanh toán đã hoàn tất thành công" };
             }
             catch (Exception ex)
             {
                 await dbTransaction.RollbackAsync();
-                return new ResponseDTO { IsSucceed = false, Message = $"Error completing payment: {ex.Message}" };
+                return new ResponseDTO { IsSucceed = false, Message = $"Lỗi khi hoàn tất thanh toán: {ex.Message}" };
             }
         }
         public async Task<ResponseDTO> FailPaymentAsync(string transactionId)
@@ -217,7 +217,7 @@ namespace InstruLearn_Application.BLL.Service
 
             if (transaction == null)
             {
-                return new ResponseDTO { IsSucceed = false, Message = "Transaction not found" };
+                return new ResponseDTO { IsSucceed = false, Message = "Không tìm thấy giao dịch" };
             }
 
             if (transaction.Status == TransactionStatus.Complete ||
@@ -226,7 +226,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Cannot update transaction that is already in {transaction.Status} status"
+                    Message = $"Không thể cập nhật giao dịch đã ở trạng thái {transaction.Status}"
                 };
             }
 
@@ -236,11 +236,11 @@ namespace InstruLearn_Application.BLL.Service
 
                 await _unitOfWork.SaveChangeAsync();
 
-                return new ResponseDTO { IsSucceed = true, Message = "Payment marked as failed" };
+                return new ResponseDTO { IsSucceed = true, Message = "Thanh toán đã được đánh dấu là thất bại" };
             }
             catch (Exception ex)
             {
-                return new ResponseDTO { IsSucceed = false, Message = $"Error updating payment status: {ex.Message}" };
+                return new ResponseDTO { IsSucceed = false, Message = $"Lỗi khi cập nhật trạng thái thanh toán: {ex.Message}" };
             }
         }
 
@@ -253,7 +253,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Wallet not found",
+                    Message = "Không tìm thấy ví",
                     Data = null
                 };
             }
@@ -263,7 +263,7 @@ namespace InstruLearn_Application.BLL.Service
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Wallet retrieved successfully",
+                Message = "Truy xuất ví thành công",
                 Data = walletDto
             };
         }
@@ -274,7 +274,7 @@ namespace InstruLearn_Application.BLL.Service
 
             if (transaction == null)
             {
-                return new ResponseDTO { IsSucceed = false, Message = $"Transaction not found for OrderCode: {orderCode}" };
+                return new ResponseDTO { IsSucceed = false, Message = $"Không tìm thấy giao dịch với mã đơn hàng: {orderCode}" };
             }
 
             if (transaction.Status == TransactionStatus.Complete || transaction.Status == TransactionStatus.Failed)
@@ -282,7 +282,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Cannot update transaction that is already in {transaction.Status} status"
+                    Message = $"Không thể cập nhật giao dịch đã ở trạng thái {transaction.Status}"
                 };
             }
 
@@ -302,7 +302,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "Payment completed successfully",
+                        Message = "Thanh toán đã hoàn tất thành công",
                         Data = new
                         {
                             TransactionId = transaction.TransactionId,
@@ -315,7 +315,7 @@ namespace InstruLearn_Application.BLL.Service
                 catch (Exception ex)
                 {
                     await dbTransaction.RollbackAsync();
-                    return new ResponseDTO { IsSucceed = false, Message = $"Error completing payment: {ex.Message}" };
+                    return new ResponseDTO { IsSucceed = false, Message = $"Lỗi khi hoàn tất thanh toán: {ex.Message}" };
                 }
             }
             else if (status == "CANCELLED" || status == "FAILED")
@@ -329,7 +329,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "Payment marked as failed",
+                        Message = "Thanh toán đã được đánh dấu là thất bại",
                         Data = new
                         {
                             TransactionId = transaction.TransactionId,
@@ -340,7 +340,7 @@ namespace InstruLearn_Application.BLL.Service
                 }
                 catch (Exception ex)
                 {
-                    return new ResponseDTO { IsSucceed = false, Message = $"Error updating payment status: {ex.Message}" };
+                    return new ResponseDTO { IsSucceed = false, Message = $"Lỗi khi cập nhật trạng thái thanh toán: {ex.Message}" };
                 }
             }
             else
@@ -349,7 +349,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Unknown payment status: {status}"
+                    Message = $"Trạng thái thanh toán không xác định: {status}"
                 };
             }
         }
@@ -358,7 +358,7 @@ namespace InstruLearn_Application.BLL.Service
         {
             if (paymentResponse == null)
             {
-                return new ResponseDTO { IsSucceed = false, Message = "Invalid payment response" };
+                return new ResponseDTO { IsSucceed = false, Message = "Phản hồi thanh toán không hợp lệ" };
             }
 
             var transaction = await _unitOfWork.WalletTransactionRepository
@@ -366,7 +366,7 @@ namespace InstruLearn_Application.BLL.Service
 
             if (transaction == null)
             {
-                return new ResponseDTO { IsSucceed = false, Message = $"Transaction not found for ID: {paymentResponse.TxnRef}" };
+                return new ResponseDTO { IsSucceed = false, Message = $"Không tìm thấy giao dịch với ID: {paymentResponse.TxnRef}" };
             }
 
             if (transaction.Status == TransactionStatus.Complete || transaction.Status == TransactionStatus.Failed)
@@ -374,7 +374,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = transaction.Status == TransactionStatus.Complete,
-                    Message = $"Transaction is already in {transaction.Status} status",
+                    Message = $"Giao dịch đã ở trạng thái {transaction.Status}",
                     Data = new
                     {
                         TransactionId = transaction.TransactionId,
@@ -400,7 +400,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "VNPay payment completed successfully",
+                        Message = "Thanh toán VNPay đã hoàn tất thành công",
                         Data = new
                         {
                             TransactionId = transaction.TransactionId,
@@ -417,7 +417,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = $"Error completing payment: {ex.Message}",
+                        Message = $"Lỗi khi hoàn tất thanh toán: {ex.Message}",
                         Data = new
                         {
                             FailureUrl = _vnpaySettings.FailureUrl
@@ -435,7 +435,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = $"Payment failed: {paymentResponse.Message}",
+                        Message = $"Thanh toán thất bại: {paymentResponse.Message}",
                         Data = new
                         {
                             TransactionId = transaction.TransactionId,
@@ -451,7 +451,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = $"Error updating payment status: {ex.Message}",
+                        Message = $"Lỗi khi cập nhật trạng thái thanh toán: {ex.Message}",
                         Data = new
                         {
                             FailureUrl = _vnpaySettings.FailureUrl

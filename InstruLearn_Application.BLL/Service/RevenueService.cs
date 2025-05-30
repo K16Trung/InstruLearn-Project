@@ -29,7 +29,7 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                _logger.LogInformation("Calculating total revenue across all types");
+                _logger.LogInformation("Đang tính tổng doanh thu trên tất cả các loại");
 
                 var successfulTransactions = await _unitOfWork.WalletTransactionRepository
                     .GetQuery()
@@ -107,7 +107,7 @@ namespace InstruLearn_Application.BLL.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error calculating total revenue");
+                _logger.LogError(ex, "Lỗi khi tính tổng doanh thu");
                 return new ResponseDTO
                 {
                     IsSucceed = false,
@@ -120,7 +120,7 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                _logger.LogInformation($"Getting monthly revenue for year {year}");
+                _logger.LogInformation($"Đang lấy doanh thu theo tháng cho năm {year}");
 
                 var startDate = new DateTime(year, 1, 1);
                 var endDate = new DateTime(year, 12, 31, 23, 59, 59);
@@ -170,7 +170,7 @@ namespace InstruLearn_Application.BLL.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error calculating monthly revenue for year {year}");
+                _logger.LogError(ex, $"Lỗi khi tính doanh thu theo tháng cho năm {year}");
                 return new ResponseDTO
                 {
                     IsSucceed = false,
@@ -183,7 +183,7 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                _logger.LogInformation($"Getting monthly revenue with weekly breakdown for Year {year}, Month {month}");
+                _logger.LogInformation($"Đang lấy doanh thu theo tháng với phân tích theo tuần cho Năm {year}, Tháng {month}");
 
                 // Validate input
                 if (month < 1 || month > 12)
@@ -322,7 +322,7 @@ namespace InstruLearn_Application.BLL.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error calculating monthly revenue with weekly breakdown for Year {year}, Month {month}");
+                _logger.LogError(ex, $"Lỗi khi tính doanh thu theo tháng với phân tích theo tuần cho Năm {year}, Tháng {month}");
                 return new ResponseDTO
                 {
                     IsSucceed = false,
@@ -335,7 +335,7 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                _logger.LogInformation($"Getting daily revenue for {date:yyyy-MM-dd}");
+                _logger.LogInformation($"Đang lấy doanh thu theo ngày cho {date:yyyy-MM-dd}");
 
                 DateTime startTime = date.Date;
                 DateTime endTime = date.Date.AddDays(1).AddMilliseconds(-1);
@@ -432,7 +432,7 @@ namespace InstruLearn_Application.BLL.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error calculating daily revenue for {date:yyyy-MM-dd}");
+                _logger.LogError(ex, $"Lỗi khi tính doanh thu theo ngày cho {date:yyyy-MM-dd}");
                 return new ResponseDTO
                 {
                     IsSucceed = false,
@@ -946,7 +946,7 @@ namespace InstruLearn_Application.BLL.Service
                     TransactionId = p.TransactionId,
                     Amount = p.AmountPaid,
                     LearnerId = p.Wallet.LearnerId,
-                    LearnerName = p.Wallet.Learner?.FullName ?? "Unknown",
+                    LearnerName = p.Wallet.Learner?.FullName ?? "Không xác định",
                     PaymentDate = p.WalletTransaction.TransactionDate,
                     Phase = "40%"
                 })
@@ -960,7 +960,7 @@ namespace InstruLearn_Application.BLL.Service
                     TransactionId = p.TransactionId,
                     Amount = p.AmountPaid,
                     LearnerId = p.Wallet.LearnerId,
-                    LearnerName = p.Wallet.Learner?.FullName ?? "Unknown",
+                    LearnerName = p.Wallet.Learner?.FullName ?? "Không xác định",
                     PaymentDate = p.WalletTransaction.TransactionDate,
                     Phase = "60%"
                 })
@@ -1007,10 +1007,10 @@ namespace InstruLearn_Application.BLL.Service
             {
                 TransactionId = p.TransactionId,
                 LearnerId = p.Wallet.LearnerId,
-                LearnerName = p.Wallet.Learner?.FullName ?? "Unknown",
+                LearnerName = p.Wallet.Learner?.FullName ?? "Không xác định",
                 Amount = p.AmountPaid,
                 PaymentDate = p.WalletTransaction.TransactionDate,
-                Phase = p.AmountPaid < 200000 ? "10% Initial" : "Other"
+                Phase = p.AmountPaid < 200000 ? "10% Ban đầu" : "Khác"
             })
             .OrderByDescending(p => p.PaymentDate)
             .ToList<object>();
@@ -1047,7 +1047,7 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     TransactionId = p.TransactionId,
                     LearnerId = p.WalletTransaction.Wallet.LearnerId,
-                    LearnerName = p.WalletTransaction.Wallet.Learner?.FullName ?? "Unknown",
+                    LearnerName = p.WalletTransaction.Wallet.Learner?.FullName ?? "Không xác định",
                     Amount = p.AmountPaid,
                     PaymentDate = p.WalletTransaction.TransactionDate
                 })

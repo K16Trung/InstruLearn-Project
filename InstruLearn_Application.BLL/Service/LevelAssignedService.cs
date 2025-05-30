@@ -38,7 +38,7 @@ namespace InstruLearn_Application.BLL.Service
                 responseList.Add(new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Level assigned retrieved successfully.",
+                    Message = "Lấy cấp độ được chỉ định thành công.",
                     Data = levelAssignedDto
                 });
             }
@@ -53,14 +53,14 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Level assigned not found.",
+                    Message = "Không tìm thấy cấp độ được chỉ định.",
                 };
             }
             var levelAssignedDto = _mapper.Map<LevelAssignedDTO>(levelAssigned);
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Level assigned retrieved successfully.",
+                Message = "Lấy cấp độ được chỉ định thành công.",
                 Data = levelAssignedDto
             };
         }
@@ -75,7 +75,7 @@ namespace InstruLearn_Application.BLL.Service
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Level assigned created successfully.",
+                Message = "Đã tạo cấp độ được chỉ định thành công.",
             };
         }
 
@@ -97,19 +97,19 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "Level assigned updated successfully!"
+                        Message = "Cập nhật cấp độ được chỉ định thành công!"
                     };
                 }
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Level assigned update failed!"
+                    Message = "Cập nhật cấp độ được chỉ định thất bại!"
                 };
             }
             return new ResponseDTO
             {
                 IsSucceed = false,
-                Message = "Level assigned not found!"
+                Message = "Không tìm thấy cấp độ được chỉ định!"
             };
         }
 
@@ -125,19 +125,19 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "Syllabus link updated successfully!"
+                        Message = "Cập nhật đường dẫn giáo trình thành công!"
                     };
                 }
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Syllabus link update failed!"
+                    Message = "Cập nhật đường dẫn giáo trình thất bại!"
                 };
             }
             return new ResponseDTO
             {
                 IsSucceed = false,
-                Message = "Level assigned not found!"
+                Message = "Không tìm thấy cấp độ được chỉ định!"
             };
         }
 
