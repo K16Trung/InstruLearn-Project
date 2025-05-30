@@ -754,7 +754,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Không thể cập nhật trạng thái kiểm tra đầu vào sau khi ngày kiểm tra đã qua."
+                        Message = "Không thể cập nhật trạng thái kiểm tra đầu vào ngoại trừ ngày kiểm tra đã qua."
                     };
                 }
 
