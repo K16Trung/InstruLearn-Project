@@ -308,7 +308,7 @@ namespace InstruLearn_Application.BLL.Service
                             IssueDate = existingCertForClass.IssueDate,
                             TeacherName = existingCertForClass.TeacherName,
                             Subject = existingCertForClass.Subject,
-                            FileStatus = "Updated from Temporary",
+                            FileStatus = String.Empty,
                             FileLink = String.Empty
                         };
 
