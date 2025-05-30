@@ -86,8 +86,8 @@ namespace InstruLearn_Application.BLL.Service
 
             try
             {
-                // Get the registration deposit amount from configuration
-                decimal registrationDepositAmount = 50000; // Default value
+                // Get the current registration deposit amount from configuration
+                decimal currentRegistrationDepositAmount = 50000; // Default value
                 var configResponse = await _configService.GetConfigurationAsync("RegistrationDepositAmount");
                 
                 if (configResponse.IsSucceed && configResponse.Data != null)
@@ -95,13 +95,21 @@ namespace InstruLearn_Application.BLL.Service
                     var configData = configResponse.Data.GetType().GetProperty("Value")?.GetValue(configResponse.Data)?.ToString();
                     if (decimal.TryParse(configData, out decimal configAmount))
                     {
-                        registrationDepositAmount = configAmount;
-                        _logger.LogInformation($"Using configured registration deposit amount: {registrationDepositAmount}");
+                        currentRegistrationDepositAmount = configAmount;
+                        _logger.LogInformation($"Using configured registration deposit amount: {currentRegistrationDepositAmount}");
                     }
                 }
                 else
                 {
-                    _logger.LogInformation($"Using default registration deposit amount: {registrationDepositAmount}");
+                    _logger.LogInformation($"Using default registration deposit amount: {currentRegistrationDepositAmount}");
+                }
+
+                // Define a list of common reservation fee amounts that have been used historically
+                List<decimal> knownRegistrationFeeAmounts = new List<decimal> { 10000, 20000, 30000, 40000, 50000, 60000, 75000, 100000 };
+                // Add current amount if it's not already in the list
+                if (!knownRegistrationFeeAmounts.Contains(currentRegistrationDepositAmount))
+                {
+                    knownRegistrationFeeAmounts.Add(currentRegistrationDepositAmount);
                 }
 
                 var transactionIds = transactions.Select(t => t.TransactionId).ToList();
@@ -190,8 +198,11 @@ namespace InstruLearn_Application.BLL.Service
                     }
                     else
                     {
-                        // Use the configurable registration deposit amount instead of hardcoded 50000
-                        if (dto.TransactionType?.ToLower() == "payment" && Math.Abs(dto.Amount - registrationDepositAmount) < 0.1m)
+                        // Check if amount matches ANY known registration fee amount
+                        bool isKnownRegistrationFee = dto.TransactionType?.ToLower() == "payment" && 
+                            knownRegistrationFeeAmounts.Any(amount => Math.Abs(dto.Amount - amount) < 0.1m);
+
+                        if (isKnownRegistrationFee)
                         {
                             dto.PaymentType = "Phí đăng ký";
                         }
@@ -208,9 +219,6 @@ namespace InstruLearn_Application.BLL.Service
                                 case "addfund":
                                 case "addfuns":
                                     dto.PaymentType = "Nạp tiền";
-                                    break;
-                                case "payment":
-                                    dto.PaymentType = "Thanh toán";
                                     break;
                                 default:
                                     dto.PaymentType = dto.TransactionType ?? "Không xác định";

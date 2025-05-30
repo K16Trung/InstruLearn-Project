@@ -12,7 +12,6 @@ namespace InstruLearn_Application.Model.Models
         [Key]
         public string Key { get; set; }
         public string Value { get; set; }
-        public string Description { get; set; }
         public DateTime LastUpdated { get; set; }
     }
 }
