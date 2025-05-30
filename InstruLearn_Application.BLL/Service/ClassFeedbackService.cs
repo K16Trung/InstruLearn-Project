@@ -56,7 +56,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Feedback can only be created on or after the last day of class ({endDate:yyyy-MM-dd})"
+                    Message = $"Phản hồi chỉ có thể được tạo vào hoặc sau ngày cuối cùng của lớp học ({endDate:yyyy-MM-dd})"
                 };
             }
 
