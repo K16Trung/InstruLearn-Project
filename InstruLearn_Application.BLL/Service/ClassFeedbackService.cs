@@ -4,6 +4,7 @@ using InstruLearn_Application.DAL.UoW.IUoW;
 using InstruLearn_Application.Model.Enum;
 using InstruLearn_Application.Model.Models;
 using InstruLearn_Application.Model.Models.DTO;
+using InstruLearn_Application.Model.Models.DTO.Certification;
 using InstruLearn_Application.Model.Models.DTO.ClassFeedback;
 using InstruLearn_Application.Model.Models.DTO.ClassFeedbackEvaluation;
 using InstruLearn_Application.Model.Models.DTO.Feedback;
@@ -19,11 +20,13 @@ namespace InstruLearn_Application.BLL.Service
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly IGoogleSheetsService _googleSheetsService;
 
-        public ClassFeedbackService(IUnitOfWork unitOfWork, IMapper mapper)
+        public ClassFeedbackService(IUnitOfWork unitOfWork, IMapper mapper, IGoogleSheetsService googleSheetsService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _googleSheetsService = googleSheetsService;
         }
         public async Task<ResponseDTO> CreateFeedbackAsync(CreateClassFeedbackDTO feedbackDTO)
         {
@@ -160,7 +163,6 @@ namespace InstruLearn_Application.BLL.Service
                     if (criterion == null)
                         continue;
 
-                    // Create evaluation without template validation since we picked template based on the criteria
                     var evaluation = new ClassFeedbackEvaluation
                     {
                         FeedbackId = createdFeedback.FeedbackId,
@@ -183,7 +185,6 @@ namespace InstruLearn_Application.BLL.Service
             if (totalPercentage > 50)
             {
                 var existingCertificates = await _unitOfWork.CertificationRepository.GetByLearnerIdAsync(feedbackDTO.LearnerId);
-
                 var existingCertForClass = existingCertificates.FirstOrDefault(c =>
                     c.CertificationType == CertificationType.CenterLearning &&
                     c.CertificationName != null &&
@@ -192,36 +193,36 @@ namespace InstruLearn_Application.BLL.Service
                 bool isTemporaryCert = existingCertForClass != null &&
                     existingCertForClass.CertificationName.Contains("[TEMPORARY]");
 
+                string teacherName = "Unknown Teacher";
+                if (classEntity.Teacher != null)
+                {
+                    teacherName = classEntity.Teacher.Fullname;
+                }
+                else
+                {
+                    var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(classEntity.TeacherId);
+                    if (teacher != null)
+                    {
+                        teacherName = teacher.Fullname;
+                    }
+                }
+
+                string majorName = "Unknown Subject";
+                if (classEntity.Major != null)
+                {
+                    majorName = classEntity.Major.MajorName;
+                }
+                else
+                {
+                    var major = await _unitOfWork.MajorRepository.GetByIdAsync(classEntity.MajorId);
+                    if (major != null)
+                    {
+                        majorName = major.MajorName;
+                    }
+                }
+
                 if (existingCertForClass == null)
                 {
-                    string teacherName = "Unknown Teacher";
-                    if (classEntity.Teacher != null)
-                    {
-                        teacherName = classEntity.Teacher.Fullname;
-                    }
-                    else
-                    {
-                        var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(classEntity.TeacherId);
-                        if (teacher != null)
-                        {
-                            teacherName = teacher.Fullname;
-                        }
-                    }
-
-                    string majorName = "Unknown Subject";
-                    if (classEntity.Major != null)
-                    {
-                        majorName = classEntity.Major.MajorName;
-                    }
-                    else
-                    {
-                        var major = await _unitOfWork.MajorRepository.GetByIdAsync(classEntity.MajorId);
-                        if (major != null)
-                        {
-                            majorName = major.MajorName;
-                        }
-                    }
-
                     var certification = new Certification
                     {
                         LearnerId = feedbackDTO.LearnerId,
@@ -234,6 +235,42 @@ namespace InstruLearn_Application.BLL.Service
 
                     await _unitOfWork.CertificationRepository.AddAsync(certification);
                     await _unitOfWork.SaveChangeAsync();
+
+                    try
+                    {
+                        var certificationData = new CertificationDataDTO
+                        {
+                            CertificationId = certification.CertificationId,
+                            LearnerName = learner.FullName,
+                            LearnerEmail = learner.FullName,
+                            CertificationType = certification.CertificationType.ToString(),
+                            CertificationName = certification.CertificationName,
+                            IssueDate = certification.IssueDate,
+                            TeacherName = certification.TeacherName,
+                            Subject = certification.Subject,
+                            FileStatus = String.Empty,
+                            FileLink = String.Empty
+                        };
+
+                        // Save to Google Sheets in the background
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                await _googleSheetsService.SaveCertificationDataAsync(certificationData);
+                            }
+                            catch (Exception ex)
+                            {
+                                // Log error but don't fail the operation
+                                Console.WriteLine($"Error saving certificate to Google Sheets: {ex.Message}");
+                            }
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log but continue - don't fail the certification process if sheets fails
+                        Console.WriteLine($"Error preparing certificate for Google Sheets: {ex.Message}");
+                    }
 
                     return new ResponseDTO
                     {
@@ -249,11 +286,51 @@ namespace InstruLearn_Application.BLL.Service
                 }
                 else if (isTemporaryCert)
                 {
+                    // Update existing temporary certificate
                     existingCertForClass.CertificationName = existingCertForClass.CertificationName.Replace("[TEMPORARY] ", "");
-                    existingCertForClass.IssueDate = DateTime.Now; // Update issue date to today
+                    existingCertForClass.IssueDate = DateTime.Now;
 
                     await _unitOfWork.CertificationRepository.UpdateAsync(existingCertForClass);
                     await _unitOfWork.SaveChangeAsync();
+
+                    // Save updated certificate to Google Sheets
+                    try
+                    {
+                        // Store updated certificate in Google Sheets
+                        var certificationData = new CertificationDataDTO
+                        {
+                            CertificationId = existingCertForClass.CertificationId,
+                            LearnerName = learner.FullName,
+                            // Use the correct property based on your Learner class
+                            LearnerEmail = learner.FullName, // Replace with the correct email property
+                            CertificationType = existingCertForClass.CertificationType.ToString(),
+                            CertificationName = existingCertForClass.CertificationName,
+                            IssueDate = existingCertForClass.IssueDate,
+                            TeacherName = existingCertForClass.TeacherName,
+                            Subject = existingCertForClass.Subject,
+                            FileStatus = "Updated from Temporary",
+                            FileLink = String.Empty
+                        };
+
+                        // Save to Google Sheets in the background
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                await _googleSheetsService.SaveCertificationDataAsync(certificationData);
+                            }
+                            catch (Exception ex)
+                            {
+                                // Log error but don't fail the operation
+                                Console.WriteLine($"Error saving certificate to Google Sheets: {ex.Message}");
+                            }
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log but continue
+                        Console.WriteLine($"Error preparing certificate for Google Sheets: {ex.Message}");
+                    }
 
                     return new ResponseDTO
                     {
@@ -269,6 +346,7 @@ namespace InstruLearn_Application.BLL.Service
                 }
             }
 
+            // Default return statement for when no certificate is issued
             return new ResponseDTO
             {
                 IsSucceed = true,
