@@ -252,7 +252,7 @@ namespace InstruLearn_Application.BLL.Service
             return new ResponseDTO
             {
                 IsSucceed = true,
-                Message = "Feedback created successfully",
+                Message = "Feedback thành công",
                 Data = createdFeedback.FeedbackId
             };
         }
