@@ -1202,12 +1202,10 @@ namespace InstruLearn_Application.BLL.Service
 
         public async Task<ResponseDTO> UpdateScheduleForMakeupAsync(int scheduleId, DateOnly newDate, TimeOnly newTimeStart, int timeLearning, string changeReason)
         {
-            // Start a transaction to ensure atomicity
             using var transaction = await _unitOfWork.BeginTransactionAsync();
 
             try
             {
-                // 1. Validate the original schedule exists and is marked as absent
                 var originalSchedule = await _unitOfWork.ScheduleRepository.GetByIdAsync(scheduleId);
                 if (originalSchedule == null)
                 {
@@ -1227,21 +1225,28 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // 2. Check if THIS schedule already has a makeup class
-                if (originalSchedule.PreferenceStatus == PreferenceStatus.MakeupClass)
-                {
-                    return new ResponseDTO
-                    {
-                        IsSucceed = false,
-                        Message = "A makeup class has already been scheduled for this absent class. Only one makeup class is allowed per absence."
-                    };
-                }
-
                 var existingMakeupSchedules = await _unitOfWork.ScheduleRepository.GetWhereAsync(
                     s => s.LearningRegisId == originalSchedule.LearningRegisId &&
                         s.PreferenceStatus == PreferenceStatus.MakeupClass);
 
-                if (existingMakeupSchedules.Any())
+                bool isUpdating = false;
+                Schedules makeupSchedule = null;
+
+                if (originalSchedule.PreferenceStatus == PreferenceStatus.MakeupClass)
+                {
+                    if (!existingMakeupSchedules.Any())
+                    {
+                        return new ResponseDTO
+                        {
+                            IsSucceed = false,
+                            Message = "The schedule is marked for makeup but no makeup schedule was found."
+                        };
+                    }
+
+                    makeupSchedule = existingMakeupSchedules.First();
+                    isUpdating = true;
+                }
+                else if (existingMakeupSchedules.Any())
                 {
                     return new ResponseDTO
                     {
@@ -1250,7 +1255,6 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // 4. Validate that new date is in the future
                 DateOnly today = DateOnly.FromDateTime(DateTime.Now);
                 if (newDate < today)
                 {
@@ -1261,8 +1265,16 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // 5. Validate the day of week is different
-                if (originalSchedule.StartDay.DayOfWeek == newDate.DayOfWeek)
+                if (!isUpdating && newDate <= originalSchedule.StartDay)
+                {
+                    return new ResponseDTO
+                    {
+                        IsSucceed = false,
+                        Message = "Makeup class must be scheduled after the date of the absent class."
+                    };
+                }
+
+                if (!isUpdating && originalSchedule.StartDay.DayOfWeek == newDate.DayOfWeek)
                 {
                     return new ResponseDTO
                     {
@@ -1271,7 +1283,6 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // 6. Check for schedule conflicts with the learner's other classes
                 var learner = originalSchedule.LearnerId.HasValue
                     ? await _unitOfWork.LearnerRepository.GetByIdAsync(originalSchedule.LearnerId.Value)
                     : null;
@@ -1286,43 +1297,86 @@ namespace InstruLearn_Application.BLL.Service
                         newTimeStart,
                         timeLearning);
 
-                    if (!conflictCheck.IsSucceed)
+                    if (!conflictCheck.IsSucceed && isUpdating)
                     {
-                        return conflictCheck; // Return the conflict response
+                        if (conflictCheck.Data is List<object> conflicts)
+                        {
+                            // Convert to list of dynamic objects
+                            var filteredConflicts = conflicts
+                                .Cast<dynamic>()
+                                .Where(c => (int)c.ScheduleId != makeupSchedule.ScheduleId)
+                                .ToList();
+
+                            if (filteredConflicts.Any())
+                            {
+                                return new ResponseDTO
+                                {
+                                    IsSucceed = false,
+                                    Message = "Schedule conflict detected. The learner already has classes scheduled during this time.",
+                                    Data = filteredConflicts
+                                };
+                            }
+                        }
+                        else
+                        {
+                            return conflictCheck;
+                        }
+                    }
+                    else if (!conflictCheck.IsSucceed)
+                    {
+                        return conflictCheck;
                     }
                 }
 
-                // Store original schedule info for notifications
                 var oldDate = originalSchedule.StartDay;
                 var oldTimeStart = originalSchedule.TimeStart;
                 var oldTimeEnd = originalSchedule.TimeEnd;
                 var oldDayOfWeek = oldDate.DayOfWeek;
 
-                // 7. Create a new makeup schedule
-                var makeupSchedule = new Schedules
+                DateOnly currentMakeupDate = DateOnly.MinValue;
+                TimeOnly currentMakeupTimeStart = TimeOnly.MinValue;
+                TimeOnly currentMakeupTimeEnd = TimeOnly.MinValue;
+
+                if (isUpdating)
                 {
-                    TeacherId = originalSchedule.TeacherId,
-                    LearnerId = originalSchedule.LearnerId,
-                    LearningRegisId = originalSchedule.LearningRegisId,
-                    ClassId = originalSchedule.ClassId,
-                    StartDay = newDate,
-                    TimeStart = newTimeStart,
-                    TimeEnd = newTimeStart.AddMinutes(timeLearning),
-                    Mode = originalSchedule.Mode,
-                    AttendanceStatus = AttendanceStatus.NotYet,
-                    ChangeReason = changeReason,
-                    PreferenceStatus = PreferenceStatus.MakeupClass
-                };
+                    currentMakeupDate = makeupSchedule.StartDay;
+                    currentMakeupTimeStart = makeupSchedule.TimeStart;
+                    currentMakeupTimeEnd = makeupSchedule.TimeEnd;
+                }
 
-                // 8. Mark the original schedule as having a makeup class
-                originalSchedule.PreferenceStatus = PreferenceStatus.MakeupClass;
+                if (isUpdating)
+                {
+                    makeupSchedule.StartDay = newDate;
+                    makeupSchedule.TimeStart = newTimeStart;
+                    makeupSchedule.TimeEnd = newTimeStart.AddMinutes(timeLearning);
+                    makeupSchedule.ChangeReason = $"{changeReason} (Updated: {DateTime.Now:yyyy-MM-dd HH:mm})";
 
-                // 9. Save both schedules in a single transaction
-                await _unitOfWork.ScheduleRepository.UpdateAsync(originalSchedule);
-                await _unitOfWork.ScheduleRepository.AddAsync(makeupSchedule);
+                    await _unitOfWork.ScheduleRepository.UpdateAsync(makeupSchedule);
+                }
+                else
+                {
+                    makeupSchedule = new Schedules
+                    {
+                        TeacherId = originalSchedule.TeacherId,
+                        LearnerId = originalSchedule.LearnerId,
+                        LearningRegisId = originalSchedule.LearningRegisId,
+                        ClassId = originalSchedule.ClassId,
+                        StartDay = newDate,
+                        TimeStart = newTimeStart,
+                        TimeEnd = newTimeStart.AddMinutes(timeLearning),
+                        Mode = originalSchedule.Mode,
+                        AttendanceStatus = AttendanceStatus.NotYet,
+                        ChangeReason = changeReason,
+                        PreferenceStatus = PreferenceStatus.MakeupClass
+                    };
+
+                    originalSchedule.PreferenceStatus = PreferenceStatus.MakeupClass;
+                    await _unitOfWork.ScheduleRepository.UpdateAsync(originalSchedule);
+                    await _unitOfWork.ScheduleRepository.AddAsync(makeupSchedule);
+                }
+
                 await _unitOfWork.SaveChangeAsync();
 
-                // Format dates and times for notifications
                 string oldFormattedDate = oldDate.ToString("dd/MM/yyyy");
                 string oldFormattedTimeStart = oldTimeStart.ToString("HH:mm");
                 string oldFormattedTimeEnd = oldTimeEnd.ToString("HH:mm");
@@ -1331,16 +1385,20 @@ namespace InstruLearn_Application.BLL.Service
                 string newFormattedTimeStart = newTimeStart.ToString("HH:mm");
                 string newFormattedTimeEnd = makeupSchedule.TimeEnd.ToString("HH:mm");
 
-                // 10. Send notifications to learner
+                string emailSubject = isUpdating ? "Your Makeup Class Has Been Rescheduled" : "Your Makeup Class Has Been Scheduled";
+                string emailIntro = isUpdating ?
+                    "Chúng tôi xác nhận lịch học bù của bạn đã được thay đổi lại." :
+                    "Chúng tôi xác nhận lịch học bù của bạn đã được xếp.";
+
                 if (originalSchedule.LearnerId.HasValue && learner?.Account != null && !string.IsNullOrEmpty(learner.Account.Email))
                 {
-                    string subject = "Your Makeup Class Has Been Scheduled";
+                    string subject = emailSubject;
                     string body = $@"
 <html>
 <body>
     <h2>Lịch học bù đã được xác nhận</h2>
     <p>Xin chào {learnerName},</p>
-    <p>Chúng tôi xác nhận lịch học bù của bạn đã được thay đổi.</p>
+    <p>{emailIntro}</p>
     
     <div style='background-color: #f0f0f0; padding: 15px; margin: 20px 0; border-radius: 5px;'>
         <h3>Thông tin lịch học cũ:</h3>
@@ -1348,8 +1406,16 @@ namespace InstruLearn_Application.BLL.Service
         <p><strong>Thời gian:</strong> {oldFormattedTimeStart} - {oldFormattedTimeEnd}</p>
     </div>
     
+    {(isUpdating ? $@"
+    <div style='background-color: #f5f0e8; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #ff9800;'>
+        <h3>Thông tin lịch học bù hiện tại:</h3>
+        <p><strong>Ngày:</strong> {currentMakeupDate:dd/MM/yyyy} ({currentMakeupDate.DayOfWeek})</p>
+        <p><strong>Thời gian:</strong> {currentMakeupTimeStart:HH:mm} - {currentMakeupTimeEnd:HH:mm}</p>
+    </div>
+    " : "")}
+    
     <div style='background-color: #e8f5e9; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #4CAF50;'>
-        <h3>Thông tin lịch học mới:</h3>
+        <h3>Thông tin lịch học {(isUpdating ? "bù mới" : "bù")}:</h3>
         <p><strong>Ngày:</strong> {newFormattedDate} ({newDate.DayOfWeek})</p>
         <p><strong>Thời gian:</strong> {newFormattedTimeStart} - {newFormattedTimeEnd}</p>
         <p><strong>Thời gian học:</strong> {timeLearning} phút</p>
@@ -1366,7 +1432,6 @@ namespace InstruLearn_Application.BLL.Service
                     await _emailService.SendEmailAsync(learner.Account.Email, subject, body);
                 }
 
-                // 11. Send notifications to teacher
                 if (originalSchedule.TeacherId.HasValue)
                 {
                     var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(originalSchedule.TeacherId.Value);
@@ -1377,13 +1442,13 @@ namespace InstruLearn_Application.BLL.Service
 
                         if (teacherAccount != null && !string.IsNullOrEmpty(teacherAccount.Email))
                         {
-                            string subject = "Makeup Class Schedule Update";
+                            string subject = isUpdating ? "Makeup Class Schedule Has Been Updated" : "Makeup Class Schedule";
                             string body = $@"
 <html>
 <body>
     <h2>Thông báo lịch dạy bù</h2>
     <p>Xin chào {teacher.Fullname},</p>
-    <p>Lịch dạy bù của bạn đã được cập nhật như sau:</p>
+    <p>Lịch dạy bù {(isUpdating ? "đã được cập nhật lại" : "đã được xếp")} như sau:</p>
     
     <div style='background-color: #f0f0f0; padding: 15px; margin: 20px 0; border-radius: 5px;'>
         <h3>Thông tin lịch dạy cũ:</h3>
@@ -1392,8 +1457,16 @@ namespace InstruLearn_Application.BLL.Service
         <p><strong>Học viên:</strong> {learnerName}</p>
     </div>
     
+    {(isUpdating ? $@"
+    <div style='background-color: #f5f0e8; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #ff9800;'>
+        <h3>Thông tin lịch dạy bù hiện tại:</h3>
+        <p><strong>Ngày:</strong> {currentMakeupDate:dd/MM/yyyy} ({currentMakeupDate.DayOfWeek})</p>
+        <p><strong>Thời gian:</strong> {currentMakeupTimeStart:HH:mm} - {currentMakeupTimeEnd:HH:mm}</p>
+    </div>
+    " : "")}
+    
     <div style='background-color: #e8f5e9; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #4CAF50;'>
-        <h3>Thông tin lịch dạy mới:</h3>
+        <h3>Thông tin lịch dạy {(isUpdating ? "bù mới" : "bù")}:</h3>
         <p><strong>Ngày:</strong> {newFormattedDate} ({newDate.DayOfWeek})</p>
         <p><strong>Thời gian:</strong> {newFormattedTimeStart} - {newFormattedTimeEnd}</p>
         <p><strong>Thời gian dạy:</strong> {timeLearning} phút</p>
@@ -1412,17 +1485,19 @@ namespace InstruLearn_Application.BLL.Service
                     }
                 }
 
-                // 12. Commit the transaction
                 await _unitOfWork.CommitTransactionAsync();
 
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = "Makeup class scheduled successfully. Notifications sent to the learner and teacher.",
+                    Message = isUpdating ?
+                        "Makeup class updated successfully. Notifications sent to the learner and teacher." :
+                        "Makeup class scheduled successfully. Notifications sent to the learner and teacher.",
                     Data = new
                     {
                         OriginalScheduleId = originalSchedule.ScheduleId,
-                        NewScheduleId = makeupSchedule.ScheduleId,
+                        MakeupScheduleId = makeupSchedule.ScheduleId,
+                        IsUpdated = isUpdating,
                         OldDate = oldDate,
                         OldDayOfWeek = oldDayOfWeek.ToString(),
                         OldTimeStart = oldTimeStart.ToString("HH:mm"),
@@ -1433,13 +1508,12 @@ namespace InstruLearn_Application.BLL.Service
                         NewTimeEnd = makeupSchedule.TimeEnd.ToString("HH:mm"),
                         TimeLearning = timeLearning,
                         ChangeReason = changeReason,
-                        AttendanceStatus = AttendanceStatus.NotYet.ToString()
+                        AttendanceStatus = makeupSchedule.AttendanceStatus.ToString()
                     }
                 };
             }
             catch (Exception ex)
             {
-                // 13. Rollback transaction on any error
                 await _unitOfWork.RollbackTransactionAsync();
 
                 return new ResponseDTO
