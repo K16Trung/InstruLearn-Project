@@ -648,7 +648,6 @@ namespace InstruLearn_Application.BLL.Service
                 bool isSameTeacher = originalTeacherId.HasValue && originalTeacherId.Value == newTeacherId;
                 _logger.LogInformation($"Teacher change request: Old teacher ID: {originalTeacherId}, New teacher ID: {newTeacherId}, Same teacher: {isSameTeacher}");
 
-                // Validate change reason based on whether it's the same teacher
                 if (isSameTeacher && string.IsNullOrWhiteSpace(changeReason))
                 {
                     return new ResponseDTO
@@ -682,10 +681,15 @@ namespace InstruLearn_Application.BLL.Service
                         await _unitOfWork.ScheduleRepository.UpdateAsync(schedule);
                     }
 
+                    notification.Status = NotificationStatus.Resolved;
+                    await _unitOfWork.StaffNotificationRepository.UpdateAsync(notification);
+                    _logger.LogInformation($"Directly marked notification {notificationId} as resolved");
+
                     var relatedNotifications = await _unitOfWork.StaffNotificationRepository
                         .GetQuery()
                         .Where(n => n.LearningRegisId == learningRegisId &&
-                                   n.Type == NotificationType.TeacherChangeRequest)
+                                   n.Type == NotificationType.TeacherChangeRequest &&
+                                   n.NotificationId != notificationId)
                         .ToListAsync();
 
                     _logger.LogInformation($"Found {relatedNotifications.Count} teacher change notifications for learning registration {learningRegisId}");
@@ -755,6 +759,16 @@ namespace InstruLearn_Application.BLL.Service
                     await transaction.RollbackAsync();
                     _logger.LogError(ex, "Error during teacher change transaction for learning registration {LearningRegisId}", learningRegisId);
                     throw;
+                }
+
+                var updatedNotification = await _unitOfWork.StaffNotificationRepository.GetByIdAsync(notificationId);
+                if (updatedNotification != null && updatedNotification.Status != NotificationStatus.Resolved)
+                {
+                    _logger.LogWarning($"Notification {notificationId} still not marked as resolved after transaction. Attempting direct update.");
+
+                    updatedNotification.Status = NotificationStatus.Resolved;
+                    await _unitOfWork.StaffNotificationRepository.UpdateAsync(updatedNotification);
+                    await _unitOfWork.SaveChangeAsync();
                 }
             }
             catch (Exception ex)
