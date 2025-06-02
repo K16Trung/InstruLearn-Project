@@ -157,6 +157,9 @@ namespace InstruLearn_Application.BLL.Service
             {
                 _logger.LogInformation($"Đang lấy doanh thu theo tháng cho năm {year}");
 
+                // Get the configurable registration deposit amount
+                decimal registrationDepositAmount = await GetRegistrationDepositAmountAsync();
+
                 var startDate = new DateTime(year, 1, 1);
                 var endDate = new DateTime(year, 12, 31, 23, 59, 59);
 
@@ -176,6 +179,9 @@ namespace InstruLearn_Application.BLL.Service
                 var centerClassByMonth = await GetCenterClassRegistrationRevenueByMonthAsync(year);
 
                 var courseByMonth = await GetCourseRevenueByMonthAsync(year);
+
+                // Calculate reservation fees for the entire year
+                decimal reservationFees = await GetReservationFeesAsync(startDate, endDate);
 
                 return new ResponseDTO
                 {
@@ -199,6 +205,11 @@ namespace InstruLearn_Application.BLL.Service
                                 CenterClassRegistrations = centerClassByMonth,
                                 CoursePurchases = courseByMonth
                             }
+                        },
+                        ReservationFees = new
+                        {
+                            TotalAmount = reservationFees,
+                            Count = registrationDepositAmount > 0 ? (int)(reservationFees / registrationDepositAmount) : 0
                         }
                     }
                 };
