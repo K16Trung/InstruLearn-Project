@@ -682,7 +682,7 @@ namespace InstruLearn_Application.BLL.Service
                     }
 
                     await _unitOfWork.StaffNotificationRepository.MarkAsResolvedAsync(notificationId);
-                    _logger.LogInformation($"Marked notification {notificationId} as resolved");
+                    _logger.LogInformation($"Marked notification {notificationId} as resolved using repository method");
 
                     var relatedNotifications = await _unitOfWork.StaffNotificationRepository
                         .GetQuery()
@@ -691,14 +691,13 @@ namespace InstruLearn_Application.BLL.Service
                                    n.NotificationId != notificationId)
                         .ToListAsync();
 
-                    _logger.LogInformation($"Found {relatedNotifications.Count} teacher change notifications for learning registration {learningRegisId}");
+                    _logger.LogInformation($"Found {relatedNotifications.Count} additional teacher change notifications for learning registration {learningRegisId}");
 
                     foreach (var relatedNotification in relatedNotifications)
                     {
                         _logger.LogInformation($"Before update: Notification {relatedNotification.NotificationId} status: {relatedNotification.Status}");
-                        relatedNotification.Status = NotificationStatus.Resolved;
-                        await _unitOfWork.StaffNotificationRepository.UpdateAsync(relatedNotification);
-                        _logger.LogInformation($"Marked notification {relatedNotification.NotificationId} as resolved");
+                        await _unitOfWork.StaffNotificationRepository.MarkAsResolvedAsync(relatedNotification.NotificationId);
+                        _logger.LogInformation($"Marked notification {relatedNotification.NotificationId} as resolved using repository method");
                     }
 
                     await _unitOfWork.SaveChangeAsync();
@@ -763,11 +762,8 @@ namespace InstruLearn_Application.BLL.Service
                 var updatedNotification = await _unitOfWork.StaffNotificationRepository.GetByIdAsync(notificationId);
                 if (updatedNotification != null && updatedNotification.Status != NotificationStatus.Resolved)
                 {
-                    _logger.LogWarning($"Notification {notificationId} still not marked as resolved after transaction. Attempting direct update.");
-
-                    updatedNotification.Status = NotificationStatus.Resolved;
-                    await _unitOfWork.StaffNotificationRepository.UpdateAsync(updatedNotification);
-                    await _unitOfWork.SaveChangeAsync();
+                    _logger.LogWarning($"Notification {notificationId} still not marked as resolved after transaction. Attempting direct update via repository method.");
+                    await _unitOfWork.StaffNotificationRepository.MarkAsResolvedAsync(notificationId);
                 }
             }
             catch (Exception ex)
