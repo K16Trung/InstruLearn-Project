@@ -1428,6 +1428,9 @@ namespace InstruLearn_Application.BLL.Service
                     makeupSchedule.TimeEnd = newTimeStart.AddMinutes(timeLearning);
                     makeupSchedule.ChangeReason = $"{changeReason} (Updated: {DateTime.Now:yyyy-MM-dd HH:mm})";
 
+                    makeupSchedule.AttendanceStatus = AttendanceStatus.NotYet;
+                    makeupSchedule.PreferenceStatus = PreferenceStatus.None;
+
                     await _unitOfWork.ScheduleRepository.UpdateAsync(makeupSchedule);
                 }
                 else
