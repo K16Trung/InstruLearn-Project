@@ -31,19 +31,5 @@ namespace InstruLearn_Application.DAL.Repository
         {
             return await _appDbContext.Wallets.FirstOrDefaultAsync(predicate);
         }
-
-        /*public async Task<WalletTransaction> GetTransactionWithWalletAsync(string orderCode)
-        {
-            long orderCodeValue;
-            if (!long.TryParse(orderCode, out orderCodeValue))
-            {
-                return null;
-            }
-
-            return await _appDbContext.WalletTransactions
-                .Include(wt => wt.Wallet)
-                .FirstOrDefaultAsync(wt => wt.OrderCode == orderCodeValue);
-        }*/
-
     }
 }

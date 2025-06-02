@@ -29,7 +29,6 @@ namespace InstruLearn_Application.DAL.Repository
             await _appDbContext.Set<Schedules>().AddRangeAsync(schedules);
         }
 
-        // Get schedules with Learning_Registration details
         public async Task<List<Schedules>> GetSchedulesByLearningRegisIdAsync(int learningRegisId)
         {
             return await _appDbContext.Schedules
@@ -43,8 +42,8 @@ namespace InstruLearn_Application.DAL.Repository
         {
             return await _appDbContext.Schedules
                 .Where(s => s.LearnerId == learnerId)
-                .Include(s => s.ScheduleDays) // Include ScheduleDays
-                .ThenInclude(sd => sd.DayOfWeeks) // Include DayOfWeeks for each day
+                .Include(s => s.ScheduleDays)
+                .ThenInclude(sd => sd.DayOfWeeks)
                 .ToListAsync();
         }
 
@@ -63,7 +62,7 @@ namespace InstruLearn_Application.DAL.Repository
         {
             var schedules = await _appDbContext.Schedules
                 .Include(s => s.ScheduleDays)
-                .Where(s => s.LearnerId == learnerId)  // Ensures filtering by learnerId
+                .Where(s => s.LearnerId == learnerId)
                 .Select(s => new
                 {
                     s.ScheduleId,
@@ -73,13 +72,12 @@ namespace InstruLearn_Application.DAL.Repository
                     s.TimeEnd,
                     s.Mode,
                     s.LearningRegisId,
-                    s.Registration.StartDay,  // Nullable DateOnly
+                    s.Registration.StartDay,
                     ScheduleDays = s.ScheduleDays.Select(d => d.DayOfWeeks).ToList()
                 })
                 .AsNoTracking()
                 .ToListAsync();
 
-            // Map to DTOs
             var formattedSchedules = schedules.Select(s => new ScheduleDTO
             {
                 ScheduleId = s.ScheduleId,
@@ -89,7 +87,7 @@ namespace InstruLearn_Application.DAL.Repository
                 TimeEnd = s.TimeEnd.ToString("HH:mm"),
                 Mode = s.Mode,
                 LearningRegisId = s.LearningRegisId ?? 0,
-                RegistrationStartDay = s.StartDay,  // Pass DateOnly?
+                RegistrationStartDay = s.StartDay,
                 ScheduleDays = s.ScheduleDays.Select(day => new ScheduleDaysDTO
                 {
                     DayOfWeeks = day
@@ -111,48 +109,11 @@ namespace InstruLearn_Application.DAL.Repository
                 .Include(s => s.ScheduleDays)
                 .ToListAsync();
         }
-        // correct
-        /*public async Task<List<int>> GetFreeTeacherIdsAsync(int majorId, TimeOnly timeStart, int timeLearning, DateOnly startDay)
-        {
-            TimeOnly timeEnd = timeStart.AddMinutes(timeLearning);
-
-            // Get day of week if needed for recurring schedules
-            DayOfWeek dayOfWeek = startDay.DayOfWeek;
-            //var busyTeacherIds = new HashSet<int>();
-
-            var busyTeacherIds = await _appDbContext.Schedules
-                .Where(s => s.TeacherId.HasValue &&
-                            s.StartDay == startDay &&  // Direct date match
-                            (
-                                (s.TimeStart <= timeStart && s.TimeEnd > timeStart) ||  // Overlapping start
-                                (s.TimeStart < timeEnd && s.TimeEnd >= timeEnd) ||      // Overlapping end
-                                (s.TimeStart >= timeStart && s.TimeEnd <= timeEnd) ||   // Fully inside
-                                (timeStart <= s.TimeStart && timeEnd >= s.TimeEnd)      // Completely contains
-                            ))
-                .Select(s => s.TeacherId.Value)
-                .Distinct()
-                .ToListAsync();
-
-            // Get teachers who have an active relationship with the specified major
-            var activeTeacherIdsForMajor = await _appDbContext.TeacherMajors
-                .Where(tm => tm.MajorId == majorId &&
-                             tm.Status == TeacherMajorStatus.Free)  // Assuming 1 is Active
-                .Select(tm => tm.TeacherId)
-                .ToListAsync();
-
-            // Exclude busy teachers from the active teachers
-            var freeTeacherIds = activeTeacherIdsForMajor
-                .Where(teacherId => !busyTeacherIds.Contains(teacherId))
-                .ToList();
-
-            return freeTeacherIds;
-        }*/
         
         public async Task<List<int>> GetFreeTeacherIdsAsync(int majorId, TimeOnly timeStart, int timeLearning, DateOnly[] startDay)
         {
             TimeOnly timeEnd = timeStart.AddMinutes(timeLearning);
 
-            // First, get all teachers who have an active relationship with the specified major
             var activeTeacherIdsForMajor = await _appDbContext.TeacherMajors
                 .Where(tm => tm.MajorId == majorId &&
                              tm.Status == TeacherMajorStatus.Free)
@@ -161,10 +122,9 @@ namespace InstruLearn_Application.DAL.Repository
 
             if (!activeTeacherIdsForMajor.Any())
             {
-                return new List<int>(); // No teachers available for this major
+                return new List<int>();
             }
 
-            // Then find all teachers who are busy during any of the specified days and times
             var busyTeacherIds = new HashSet<int>();
 
             foreach (var day in startDay)
@@ -173,23 +133,21 @@ namespace InstruLearn_Application.DAL.Repository
                     .Where(s => s.TeacherId.HasValue &&
                                 s.StartDay == day &&
                                 (
-                                    (s.TimeStart <= timeStart && s.TimeEnd > timeStart) ||  // Overlapping start
-                                    (s.TimeStart < timeEnd && s.TimeEnd >= timeEnd) ||      // Overlapping end
-                                    (s.TimeStart >= timeStart && s.TimeEnd <= timeEnd) ||   // Fully inside
-                                    (timeStart <= s.TimeStart && timeEnd >= s.TimeEnd)      // Completely contains
+                                    (s.TimeStart <= timeStart && s.TimeEnd > timeStart) ||
+                                    (s.TimeStart < timeEnd && s.TimeEnd >= timeEnd) ||
+                                    (s.TimeStart >= timeStart && s.TimeEnd <= timeEnd) ||
+                                    (timeStart <= s.TimeStart && timeEnd >= s.TimeEnd)
                                 ))
                     .Select(s => s.TeacherId.Value)
                     .Distinct()
                     .ToListAsync();
 
-                // Add all busy teacher IDs from this day to our set
                 foreach (var teacherId in busyOnThisDay)
                 {
                     busyTeacherIds.Add(teacherId);
                 }
             }
 
-            // Exclude busy teachers from the active teachers
             var freeTeacherIds = activeTeacherIdsForMajor
                 .Where(teacherId => !busyTeacherIds.Contains(teacherId))
                 .ToList();
@@ -211,7 +169,6 @@ namespace InstruLearn_Application.DAL.Repository
 
         public async Task<List<ConsolidatedScheduleDTO>> GetConsolidatedCenterSchedulesByTeacherIdAsync(int teacherId)
         {
-            // Get all class schedules for the teacher with Mode = Center
             var schedules = await _appDbContext.Schedules
                 .Where(s => s.TeacherId == teacherId && s.Mode == ScheduleMode.Center)
                 .Include(s => s.Teacher)
@@ -224,7 +181,6 @@ namespace InstruLearn_Application.DAL.Repository
                 return new List<ConsolidatedScheduleDTO>();
             }
 
-            // Group schedules by class and timeslot
             var groupedSchedules = schedules
                 .GroupBy(s => new
                 {
@@ -244,7 +200,6 @@ namespace InstruLearn_Application.DAL.Repository
                 })
                 .ToList();
 
-            // Fetch class days for these classes
             var classIds = schedules
                 .Where(s => s.ClassId.HasValue)
                 .Select(s => s.ClassId.Value)
@@ -259,14 +214,12 @@ namespace InstruLearn_Application.DAL.Repository
                 .GroupBy(cd => cd.ClassId)
                 .ToDictionary(g => g.Key, g => g.ToList());
 
-            // Fetch class information
             var classes = await _appDbContext.Classes
                 .Where(c => classIds.Contains(c.ClassId))
                 .ToListAsync();
 
             var classDict = classes.ToDictionary(c => c.ClassId, c => c);
 
-            // Get all learners
             var learnerIds = schedules
                 .Where(s => s.LearnerId.HasValue)
                 .Select(s => s.LearnerId.Value)
@@ -281,22 +234,18 @@ namespace InstruLearn_Application.DAL.Repository
                     .ToDictionaryAsync(l => l.LearnerId, l => l);
             }
 
-            // Create consolidated schedule DTOs
             var consolidatedSchedules = new List<ConsolidatedScheduleDTO>();
 
             foreach (var group in groupedSchedules)
             {
-                // Get class info
                 string className = "N/A";
                 if (group.ClassId.HasValue && classDict.TryGetValue(group.ClassId.Value, out var classEntity))
                 {
                     className = classEntity.ClassName;
                 }
 
-                // Get all learners for this schedule group - PREVENTING DUPLICATES
                 var scheduleParticipants = new List<ScheduleParticipantDTO>();
 
-                // Group the schedules by learner to eliminate duplicates
                 var participantGroups = group.Schedules
                     .Where(s => s.LearnerId.HasValue && s.LearningRegisId.HasValue)
                     .GroupBy(s => new { s.LearnerId, s.LearningRegisId })
@@ -321,7 +270,6 @@ namespace InstruLearn_Application.DAL.Repository
                     }
                 }
 
-                // Create ScheduleDays info if available
                 var scheduleDays = new List<ScheduleDaysDTO>();
                 if (group.ClassId.HasValue &&
                     classDaysByClass.TryGetValue(group.ClassId.Value, out var days))
@@ -332,7 +280,6 @@ namespace InstruLearn_Application.DAL.Repository
                     }).ToList();
                 }
 
-                // Create consolidated schedule DTO
                 var consolidatedSchedule = new ConsolidatedScheduleDTO
                 {
                     ScheduleId = group.FirstSchedule.ScheduleId,
@@ -346,7 +293,7 @@ namespace InstruLearn_Application.DAL.Repository
                     StartDay = group.StartDay,
                     Mode = ScheduleMode.Center,
                     AttendanceStatus = group.FirstSchedule.AttendanceStatus,
-                    RegistrationStartDay = group.StartDay, // Using StartDay as registrationStartDay
+                    RegistrationStartDay = group.StartDay,
                     Participants = scheduleParticipants,
                     ScheduleDays = scheduleDays
                 };
@@ -434,14 +381,12 @@ namespace InstruLearn_Application.DAL.Repository
         public async Task<(bool HasConflict, List<Schedules> ConflictingSchedules)> CheckLearnerClassScheduleConflictAsync(
     int learnerId, int classId)
         {
-            // First, get all learner schedules regardless of day
             var learnerSchedules = await _appDbContext.Schedules
                 .Where(s => s.LearnerId == learnerId)
                 .Include(s => s.Class)
                 .Include(s => s.Teacher)
                 .ToListAsync();
 
-            // Get the class entity with its days
             var classEntity = await _appDbContext.Classes
                 .Include(c => c.ClassDays)
                 .FirstOrDefaultAsync(c => c.ClassId == classId);
@@ -451,20 +396,16 @@ namespace InstruLearn_Application.DAL.Repository
                 return (false, new List<Schedules>());
             }
 
-            // Extract class time information
             TimeOnly classTimeStart = classEntity.ClassTime;
-            TimeOnly classTimeEnd = classEntity.ClassTime.AddHours(2); // Standard 2-hour class
+            TimeOnly classTimeEnd = classEntity.ClassTime.AddHours(2);
 
-            // Get the class days as int values (0-6 for Sunday-Saturday)
             var classDayValues = classEntity.ClassDays.Select(cd => (int)cd.Day).ToList();
 
-            // Perform the filtering in memory
             var conflictingSchedules = learnerSchedules
                 .Where(s => classDayValues.Contains((int)s.StartDay.DayOfWeek) &&
                             (classTimeStart < s.TimeEnd && s.TimeStart < classTimeEnd))
                 .ToList();
 
-            // Now handle pending registrations
             var pendingRegistrations = await _appDbContext.Learning_Registrations
                 .Where(r => r.LearnerId == learnerId &&
                            (r.Status == LearningRegis.Pending ||
@@ -476,12 +417,10 @@ namespace InstruLearn_Application.DAL.Repository
             {
                 if (!registration.StartDay.HasValue) continue;
 
-                // Check for day conflicts between registration and class
                 var registrationDayValues = registration.LearningRegistrationDay
                     .Select(ld => (int)ld.DayOfWeek)
                     .ToList();
 
-                // Check if any learning day matches class days
                 bool hasDayOverlap = registrationDayValues.Any(regDay => classDayValues.Contains(regDay));
 
                 if (hasDayOverlap)
@@ -489,12 +428,10 @@ namespace InstruLearn_Application.DAL.Repository
                     TimeOnly regisStart = registration.TimeStart;
                     TimeOnly regisEnd = registration.TimeStart.AddMinutes(registration.TimeLearning);
 
-                    // Check time overlap
                     bool hasTimeOverlap = (classTimeStart < regisEnd && regisStart < classTimeEnd);
 
                     if (hasTimeOverlap)
                     {
-                        // Create a virtual schedule representing the conflict
                         var virtualSchedule = new Schedules
                         {
                             ScheduleId = -1, // Virtual ID

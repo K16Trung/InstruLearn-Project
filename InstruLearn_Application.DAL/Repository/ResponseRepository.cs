@@ -8,8 +8,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-// Bỏ using Azure nếu không cần thiết
-// using Azure;
 
 namespace InstruLearn_Application.DAL.Repository
 {

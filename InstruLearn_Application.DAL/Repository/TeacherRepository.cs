@@ -40,12 +40,12 @@ namespace InstruLearn_Application.DAL.Repository
         {
             if (teacherIds == null || !teacherIds.Any())
             {
-                return new List<Teacher>(); // Return empty if no free teachers
+                return new List<Teacher>();
             }
 
             return await _appDbContext.Teachers
-                .Include(t => t.TeacherMajors)  // Ensure Majors are loaded
-                    .ThenInclude(tm => tm.Major) // Ensure Major details are loaded
+                .Include(t => t.TeacherMajors)
+                    .ThenInclude(tm => tm.Major)
                 .Where(t => teacherIds.Contains(t.TeacherId))
                 .ToListAsync();
         }

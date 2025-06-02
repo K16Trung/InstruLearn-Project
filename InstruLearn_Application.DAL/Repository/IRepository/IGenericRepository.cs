@@ -16,8 +16,6 @@ namespace InstruLearn_Application.DAL.Repository.IRepository
         Task<T?> GetByIdAsync(int id);
         Task<T> GettWithIncludesAsync(Expression<Func<T, bool>> filter, string includeProperties = "");
         Task<List<T>> GetWithIncludesAsync(Expression<Func<T, bool>> filter, string includeProperties = "");
-        /*Task<List<T>> GetAllWithIncludesAsync(Expression<Func<T, bool>> filter, string includeProperties = "");
-        Task<List<T>> GetWithIncludesAsync(Expression<Func<T, bool>> filter, string includeProperties = "");*/
         Task AddAsync(T entity);
         Task<bool> UpdateAsync(T entity);
         Task DeleteAsync(int id);

@@ -22,7 +22,7 @@ namespace InstruLearn_Application.DAL.Repository
             return await _appDbContext.QnA
                 .Include(f => f.Account)
                 .Include(f => f.QnAReplies)
-                    .ThenInclude(r => r.Account)  // If you need the account info for each reply
+                    .ThenInclude(r => r.Account)
                 .ToListAsync();
         }
         public async Task<QnA> GetByIdAsync(int id)

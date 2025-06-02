@@ -24,7 +24,7 @@ namespace InstruLearn_Application.DAL.Repository
         public async Task<IEnumerable<Learning_Registration>> GetPendingRegistrationsAsync()
         {
             return await _appDbContext.Learning_Registrations
-                .Where(x => x.Status == LearningRegis.Pending)  // Ensure "Pending" matches your status naming convention
+                .Where(x => x.Status == LearningRegis.Pending)
                 .Include(x => x.Learner)
                 .Include(x => x.Teacher)
                 .Include(l => l.Learner.Account)
@@ -38,7 +38,6 @@ namespace InstruLearn_Application.DAL.Repository
                 .ToListAsync();
         }
 
-        // ✅ Get pending registrations by LearnerId
         public async Task<IEnumerable<Learning_Registration>> GetRegistrationsByLearnerIdAsync(int learnerId)
         {
             return await _appDbContext.Learning_Registrations
@@ -97,7 +96,7 @@ namespace InstruLearn_Application.DAL.Repository
             if (include != null)
                 query = include(query);
             else
-                query = query.Include(lr => lr.LearningRegistrationDay); // ✅ Ensure it is included
+                query = query.Include(lr => lr.LearningRegistrationDay);
 
             return await query.FirstOrDefaultAsync(predicate);
         }
