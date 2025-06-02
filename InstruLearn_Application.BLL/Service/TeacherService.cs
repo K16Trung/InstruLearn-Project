@@ -33,10 +33,8 @@ namespace InstruLearn_Application.BLL.Service
         }
 
 
-        // Get All Teachers
         public async Task<List<ResponseDTO>> GetAllTeachersAsync()
         {
-            // Update to include Account data and Majors with Teacher
             var teacherList = await _unitOfWork.TeacherRepository
                 .GetQuery()
                 .Include(t => t.Account)
@@ -60,12 +58,10 @@ namespace InstruLearn_Application.BLL.Service
             return responseList;
         }
 
-        // Get Teacher by Id
         public async Task<ResponseDTO> GetTeacherByIdAsync(int teacherId)
         {
             var response = new ResponseDTO();
 
-            // Use query with includes instead of GetByIdAsync
             var teacher = await _unitOfWork.TeacherRepository
                 .GetQuery()
                 .Include(t => t.Account)
@@ -105,7 +101,6 @@ namespace InstruLearn_Application.BLL.Service
                         };
                     }
 
-                    // Kiểm tra email tồn tại
                     var accountsByEmail = _unitOfWork.AccountRepository.GetFilter(x => x.Email == createTeacherDTO.Email);
                     if (accountsByEmail.Items.Any())
                     {
@@ -113,7 +108,6 @@ namespace InstruLearn_Application.BLL.Service
                         return response;
                     }
 
-                    // Kiểm tra tên đăng nhập tồn tại
                     var accountsByUsername = _unitOfWork.AccountRepository.GetFilter(x => x.Username == createTeacherDTO.Username);
                     if (accountsByUsername.Items.Any())
                     {
@@ -182,7 +176,6 @@ namespace InstruLearn_Application.BLL.Service
         {
             var response = new ResponseDTO();
 
-            // Get the teacher by ID
             var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(teacherId);
             if (teacher == null)
             {
@@ -190,7 +183,6 @@ namespace InstruLearn_Application.BLL.Service
                 return response;
             }
 
-            // Get the associated account
             var account = await _unitOfWork.AccountRepository.GetByIdAsync(teacher.AccountId);
             if (account == null)
             {
@@ -221,7 +213,6 @@ namespace InstruLearn_Application.BLL.Service
             return response;
         }
 
-        // Update Teacher
         public async Task<ResponseDTO> UpdateMajorTeacherAsync(int teacherId, UpdateMajorTeacherDTO updateMajorTeacherDTO)
         {
             try
@@ -239,19 +230,16 @@ namespace InstruLearn_Application.BLL.Service
                 await using var transaction = await _unitOfWork.BeginTransactionAsync();
                 try
                 {
-                    // Get current teacher majors without tracking
                     var currentTeacherMajors = await _unitOfWork.dbContext.TeacherMajors
                         .AsNoTracking()
                         .Where(tm => tm.TeacherId == teacherId)
                         .ToListAsync();
 
-                    // Remove all existing majors
                     _unitOfWork.dbContext.TeacherMajors.RemoveRange(
                         _unitOfWork.dbContext.TeacherMajors.Where(tm => tm.TeacherId == teacherId)
                     );
                     await _unitOfWork.SaveChangeAsync();
 
-                    // Add new majors
                     if (updateMajorTeacherDTO.MajorIds != null && updateMajorTeacherDTO.MajorIds.Any())
                     {
                         var newTeacherMajors = updateMajorTeacherDTO.MajorIds.Select(majorId => new TeacherMajor
@@ -300,7 +288,6 @@ namespace InstruLearn_Application.BLL.Service
                 return response;
             }
 
-            // Change status to Banned
             var account = await _unitOfWork.AccountRepository.GetByIdAsync(teacher.AccountId);
             account.IsActive = AccountStatus.Banned;
 
@@ -317,7 +304,6 @@ namespace InstruLearn_Application.BLL.Service
             return response;
         }
 
-        // Ban Teacher
         public async Task<ResponseDTO> UnbanTeacherAsync(int teacherId)
         {
             var response = new ResponseDTO();
@@ -329,7 +315,6 @@ namespace InstruLearn_Application.BLL.Service
                 return response;
             }
 
-            // Change status to Banned
             var account = await _unitOfWork.AccountRepository.GetByIdAsync(teacher.AccountId);
             account.IsActive = AccountStatus.Active;
 
@@ -348,7 +333,7 @@ namespace InstruLearn_Application.BLL.Service
 
         private string HashPassword(string password)
         {
-            return BCrypt.Net.BCrypt.HashPassword(password); // Explicit namespace
+            return BCrypt.Net.BCrypt.HashPassword(password);
         }
         public async Task<ResponseDTO> DeleteMajorTeacherAsync(int teacherId, DeleteMajorTeacherDTO deleteMajorTeacherDTO)
         {
@@ -363,7 +348,6 @@ namespace InstruLearn_Application.BLL.Service
                 await using var transaction = await _unitOfWork.BeginTransactionAsync();
                 try
                 {
-                    // Get teacher majors to delete
                     var teacherMajorsToDelete = await _unitOfWork.dbContext.TeacherMajors
                         .Where(tm => tm.TeacherId == teacherId && deleteMajorTeacherDTO.MajorIds.Contains(tm.MajorId))
                         .ToListAsync();
@@ -373,11 +357,9 @@ namespace InstruLearn_Application.BLL.Service
                         return new ResponseDTO { IsSucceed = false, Message = "Không tìm thấy chuyên ngành phù hợp cho giáo viên này" };
                     }
 
-                    // Remove the selected majors
                     _unitOfWork.dbContext.TeacherMajors.RemoveRange(teacherMajorsToDelete);
                     await _unitOfWork.SaveChangeAsync();
 
-                    // Get remaining majors for response
                     var remainingMajors = await _unitOfWork.dbContext.TeacherMajors
                         .Include(tm => tm.Major)
                         .Where(tm => tm.TeacherId == teacherId)
@@ -385,7 +367,6 @@ namespace InstruLearn_Application.BLL.Service
 
                     await _unitOfWork.CommitTransactionAsync();
 
-                    // Return a simplified response without circular references
                     var response = new ResponseDTO
                     {
                         IsSucceed = true,

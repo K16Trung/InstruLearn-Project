@@ -28,14 +28,12 @@ namespace InstruLearn_Application.BLL.Service
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            // Wait for application to fully start
             await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
 
             try
             {
                 _logger.LogInformation("Attempting to register PayOS webhook...");
 
-                // Create PayOS instance
                 PayOS payOS = new PayOS(
                     _payOSSettings.ClientId,
                     _payOSSettings.ApiKey,
@@ -44,7 +42,6 @@ namespace InstruLearn_Application.BLL.Service
 
                 string webhookUrl = "https://instrulearnapplication2025-h7hfdte3etdth7av.southeastasia-01.azurewebsites.net/api/payos/webhook";
 
-                // Try to register webhook
                 try
                 {
                     var result = await payOS.confirmWebhook(webhookUrl);

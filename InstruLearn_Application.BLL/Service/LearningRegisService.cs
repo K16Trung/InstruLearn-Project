@@ -198,6 +198,27 @@ namespace InstruLearn_Application.BLL.Service
                 enrichedReg["firstPaymentPeriod"] = firstPaymentPeriod;
                 enrichedReg["secondPaymentPeriod"] = secondPaymentPeriod;
 
+                if (registration.LearnerId > 0)
+                {
+                    var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(registration.LearnerId);
+                    if (learner != null && !string.IsNullOrEmpty(learner.AccountId))
+                    {
+                        var account = await _unitOfWork.AccountRepository.GetByIdAsync(learner.AccountId);
+                        if (account != null)
+                        {
+                            enrichedReg["learnerAddress"] = account.Address;
+                            enrichedReg["accountDetails"] = new
+                            {
+                                Address = account.Address,
+                                PhoneNumber = account.PhoneNumber,
+                                Gender = account.Gender,
+                                Email = account.Email,
+                                Avatar = account.Avatar
+                            };
+                        }
+                    }
+                }
+
                 var learningPathSessions = await _unitOfWork.LearningPathSessionRepository
                     .GetByLearningRegisIdAsync(learningRegisId);
 
@@ -269,7 +290,6 @@ namespace InstruLearn_Application.BLL.Service
             {
                 _logger.LogInformation("Starting learning registration process.");
 
-                // Check if valid learning days were provided
                 if (createLearningRegisDTO.LearningDays == null || !createLearningRegisDTO.LearningDays.Any())
                 {
                     return new ResponseDTO
@@ -279,12 +299,10 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Calculate the potential schedule dates based on requested days of week
                 var scheduleDates = new List<DateOnly>();
                 var startDate = createLearningRegisDTO.StartDay.Value;
                 var daysOfWeek = createLearningRegisDTO.LearningDays.Select(d => (DayOfWeek)d).ToList();
 
-                // For checking purposes, let's look at sessions over the next 8 weeks (enough to catch conflicts)
                 for (int week = 0; week < 8; week++)
                 {
                     for (int day = 0; day < 7; day++)
@@ -336,11 +354,9 @@ namespace InstruLearn_Application.BLL.Service
 
                 using (var transaction = await _unitOfWork.BeginTransactionAsync())
                 {
-                    // Get the registration deposit amount from the system configuration
                     const string depositConfigKey = "RegistrationDepositAmount";
                     var depositConfig = await _unitOfWork.SystemConfigurationRepository.GetByKeyAsync(depositConfigKey);
 
-                    // Default to 50000 if configuration doesn't exist
                     decimal depositAmount = 50000;
 
                     if (depositConfig != null && decimal.TryParse(depositConfig.Value, out decimal configValue))
@@ -392,7 +408,6 @@ namespace InstruLearn_Application.BLL.Service
                     var learningRegis = _mapper.Map<Learning_Registration>(createLearningRegisDTO);
                     learningRegis.Status = LearningRegis.Pending;
 
-                    // Set the request date to Vietnam time zone (UTC+7)
                     var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
                     learningRegis.RequestDate = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vietnamTimeZone);
 
@@ -494,6 +509,26 @@ namespace InstruLearn_Application.BLL.Service
                 var registrations = await _learningRegisRepository.GetRegistrationsByLearnerIdAsync(learnerId);
                 var registrationDtos = _mapper.Map<IEnumerable<OneOnOneRegisDTO>>(registrations).ToList();
 
+                string learnerAddress = null;
+                Dictionary<string, object> accountDetails = null;
+                var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(learnerId);
+                if (learner != null && !string.IsNullOrEmpty(learner.AccountId))
+                {
+                    var account = await _unitOfWork.AccountRepository.GetByIdAsync(learner.AccountId);
+                    if (account != null)
+                    {
+                        learnerAddress = account.Address;
+                        accountDetails = new Dictionary<string, object>
+                        {
+                            ["Address"] = account.Address,
+                            ["PhoneNumber"] = account.PhoneNumber,
+                            ["Gender"] = account.Gender,
+                            ["Email"] = account.Email,
+                            ["Avatar"] = account.Avatar
+                        };
+                    }
+                }
+
                 var enrichedRegistrations = new List<object>();
                 foreach (var regDto in registrationDtos)
                 {
@@ -512,7 +547,16 @@ namespace InstruLearn_Application.BLL.Service
                     enrichedReg["firstPaymentPeriod"] = firstPaymentPeriod;
                     enrichedReg["secondPaymentPeriod"] = secondPaymentPeriod;
 
-                    // Find the original registration from the collection to access the teacher change flags
+                    if (learnerAddress != null)
+                    {
+                        enrichedReg["learnerAddress"] = learnerAddress;
+                    }
+
+                    if (accountDetails != null)
+                    {
+                        enrichedReg["accountDetails"] = accountDetails;
+                    }
+
                     var originalRegistration = registrations.FirstOrDefault(r => r.LearningRegisId == regDto.LearningRegisId);
                     if (originalRegistration != null)
                     {
@@ -727,7 +771,6 @@ namespace InstruLearn_Application.BLL.Service
                     return classScheduleConflict;
                 }
 
-                // Check if learner is already enrolled in this class
                 var existingEnrollments = await _unitOfWork.LearningRegisRepository
                     .GetQuery()
                     .AnyAsync(lr =>
@@ -745,7 +788,6 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Get class information
                 var classEntity = await _unitOfWork.ClassRepository.GetByIdAsync(paymentDTO.ClassId);
                 if (classEntity == null)
                 {
@@ -800,7 +842,6 @@ namespace InstruLearn_Application.BLL.Service
                         _logger.LogInformation($"Using level ID {levelId} from class {paymentDTO.ClassId}");
                     }
 
-                    // Get learner information
                     var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(paymentDTO.LearnerId);
                     if (learner == null)
                     {
@@ -812,7 +853,6 @@ namespace InstruLearn_Application.BLL.Service
                         };
                     }
 
-                    // Check for existing enrollment in Learner_Classes table
                     var existingLearnerClassEnrollment = await _unitOfWork.dbContext.Learner_Classes
                         .FirstOrDefaultAsync(lc => lc.LearnerId == paymentDTO.LearnerId && lc.ClassId == paymentDTO.ClassId);
 
@@ -826,7 +866,6 @@ namespace InstruLearn_Application.BLL.Service
                         };
                     }
 
-                    // Calculate payment amount
                     decimal pricePerDay = classEntity.Price;
                     if (pricePerDay <= 0)
                     {
@@ -843,7 +882,6 @@ namespace InstruLearn_Application.BLL.Service
 
                     _logger.LogInformation($"Class price calculation: {pricePerDay} per day × {classEntity.totalDays} days = {totalClassPrice} total. 10% payment: {paymentAmount}");
 
-                    // Get registration type for center classes
                     var classRegisType = await _unitOfWork.LearningRegisTypeRepository.GetQuery()
                         .FirstOrDefaultAsync(rt => rt.RegisTypeName.Contains("Center"));
 
@@ -857,7 +895,6 @@ namespace InstruLearn_Application.BLL.Service
                         };
                     }
 
-                    // Check wallet balance
                     var wallet = await _unitOfWork.WalletRepository.GetFirstOrDefaultAsync(w => w.LearnerId == paymentDTO.LearnerId);
                     if (wallet == null)
                     {
@@ -879,12 +916,10 @@ namespace InstruLearn_Application.BLL.Service
                         };
                     }
 
-                    // Process payment
                     wallet.Balance -= paymentAmount;
                     await _unitOfWork.WalletRepository.UpdateAsync(wallet);
                     await _unitOfWork.SaveChangeAsync();
 
-                    // Create wallet transaction record
                     var walletTransaction = new WalletTransaction
                     {
                         TransactionId = Guid.NewGuid().ToString(),
@@ -898,7 +933,6 @@ namespace InstruLearn_Application.BLL.Service
                     await _unitOfWork.WalletTransactionRepository.AddAsync(walletTransaction);
                     await _unitOfWork.SaveChangeAsync();
 
-                    // Create learning registration record
                     var learningRegis = new Learning_Registration
                     {
                         LearnerId = paymentDTO.LearnerId,
@@ -922,7 +956,6 @@ namespace InstruLearn_Application.BLL.Service
                     await _unitOfWork.LearningRegisRepository.AddAsync(learningRegis);
                     await _unitOfWork.SaveChangeAsync();
 
-                    // Create learner class enrollment
                     var learnerClass = new Learner_class
                     {
                         LearnerId = paymentDTO.LearnerId,
@@ -932,7 +965,6 @@ namespace InstruLearn_Application.BLL.Service
                     _unitOfWork.dbContext.Learner_Classes.Add(learnerClass);
                     await _unitOfWork.SaveChangeAsync();
 
-                    // Handle certificate creation based on class start date
                     if (classEntity.StartDate == today)
                     {
                         _logger.LogInformation($"Class starts today. Creating temporary certificate for learner {paymentDTO.LearnerId} in class {paymentDTO.ClassId}");
@@ -984,13 +1016,12 @@ namespace InstruLearn_Application.BLL.Service
                             {
                                 _logger.LogInformation($"Temporary certificate created successfully for learner {paymentDTO.LearnerId} in class {paymentDTO.ClassId}");
 
-                                // Schedule a notification for certificate verification after attendance is recorded
                                 var staffNotification = new StaffNotification
                                 {
                                     Title = "Certificate Eligibility Verification Required",
                                     Message = $"Learner {learner.FullName} (ID: {paymentDTO.LearnerId}) received a temporary certificate for class {classEntity.ClassName} (ID: {paymentDTO.ClassId}). Verify 75% attendance before finalizing certificate.",
                                     LearnerId = paymentDTO.LearnerId,
-                                    CreatedAt = DateTime.Now.AddDays(classEntity.totalDays / 2), // Set future date to verify halfway through course
+                                    CreatedAt = DateTime.Now.AddDays(classEntity.totalDays / 2),
                                     Status = NotificationStatus.Unread,
                                     Type = NotificationType.Certificate
                                 };
@@ -1012,7 +1043,6 @@ namespace InstruLearn_Application.BLL.Service
                     {
                         _logger.LogInformation($"Class has already started on {classEntity.StartDate}, but learner is joining today ({today}). No certificate will be created immediately.");
 
-                        // Create notification to check attendance later
                         var staffNotification = new StaffNotification
                         {
                             Title = "Late Enrollment - Certificate Eligibility Check Needed",
@@ -1044,10 +1074,8 @@ namespace InstruLearn_Application.BLL.Service
                         await _unitOfWork.SaveChangeAsync();
                     }
 
-                    // Create schedules for the learner
                     await CreateLearnerSchedulesForClass(paymentDTO.LearnerId, paymentDTO.ClassId, classEntity, learningRegis);
 
-                    // Create entrance test notification
                     try
                     {
                         string formattedClassTime = classEntity.ClassTime.ToString("HH:mm");
@@ -1092,7 +1120,6 @@ namespace InstruLearn_Application.BLL.Service
 
                     _logger.LogInformation($"Learner {paymentDTO.LearnerId} successfully enrolled in class {paymentDTO.ClassId} with payment of {paymentAmount} (10% of total {totalClassPrice})");
 
-                    // Updated certificate status message based on when learner joins relative to class start date
                     string certificateStatus;
                     if (classEntity.StartDate == today)
                     {
@@ -1147,10 +1174,8 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
-        // Helper method to create schedules for a learner in a class
         private async Task CreateLearnerSchedulesForClass(int learnerId, int classId, Class classEntity, Learning_Registration learningRegis)
         {
-            // Check for existing schedules with learner IDs in this class
             var existingLearnerSchedules = await _unitOfWork.ScheduleRepository.GetQuery()
                 .Where(s => s.ClassId == classId &&
                            s.TeacherId == classEntity.TeacherId &&
@@ -1194,7 +1219,6 @@ namespace InstruLearn_Application.BLL.Service
                 return;
             }
 
-            // Check for teacher schedules without learner IDs
             var existingTeacherSchedules = await _unitOfWork.ScheduleRepository.GetQuery()
                 .Where(s => s.ClassId == classId &&
                            s.TeacherId == classEntity.TeacherId &&
@@ -1236,7 +1260,6 @@ namespace InstruLearn_Application.BLL.Service
                 return;
             }
 
-            // No existing schedules found, create new ones based on class days
             _logger.LogWarning($"No existing schedules found for class {classId}, creating new ones");
 
             var classDays = await _unitOfWork.ClassDayRepository.GetQuery()
@@ -1334,7 +1357,6 @@ namespace InstruLearn_Application.BLL.Service
 
                     if (responseId.HasValue)
                     {
-                        // Get response with its response type to include in notification
                         var response = await _unitOfWork.ResponseRepository.GetWithIncludesAsync(
                             r => r.ResponseId == responseId.Value,
                             "ResponseType");
@@ -1352,7 +1374,6 @@ namespace InstruLearn_Application.BLL.Service
                         learningRegis.ResponseId = responseId.Value;
                         responseDescription = selectedResponse.ResponseName ?? responseDescription;
 
-                        // Get the response type name if available
                         if (selectedResponse.ResponseType != null)
                         {
                             responseTypeName = selectedResponse.ResponseType.ResponseTypeName;
@@ -1361,11 +1382,9 @@ namespace InstruLearn_Application.BLL.Service
 
                     await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
 
-                    // Get learner details for notification
                     var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(learningRegis.LearnerId);
                     if (learner != null)
                     {
-                        // Create notification for the learner
                         var notification = new StaffNotification
                         {
                             LearnerId = learningRegis.LearnerId,
@@ -1379,7 +1398,6 @@ namespace InstruLearn_Application.BLL.Service
 
                         await _unitOfWork.StaffNotificationRepository.AddAsync(notification);
 
-                        // Send email notification if learner has an email address
                         var account = learner.Account != null ?
                             learner.Account :
                             await _unitOfWork.AccountRepository.GetByIdAsync(learner.AccountId);
@@ -1412,14 +1430,12 @@ namespace InstruLearn_Application.BLL.Service
                         </body>
                         </html>";
 
-                                // Send email notification
                                 await _emailService.SendEmailAsync(account.Email, subject, body, true);
                                 _logger.LogInformation($"Rejection email sent to {account.Email} for learning registration {learningRegisId}");
                             }
                             catch (Exception emailEx)
                             {
                                 _logger.LogError(emailEx, $"Error sending rejection email for learning registration {learningRegisId}");
-                                // Continue with transaction even if email fails
                             }
                         }
                     }
@@ -1735,7 +1751,6 @@ namespace InstruLearn_Application.BLL.Service
 
                 if (isInSecondPaymentPhase)
                 {
-                    // If waiting for teacher change, provide appropriate status
                     if (learningRegis.ChangeTeacherRequested && !learningRegis.TeacherChangeProcessed)
                     {
                         secondPaymentStatus = "Đang chờ thay đổi giáo viên";
@@ -1743,7 +1758,6 @@ namespace InstruLearn_Application.BLL.Service
                     }
                     else if (learningRegis.PaymentDeadline.HasValue)
                     {
-                        // Normal case - deadline is set
                         secondPaymentDeadline = learningRegis.PaymentDeadline;
 
                         DateTime now = DateTime.Now;

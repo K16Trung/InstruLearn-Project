@@ -33,16 +33,13 @@ namespace InstruLearn_Application.BLL.Service
             var teacherMajorList = await _unitOfWork.TeacherMajorRepository.GetAllAsync();
             var responseList = new List<ResponseDTO>();
 
-            // Group by TeacherId to handle each teacher's majors
             var teacherGroups = teacherMajorList.GroupBy(tm => tm.TeacherId);
 
             foreach (var teacherGroup in teacherGroups)
             {
-                // Get the first record to access teacher details
                 var firstTeacherMajor = teacherGroup.First();
                 var teacher = firstTeacherMajor.Teacher;
 
-                // Create separate response for each major
                 foreach (var teacherMajor in teacherGroup)
                 {
                     var teacherMajorDto = new TeacherMajorDTO
@@ -98,7 +95,6 @@ namespace InstruLearn_Application.BLL.Service
         {
             var response = new ResponseDTO();
 
-            // Call the custom method in the repository to update the Status
             var updated = await _unitOfWork.TeacherMajorRepository.UpdateStatusAsync(teacherMajorId, TeacherMajorStatus.Busy);
 
             if (!updated)
@@ -115,7 +111,6 @@ namespace InstruLearn_Application.BLL.Service
         {
             var response = new ResponseDTO();
 
-            // Call the custom method in the repository to update the Status
             var updated = await _unitOfWork.TeacherMajorRepository.UpdateStatusAsync(teacherMajorId, TeacherMajorStatus.Free);
 
             if (!updated)

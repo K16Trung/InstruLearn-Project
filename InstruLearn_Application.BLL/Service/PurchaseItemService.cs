@@ -108,7 +108,6 @@ namespace InstruLearn_Application.BLL.Service
             await _unitOfWork.BeginTransactionAsync();
             try
             {
-                // Validate learner exists
                 var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(createPurchaseItemsDTO.LearnerId);
                 if (learner == null)
                 {
@@ -119,7 +118,6 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Get the wallet
                 var wallet = await _unitOfWork.WalletRepository.FirstOrDefaultAsync(w => w.LearnerId == createPurchaseItemsDTO.LearnerId);
                 if (wallet == null)
                 {

@@ -33,7 +33,6 @@ namespace InstruLearn_Application.BLL.Service
             {
                 _logger.LogInformation("Đang tính tổng doanh thu trên tất cả các loại");
 
-                // Get the configurable registration deposit amount
                 decimal registrationDepositAmount = await GetRegistrationDepositAmountAsync();
 
                 var successfulTransactions = await _unitOfWork.WalletTransactionRepository
@@ -121,10 +120,9 @@ namespace InstruLearn_Application.BLL.Service
             }
         }
 
-        // Add this new helper method to get the registration deposit amount
         private async Task<decimal> GetRegistrationDepositAmountAsync()
         {
-            decimal depositAmount = 50000; // Default value
+            decimal depositAmount = 50000;
             try
             {
                 var configResponse = await _configService.GetConfigurationAsync("RegistrationDepositAmount");
@@ -157,7 +155,6 @@ namespace InstruLearn_Application.BLL.Service
             {
                 _logger.LogInformation($"Đang lấy doanh thu theo tháng cho năm {year}");
 
-                // Get the configurable registration deposit amount
                 decimal registrationDepositAmount = await GetRegistrationDepositAmountAsync();
 
                 var startDate = new DateTime(year, 1, 1);
@@ -180,7 +177,6 @@ namespace InstruLearn_Application.BLL.Service
 
                 var courseByMonth = await GetCourseRevenueByMonthAsync(year);
 
-                // Calculate reservation fees for the entire year
                 decimal reservationFees = await GetReservationFeesAsync(startDate, endDate);
 
                 return new ResponseDTO
@@ -231,7 +227,6 @@ namespace InstruLearn_Application.BLL.Service
             {
                 _logger.LogInformation($"Đang lấy doanh thu theo tháng với phân tích theo tuần cho Năm {year}, Tháng {month}");
 
-                // Validate input
                 if (month < 1 || month > 12)
                 {
                     return new ResponseDTO
@@ -241,11 +236,9 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Get the start and end dates for the specified month
                 DateTime monthStart = new DateTime(year, month, 1);
                 DateTime monthEnd = monthStart.AddMonths(1).AddDays(-1);
 
-                // Get all transactions for the month
                 var transactions = await _unitOfWork.WalletTransactionRepository
                     .GetQuery()
                     .Where(t => t.Status == TransactionStatus.Complete &&
@@ -254,15 +247,12 @@ namespace InstruLearn_Application.BLL.Service
                                t.TransactionDate <= monthEnd)
                     .ToListAsync();
 
-                // Get week start dates within this month
                 var weekStartDates = GetWeekStartDatesInMonth(year, month);
 
-                // Calculate weekly revenue data
                 var weeklyData = new List<object>();
 
                 foreach (var (weekNumber, startDate) in weekStartDates)
                 {
-                    // Calculate the end date for this week (either end of week or end of month)
                     DateTime weekEndDate = startDate.AddDays(6);
                     if (weekEndDate > monthEnd)
                     {
@@ -273,7 +263,6 @@ namespace InstruLearn_Application.BLL.Service
                         .Where(t => t.TransactionDate >= startDate && t.TransactionDate <= weekEndDate)
                         .ToList();
 
-                    // Daily breakdown within this week
                     var dailyData = weekTransactions
                         .GroupBy(t => t.TransactionDate.Date)
                         .Select(g => new
@@ -286,7 +275,6 @@ namespace InstruLearn_Application.BLL.Service
                         .OrderBy(d => DateTime.Parse(d.Date))
                         .ToList();
 
-                    // Get revenue by types for this week
                     var (oneOnOneDetails, oneOnOneCount) = await GetOneOnOneRegistrationRevenueAsync(startDate, weekEndDate);
                     var (centerClassDetails, centerClassCount) = await GetCenterClassRegistrationRevenueAsync(startDate, weekEndDate);
                     var (courseDetails, courseCount) = await GetCourseRevenueAsync(startDate, weekEndDate);
@@ -333,10 +321,8 @@ namespace InstruLearn_Application.BLL.Service
                     });
                 }
 
-                // Calculate monthly revenue breakdown by type
                 var revenueByType = await GetRevenueByTypeForTimeRangeAsync(monthStart, monthEnd);
 
-                // Get monthly summary
                 decimal totalMonthRevenue = transactions.Sum(t => t.Amount);
                 int totalMonthTransactions = transactions.Count;
 
@@ -383,7 +369,6 @@ namespace InstruLearn_Application.BLL.Service
             {
                 _logger.LogInformation($"Đang lấy doanh thu theo ngày cho {date:yyyy-MM-dd}");
 
-                // Get the configurable registration deposit amount
                 decimal registrationDepositAmount = await GetRegistrationDepositAmountAsync();
 
                 DateTime startTime = date.Date;
@@ -632,10 +617,8 @@ namespace InstruLearn_Application.BLL.Service
                     .Include(p => p.WalletTransaction)
                     .ToListAsync();
 
-                // Check if there are any payments
                 if (payments.Count == 0)
                 {
-                    // Return empty data when no payments exist
                     return (
                         new { Count = 0, TotalAmount = 0m, Payments = new List<object>() },
                         new { Count = 0, TotalAmount = 0m, Payments = new List<object>() }
@@ -647,10 +630,8 @@ namespace InstruLearn_Application.BLL.Service
                     .Where(lr => lr.ClassId == null)
                     .ToListAsync();
 
-                // Set a default threshold if no registrations with price exist
-                decimal threshold = 500000; // Default threshold
+                decimal threshold = 500000;
                 
-                // Only calculate average if there are registrations with price
                 if (learningRegistrations.Any(lr => lr.Price.HasValue)) 
                 {
                     var averagePrice = learningRegistrations.Where(lr => lr.Price.HasValue)
@@ -694,7 +675,6 @@ namespace InstruLearn_Application.BLL.Service
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in GetOneOnOnePaymentPhasesAsync");
-                // Return empty data in case of error
                 return (
                     new { Count = 0, TotalAmount = 0m, Payments = new List<object>() },
                     new { Count = 0, TotalAmount = 0m, Payments = new List<object>() }
@@ -1017,7 +997,6 @@ namespace InstruLearn_Application.BLL.Service
                 .ToListAsync();
 
 
-            // Add this check before calculating averagePrice
             decimal averagePrice = 0;
             if (oneOnOneRegistrations.Any(lr => lr.Price.HasValue))
             {
@@ -1025,7 +1004,7 @@ namespace InstruLearn_Application.BLL.Service
             }
             else
             {
-                averagePrice = 500000; // Set a default value
+                averagePrice = 500000;
             }
 
             var phase40Threshold = averagePrice * 0.4m * 1.2m;
@@ -1163,7 +1142,6 @@ namespace InstruLearn_Application.BLL.Service
                 .Where(lr => lr.ClassId == null)
                 .ToListAsync();
 
-            // Add this check before calculating averagePrice
             decimal averagePrice = 0;
             if (oneOnOneRegistrations.Any(lr => lr.Price.HasValue))
             {
@@ -1171,7 +1149,7 @@ namespace InstruLearn_Application.BLL.Service
             }
             else
             {
-                averagePrice = 500000; // Set a default value
+                averagePrice = 500000;
             }
 
             var phase40Threshold = averagePrice * 0.4m * 1.2m;

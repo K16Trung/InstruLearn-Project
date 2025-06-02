@@ -58,12 +58,10 @@ namespace InstruLearn_Application.BLL.Service
 
                 using var transaction = await _unitOfWork.BeginTransactionAsync();
 
-                // Deduct from Wallet Balance
                 wallet.Balance -= requiredAmount;
                 wallet.UpdateAt = DateTime.UtcNow;
                 await _unitOfWork.WalletRepository.UpdateAsync(wallet);
 
-                // Create Wallet Transaction
                 var walletTransaction = new WalletTransaction
                 {
                     TransactionId = Guid.NewGuid().ToString(),
@@ -75,7 +73,6 @@ namespace InstruLearn_Application.BLL.Service
                 };
                 await _unitOfWork.WalletTransactionRepository.AddAsync(walletTransaction);
 
-                // Create Payment Record
                 var payment = new Payment
                 {
                     WalletId = wallet.WalletId,
@@ -84,17 +81,14 @@ namespace InstruLearn_Application.BLL.Service
                     PaymentMethod = paymentDTO.PaymentMethod,
                     PaymentFor = PaymentFor.LearningRegistration,
                     Status = PaymentStatus.Completed
-                    // LearningRegisId property was removed as it doesn't exist
                 };
                 await _unitOfWork.PaymentsRepository.AddAsync(payment);
 
-                // Update Learning Registration Status
                 learningRegis.Status = LearningRegis.Fourty;
                 learningRegis.RemainingAmount = remainingAmount;
                 learningRegis.HasPendingLearningPath = true;
                 await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
 
-                // Find and resolve any existing CreateLearningPath notifications
                 var existingNotifications = await _unitOfWork.StaffNotificationRepository
                     .GetQuery()
                     .Where(n => n.LearningRegisId == learningRegis.LearningRegisId &&
@@ -108,11 +102,9 @@ namespace InstruLearn_Application.BLL.Service
                     await _unitOfWork.StaffNotificationRepository.UpdateAsync(notification);
                 }
 
-                // Create schedules for learner and teacher
                 var schedules = DateTimeHelper.GenerateOneOnOneSchedules(learningRegis);
                 await _unitOfWork.ScheduleRepository.AddRangeAsync(schedules);
 
-                // Create notification for teacher about schedules being updated
                 if (learningRegis.TeacherId.HasValue)
                 {
                     var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(learningRegis.TeacherId.Value);
@@ -139,7 +131,6 @@ namespace InstruLearn_Application.BLL.Service
                 await _unitOfWork.SaveChangeAsync();
                 await _unitOfWork.CommitTransactionAsync();
 
-                // Map Payment to PaymentDTO using AutoMapper
                 var paymentResponse = _mapper.Map<PaymentDTO>(payment);
 
                 return new ResponseDTO
@@ -185,12 +176,10 @@ namespace InstruLearn_Application.BLL.Service
 
                 using var transaction = await _unitOfWork.BeginTransactionAsync();
 
-                // Deduct from Wallet Balance
                 wallet.Balance -= learningRegis.RemainingAmount.Value;
                 wallet.UpdateAt = DateTime.UtcNow;
                 await _unitOfWork.WalletRepository.UpdateAsync(wallet);
 
-                // Create Wallet Transaction
                 var walletTransaction = new WalletTransaction
                 {
                     TransactionId = Guid.NewGuid().ToString(),
@@ -202,7 +191,6 @@ namespace InstruLearn_Application.BLL.Service
                 };
                 await _unitOfWork.WalletTransactionRepository.AddAsync(walletTransaction);
 
-                // Create Payment Record
                 var payment = new Payment
                 {
                     WalletId = wallet.WalletId,
@@ -214,12 +202,10 @@ namespace InstruLearn_Application.BLL.Service
                 };
                 await _unitOfWork.PaymentsRepository.AddAsync(payment);
 
-                // Update Learning Registration Status and Clear Remaining Amount
                 learningRegis.Status = LearningRegis.Sixty;
                 learningRegis.RemainingAmount = 0;
                 await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
 
-                // Find and mark any related PaymentReminder notifications as resolved
                 var notifications = await _unitOfWork.StaffNotificationRepository
                     .GetQuery()
                     .Where(n => n.LearningRegisId == learningRegisId &&
@@ -267,7 +253,6 @@ namespace InstruLearn_Application.BLL.Service
 
                 using var transaction = await _unitOfWork.BeginTransactionAsync();
 
-                // Determine whether it's a 40% or 60% payment rejection based on current status
                 bool is40PercentRejection = learningRegis.Status == LearningRegis.Accepted ||
                                     learningRegis.Status == LearningRegis.Fourty;
 
@@ -278,14 +263,12 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     learningRegis.Status = LearningRegis.Payment40Rejected;
 
-                    // Delete schedules
                     var schedules = await _unitOfWork.ScheduleRepository.GetSchedulesByLearningRegisIdAsync(learningRegisId);
                     foreach (var schedule in schedules)
                     {
                         await _unitOfWork.ScheduleRepository.DeleteAsync(schedule.ScheduleId);
                     }
 
-                    // Delete learning path sessions
                     var learningPathSessions = await _unitOfWork.LearningPathSessionRepository
                         .GetByLearningRegisIdAsync(learningRegisId);
                     foreach (var session in learningPathSessions)
@@ -293,22 +276,18 @@ namespace InstruLearn_Application.BLL.Service
                         await _unitOfWork.LearningPathSessionRepository.DeleteAsync(session.LearningPathSessionId);
                     }
 
-                    // Clear learning path flag
                     learningRegis.HasPendingLearningPath = false;
                 }
                 else if (is60PercentRejection)
                 {
-                    // Case 2: Reject 60% payment - Set status to Cancelled
                     learningRegis.Status = LearningRegis.Payment60Rejected;
 
-                    // Delete schedules
                     var schedules = await _unitOfWork.ScheduleRepository.GetSchedulesByLearningRegisIdAsync(learningRegisId);
                     foreach (var schedule in schedules)
                     {
                         await _unitOfWork.ScheduleRepository.DeleteAsync(schedule.ScheduleId);
                     }
 
-                    // Delete learning path sessions
                     var learningPathSessions = await _unitOfWork.LearningPathSessionRepository
                         .GetByLearningRegisIdAsync(learningRegisId);
                     foreach (var session in learningPathSessions)
@@ -316,7 +295,6 @@ namespace InstruLearn_Application.BLL.Service
                         await _unitOfWork.LearningPathSessionRepository.DeleteAsync(session.LearningPathSessionId);
                     }
 
-                    // Clear learning path
                     learningRegis.HasPendingLearningPath = false;
                 }
                 else
@@ -328,7 +306,6 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Update notifications
                 var notifications = await _unitOfWork.StaffNotificationRepository
                     .GetQuery()
                     .Where(n => n.LearningRegisId == learningRegisId &&
@@ -341,7 +318,6 @@ namespace InstruLearn_Application.BLL.Service
                     await _unitOfWork.StaffNotificationRepository.UpdateAsync(notification);
                 }
 
-                // Update the learning registration
                 await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
                 await _unitOfWork.SaveChangeAsync();
                 await _unitOfWork.CommitTransactionAsync();
@@ -370,7 +346,6 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                // Get all payment transactions for learning registrations
                 var query = _unitOfWork.PaymentsRepository
                     .GetQuery()
                     .Where(p => p.Status == PaymentStatus.Completed &&
@@ -381,20 +356,17 @@ namespace InstruLearn_Application.BLL.Service
 
                 var payments = await query.ToListAsync();
 
-                // Get all learning registrations with classes
                 var registrations = await _unitOfWork.LearningRegisRepository
                     .GetQuery()
                     .Where(lr => lr.ClassId != null)
                     .Include(lr => lr.Classes)
-                    .Include(lr => lr.Learner) // Include learner information directly
+                    .Include(lr => lr.Learner)
                     .ToListAsync();
 
-                // Filter to get only class registrations for the specified class (or all if classId is null)
                 var classRegistrations = registrations
                     .Where(lr => classId == null || lr.ClassId == classId)
                     .ToList();
 
-                // Get all wallet transactions that might be related
                 var walletTransactions = await _unitOfWork.WalletTransactionRepository
                     .GetQuery()
                     .Where(wt => wt.Status == TransactionStatus.Complete &&
@@ -402,7 +374,6 @@ namespace InstruLearn_Application.BLL.Service
                     .Include(wt => wt.Wallet)
                     .ToListAsync();
 
-                // Results list for all class registrations
                 var registrationResults = new List<object>();
 
                 foreach (var registration in classRegistrations)
@@ -412,20 +383,17 @@ namespace InstruLearn_Application.BLL.Service
                     var totalClassPrice = classPrice * totalDays;
                     var expectedInitialPayment = Math.Round(totalClassPrice * 0.1m, 2);
 
-                    // Find payment matching this registration
                     var matchingPayments = payments
                         .Where(p => p.Wallet.LearnerId == registration.LearnerId)
                         .ToList();
 
-                    // Find wallet transactions for this learner
                     var learnerWalletTransactions = walletTransactions
                         .Where(wt => wt.Wallet.LearnerId == registration.LearnerId &&
-                                    wt.TransactionDate >= registration.RequestDate.AddDays(-3)) // Look at transactions a few days before registration too
+                                    wt.TransactionDate >= registration.RequestDate.AddDays(-3))
                         .OrderByDescending(wt => wt.TransactionDate)
-                        .Take(5) // Get the 5 most recent transactions
+                        .Take(5)
                         .ToList();
 
-                    // Find exact matches based on amount and date
                     var fullMatches = matchingPayments
                         .Where(p => Math.Abs(p.AmountPaid - expectedInitialPayment) < 0.1m &&
                                     p.WalletTransaction?.TransactionDate >= registration.RequestDate)
@@ -448,7 +416,6 @@ namespace InstruLearn_Application.BLL.Service
                         ExpectedPayment = expectedInitialPayment,
                         Status = registration.Status.ToString(),
                         RegistrationDate = registration.RequestDate,
-                        // Additional wallet information
                         WalletTransactions = learnerWalletTransactions.Select(wt => new {
                             TransactionId = wt.TransactionId,
                             Amount = wt.Amount,
@@ -457,7 +424,6 @@ namespace InstruLearn_Application.BLL.Service
                             Status = wt.Status.ToString(),
                             PaymentRecord = payments.FirstOrDefault(p => p.TransactionId == wt.TransactionId) != null
                         }).ToList(),
-                        // General information useful for diagnosis
                         Registration = new
                         {
                             Status = registration.Status.ToString(),
@@ -505,7 +471,6 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Get the wallet for this learner (for record-keeping only)
                 var wallet = await _unitOfWork.WalletRepository
                     .GetFirstOrDefaultAsync(w => w.LearnerId == learnerId);
 
@@ -521,13 +486,11 @@ namespace InstruLearn_Application.BLL.Service
                 using var transaction = await _unitOfWork.BeginTransactionAsync();
                 try
                 {
-                    // Calculate the payment amount (90% of total class price)
                     var classPrice = registration.Classes?.Price ?? 0;
                     var totalDays = registration.Classes?.totalDays ?? 0;
                     var totalClassPrice = classPrice * totalDays;
                     decimal remainingAmount = Math.Round(totalClassPrice * 0.9m, 0);
 
-                    // Create a wallet transaction record (for tracking only, not actually deducting money)
                     var walletTransaction = new WalletTransaction
                     {
                         TransactionId = Guid.NewGuid().ToString(),
@@ -539,7 +502,6 @@ namespace InstruLearn_Application.BLL.Service
                     };
                     await _unitOfWork.WalletTransactionRepository.AddAsync(walletTransaction);
 
-                    // Create Payment Record
                     var payment = new Payment
                     {
                         WalletId = wallet.WalletId,
@@ -551,7 +513,6 @@ namespace InstruLearn_Application.BLL.Service
                     };
                     await _unitOfWork.PaymentsRepository.AddAsync(payment);
 
-                    // Update the registration status to indicate full payment
                     registration.Status = LearningRegis.FullyPaid;
                     registration.RemainingAmount = 0;
                     await _unitOfWork.LearningRegisRepository.UpdateAsync(registration);
@@ -600,7 +561,6 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                // Check if the class exists
                 var classEntity = await _unitOfWork.ClassRepository.GetByIdAsync(classId);
                 if (classEntity == null)
                 {
@@ -611,7 +571,6 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Get all learner registrations for this class that are fully paid
                 var registrations = await _unitOfWork.LearningRegisRepository
                     .GetQuery()
                     .Where(lr => lr.ClassId == classId && lr.Status == LearningRegis.FullyPaid)
@@ -628,10 +587,8 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Get the payment records for these learners
                 var learnerIds = registrations.Select(r => r.LearnerId).ToList();
 
-                // Get wallets for these learners to link to payments
                 var wallets = await _unitOfWork.WalletRepository
                     .GetQuery()
                     .Where(w => learnerIds.Contains(w.LearnerId))
@@ -639,7 +596,6 @@ namespace InstruLearn_Application.BLL.Service
 
                 var walletIds = wallets.Select(w => w.WalletId).ToList();
 
-                // Get payment records for class registration payments
                 var payments = await _unitOfWork.PaymentsRepository
                     .GetQuery()
                     .Where(p => walletIds.Contains(p.WalletId) &&
@@ -648,23 +604,17 @@ namespace InstruLearn_Application.BLL.Service
                     .Include(p => p.WalletTransaction)
                     .ToListAsync();
 
-                // Map the wallets to learner IDs for easier lookup
                 var walletByLearnerId = wallets.ToDictionary(w => w.LearnerId, w => w);
 
-                // Prepare the result
                 var fullyPaidLearners = registrations.Select(reg => {
-                    // Try to find the wallet for this learner
                     walletByLearnerId.TryGetValue(reg.LearnerId, out var wallet);
 
-                    // Find payments for this learner's wallet
                     var learnerPayments = wallet != null
                         ? payments.Where(p => p.WalletId == wallet.WalletId).ToList()
                         : new List<Payment>();
 
-                    // Calculate the total amount paid by this learner
                     decimal totalPaid = learnerPayments.Sum(p => p.AmountPaid);
 
-                    // Find the latest payment date
                     var latestPayment = learnerPayments.OrderByDescending(p => p.WalletTransaction?.TransactionDate).FirstOrDefault();
 
                     return new
@@ -701,7 +651,6 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                // Check if the class exists
                 var classEntity = await _unitOfWork.ClassRepository.GetByIdAsync(classId);
                 if (classEntity == null)
                 {
@@ -712,7 +661,6 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Get all learner registrations for this class
                 var registrations = await _unitOfWork.LearningRegisRepository
                     .GetQuery()
                     .Where(lr => lr.ClassId == classId)
@@ -730,10 +678,8 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Get learner IDs from registrations
                 var learnerIds = registrations.Select(r => r.LearnerId).ToList();
 
-                // Get wallets for these learners
                 var wallets = await _unitOfWork.WalletRepository
                     .GetQuery()
                     .Where(w => learnerIds.Contains(w.LearnerId))
@@ -741,7 +687,6 @@ namespace InstruLearn_Application.BLL.Service
 
                 var walletIds = wallets.Select(w => w.WalletId).ToList();
 
-                // Get payment records for this class
                 var payments = await _unitOfWork.PaymentsRepository
                     .GetQuery()
                     .Where(p => walletIds.Contains(p.WalletId) &&
@@ -751,10 +696,8 @@ namespace InstruLearn_Application.BLL.Service
                     .Include(p => p.WalletTransaction)
                     .ToListAsync();
 
-                // Map the wallets to learner IDs for easier lookup
                 var walletByLearnerId = wallets.ToDictionary(w => w.LearnerId, w => w);
 
-                // Prepare results for fully paid learners
                 var fullyPaidLearners = registrations
                     .Where(reg => reg.Status == LearningRegis.FullyPaid)
                     .Select(reg => {
@@ -762,19 +705,15 @@ namespace InstruLearn_Application.BLL.Service
                         var classPrice = reg.Classes?.Price ?? 0;
                         var totalDays = reg.Classes?.totalDays ?? 0;
                         var totalClassPrice = classPrice * totalDays;
-                        // Try to find the wallet for this learner
                         walletByLearnerId.TryGetValue(reg.LearnerId, out var wallet);
 
-                        // Find payments for this learner's wallet
                         var learnerPayments = wallet != null
                             ? payments.Where(p => p.WalletId == wallet.WalletId &&
                                                  p.PaymentFor == PaymentFor.ClassRegistration).ToList()
                             : new List<Payment>();
 
-                        // Calculate the total amount paid by this learner
                         decimal totalPaid = learnerPayments.Sum(p => p.AmountPaid);
 
-                        // Find the latest payment date
                         var latestPayment = learnerPayments.OrderByDescending(p => p.WalletTransaction?.TransactionDate).FirstOrDefault();
 
                         return new
@@ -793,7 +732,6 @@ namespace InstruLearn_Application.BLL.Service
                         };
                     }).ToList();
 
-                // Process partially paid (10% initial payment) learners
                 var partiallyPaidLearners = registrations
                     .Where(reg => reg.Status == LearningRegis.Accepted && reg.Status != LearningRegis.FullyPaid)
                     .Select<Learning_Registration, object>(reg => {
@@ -817,21 +755,19 @@ namespace InstruLearn_Application.BLL.Service
 
                         if (payment == null)
                         {
-                            // Get wallet transactions for this learner that match the amount
                             var walletTxs = _unitOfWork.WalletTransactionRepository
                                 .GetQuery()
                                 .Where(wt => wt.WalletId == wallet.WalletId &&
                                         wt.Status == TransactionStatus.Complete &&
                                         wt.TransactionType == TransactionType.Payment &&
                                         Math.Abs(wt.Amount - expectedInitialPayment) < 0.1m &&
-                                        wt.TransactionDate >= reg.RequestDate.AddSeconds(-1)) // Add a 1-second buffer
+                                        wt.TransactionDate >= reg.RequestDate.AddSeconds(-1))
                                 .OrderBy(wt => wt.TransactionDate)
                                 .ToListAsync().Result;
 
                             if (!walletTxs.Any())
                                 return null;
 
-                            // Use the wallet transaction data directly
                             return new
                             {
                                 LearnerId = reg.LearnerId,
@@ -875,7 +811,6 @@ namespace InstruLearn_Application.BLL.Service
                     .Where(item => item != null)
                     .ToList();
 
-                // Return the combined data
                 return new ResponseDTO
                 {
                     IsSucceed = true,

@@ -109,7 +109,6 @@ namespace InstruLearn_Application.BLL.Service
 
                 if (config == null)
                 {
-                    // Create new configuration if it doesn't exist
                     config = new SystemConfiguration
                     {
                         Key = key,
@@ -121,7 +120,6 @@ namespace InstruLearn_Application.BLL.Service
                 }
                 else
                 {
-                    // Update existing configuration
                     config.Value = value;
                     config.LastUpdated = DateTime.Now;
 

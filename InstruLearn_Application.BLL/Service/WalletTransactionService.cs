@@ -86,16 +86,13 @@ namespace InstruLearn_Application.BLL.Service
 
             try
             {
-                // Get all transaction IDs
                 var transactionIds = transactions.Select(t => t.TransactionId).ToList();
 
-                // Get all payments linked to these transactions
                 var payments = await _unitOfWork.PaymentsRepository
                     .GetQuery()
                     .Where(p => transactionIds.Contains(p.TransactionId))
                     .ToListAsync();
 
-                // Get learning registrations
                 var learningRegistrationIds = payments
                     .Where(p => p.PaymentFor == PaymentFor.LearningRegistration)
                     .Select(p => p.PaymentId)
@@ -110,58 +107,45 @@ namespace InstruLearn_Application.BLL.Service
                         .ToListAsync();
                 }
 
-                // Find all learning registrations created in the same timeframe as the transactions
-                // This will help identify class join and registration fee transactions
                 var recentRegistrations = await _unitOfWork.LearningRegisRepository
                     .GetQuery()
                     .Where(lr => lr.RequestDate >= DateTime.UtcNow.AddDays(-30))
                     .ToListAsync();
 
-                // Check each transaction
                 foreach (var dto in transactionDtos)
                 {
                     var originalTransaction = transactions.FirstOrDefault(t => t.TransactionId == dto.TransactionId);
                     var payment = payments.FirstOrDefault(p => p.TransactionId == dto.TransactionId);
 
-                    // Check for application fee payments first - this takes highest priority
                     if (payment != null && payment.PaymentFor == PaymentFor.ApplicationFee)
                     {
                         dto.PaymentType = "Phí đăng ký";
                         continue;
                     }
 
-                    // DIRECT METHOD: Check if transaction matches a learning registration that has ClassId
-                    // When a transaction has an associated learning registration with ClassId, it's a class enrollment
-                    // With ClassId -> Center class enrollment
                     var classRegistrationMatch = recentRegistrations.FirstOrDefault(lr =>
                         lr.ClassId.HasValue && /* ClassId has value */
                         originalTransaction != null &&
                         lr.RequestDate != default &&
-                        Math.Abs((originalTransaction.TransactionDate - lr.RequestDate).TotalMinutes) < 5); // 5 minute window
+                        Math.Abs((originalTransaction.TransactionDate - lr.RequestDate).TotalMinutes) < 5);
 
-                    // DIRECT METHOD: Check if transaction matches a learning registration without ClassId 
-                    // When a transaction has an associated learning registration without ClassId, it's a one-on-one registration fee
-                    // Without ClassId -> Registration fee
                     var oneOnOneRegistrationMatch = recentRegistrations.FirstOrDefault(lr =>
                         !lr.ClassId.HasValue && /* ClassId is null */
                         originalTransaction != null &&
                         lr.RequestDate != default &&
-                        Math.Abs((originalTransaction.TransactionDate - lr.RequestDate).TotalMinutes) < 5); // 5 minute window
+                        Math.Abs((originalTransaction.TransactionDate - lr.RequestDate).TotalMinutes) < 5);
 
                     if (classRegistrationMatch != null)
                     {
-                        // This is definitely a class enrollment payment
                         dto.PaymentType = "Tham gia lớp học trung tâm";
                         continue;
                     }
-                    else if (oneOnOneRegistrationMatch != null && dto.Amount == 50000) // Standard deposit amount
+                    else if (oneOnOneRegistrationMatch != null && dto.Amount == 50000)
                     {
-                        // This is definitely a registration fee for one-on-one learning
                         dto.PaymentType = "Phí đăng ký";
                         continue;
                     }
 
-                    // If we have a payment record, use its information
                     if (payment != null)
                     {
                         if (payment.PaymentFor == PaymentFor.LearningRegistration)
@@ -170,20 +154,17 @@ namespace InstruLearn_Application.BLL.Service
 
                             if (registration != null)
                             {
-                                // Check if this is a class registration (has ClassId)
                                 if (registration.ClassId.HasValue)
                                 {
                                     dto.PaymentType = "Tham gia lớp học trung tâm";
                                     continue;
                                 }
-                                // If ClassId is null, this is a one-on-one registration fee
                                 else if (!registration.ClassId.HasValue)
                                 {
                                     dto.PaymentType = "Phí đăng ký";
                                     continue;
                                 }
 
-                                // If we got here, process other payment amount checks
                                 if (registration.Price.HasValue)
                                 {
                                     decimal totalPrice = registration.Price.Value;
@@ -228,12 +209,10 @@ namespace InstruLearn_Application.BLL.Service
                     }
                     else
                     {
-                        // Special handling for 50000 VND deposits without payment records
                         if (originalTransaction != null &&
                             originalTransaction.TransactionType == TransactionType.Payment &&
                             Math.Abs(originalTransaction.Amount - 50000) < 0.1m)
                         {
-                            // This is very likely a registration deposit
                             dto.PaymentType = "Phí đăng ký";
                             continue;
                         }

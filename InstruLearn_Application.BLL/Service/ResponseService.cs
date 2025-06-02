@@ -36,7 +36,7 @@ namespace InstruLearn_Application.BLL.Service
             var responseDtos = responses.Select(r => new ResponseForLearningRegisDTO
             {
                 ResponseId = r.ResponseId,
-                ResponseDescription = r.ResponseName, // Changed from ResponseName
+                ResponseDescription = r.ResponseName,
                 ResponseTypes = new List<ReponseTypeDTO>
             {
                 _mapper.Map<ReponseTypeDTO>(r.ResponseType)
@@ -72,7 +72,7 @@ namespace InstruLearn_Application.BLL.Service
             var responseDto = new ResponseForLearningRegisDTO
             {
                 ResponseId = response.ResponseId,
-                ResponseDescription = response.ResponseName, // Changed from ResponseName
+                ResponseDescription = response.ResponseName,
                 ResponseTypes = new List<ReponseTypeDTO>
             {
                 _mapper.Map<ReponseTypeDTO>(response.ResponseType)
@@ -104,7 +104,7 @@ namespace InstruLearn_Application.BLL.Service
                 var response = new Response
                 {
                     ResponseTypeId = createResponseDTO.ResponseTypeId,
-                    ResponseName = createResponseDTO.ResponseDescription // Changed from ResponseName
+                    ResponseName = createResponseDTO.ResponseDescription
                 };
 
                 await _unitOfWork.ResponseRepository.AddAsync(response);
@@ -115,7 +115,7 @@ namespace InstruLearn_Application.BLL.Service
                 var responseDto = new ResponseForLearningRegisDTO
                 {
                     ResponseId = createdResponse.ResponseId,
-                    ResponseDescription = createdResponse.ResponseName, // Changed from ResponseName
+                    ResponseDescription = createdResponse.ResponseName,
                     ResponseTypes = new List<ReponseTypeDTO>
                 {
                     _mapper.Map<ReponseTypeDTO>(createdResponse.ResponseType)
@@ -152,8 +152,7 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Update the ResponseName property using the ResponseDescription from DTO
-                response.ResponseName = updateResponseDTO.ResponseDescription; // Changed from ResponseName
+                response.ResponseName = updateResponseDTO.ResponseDescription;
 
                 await _unitOfWork.ResponseRepository.UpdateAsync(response);
                 await _unitOfWork.SaveChangeAsync();
@@ -163,7 +162,7 @@ namespace InstruLearn_Application.BLL.Service
                 var responseDto = new ResponseForLearningRegisDTO
                 {
                     ResponseId = updatedResponse.ResponseId,
-                    ResponseDescription = updatedResponse.ResponseName, // Changed from ResponseName
+                    ResponseDescription = updatedResponse.ResponseName,
                     ResponseTypes = new List<ReponseTypeDTO>
                 {
                     _mapper.Map<ReponseTypeDTO>(updatedResponse.ResponseType)
