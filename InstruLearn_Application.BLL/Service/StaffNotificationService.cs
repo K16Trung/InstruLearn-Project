@@ -604,6 +604,7 @@ namespace InstruLearn_Application.BLL.Service
             {
                 _logger.LogInformation($"Processing teacher change request: notification={notificationId}, learningRegis={learningRegisId}, newTeacher={newTeacherId}");
 
+                // Get the notification first
                 var specificNotification = await _unitOfWork.StaffNotificationRepository.GetByIdAsync(notificationId);
                 if (specificNotification == null || specificNotification.Type != NotificationType.TeacherChangeRequest ||
                     specificNotification.LearningRegisId != learningRegisId)
@@ -618,6 +619,7 @@ namespace InstruLearn_Application.BLL.Service
 
                 _logger.LogInformation($"Current notification status: {specificNotification.Status}");
 
+                // Perform validations
                 var learningRegis = await _unitOfWork.LearningRegisRepository.GetWithIncludesAsync(
                     lr => lr.LearningRegisId == learningRegisId && lr.Status == LearningRegis.FourtyFeedbackDone,
                     "Teacher,Learner.Account");
@@ -632,8 +634,8 @@ namespace InstruLearn_Application.BLL.Service
                 }
 
                 var registration = learningRegis.First();
-
                 var newTeacher = await _unitOfWork.TeacherRepository.GetByIdAsync(newTeacherId);
+
                 if (newTeacher == null)
                 {
                     return new ResponseDTO
@@ -649,7 +651,6 @@ namespace InstruLearn_Application.BLL.Service
                     : null;
 
                 bool isSameTeacher = originalTeacherId.HasValue && originalTeacherId.Value == newTeacherId;
-                _logger.LogInformation($"Teacher change request: Old teacher ID: {originalTeacherId}, New teacher ID: {newTeacherId}, Same teacher: {isSameTeacher}");
 
                 if (isSameTeacher && string.IsNullOrWhiteSpace(changeReason))
                 {
@@ -660,18 +661,23 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
+                // Perform changes in a critical transaction
                 using var transaction = await _unitOfWork.BeginTransactionAsync();
                 try
                 {
+                    // Update learning registration
                     registration.TeacherId = newTeacherId;
                     registration.PaymentDeadline = DateTime.Now.AddDays(1);
                     registration.TeacherChangeProcessed = true;
                     registration.ChangeTeacherRequested = true;
                     registration.SentTeacherChangeReminder = false;
                     await _unitOfWork.LearningRegisRepository.UpdateAsync(registration);
+                    await _unitOfWork.SaveChangeAsync(); // Save changes immediately
 
+                    // Update schedules
                     var schedules = await _unitOfWork.ScheduleRepository.GetSchedulesByLearningRegisIdAsync(learningRegisId);
-                    var futureSchedules = schedules.Where(s => s.StartDay >= DateOnly.FromDateTime(DateTime.Today) && s.AttendanceStatus == AttendanceStatus.NotYet).ToList();
+                    var futureSchedules = schedules.Where(s => s.StartDay >= DateOnly.FromDateTime(DateTime.Today) &&
+                                                              s.AttendanceStatus == AttendanceStatus.NotYet).ToList();
 
                     foreach (var schedule in futureSchedules)
                     {
@@ -683,14 +689,21 @@ namespace InstruLearn_Application.BLL.Service
                                 changeReason);
                         await _unitOfWork.ScheduleRepository.UpdateAsync(schedule);
                     }
+                    await _unitOfWork.SaveChangeAsync(); // Save changes immediately
 
-                    // Directly update notification status
+                    // CRITICAL PART: Update notification status directly in the database
+                    _logger.LogInformation($"Updating notification {notificationId} status from {specificNotification.Status} to {NotificationStatus.Resolved}");
+
+                    // Direct SQL approach as a last resort
+                    string sql = $"UPDATE StaffNotifications SET Status = {(int)NotificationStatus.Resolved} WHERE NotificationId = {notificationId}";
+                    await _unitOfWork.dbContext.Database.ExecuteSqlRawAsync(sql);
+
+                    // Also update the in-memory object
                     specificNotification.Status = NotificationStatus.Resolved;
                     await _unitOfWork.StaffNotificationRepository.UpdateAsync(specificNotification);
-                    _logger.LogInformation($"Directly updated notification {notificationId} status to Resolved");
-
                     await _unitOfWork.SaveChangeAsync();
 
+                    // Handle related notifications
                     var relatedNotifications = await _unitOfWork.StaffNotificationRepository
                         .GetQuery()
                         .Where(n => n.LearningRegisId == learningRegisId &&
@@ -698,19 +711,26 @@ namespace InstruLearn_Application.BLL.Service
                                   n.NotificationId != notificationId)
                         .ToListAsync();
 
-                    _logger.LogInformation($"Found {relatedNotifications.Count} additional teacher change notifications for learning registration {learningRegisId}");
+                    _logger.LogInformation($"Found {relatedNotifications.Count} additional teacher change notifications to update");
 
                     foreach (var relatedNotification in relatedNotifications)
                     {
-                        _logger.LogInformation($"Processing related notification {relatedNotification.NotificationId}, current status: {relatedNotification.Status}");
-                        // Directly update related notification statuses
+                        _logger.LogInformation($"Updating related notification {relatedNotification.NotificationId} from {relatedNotification.Status} to {NotificationStatus.Resolved}");
+
+                        // Direct SQL approach for related notifications too
+                        string relatedSql = $"UPDATE StaffNotifications SET Status = {(int)NotificationStatus.Resolved} WHERE NotificationId = {relatedNotification.NotificationId}";
+                        await _unitOfWork.dbContext.Database.ExecuteSqlRawAsync(relatedSql);
+
+                        // Update in-memory object
                         relatedNotification.Status = NotificationStatus.Resolved;
                         await _unitOfWork.StaffNotificationRepository.UpdateAsync(relatedNotification);
+                        await _unitOfWork.SaveChangeAsync();
                     }
 
-                    await _unitOfWork.SaveChangeAsync();
+                    // Commit all changes
                     await transaction.CommitAsync();
 
+                    // Send notifications
                     string effectiveReason = isSameTeacher ?
                         changeReason! :
                         (string.IsNullOrWhiteSpace(changeReason) ?
@@ -719,9 +739,9 @@ namespace InstruLearn_Application.BLL.Service
 
                     await SendTeacherChangeNotifications(registration, newTeacher, originalTeacher, changeReason, futureSchedules, isSameTeacher);
 
-                    // Verify the notification status after transaction commit
-                    var verificationCheck = await _unitOfWork.StaffNotificationRepository.GetByIdAsync(notificationId);
-                    _logger.LogInformation($"Verification status check: notification {notificationId} is now {verificationCheck?.Status.ToString() ?? "unknown"}");
+                    // Verify the status after all operations
+                    await _unitOfWork.dbContext.Entry(specificNotification).ReloadAsync();
+                    _logger.LogInformation($"FINAL VERIFICATION: Notification {notificationId} status is now {specificNotification.Status}");
 
                     var attendedSessions = schedules.Count(s => s.AttendanceStatus == AttendanceStatus.Present || s.AttendanceStatus == AttendanceStatus.Absent);
                     var totalSessions = schedules.Count;
@@ -737,6 +757,9 @@ namespace InstruLearn_Application.BLL.Service
                         {
                             LearningRegisId = learningRegisId,
                             NewTeacherId = newTeacherId,
+                            NotificationId = notificationId,
+                            NotificationStatus = specificNotification.Status.ToString(),
+                            NotificationResolved = specificNotification.Status == NotificationStatus.Resolved,
                             NewTeacherName = newTeacher.Fullname,
                             OriginalTeacherId = originalTeacherId,
                             OriginalTeacherName = originalTeacher?.Fullname ?? "No previous teacher",
@@ -744,9 +767,8 @@ namespace InstruLearn_Application.BLL.Service
                             CompletedSessions = attendedSessions,
                             CompletedPercentage = Math.Round(completedPercentage, 1),
                             RemainingSchedules = totalSessions - attendedSessions,
-                            NotificationStatus = verificationCheck?.Status.ToString() ?? "Unknown",
-                            NotificationResolved = verificationCheck?.Status == NotificationStatus.Resolved,
-                            IsSameTeacher = isSameTeacher
+                            IsSameTeacher = isSameTeacher,
+                            UpdateTimestamp = DateTime.Now
                         }
                     };
                 }
