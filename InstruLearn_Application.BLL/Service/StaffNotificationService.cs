@@ -40,6 +40,8 @@ namespace InstruLearn_Application.BLL.Service
 
                 var allNotifications = await _unitOfWork.StaffNotificationRepository.GetContinueWithTeacherChangeRequestsAsync();
 
+                allNotifications = allNotifications?.Where(n => n.Status != NotificationStatus.Resolved).ToList();
+
                 if (allNotifications == null || !allNotifications.Any())
                 {
                     return new ResponseDTO
@@ -90,8 +92,6 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     if (notifications[i].LearningRegisId.HasValue)
                     {
-                        var originalStatus = notifications[i].Status;
-                        var originalType = notifications[i].Type;
                         var registrationData = await _unitOfWork.LearningRegisRepository.GetWithIncludesAsync(
                             lr => lr.LearningRegisId == notifications[i].LearningRegisId.Value &&
                                   lr.Status == LearningRegis.FourtyFeedbackDone,
@@ -130,8 +130,6 @@ namespace InstruLearn_Application.BLL.Service
                                     "");
                             }
                         }
-                        notificationDTOs[i].Status = originalStatus;
-                        notificationDTOs[i].Type = originalType;
                     }
                 }
 
