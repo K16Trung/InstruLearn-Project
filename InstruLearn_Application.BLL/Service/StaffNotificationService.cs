@@ -660,6 +660,7 @@ namespace InstruLearn_Application.BLL.Service
                 using var transaction = await _unitOfWork.BeginTransactionAsync();
                 try
                 {
+                    // Update learning registration
                     registration.TeacherId = newTeacherId;
                     registration.PaymentDeadline = DateTime.Now.AddDays(1);
                     registration.TeacherChangeProcessed = true;
@@ -667,6 +668,7 @@ namespace InstruLearn_Application.BLL.Service
                     registration.SentTeacherChangeReminder = false;
                     await _unitOfWork.LearningRegisRepository.UpdateAsync(registration);
 
+                    // Update schedules
                     var schedules = await _unitOfWork.ScheduleRepository.GetSchedulesByLearningRegisIdAsync(learningRegisId);
                     var futureSchedules = schedules.Where(s => s.StartDay >= DateOnly.FromDateTime(DateTime.Today) && s.AttendanceStatus == AttendanceStatus.NotYet).ToList();
 
@@ -681,9 +683,11 @@ namespace InstruLearn_Application.BLL.Service
                         await _unitOfWork.ScheduleRepository.UpdateAsync(schedule);
                     }
 
+                    // Mark the primary notification as resolved using the repository method
+                    _logger.LogInformation($"Marking notification {notificationId} as resolved using MarkAsResolvedAsync");
                     await _unitOfWork.StaffNotificationRepository.MarkAsResolvedAsync(notificationId);
-                    _logger.LogInformation($"Marked notification {notificationId} as resolved using repository method");
 
+                    // Find all related notifications
                     var relatedNotifications = await _unitOfWork.StaffNotificationRepository
                         .GetQuery()
                         .Where(n => n.LearningRegisId == learningRegisId &&
@@ -691,22 +695,25 @@ namespace InstruLearn_Application.BLL.Service
                                    n.NotificationId != notificationId)
                         .ToListAsync();
 
-                    _logger.LogInformation($"Found {relatedNotifications.Count} additional teacher change notifications for learning registration {learningRegisId}");
+                    _logger.LogInformation($"Found {relatedNotifications.Count} additional teacher change notifications for registration {learningRegisId}");
 
+                    // Mark all related notifications as resolved
                     foreach (var relatedNotification in relatedNotifications)
                     {
-                        _logger.LogInformation($"Before update: Notification {relatedNotification.NotificationId} status: {relatedNotification.Status}");
+                        _logger.LogInformation($"Marking related notification {relatedNotification.NotificationId} as resolved using MarkAsResolvedAsync");
                         await _unitOfWork.StaffNotificationRepository.MarkAsResolvedAsync(relatedNotification.NotificationId);
-                        _logger.LogInformation($"Marked notification {relatedNotification.NotificationId} as resolved using repository method");
                     }
 
+                    // Save changes and commit transaction
                     await _unitOfWork.SaveChangeAsync();
                     await transaction.CommitAsync();
 
+                    // Verification check after transaction
                     var verificationCheck = await _unitOfWork.StaffNotificationRepository
                         .GetQuery()
-                        .Where(n => n.LearningRegisId == learningRegisId &&
-                                n.Type == NotificationType.TeacherChangeRequest)
+                        .Where(n => (n.NotificationId == notificationId ||
+                                   (n.LearningRegisId == learningRegisId &&
+                                    n.Type == NotificationType.TeacherChangeRequest)))
                         .ToListAsync();
 
                     foreach (var verifiedNotification in verificationCheck)
@@ -714,7 +721,9 @@ namespace InstruLearn_Application.BLL.Service
                         _logger.LogInformation($"Verification - Notification {verifiedNotification.NotificationId} status after transaction: {verifiedNotification.Status}");
                         if (verifiedNotification.Status != NotificationStatus.Resolved)
                         {
-                            _logger.LogWarning($"Notification {verifiedNotification.NotificationId} was not properly marked as resolved!");
+                            _logger.LogWarning($"Notification {verifiedNotification.NotificationId} was not properly marked as resolved! Attempting direct resolution.");
+                            await _unitOfWork.StaffNotificationRepository.MarkAsResolvedAsync(verifiedNotification.NotificationId);
+                            await _unitOfWork.SaveChangeAsync();
                         }
                     }
 
@@ -757,13 +766,6 @@ namespace InstruLearn_Application.BLL.Service
                     await transaction.RollbackAsync();
                     _logger.LogError(ex, "Error during teacher change transaction for learning registration {LearningRegisId}", learningRegisId);
                     throw;
-                }
-
-                var updatedNotification = await _unitOfWork.StaffNotificationRepository.GetByIdAsync(notificationId);
-                if (updatedNotification != null && updatedNotification.Status != NotificationStatus.Resolved)
-                {
-                    _logger.LogWarning($"Notification {notificationId} still not marked as resolved after transaction. Attempting direct update via repository method.");
-                    await _unitOfWork.StaffNotificationRepository.MarkAsResolvedAsync(notificationId);
                 }
             }
             catch (Exception ex)
