@@ -692,6 +692,7 @@ namespace InstruLearn_Application.BLL.Service
 
                     foreach (var relatedNotification in relatedNotifications)
                     {
+                        _logger.LogInformation($"Before update: Notification {relatedNotification.NotificationId} status: {relatedNotification.Status}");
                         relatedNotification.Status = NotificationStatus.Resolved;
                         await _unitOfWork.StaffNotificationRepository.UpdateAsync(relatedNotification);
                         _logger.LogInformation($"Marked notification {relatedNotification.NotificationId} as resolved");
@@ -699,6 +700,21 @@ namespace InstruLearn_Application.BLL.Service
 
                     await _unitOfWork.SaveChangeAsync();
                     await transaction.CommitAsync();
+
+                    var verificationCheck = await _unitOfWork.StaffNotificationRepository
+                        .GetQuery()
+                        .Where(n => n.LearningRegisId == learningRegisId &&
+                                n.Type == NotificationType.TeacherChangeRequest)
+                        .ToListAsync();
+
+                    foreach (var verifiedNotification in verificationCheck)
+                    {
+                        _logger.LogInformation($"Verification - Notification {verifiedNotification.NotificationId} status after transaction: {verifiedNotification.Status}");
+                        if (verifiedNotification.Status != NotificationStatus.Resolved)
+                        {
+                            _logger.LogWarning($"Notification {verifiedNotification.NotificationId} was not properly marked as resolved!");
+                        }
+                    }
 
                     string effectiveReason = isSameTeacher ?
                         changeReason! :
