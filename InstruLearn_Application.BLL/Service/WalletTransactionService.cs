@@ -124,13 +124,13 @@ namespace InstruLearn_Application.BLL.Service
                     }
 
                     var classRegistrationMatch = recentRegistrations.FirstOrDefault(lr =>
-                        lr.ClassId.HasValue && /* ClassId has value */
+                        lr.ClassId.HasValue &&
                         originalTransaction != null &&
                         lr.RequestDate != default &&
                         Math.Abs((originalTransaction.TransactionDate - lr.RequestDate).TotalMinutes) < 5);
 
                     var oneOnOneRegistrationMatch = recentRegistrations.FirstOrDefault(lr =>
-                        !lr.ClassId.HasValue && /* ClassId is null */
+                        !lr.ClassId.HasValue &&
                         originalTransaction != null &&
                         lr.RequestDate != default &&
                         Math.Abs((originalTransaction.TransactionDate - lr.RequestDate).TotalMinutes) < 5);

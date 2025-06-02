@@ -24,7 +24,6 @@ namespace InstruLearn_Application.BLL.Service
         }
         public async Task<ResponseDTO> CreateTemplateAsync(CreateLevelFeedbackTemplateDTO templateDTO)
         {
-            // Check if level exists
             var level = await _unitOfWork.LevelAssignedRepository.GetByIdAsync(templateDTO.LevelId);
             if (level == null)
             {
@@ -35,7 +34,6 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
-            // Check for duplicate criteria
             if (templateDTO.Criteria != null && templateDTO.Criteria.Any())
             {
                 var uniqueCriteria = templateDTO.Criteria
@@ -53,7 +51,6 @@ namespace InstruLearn_Application.BLL.Service
                 }
             }
 
-            // Check if a template already exists for this level and is active
             var existingTemplate = await _unitOfWork.LevelFeedbackTemplateRepository.GetTemplateForLevelAsync(templateDTO.LevelId);
             if (existingTemplate != null)
             {
@@ -64,12 +61,10 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
-            // Create a complete template with criteria in a single transaction
             using (var transaction = await _unitOfWork.dbContext.Database.BeginTransactionAsync())
             {
                 try
                 {
-                    // Create the template
                     var template = new LevelFeedbackTemplate
                     {
                         LevelId = templateDTO.LevelId,
@@ -78,29 +73,23 @@ namespace InstruLearn_Application.BLL.Service
                         CreatedAt = DateTime.Now
                     };
 
-                    // Add template to context but don't save yet
                     await _unitOfWork.LevelFeedbackTemplateRepository.AddAsync(template);
                     await _unitOfWork.SaveChangeAsync();
 
-                    // Get the ID of the newly created template
                     var createdTemplate = await _unitOfWork.LevelFeedbackTemplateRepository.GetAsync(
                         t => t.LevelId == templateDTO.LevelId && t.TemplateName == templateDTO.TemplateName);
 
-                    // Add criteria to the template if any
                     if (templateDTO.Criteria != null && templateDTO.Criteria.Any())
                     {
-                        // Create a list of criteria to add in a single operation
                         var criteriaToAdd = new List<LevelFeedbackCriterion>();
 
                         foreach (var criterionDTO in templateDTO.Criteria)
                         {
                             var criterion = _mapper.Map<LevelFeedbackCriterion>(criterionDTO);
                             criterion.TemplateId = createdTemplate.TemplateId;
-                            // Use the display order from the DTO
                             criteriaToAdd.Add(criterion);
                         }
 
-                        // Add all criteria to the repository
                         foreach (var criterion in criteriaToAdd)
                         {
                             await _unitOfWork.LevelFeedbackCriterionRepository.AddAsync(criterion);
@@ -142,13 +131,11 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
-            // Update template properties
             template.TemplateName = templateDTO.TemplateName;
             template.IsActive = templateDTO.IsActive;
 
             await _unitOfWork.LevelFeedbackTemplateRepository.UpdateAsync(template);
 
-            // Handle criteria updates
             if (templateDTO.Criteria != null)
             {
                 var existingCriteria = await _unitOfWork.LevelFeedbackCriterionRepository
@@ -159,7 +146,6 @@ namespace InstruLearn_Application.BLL.Service
                     .Select(c => c.CriterionId)
                     .ToList();
 
-                // Delete criteria not in the updated list
                 foreach (var criterionId in existingIds)
                 {
                     if (!updatedIds.Contains(criterionId))
@@ -168,13 +154,11 @@ namespace InstruLearn_Application.BLL.Service
                     }
                 }
 
-                // Update or add criteria
                 int order = 1;
                 foreach (var criterionDTO in templateDTO.Criteria)
                 {
                     if (criterionDTO.CriterionId > 0)
                     {
-                        // Update existing criterion
                         var criterion = existingCriteria.FirstOrDefault(c => c.CriterionId == criterionDTO.CriterionId);
                         if (criterion != null)
                         {
@@ -188,7 +172,6 @@ namespace InstruLearn_Application.BLL.Service
                     }
                     else
                     {
-                        // Add new criterion
                         var newCriterion = new LevelFeedbackCriterion
                         {
                             TemplateId = templateId,
@@ -214,7 +197,6 @@ namespace InstruLearn_Application.BLL.Service
 
         public async Task<ResponseDTO> DeleteTemplateAsync(int templateId)
         {
-            // Check if template exists
             var template = await _unitOfWork.LevelFeedbackTemplateRepository.GetByIdAsync(templateId);
             if (template == null)
             {
@@ -225,7 +207,6 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
-            // Check if template is used in any feedback
             var feedbacks = await _unitOfWork.ClassFeedbackRepository.GetAllAsync(f => f.TemplateId == templateId);
             if (feedbacks != null && feedbacks.Any())
             {
@@ -236,14 +217,12 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
-            // Delete all criteria first
             var criteria = await _unitOfWork.LevelFeedbackCriterionRepository.GetCriteriaByTemplateIdAsync(templateId);
             foreach (var criterion in criteria)
             {
                 await _unitOfWork.LevelFeedbackCriterionRepository.DeleteAsync(criterion.CriterionId);
             }
 
-            // Then delete template
             await _unitOfWork.LevelFeedbackTemplateRepository.DeleteAsync(templateId);
             await _unitOfWork.SaveChangeAsync();
 
@@ -266,7 +245,6 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
-            // Deactivate any other active templates for this level
             var activeTemplates = await _unitOfWork.LevelFeedbackTemplateRepository.GetAllAsync(
                 t => t.LevelId == template.LevelId && t.IsActive && t.TemplateId != templateId);
 
@@ -276,7 +254,6 @@ namespace InstruLearn_Application.BLL.Service
                 await _unitOfWork.LevelFeedbackTemplateRepository.UpdateAsync(activeTemplate);
             }
 
-            // Activate this template
             template.IsActive = true;
             await _unitOfWork.LevelFeedbackTemplateRepository.UpdateAsync(template);
             await _unitOfWork.SaveChangeAsync();

@@ -141,7 +141,7 @@ namespace InstruLearn_Application.BLL.Service
 
         private string HashPassword(string password)
         {
-            return BCrypt.Net.BCrypt.HashPassword(password); // Explicit namespace
+            return BCrypt.Net.BCrypt.HashPassword(password);
         }
 
         public async Task<ResponseDTO> DeleteManagerAsync(int managerId)

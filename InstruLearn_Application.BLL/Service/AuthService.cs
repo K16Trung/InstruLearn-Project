@@ -40,7 +40,6 @@ namespace InstruLearn_Application.BLL.Service
             _emailService = emailService;
         }
 
-        // Login
         public async Task<ResponseDTO> LoginAsync(LoginDTO loginDTO)
         {
             var response = new ResponseDTO();
@@ -91,7 +90,6 @@ namespace InstruLearn_Application.BLL.Service
             return response;
         }
 
-        // Register
         public async Task<ResponseDTO> RegisterAsync(RegisterDTO registerDTO)
         {
             var response = new ResponseDTO();
@@ -168,7 +166,6 @@ namespace InstruLearn_Application.BLL.Service
             return response;
         }
 
-        // Login google
         public async Task<ResponseDTO> GoogleLoginAsync(GoogleLoginDTO googleLoginDTO)
         {
             var response = new ResponseDTO();

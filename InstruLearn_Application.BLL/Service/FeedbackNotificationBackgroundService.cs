@@ -15,7 +15,6 @@ namespace InstruLearn_Application.BLL.Service
         private readonly ILogger<FeedbackNotificationBackgroundService> _logger;
         private readonly IServiceScopeFactory _serviceScopeFactory;
 
-        // Check once a day
         private readonly TimeSpan _checkInterval = TimeSpan.FromHours(24);
 
         public FeedbackNotificationBackgroundService(
@@ -50,7 +49,6 @@ namespace InstruLearn_Application.BLL.Service
                         _logger.LogWarning("Feedback notification check completed with warnings: {message}", result.Message);
                     }
 
-                    // Check for expired feedbacks and update their status
                     var expiredResult = await feedbackService.CheckForExpiredFeedbacksAsync();
                     if (expiredResult.IsSucceed)
                     {
@@ -66,7 +64,6 @@ namespace InstruLearn_Application.BLL.Service
                     _logger.LogError(ex, "Error occurred while checking for feedback notifications");
                 }
 
-                // Wait for the next check interval
                 await Task.Delay(_checkInterval, stoppingToken);
             }
 

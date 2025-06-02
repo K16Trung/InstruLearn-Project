@@ -17,19 +17,6 @@ namespace InstruLearn_Application.Controllers
         {
             _scheduleService = scheduleService;
         }
-
-        /*[HttpGet("learningRegis/{learningRegisId}")]
-        public async Task<IActionResult> GetSchedulesByLearningRegisId(int learningRegisId)
-        {
-            var schedules = await _scheduleService.GetSchedulesByLearningRegisIdAsync(learningRegisId);
-
-            if (schedules == null || !schedules.Any())
-            {
-                return NotFound("No schedules found for this Learning Registration ID.");
-            }
-
-            return Ok(schedules);
-        }*/
         
         [HttpGet("learningRegis/{learningRegisId}/schedules")]
         public async Task<IActionResult> GetSchedulesAsync(int learningRegisId)
@@ -105,7 +92,6 @@ namespace InstruLearn_Application.Controllers
 
             try
             {
-                // Parse comma-separated date strings into DateOnly array
                 string[] dateStrings = startDay.Split(',').Select(d => d.Trim()).ToArray();
                 var startDays = new List<DateOnly>();
 
@@ -194,13 +180,11 @@ namespace InstruLearn_Application.Controllers
             }
             DateOnly today = DateOnly.FromDateTime(DateTime.Today);
 
-            // The service method will validate if the schedule is for today
             var result = await _scheduleService.CheckClassAttendanceAsync(
                 scheduleId,
                 model.Status,
-                today); // Pass today's date for validation
+                today);
 
-            // Return BadRequest if the result indicates failure due to date mismatch
             if (!result.IsSucceed && result.Message.Contains("today"))
             {
                 return BadRequest(result);
@@ -266,7 +250,6 @@ namespace InstruLearn_Application.Controllers
             return BadRequest(result);
         }
 
-        // Add to InstruLearn_Application/Controllers/SchedulesController.cs
         [HttpPut("makeup/{scheduleId}")]
         public async Task<IActionResult> UpdateScheduleForMakeup(int scheduleId, [FromBody] UpdateScheduleMakeupDTO model)
         {

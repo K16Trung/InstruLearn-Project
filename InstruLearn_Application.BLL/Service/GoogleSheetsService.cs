@@ -529,7 +529,7 @@ namespace InstruLearn_Application.BLL.Service
                         ApplicationName = _applicationName
                     });
 
-                    var range = $"{_sheetName}!A2:J"; // Start from row 2 to skip headers
+                    var range = $"{_sheetName}!A2:J";
                     LogInfo($"Fetching data from range: {range}");
 
                     var request = service.Spreadsheets.Values.Get(_spreadsheetId, range);
@@ -547,26 +547,23 @@ namespace InstruLearn_Application.BLL.Service
                     {
                         try
                         {
-                            // Ensure the row has enough columns
                             if (row.Count < 8)
                             {
                                 LogWarning($"Row has insufficient columns: {row.Count}. Expected at least 8 columns.");
                                 continue;
                             }
 
-                            // Parse certificate ID
                             if (!int.TryParse(row[0]?.ToString(), out int certId))
                             {
                                 LogWarning($"Could not parse Certificate ID: {row[0]}");
                                 continue;
                             }
 
-                            // Parse issue date
                             DateTime issueDate;
                             if (!DateTime.TryParse(row[5]?.ToString(), out issueDate))
                             {
                                 LogWarning($"Could not parse Issue Date: {row[5]}");
-                                issueDate = DateTime.MinValue; // Default value
+                                issueDate = DateTime.MinValue;
                             }
 
                             var certificate = new CertificationDataDTO
@@ -588,7 +585,6 @@ namespace InstruLearn_Application.BLL.Service
                         catch (Exception ex)
                         {
                             LogError($"Error parsing certificate row: {ex.Message}", ex);
-                            // Continue to next row
                         }
                     }
 

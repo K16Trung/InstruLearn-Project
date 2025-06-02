@@ -37,7 +37,6 @@ namespace InstruLearn_Application.Controllers
         [HttpPost("add-funds-vnpay")]
         public async Task<IActionResult> AddFundsWithVnpay([FromBody] AddFundsRequest request)
         {
-            // Get the client IP address
             string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
 
             var result = await _walletService.AddFundsWithVnpay(request.LearnerId, request.Amount, ipAddress);
@@ -68,7 +67,7 @@ namespace InstruLearn_Application.Controllers
 
             if (string.IsNullOrEmpty(request.Status))
             {
-                request.Status = "PAID"; // Default to PAID if not specified
+                request.Status = "PAID";
             }
 
             try

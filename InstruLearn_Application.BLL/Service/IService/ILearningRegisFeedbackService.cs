@@ -13,8 +13,6 @@ namespace InstruLearn_Application.BLL.Service.IService
     public interface ILearningRegisFeedbackService
     {
         Task<List<LearningRegisFeedbackDTO>> GetAllFeedbackAsync();
-
-        // Question management
         Task<ResponseDTO> CreateQuestionAsync(LearningRegisFeedbackQuestionDTO questionDTO);
         Task<ResponseDTO> UpdateQuestionAsync(int questionId, LearningRegisFeedbackQuestionDTO questionDTO);
         Task<ResponseDTO> DeleteQuestionAsync(int questionId);
@@ -22,8 +20,6 @@ namespace InstruLearn_Application.BLL.Service.IService
         Task<ResponseDTO> DeactivateQuestionAsync(int questionId);
         Task<LearningRegisFeedbackQuestionDTO> GetQuestionAsync(int questionId);
         Task<List<LearningRegisFeedbackQuestionDTO>> GetAllActiveQuestionsAsync();
-
-        // Feedback submission
         Task<ResponseDTO> SubmitFeedbackAsync(CreateLearningRegisFeedbackDTO createDTO);
         Task<ResponseDTO> UpdateFeedbackAsync(int feedbackId, UpdateLearningRegisFeedbackDTO updateDTO);
         Task<ResponseDTO> DeleteFeedbackAsync(int feedbackId);
@@ -32,7 +28,6 @@ namespace InstruLearn_Application.BLL.Service.IService
         Task<List<LearningRegisFeedbackDTO>> GetFeedbacksByTeacherIdAsync(int teacherId);
         Task<List<LearningRegisFeedbackDTO>> GetFeedbacksByLearnerIdAsync(int learnerId);
 
-        // Analytics
         Task<TeacherFeedbackSummaryDTO> GetTeacherFeedbackSummaryAsync(int teacherId);
     }
 }

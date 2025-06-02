@@ -31,11 +31,9 @@ namespace InstruLearn_Application.BLL.Service
             {
                 _logger.LogInformation($"Kiểm tra thông báo phản hồi cho ID học viên: {learnerId}");
 
-                // Get all completed feedbacks for this learner regardless of registration status
                 var allFeedbacks = await _unitOfWork.LearningRegisFeedbackRepository
                     .GetFeedbacksByLearnerIdAsync(learnerId);
 
-                // Get active learning registrations (40%, post-feedback, or 60%)
                 var learningRegs = await _unitOfWork.LearningRegisRepository
                     .GetWithIncludesAsync(
                         x => x.LearnerId == learnerId && (x.Status == LearningRegis.Fourty || x.Status == LearningRegis.FourtyFeedbackDone || x.Status == LearningRegis.Sixty),
@@ -46,7 +44,6 @@ namespace InstruLearn_Application.BLL.Service
                 var feedbacksToUpdate = new List<LearningRegisFeedback>();
                 var registrationsToUpdate = new List<Learning_Registration>();
 
-                // No active learning registrations or feedbacks
                 if ((learningRegs == null || !learningRegs.Any()) &&
                     (allFeedbacks == null || !allFeedbacks.Any()))
                 {
@@ -57,11 +54,9 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Get feedback questions for all notifications
                 var feedbackQuestions = await _unitOfWork.LearningRegisFeedbackQuestionRepository
                     .GetActiveQuestionsWithOptionsAsync();
 
-                // Format questions to avoid circular references
                 var questions = feedbackQuestions.Select(q => new
                 {
                     q.QuestionId,
@@ -77,13 +72,10 @@ namespace InstruLearn_Application.BLL.Service
                     }).ToList()
                 }).ToList();
 
-                // First, handle all completed feedbacks to ensure they're always included
                 foreach (var completedFeedback in allFeedbacks.Where(f => f.Status == FeedbackStatus.Completed))
                 {
-                    // Get the registration for this feedback
                     var regis = learningRegs?.FirstOrDefault(r => r.LearningRegisId == completedFeedback.LearningRegistrationId);
 
-                    // If the registration doesn't exist in our active list, fetch it directly
                     if (regis == null)
                     {
                         regis = await _unitOfWork.LearningRegisRepository
@@ -99,7 +91,6 @@ namespace InstruLearn_Application.BLL.Service
                         }
                     }
 
-                    // Calculate session information
                     var completedSessions = regis.Schedules
                         ?.Count(s => s.AttendanceStatus == AttendanceStatus.Present ||
                                   s.AttendanceStatus == AttendanceStatus.Absent) ?? 0;
@@ -109,7 +100,6 @@ namespace InstruLearn_Application.BLL.Service
                         ? (double)completedSessions / totalSessions * 100
                         : 0;
 
-                    // Get feedback answers
                     var feedbackAnswers = await _unitOfWork.LearningRegisFeedbackAnswerRepository
                         .GetAnswersByFeedbackIdAsync(completedFeedback.FeedbackId);
 
@@ -120,7 +110,6 @@ namespace InstruLearn_Application.BLL.Service
                         remainingPayment = Math.Round(totalPrice * 0.6m, 2);
                     }
 
-                    // Add the completed feedback notification
                     feedbackNotifications.Add(new
                     {
                         FeedbackId = completedFeedback.FeedbackId,
@@ -149,7 +138,6 @@ namespace InstruLearn_Application.BLL.Service
                     _logger.LogInformation($"                                                                                    ID {completedFeedback.FeedbackId}, registration {regis.LearningRegisId}");
                 }
 
-                // Now process active learning registrations for non-completed feedbacks
                 if (learningRegs != null && learningRegs.Any())
                 {
                     foreach (var regis in learningRegs)
@@ -169,24 +157,19 @@ namespace InstruLearn_Application.BLL.Service
                         var existingFeedback = allFeedbacks
                             .FirstOrDefault(f => f.LearningRegistrationId == regis.LearningRegisId);
 
-                        // Skip if already processed as completed
                         if (existingFeedback != null && existingFeedback.Status == FeedbackStatus.Completed)
                         {
                             continue;
                         }
 
-                        // Skip if below threshold and no completed feedback
                         if (completedSessions < fortyPercentThreshold)
                         {
                             _logger.LogInformation($"Bỏ qua bản đăng ký {regis.LearningRegisId} vì tỷ lệ hoàn thành dưới 40%");
                             continue;
                         }
 
-                        // The rest of your existing code for non-completed feedback goes here
-                        // (creating new feedback records, checking deadlines, etc.)
                         if (existingFeedback == null)
                         {
-                            // Create a new feedback record
                             var newFeedback = new LearningRegisFeedback
                             {
                                 LearningRegistrationId = regis.LearningRegisId,
@@ -211,7 +194,6 @@ namespace InstruLearn_Application.BLL.Service
                             feedbacksToUpdate.Add(existingFeedback);
                         }
 
-                        // Check for expired deadline
                         if (existingFeedback.DeadlineDate.HasValue &&
                             DateTime.Now > existingFeedback.DeadlineDate.Value &&
                             existingFeedback.Status != FeedbackStatus.Completed)
@@ -232,7 +214,6 @@ namespace InstruLearn_Application.BLL.Service
                             continue;
                         }
 
-                        // Add notification for feedback in progress
                         if (existingFeedback.Status == FeedbackStatus.NotStarted ||
                             existingFeedback.Status == FeedbackStatus.InProgress)
                         {
@@ -242,7 +223,6 @@ namespace InstruLearn_Application.BLL.Service
                                 remainingPayment = regis.Price.Value * 0.6m;
                             }
 
-                            // Calculate deadline information
                             int daysRemaining = 0;
                             string deadlineMessage = "";
 
@@ -251,7 +231,6 @@ namespace InstruLearn_Application.BLL.Service
                                 TimeSpan timeRemaining = existingFeedback.DeadlineDate.Value - DateTime.Now;
                                 daysRemaining = Math.Max(0, (int)Math.Ceiling(timeRemaining.TotalDays));
 
-                                // Create deadline message (keep the existing logic)
                                 if (daysRemaining < 1)
                                 {
                                     int hoursRemaining = Math.Max(0, (int)Math.Ceiling(timeRemaining.TotalHours));
@@ -290,7 +269,6 @@ namespace InstruLearn_Application.BLL.Service
                     }
                 }
 
-                // Save all updates
                 foreach (var feedback in feedbacksToUpdate)
                 {
                     await _unitOfWork.LearningRegisFeedbackRepository.UpdateAsync(feedback);
@@ -549,7 +527,6 @@ namespace InstruLearn_Application.BLL.Service
         {
             _logger.LogInformation($"Sending test feedback email notification to {email}");
 
-            // Using the existing email notification method
             await SendFeedbackEmailNotification(
                 email,
                 learnerName,
@@ -567,7 +544,6 @@ namespace InstruLearn_Application.BLL.Service
             {
                 _logger.LogInformation("Starting progress check for learners with Fourty status");
 
-                // Get learning registrations with Fourty status - these are learners who have paid 40% and are learning
                 var fortyStatusRegistrations = await _unitOfWork.LearningRegisRepository
                     .GetWithIncludesAsync(
                         x => x.Status == LearningRegis.Fourty,
@@ -586,45 +562,36 @@ namespace InstruLearn_Application.BLL.Service
                 int notificationCount = 0;
                 var results = new List<object>();
 
-                // Process each registration
                 foreach (var regis in fortyStatusRegistrations)
                 {
                     try
                     {
-                        // Get completed sessions count (sessions marked as Present or Absent)
                         var completedSessions = regis.Schedules
                             .Count(s => s.AttendanceStatus == AttendanceStatus.Present ||
                                       s.AttendanceStatus == AttendanceStatus.Absent);
 
-                        // Total number of sessions
                         int totalSessions = regis.NumberOfSession;
 
-                        // Skip if no sessions or total sessions is invalid
                         if (totalSessions <= 0 || completedSessions <= 0)
                         {
                             continue;
                         }
 
-                        // Calculate the 40% threshold of total learning sessions (round up)
                         int fortyPercentThreshold = Math.Max(1, (int)Math.Ceiling(totalSessions * 0.4));
 
-                        // Calculate progress percentage
                         double progressPercentage = (double)completedSessions / totalSessions * 100;
 
                         _logger.LogInformation($"Checking learner {regis.LearnerId} progress: {completedSessions}/{totalSessions} sessions " +
                                                $"({progressPercentage:F1}%), threshold: {fortyPercentThreshold} sessions");
 
-                        // Check if the learner has completed at least 40% of their learning sessions
                         if (completedSessions >= fortyPercentThreshold)
                         {
                             _logger.LogInformation($"Learner {regis.LearnerId} has completed {completedSessions} out of {totalSessions} " +
                                                    $"sessions ({progressPercentage:F1}%), sending feedback notification");
 
-                            // Check if feedback already exists for this registration
                             var existingFeedback = await _unitOfWork.LearningRegisFeedbackRepository
                                 .GetFeedbackByRegistrationIdAsync(regis.LearningRegisId);
 
-                            // If no feedback exists, create one
                             if (existingFeedback == null)
                             {
                                 var newFeedback = new LearningRegisFeedback
@@ -640,28 +607,23 @@ namespace InstruLearn_Application.BLL.Service
                                 await _unitOfWork.LearningRegisFeedbackRepository.AddAsync(newFeedback);
                                 await _unitOfWork.SaveChangeAsync();
 
-                                // Retrieve the created feedback with its ID
                                 existingFeedback = await _unitOfWork.LearningRegisFeedbackRepository
                                     .GetFeedbackByRegistrationIdAsync(regis.LearningRegisId);
 
                                 _logger.LogInformation($"Created new feedback record with ID {existingFeedback.FeedbackId} for registration {regis.LearningRegisId}");
                             }
 
-                            // Send notification if feedback is not completed yet
                             if (existingFeedback != null &&
                                 (existingFeedback.Status == FeedbackStatus.NotStarted ||
                                  existingFeedback.Status == FeedbackStatus.InProgress))
                             {
-                                // If the learner has an email, send a notification email
                                 if (regis.Learner?.Account?.Email != null)
                                 {
                                     var learnerEmail = regis.Learner.Account.Email;
                                     var learnerName = regis.Learner.FullName;
 
-                                    // Calculate remaining payment (60% of total)
                                     decimal remainingPayment = regis.Price.HasValue ? regis.Price.Value * 0.6m : 0;
 
-                                    // Send email notification
                                     await SendFeedbackEmailNotification(
                                         learnerEmail,
                                         learnerName,
@@ -726,7 +688,6 @@ namespace InstruLearn_Application.BLL.Service
             {
                 _logger.LogInformation("Checking for expired feedback deadlines");
 
-                // Get all feedbacks that are not completed and have a deadline date in the past
                 var expiredFeedbacks = await _unitOfWork.LearningRegisFeedbackRepository
                     .GetWithIncludesAsync(
                         f => f.Status != FeedbackStatus.Completed &&
@@ -751,7 +712,6 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     try
                     {
-                        // Update feedback status
                         feedback.Status = FeedbackStatus.Completed;
                         feedback.CompletedAt = DateTime.Now;
                         feedback.AdditionalComments = (feedback.AdditionalComments ?? "") +
@@ -759,7 +719,6 @@ namespace InstruLearn_Application.BLL.Service
 
                         await _unitOfWork.LearningRegisFeedbackRepository.UpdateAsync(feedback);
 
-                        // Get and update the learning registration
                         var learningRegis = feedback.LearningRegistration;
                         if (learningRegis == null)
                         {
@@ -868,7 +827,6 @@ namespace InstruLearn_Application.BLL.Service
 
                         var endDate = DateTimeHelper.CalculateEndDate(classEntity.StartDate, classEntity.totalDays, classDayValues);
 
-                        // Check if the class is on its last day or has recently ended without feedback
                         bool isLastDay = endDate == today;
                         bool isRecentlyEnded = endDate < today && (includeOlderClasses || endDate >= sevenDaysAgo);
 
@@ -897,7 +855,6 @@ namespace InstruLearn_Application.BLL.Service
 
                             foreach (var learnerClass in classEntity.Learner_Classes)
                             {
-                                // Skip if no valid learner
                                 if (learnerClass.LearnerId <= 0 || learnerClass.Learner == null)
                                     continue;
 
@@ -916,7 +873,6 @@ namespace InstruLearn_Application.BLL.Service
                                     continue;
                                 }
 
-                                // At this point, we know we need to create feedback for this student
                                 anyLearnersMissingFeedback = true;
 
                                 var newFeedback = new ClassFeedback
@@ -950,7 +906,7 @@ namespace InstruLearn_Application.BLL.Service
                                 var notification = new StaffNotification
                                 {
                                     LearnerId = learnerClass.LearnerId,
-                                    LearningRegisId = null, // As this is a class feedback, not related to learning registration
+                                    LearningRegisId = null,
                                     Type = NotificationType.ClassFeedback,
                                     Status = NotificationStatus.Unread,
                                     CreatedAt = DateTime.Now,
@@ -980,16 +936,13 @@ namespace InstruLearn_Application.BLL.Service
 
                                     if (newFeedbacksCount > 0)
                                     {
-                                        // Find any learning registration that links to this teacher
                                         var teacherLearningRegis = await _unitOfWork.LearningRegisRepository
                                             .GetFirstOrDefaultAsync(lr => lr.TeacherId == classEntity.TeacherId);
 
-                                        // If we found a learning registration for this teacher
                                         if (teacherLearningRegis != null)
                                         {
                                             var teacherNotification = new StaffNotification
                                             {
-                                                // Use the teacher's learning registration ID to make it appear in their notifications
                                                 LearningRegisId = teacherLearningRegis.LearningRegisId,
                                                 LearnerId = null,
                                                 Type = NotificationType.ClassFeedback,
@@ -1080,7 +1033,7 @@ namespace InstruLearn_Application.BLL.Service
                         <p>Thanh toán còn lại: {remainingPayment.ToString("N0")} VND</p>
                         
                         <div style='background-color: #4CAF50; text-align: center; padding: 15px; margin: 20px 0; border-radius: 5px;'>
-                            <a href='http://localhost:3000/notification' style='color: white; text-decoration: none; font-weight: bold; font-size: 16px;'>
+                            <a href='https://instru-learn-cc1.vercel.app/notification' style='color: white; text-decoration: none; font-weight: bold; font-size: 16px;'>
                                 Hoàn thành Biểu mẫu phản hồi
                             </a>
                         </div>

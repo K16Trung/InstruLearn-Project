@@ -43,7 +43,6 @@ namespace InstruLearn_Application.BLL.Service
                     _logger.LogError(ex, "Error occurred while processing payment deadlines");
                 }
 
-                // Wait for the next check interval
                 await Task.Delay(_checkInterval, stoppingToken);
             }
         }
@@ -56,7 +55,6 @@ namespace InstruLearn_Application.BLL.Service
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
             var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
 
-            // Get all learning registrations with status 'Accepted' or 'FourtyFeedbackDone'
             var pendingRegistrations = await unitOfWork.LearningRegisRepository
                 .GetWithIncludesAsync(
                     x => (x.Status == LearningRegis.Accepted || x.Status == LearningRegis.FourtyFeedbackDone) &&
@@ -68,7 +66,6 @@ namespace InstruLearn_Application.BLL.Service
 
             foreach (var registration in pendingRegistrations)
             {
-                // If payment deadline has passed
                 if (DateTime.Now > registration.PaymentDeadline)
                 {
                     _logger.LogInformation("Processing expired payment for registration ID: {id}, LearnerId: {learnerId}, Status: {status}",
@@ -78,7 +75,6 @@ namespace InstruLearn_Application.BLL.Service
                     {
                         using var transaction = await unitOfWork.BeginTransactionAsync();
 
-                        // Update status to rejected or cancelled based on current state
                         if (registration.Status == LearningRegis.Accepted)
                         {
                             registration.Status = LearningRegis.Cancelled;
@@ -89,11 +85,9 @@ namespace InstruLearn_Application.BLL.Service
                             registration.Status = LearningRegis.Cancelled;
                             registration.LearningRequest = "Quá hạn thanh toán 60%";
 
-                            // Get all schedules associated with this learning registration
                             var schedules = registration.Schedules?.ToList() ??
                                 await unitOfWork.ScheduleRepository.GetSchedulesByLearningRegisIdAsync(registration.LearningRegisId);
 
-                            // Delete all schedules for this learning registration
                             foreach (var schedule in schedules)
                             {
                                 await unitOfWork.ScheduleRepository.DeleteAsync(schedule.ScheduleId);
@@ -105,7 +99,6 @@ namespace InstruLearn_Application.BLL.Service
 
                         await unitOfWork.SaveChangeAsync();
 
-                        // Send notification emails
                         if (registration.Learner?.Account?.Email != null)
                         {
                             try
@@ -144,7 +137,6 @@ namespace InstruLearn_Application.BLL.Service
                             }
                         }
 
-                        // Notify teacher if it's a FourtyFeedbackDone status
                         if (registration.Status == LearningRegis.Cancelled &&
                             registration.Teacher?.AccountId != null &&
                             registration.Schedules?.Any() == true)

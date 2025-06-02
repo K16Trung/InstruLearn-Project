@@ -58,10 +58,8 @@ namespace InstruLearn_Application.BLL.Service
 
                 var emailNotifications = new List<NotificationDTO>();
 
-                // Get staff notifications for this learner but filter out those that aren't meant for learners
                 var allStaffNotifications = await _unitOfWork.StaffNotificationRepository.GetNotificationsByLearnerIdAsync(learnerId);
 
-                // Define notification types that are relevant for learners
                 var learnerRelevantNotificationTypes = new[]
                 {
                     NotificationType.PaymentReminder,
@@ -71,7 +69,6 @@ namespace InstruLearn_Application.BLL.Service
                     NotificationType.RegistrationRejected
                 };
 
-                // Filter notifications to include only types relevant for learners
                 var relevantStaffNotifications = allStaffNotifications
                     .Where(n =>
                         learnerRelevantNotificationTypes.Contains(n.Type) &&
@@ -95,14 +92,12 @@ namespace InstruLearn_Application.BLL.Service
                     });
                 }
 
-                // Rest of the code remains the same
                 var allLearningRegistrations = await _unitOfWork.LearningRegisRepository.GetRegistrationsByLearnerIdAsync(learnerId);
                 var oneOnOneLearningRegistrations = allLearningRegistrations.Where(r => r.RegisTypeId == 1).ToList();
                 _logger.LogInformation($"Found {oneOnOneLearningRegistrations.Count} 1:1 learning registrations for learner ID: {learnerId}");
 
                 foreach (var registration in oneOnOneLearningRegistrations)
                 {
-                    // Payment deadline notifications
                     if (registration.Status == LearningRegis.FourtyFeedbackDone && registration.PaymentDeadline.HasValue)
                     {
                         decimal remainingPayment = registration.Price.HasValue ? registration.Price.Value * 0.6m : 0;
@@ -122,7 +117,6 @@ namespace InstruLearn_Application.BLL.Service
                         });
                     }
 
-                    // Registration status change notifications
                     string statusMessage = "";
                     string statusTitle = "";
 
@@ -209,7 +203,6 @@ namespace InstruLearn_Application.BLL.Service
                         emailNotifications.Add(notification);
                     }
 
-                    // Learning path confirmation notifications
                     if (registration.Status == LearningRegis.Accepted || registration.Status == LearningRegis.Fourty)
                     {
                         try
@@ -217,7 +210,6 @@ namespace InstruLearn_Application.BLL.Service
                             _logger.LogInformation($"Processing notification for registration ID: {registration.LearningRegisId}, " +
                                                   $"Status: {registration.Status}, HasPendingLearningPath: {registration.HasPendingLearningPath}");
 
-                            // Check if learning paths actually exist
                             var learningPathSessions = await _unitOfWork.LearningPathSessionRepository
                                 .GetByLearningRegisIdAsync(registration.LearningRegisId);
 
@@ -227,12 +219,10 @@ namespace InstruLearn_Application.BLL.Service
 
                             if (hasConfirmedLearningPath)
                             {
-                                // Check if there's already a notification for this learning registration
                                 var existingNotification = allStaffNotifications
                                     .FirstOrDefault(n => n.LearningRegisId == registration.LearningRegisId &&
                                                      n.Type == NotificationType.CreateLearningPath);
 
-                                // Learning path exists and has been confirmed - show payment notification
                                 int sessionCount = learningPathSessions.Count;
                                 _logger.LogInformation($"Found {sessionCount} confirmed learning path session(s)");
 
@@ -269,7 +259,6 @@ namespace InstruLearn_Application.BLL.Service
                                     LearningRequest = registration.LearningRequest
                                 });
                             }
-                            // The "registration accepted" notification is already handled in the earlier switch statement
                         }
                         catch (Exception ex)
                         {
@@ -278,7 +267,6 @@ namespace InstruLearn_Application.BLL.Service
                     }
                 }
 
-                // Feedback notifications
                 var feedbacks = await _unitOfWork.LearningRegisFeedbackRepository.GetFeedbacksByLearnerIdAsync(learnerId);
                 _logger.LogInformation($"Found {feedbacks?.Count ?? 0} feedback notifications for learner ID: {learnerId}");
 
@@ -343,7 +331,6 @@ namespace InstruLearn_Application.BLL.Service
 
                 if (classId.HasValue)
                 {
-                    // If a specific class ID is provided, filter notifications for that class
                     var classInfo = await _unitOfWork.ClassRepository.GetByIdAsync(classId.Value);
                     if (classInfo == null)
                     {

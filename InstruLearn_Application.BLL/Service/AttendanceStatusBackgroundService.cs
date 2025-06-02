@@ -14,7 +14,7 @@ namespace InstruLearn_Application.BLL.Service
     {
         private readonly ILogger<AttendanceStatusBackgroundService> _logger;
         private readonly IServiceProvider _serviceProvider;
-        private readonly TimeSpan _interval = TimeSpan.FromHours(4); // Run every 4 hours
+        private readonly TimeSpan _interval = TimeSpan.FromHours(4);
 
         public AttendanceStatusBackgroundService(
             ILogger<AttendanceStatusBackgroundService> logger,
@@ -34,7 +34,6 @@ namespace InstruLearn_Application.BLL.Service
 
                 try
                 {
-                    // Create a scope to resolve the schedule service
                     using (var scope = _serviceProvider.CreateScope())
                     {
                         var scheduleService = scope.ServiceProvider.GetRequiredService<IScheduleService>();
@@ -55,7 +54,6 @@ namespace InstruLearn_Application.BLL.Service
                     _logger.LogError(ex, "Error executing attendance status auto-update");
                 }
 
-                // Wait for the next interval
                 _logger.LogInformation("Attendance Status Background Service is waiting for the next interval");
                 await Task.Delay(_interval, stoppingToken);
             }

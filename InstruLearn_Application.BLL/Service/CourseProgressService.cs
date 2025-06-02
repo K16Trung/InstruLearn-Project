@@ -295,7 +295,6 @@ namespace InstruLearn_Application.BLL.Service
 
                 if (learnerCourse == null)
                 {
-                    // If no progress exists yet, calculate it
                     double calculatedPercentage = await CalculateTypeBasedCompletionPercentageAsync(
                         learnerId, coursePackageId);
 

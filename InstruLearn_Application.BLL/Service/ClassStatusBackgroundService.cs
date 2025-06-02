@@ -62,13 +62,11 @@ namespace InstruLearn_Application.BLL.Service
                         await UpdateAllClassStatusesAsync(unitOfWork);
                     }
 
-                    //await Task.Delay(TimeSpan.FromHours(checkIntervalHours), stoppingToken);
                     await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
                     _logger.LogError(ex, "Error occurred while updating class statuses");
-                    //await Task.Delay(TimeSpan.FromMinutes(15), stoppingToken);
                     await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
                 }
             }
@@ -129,7 +127,6 @@ namespace InstruLearn_Application.BLL.Service
                         _logger.LogInformation("Updated class {ClassId} status from {OldStatus} to {NewStatus}",
                             classEntity.ClassId, oldStatus, newStatus);
 
-                        // Create temporary certificates when class status changes to Ongoing
                         if (oldStatus == ClassStatus.Scheduled && newStatus == ClassStatus.Ongoing)
                         {
                             await CreateTemporaryCertificatesForClass(unitOfWork, classEntity);
@@ -157,7 +154,6 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                // Get all learners in this class
                 var learners = await unitOfWork.dbContext.Learner_Classes
                     .Where(lc => lc.ClassId == classEntity.ClassId)
                     .Select(lc => lc.LearnerId)
@@ -172,7 +168,6 @@ namespace InstruLearn_Application.BLL.Service
                 _logger.LogInformation("Creating temporary certificates for {Count} learners in class {ClassId}",
                     learners.Count, classEntity.ClassId);
 
-                // Get teacher info
                 string teacherName = "Unknown Teacher";
                 if (classEntity.Teacher != null)
                 {
@@ -187,7 +182,6 @@ namespace InstruLearn_Application.BLL.Service
                     }
                 }
 
-                // Get subject info
                 string majorName = "Unknown Subject";
                 if (classEntity.Major != null)
                 {
@@ -202,10 +196,8 @@ namespace InstruLearn_Application.BLL.Service
                     }
                 }
 
-                // Create certificates for each learner
                 foreach (var learnerId in learners)
                 {
-                    // Check if learner already has a certificate for this class
                     var existingCertificates = await unitOfWork.CertificationRepository.GetByLearnerIdAsync(learnerId);
                     bool hasCertification = existingCertificates.Any(c =>
                         c.CertificationType == CertificationType.CenterLearning &&
@@ -218,7 +210,6 @@ namespace InstruLearn_Application.BLL.Service
                         continue;
                     }
 
-                    // Create a new temporary certification
                     var certification = new Certification
                     {
                         LearnerId = learnerId,
@@ -232,7 +223,6 @@ namespace InstruLearn_Application.BLL.Service
                     await unitOfWork.CertificationRepository.AddAsync(certification);
                     _logger.LogInformation("Created temporary certificate for learner {LearnerId} in class {ClassId}", learnerId, classEntity.ClassId);
 
-                    // Create a notification for attendance verification
                     var learner = await unitOfWork.LearnerRepository.GetByIdAsync(learnerId);
                     var staffNotification = new StaffNotification
                     {

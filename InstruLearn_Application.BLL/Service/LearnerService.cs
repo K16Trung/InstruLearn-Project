@@ -54,7 +54,6 @@ namespace InstruLearn_Application.BLL.Service
                 return response;
             }
 
-            // Change status to Banned
             var account = await _unitOfWork.AccountRepository.GetByIdAsync(learner.AccountId);
             account.IsActive = AccountStatus.Banned;
 
@@ -82,7 +81,6 @@ namespace InstruLearn_Application.BLL.Service
                 return response;
             }
 
-            // Change status to Banned
             var account = await _unitOfWork.AccountRepository.GetByIdAsync(learner.AccountId);
             account.IsActive = AccountStatus.Active;
 

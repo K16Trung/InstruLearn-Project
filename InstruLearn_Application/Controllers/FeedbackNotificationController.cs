@@ -83,7 +83,6 @@ namespace InstruLearn_Application.Controllers
 
 
         [HttpPost("run-auto-check")]
-        //[Authorize(Roles = "Admin,Staff,Manager")]
         public async Task<ActionResult<ResponseDTO>> RunAutomaticCheck()
         {
             var result = await _feedbackNotificationService.AutoCheckAndCreateFeedbackNotificationsAsync();
@@ -97,7 +96,6 @@ namespace InstruLearn_Application.Controllers
         }
 
         [HttpPost("test-email-notification")]
-        //[Authorize(Roles = "Admin,Staff,Manager")]
         public async Task<ActionResult<ResponseDTO>> TestEmailNotification([FromBody] TestEmailNotificationDTO model)
         {
             if (string.IsNullOrEmpty(model.Email))
@@ -111,7 +109,6 @@ namespace InstruLearn_Application.Controllers
 
             try
             {
-                // Create a test email notification
                 await _feedbackNotificationService.SendTestFeedbackEmailNotification(
                     model.Email,
                     model.LearnerName ?? "Test Learner",

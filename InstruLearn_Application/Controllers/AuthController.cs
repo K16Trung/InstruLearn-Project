@@ -66,7 +66,7 @@ namespace InstruLearn_Application.Controllers
                 return BadRequest(ModelState);
 
             var result = await _authService.ForgotPasswordAsync(forgotPasswordDTO);
-            return Ok(result); // Always return OK for security reasons
+            return Ok(result);
         }
 
         [HttpPost("reset-password")]

@@ -100,14 +100,12 @@ namespace InstruLearn_Application.BLL.Service
 
             await _unitOfWork.LearningRegisFeedbackQuestionRepository.UpdateAsync(question);
 
-            // Update options
             if (questionDTO.Options != null)
             {
                 var existingOptions = await _unitOfWork.LearningRegisFeedbackOptionRepository.GetOptionsByQuestionIdAsync(questionId);
                 var existingOptionIds = existingOptions.Select(o => o.OptionId).ToList();
                 var updatedOptionIds = questionDTO.Options.Where(o => o.OptionId > 0).Select(o => o.OptionId).ToList();
 
-                // Remove options that are not in the updated list
                 foreach (var optionId in existingOptionIds)
                 {
                     if (!updatedOptionIds.Contains(optionId))
@@ -116,12 +114,10 @@ namespace InstruLearn_Application.BLL.Service
                     }
                 }
 
-                // Update or add options
                 foreach (var optionDTO in questionDTO.Options)
                 {
                     if (optionDTO.OptionId > 0)
                     {
-                        // Update existing option
                         var option = existingOptions.FirstOrDefault(o => o.OptionId == optionDTO.OptionId);
                         if (option != null)
                         {
@@ -131,7 +127,6 @@ namespace InstruLearn_Application.BLL.Service
                     }
                     else
                     {
-                        // Add new option
                         var newOption = new LearningRegisFeedbackOption
                         {
                             QuestionId = questionId,
@@ -163,7 +158,6 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
-            // Delete options first
             var options = await _unitOfWork.LearningRegisFeedbackOptionRepository.GetOptionsByQuestionIdAsync(questionId);
             foreach (var option in options)
             {
@@ -243,7 +237,6 @@ namespace InstruLearn_Application.BLL.Service
 
         public async Task<ResponseDTO> SubmitFeedbackAsync(CreateLearningRegisFeedbackDTO createDTO)
         {
-            // Validate learning registration
             var learningRegis = await _unitOfWork.LearningRegisRepository.GetByIdAsync(createDTO.LearningRegistrationId);
             if (learningRegis == null)
             {
@@ -254,7 +247,6 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
-            // Validate learner
             var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(createDTO.LearnerId);
             if (learner == null)
             {
@@ -265,10 +257,8 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
-            // Check if feedback already exists
             var existingFeedback = await _unitOfWork.LearningRegisFeedbackRepository.GetFeedbackByRegistrationIdAsync(createDTO.LearningRegistrationId);
 
-            // Modified logic: Allow submission if feedback exists but is not completed yet
             if (existingFeedback != null && existingFeedback.Status == FeedbackStatus.Completed)
             {
                 return new ResponseDTO
@@ -278,7 +268,6 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
-            // Get all active questions to validate
             var activeQuestions = await _unitOfWork.LearningRegisFeedbackQuestionRepository.GetActiveQuestionsWithOptionsAsync();
             if (activeQuestions == null || !activeQuestions.Any())
             {
@@ -292,7 +281,6 @@ namespace InstruLearn_Application.BLL.Service
             var requiredQuestionIds = activeQuestions.Where(q => q.IsRequired).Select(q => q.QuestionId).ToList();
             var answeredQuestionIds = createDTO.Answers.Select(a => a.QuestionId).ToList();
 
-            // Check if all required questions are answered
             var missingRequiredQuestions = requiredQuestionIds.Except(answeredQuestionIds).ToList();
             if (missingRequiredQuestions.Any())
             {
@@ -313,13 +301,11 @@ namespace InstruLearn_Application.BLL.Service
 
                 if (existingFeedback != null)
                 {
-                    // Update existing feedback
                     existingFeedback.AdditionalComments = createDTO.AdditionalComments;
                     existingFeedback.TeacherChangeReason = createDTO.TeacherChangeReason;
                     existingFeedback.CompletedAt = DateTime.Now;
                     existingFeedback.Status = FeedbackStatus.Completed;
 
-                    // Delete existing answers if any
                     var existingAnswers = await _unitOfWork.LearningRegisFeedbackAnswerRepository
                         .GetAnswersByFeedbackIdAsync(existingFeedback.FeedbackId);
 
@@ -328,10 +314,8 @@ namespace InstruLearn_Application.BLL.Service
                         await _unitOfWork.LearningRegisFeedbackAnswerRepository.DeleteAsync(answer.AnswerId);
                     }
 
-                    // Add new answers
                     foreach (var answerDTO in createDTO.Answers)
                     {
-                        // Validate question exists and is active
                         var question = activeQuestions.FirstOrDefault(q => q.QuestionId == answerDTO.QuestionId);
                         if (question == null)
                         {
@@ -342,7 +326,6 @@ namespace InstruLearn_Application.BLL.Service
                             };
                         }
 
-                        // Validate option belongs to the question
                         if (question.Options == null || !question.Options.Any())
                         {
                             return new ResponseDTO
@@ -352,7 +335,6 @@ namespace InstruLearn_Application.BLL.Service
                             };
                         }
 
-                        // Validate option belongs to the question
                         var option = question.Options.FirstOrDefault(o => o.OptionId == answerDTO.SelectedOptionId);
                         if (option == null)
                         {
@@ -380,7 +362,6 @@ namespace InstruLearn_Application.BLL.Service
                 }
                 else
                 {
-                    // Create new feedback
                     var feedback = new LearningRegisFeedback
                     {
                         LearningRegistrationId = createDTO.LearningRegistrationId,
@@ -393,7 +374,6 @@ namespace InstruLearn_Application.BLL.Service
                         Answers = new List<LearningRegisFeedbackAnswer>()
                     };
 
-                    // Add the same block here too for newly created feedback
                     var relatedNotifications = await _unitOfWork.StaffNotificationRepository
                         .GetQuery()
                         .Where(n => n.LearningRegisId == createDTO.LearningRegistrationId &&
@@ -410,10 +390,8 @@ namespace InstruLearn_Application.BLL.Service
                         }
                     }
 
-                    // Add answers
                     foreach (var answerDTO in createDTO.Answers)
                     {
-                        // Validate question exists and is active
                         var question = activeQuestions.FirstOrDefault(q => q.QuestionId == answerDTO.QuestionId);
                         if (question == null)
                         {
@@ -424,7 +402,6 @@ namespace InstruLearn_Application.BLL.Service
                             };
                         }
 
-                        // Validate option belongs to the question
                         if (question.Options == null || !question.Options.Any())
                         {
                             return new ResponseDTO
@@ -434,7 +411,6 @@ namespace InstruLearn_Application.BLL.Service
                             };
                         }
 
-                        // Validate option belongs to the question
                         var option = question.Options.FirstOrDefault(o => o.OptionId == answerDTO.SelectedOptionId);
                         if (option == null)
                         {
@@ -455,18 +431,13 @@ namespace InstruLearn_Application.BLL.Service
                     await _unitOfWork.LearningRegisFeedbackRepository.AddAsync(feedback);
                     await _unitOfWork.SaveChangeAsync();
 
-                    // Get the feedback ID of the newly created feedback
                     var newFeedback = await _unitOfWork.LearningRegisFeedbackRepository
                         .GetFeedbackByRegistrationIdAsync(createDTO.LearningRegistrationId);
                     feedbackId = newFeedback.FeedbackId;
                 }
 
-                // Now implement the ProcessFeedbackCompletionAsync functionality
-
-                // If the learner wants to continue studying but change the teacher
                 if (createDTO.ContinueStudying && createDTO.ChangeTeacher)
                 {
-                    // Update learning registration status to indicate readiness for 60% payment
                     if (learningRegis.Status == LearningRegis.Fourty)
                     {
                         learningRegis.Status = LearningRegis.FourtyFeedbackDone;
@@ -477,7 +448,6 @@ namespace InstruLearn_Application.BLL.Service
                         await _unitOfWork.SaveChangeAsync();
                     }
 
-                    // Create a notification for staff to handle the teacher change request
                     var teacherChangeNotification = new StaffNotification
                     {
                         Title = "Yêu cầu thay đổi giáo viên",
@@ -492,7 +462,6 @@ namespace InstruLearn_Application.BLL.Service
                     await _unitOfWork.StaffNotificationRepository.AddAsync(teacherChangeNotification);
                     await _unitOfWork.SaveChangeAsync();
 
-                    // Send email notification to learner about the payment deadline
                     if (learner != null && !string.IsNullOrEmpty(learner.AccountId))
                     {
                         var learnerAccount = await _unitOfWork.AccountRepository.GetByIdAsync(learner.AccountId);
@@ -554,10 +523,8 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // If the learner wants to continue studying
                 if (createDTO.ContinueStudying)
                 {
-                    // Update learning registration status to indicate readiness for 60% payment
                     if (learningRegis.Status == LearningRegis.Fourty)
                     {
                         learningRegis.Status = LearningRegis.FourtyFeedbackDone;
@@ -567,7 +534,6 @@ namespace InstruLearn_Application.BLL.Service
                         await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
                         await _unitOfWork.SaveChangeAsync();
 
-                        // Send email notification to learner about the payment deadline
                         if (learner != null && !string.IsNullOrEmpty(learner.AccountId))
                         {
                             var learnerAccount = await _unitOfWork.AccountRepository.GetByIdAsync(learner.AccountId);
@@ -640,14 +606,11 @@ namespace InstruLearn_Application.BLL.Service
                 }
                 else
                 {
-                    // Learner doesn't want to continue
                     learningRegis.Status = LearningRegis.Cancelled;
                     await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
 
-                    // Get all schedules associated with this learning registration
                     var learningRegisSchedules = await _unitOfWork.ScheduleRepository.GetSchedulesByLearningRegisIdAsync(learningRegis.LearningRegisId);
 
-                    // Get teacher ID for notification
                     int? teacherId = null;
                     if (learningRegisSchedules.Any() && learningRegisSchedules.First().TeacherId.HasValue)
                     {
@@ -658,7 +621,6 @@ namespace InstruLearn_Application.BLL.Service
                         teacherId = learningRegis.TeacherId;
                     }
 
-                    // Delete all schedules for this learning registration
                     foreach (var schedule in learningRegisSchedules)
                     {
                         await _unitOfWork.ScheduleRepository.DeleteAsync(schedule.ScheduleId);
@@ -666,7 +628,6 @@ namespace InstruLearn_Application.BLL.Service
 
                     await _unitOfWork.SaveChangeAsync();
 
-                    // Send notification to teacher if applicable
                     if (teacherId.HasValue)
                     {
                         var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(teacherId.Value);
@@ -694,8 +655,6 @@ namespace InstruLearn_Application.BLL.Service
                                 }
                                 catch (Exception emailEx)
                                 {
-                                    // Log the error but don't fail the operation
-                                    // _logger.LogError(emailEx, "Failed to send email notification to teacher");
                                 }
                             }
                         }
@@ -737,24 +696,19 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
-            // Update additional comments
             feedback.AdditionalComments = updateDTO.AdditionalComments;
             feedback.CompletedAt = DateTime.Now;
 
-            // Get active questions for validation
             var activeQuestions = await _unitOfWork.LearningRegisFeedbackQuestionRepository.GetActiveQuestionsWithOptionsAsync();
 
-            // Delete existing answers
             var existingAnswers = await _unitOfWork.LearningRegisFeedbackAnswerRepository.GetAnswersByFeedbackIdAsync(feedbackId);
             foreach (var answer in existingAnswers)
             {
                 await _unitOfWork.LearningRegisFeedbackAnswerRepository.DeleteAsync(answer.AnswerId);
             }
 
-            // Add new answers
             foreach (var answerDTO in updateDTO.Answers)
             {
-                // Validate question exists and is active
                 var question = activeQuestions.FirstOrDefault(q => q.QuestionId == answerDTO.QuestionId);
                 if (question == null)
                 {
@@ -765,7 +719,6 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Validate option belongs to the question
                 var option = question.Options.FirstOrDefault(o => o.OptionId == answerDTO.SelectedOptionId);
                 if (option == null)
                 {
@@ -808,7 +761,6 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
-            // Delete answers first
             var answers = await _unitOfWork.LearningRegisFeedbackAnswerRepository.GetAnswersByFeedbackIdAsync(feedbackId);
             foreach (var answer in answers)
             {
@@ -874,45 +826,36 @@ namespace InstruLearn_Application.BLL.Service
 
             var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(teacherId);
 
-            // Get all questions and options for reference
             var allQuestions = await _unitOfWork.LearningRegisFeedbackQuestionRepository.GetAllAsync();
 
-            // Track overall statistics
             double overallRatingSum = 0;
             int overallRatingCount = 0;
 
-            // Track category statistics - use a constant category since we don't have Category property
             var categoryRatings = new Dictionary<string, List<double>>();
-            const string defaultCategory = "General"; // Use a default category for all questions
+            const string defaultCategory = "General";
 
-            // Track question statistics
             var questionSummaries = new Dictionary<int, QuestionSummaryDTO>();
 
-            // Process all feedback
             foreach (var feedback in feedbacks)
             {
                 foreach (var answer in feedback.Answers)
                 {
                     var questionId = answer.QuestionId;
-                    // Use position (order) instead of Value
                     int optionValue = GetOptionPositionAsValue(answer.SelectedOptionId);
                     var question = answer.Question ?? allQuestions.FirstOrDefault(q => q.QuestionId == questionId);
 
                     if (question == null)
                         continue;
 
-                    // Add to overall rating
                     overallRatingSum += optionValue;
                     overallRatingCount++;
 
-                    // Add to category ratings - use default category
                     if (!categoryRatings.ContainsKey(defaultCategory))
                     {
                         categoryRatings[defaultCategory] = new List<double>();
                     }
                     categoryRatings[defaultCategory].Add(optionValue);
 
-                    // Process question statistics
                     if (!questionSummaries.ContainsKey(questionId))
                     {
                         questionSummaries[questionId] = new QuestionSummaryDTO
@@ -925,7 +868,6 @@ namespace InstruLearn_Application.BLL.Service
                         };
                     }
 
-                    // Track option counts
                     var optionId = answer.SelectedOptionId;
                     var option = answer.SelectedOption;
 
@@ -939,7 +881,7 @@ namespace InstruLearn_Application.BLL.Service
                             OptionId = optionId,
                             OptionText = option?.OptionText ?? "Unknown",
                             Count = 1,
-                            Percentage = 0 // Will calculate later
+                            Percentage = 0
                         });
                     }
                     else
@@ -949,7 +891,6 @@ namespace InstruLearn_Application.BLL.Service
                 }
             }
 
-            // Calculate averages and percentages
             var overallAverage = overallRatingCount > 0 ? overallRatingSum / overallRatingCount : 0;
 
             var categoryAverages = new Dictionary<string, double>();
@@ -962,14 +903,12 @@ namespace InstruLearn_Application.BLL.Service
             {
                 var summary = questionSummaries[questionId];
 
-                // Calculate option percentages
                 int totalResponses = summary.OptionCounts.Sum(o => o.Count);
                 foreach (var option in summary.OptionCounts)
                 {
                     option.Percentage = totalResponses > 0 ? (double)option.Count / totalResponses * 100 : 0;
                 }
 
-                // Calculate question average
                 summary.AverageRating = totalResponses > 0
                     ? summary.OptionCounts.Sum(o => o.Count * GetOptionPositionAsValue(o.OptionId)) / totalResponses
                     : 0;
@@ -986,26 +925,20 @@ namespace InstruLearn_Application.BLL.Service
             };
         }
 
-        // Method to determine value based on option position
         private int GetOptionPositionAsValue(int optionId)
         {
-            // Get the option and its question
             var option = _unitOfWork.LearningRegisFeedbackOptionRepository.GetByIdAsync(optionId).Result;
             if (option == null)
                 return 0;
 
-            // Get all options for the question
             var options = _unitOfWork.LearningRegisFeedbackOptionRepository.GetOptionsByQuestionIdAsync(option.QuestionId).Result;
             if (options == null || !options.Any())
                 return 0;
 
-            // Sort options by ID (natural ordering)
             var sortedOptions = options.OrderBy(o => o.OptionId).ToList();
 
-            // Find the position (1-based index) of the current option
             int position = sortedOptions.FindIndex(o => o.OptionId == optionId) + 1;
 
-            // Return position as the value (first option = 1, second = 2, etc.)
             return position > 0 ? position : 1;
         }
 
@@ -1016,7 +949,6 @@ namespace InstruLearn_Application.BLL.Service
 
             var feedbackDTO = _mapper.Map<LearningRegisFeedbackDTO>(feedback);
 
-            // Calculate average rating (this is still needed since it's a calculated property)
             double totalRating = 0;
             int ratingCount = 0;
 
@@ -1024,7 +956,6 @@ namespace InstruLearn_Application.BLL.Service
             {
                 foreach (var answer in feedback.Answers)
                 {
-                    // Use the position-based value instead of the direct Value property
                     int value = GetOptionPositionAsValue(answer.SelectedOptionId);
                     totalRating += value;
                     ratingCount++;

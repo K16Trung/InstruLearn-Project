@@ -34,15 +34,12 @@ namespace InstruLearn_Application.Controllers
 
             try
             {
-                // Check if this is a cancel request or payment success
                 if (cancel == "true")
                 {
                     await _walletService.FailPaymentAsync(id);
-                    // Use a simpler URL during testing - this should eventually be your frontend URL
                     return Redirect("/payment-failed");
                 }
 
-                // For successful payments, we'll receive code=00 and status=PAID
                 if (code == "00" && status == "PAID")
                 {
                     var result = await _walletService.UpdatePaymentStatusAsync(id);
@@ -59,7 +56,6 @@ namespace InstruLearn_Application.Controllers
                     }
                 }
 
-                // Default case for other statuses
                 await _walletService.FailPaymentAsync(id);
                 return Redirect("/payment-failed");
             }
@@ -88,7 +84,6 @@ namespace InstruLearn_Application.Controllers
 
                 string transactionId = request.Data.TransactionId;
 
-                // Process based on payment status
                 if (request.Data.Status == "PAID")
                 {
                     var result = await _walletService.UpdatePaymentStatusAsync(transactionId);
@@ -129,7 +124,6 @@ namespace InstruLearn_Application.Controllers
             }
         }
 
-        // Add to PayOSWebhookController.cs
         [HttpGet("webhook-test")]
         public IActionResult TestWebhook()
         {

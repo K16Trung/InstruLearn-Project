@@ -252,7 +252,6 @@ namespace InstruLearn_Application.BLL.Service
                             FileLink = String.Empty
                         };
 
-                        // Save to Google Sheets in the background
                         _ = Task.Run(async () =>
                         {
                             try
@@ -261,14 +260,12 @@ namespace InstruLearn_Application.BLL.Service
                             }
                             catch (Exception ex)
                             {
-                                // Log error but don't fail the operation
                                 Console.WriteLine($"Error saving certificate to Google Sheets: {ex.Message}");
                             }
                         });
                     }
                     catch (Exception ex)
                     {
-                        // Log but continue - don't fail the certification process if sheets fails
                         Console.WriteLine($"Error preparing certificate for Google Sheets: {ex.Message}");
                     }
 
@@ -286,23 +283,19 @@ namespace InstruLearn_Application.BLL.Service
                 }
                 else if (isTemporaryCert)
                 {
-                    // Update existing temporary certificate
                     existingCertForClass.CertificationName = existingCertForClass.CertificationName.Replace("[TEMPORARY] ", "");
                     existingCertForClass.IssueDate = DateTime.Now;
 
                     await _unitOfWork.CertificationRepository.UpdateAsync(existingCertForClass);
                     await _unitOfWork.SaveChangeAsync();
 
-                    // Save updated certificate to Google Sheets
                     try
                     {
-                        // Store updated certificate in Google Sheets
                         var certificationData = new CertificationDataDTO
                         {
                             CertificationId = existingCertForClass.CertificationId,
                             LearnerName = learner.FullName,
-                            // Use the correct property based on your Learner class
-                            LearnerEmail = learner.FullName, // Replace with the correct email property
+                            LearnerEmail = learner.FullName,
                             CertificationType = existingCertForClass.CertificationType.ToString(),
                             CertificationName = existingCertForClass.CertificationName,
                             IssueDate = existingCertForClass.IssueDate,
@@ -312,7 +305,6 @@ namespace InstruLearn_Application.BLL.Service
                             FileLink = String.Empty
                         };
 
-                        // Save to Google Sheets in the background
                         _ = Task.Run(async () =>
                         {
                             try
@@ -321,14 +313,12 @@ namespace InstruLearn_Application.BLL.Service
                             }
                             catch (Exception ex)
                             {
-                                // Log error but don't fail the operation
                                 Console.WriteLine($"Error saving certificate to Google Sheets: {ex.Message}");
                             }
                         });
                     }
                     catch (Exception ex)
                     {
-                        // Log but continue
                         Console.WriteLine($"Error preparing certificate for Google Sheets: {ex.Message}");
                     }
 
@@ -346,7 +336,6 @@ namespace InstruLearn_Application.BLL.Service
                 }
             }
 
-            // Default return statement for when no certificate is issued
             return new ResponseDTO
             {
                 IsSucceed = true,
@@ -367,13 +356,11 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
-            // Update basic properties
             feedback.AdditionalComments = feedbackDTO.AdditionalComments;
             feedback.CompletedAt = DateTime.Now;
 
             await _unitOfWork.ClassFeedbackRepository.UpdateAsync(feedback);
 
-            // Handle evaluations updates
             if (feedbackDTO.Evaluations != null)
             {
                 var existingEvaluations = await _unitOfWork.ClassFeedbackEvaluationRepository
@@ -384,7 +371,6 @@ namespace InstruLearn_Application.BLL.Service
                     .Select(e => e.EvaluationId)
                     .ToList();
 
-                // Delete evaluations not in the updated list
                 foreach (var evaluationId in existingIds)
                 {
                     if (!updatedIds.Contains(evaluationId))
@@ -393,12 +379,10 @@ namespace InstruLearn_Application.BLL.Service
                     }
                 }
 
-                // Update or add evaluations
                 foreach (var evaluationDTO in feedbackDTO.Evaluations)
                 {
                     if (evaluationDTO.EvaluationId > 0)
                     {
-                        // Update existing evaluation
                         var evaluation = await _unitOfWork.ClassFeedbackEvaluationRepository
                             .GetByIdAsync(evaluationDTO.EvaluationId);
 
@@ -412,13 +396,11 @@ namespace InstruLearn_Application.BLL.Service
                     }
                     else
                     {
-                        // Verify criterion exists and belongs to the feedback's template
                         var criterion = await _unitOfWork.LevelFeedbackCriterionRepository
                             .GetByIdAsync(evaluationDTO.CriterionId);
 
                         if (criterion != null && criterion.TemplateId == feedback.TemplateId)
                         {
-                            // Add new evaluation
                             var newEvaluation = new ClassFeedbackEvaluation
                             {
                                 FeedbackId = feedbackId,
@@ -454,7 +436,6 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
-            // Delete evaluations first
             var evaluations = await _unitOfWork.ClassFeedbackEvaluationRepository
                 .GetEvaluationsByFeedbackIdAsync(feedbackId);
 
@@ -463,7 +444,6 @@ namespace InstruLearn_Application.BLL.Service
                 await _unitOfWork.ClassFeedbackEvaluationRepository.DeleteAsync(evaluation.EvaluationId);
             }
 
-            // Delete feedback
             await _unitOfWork.ClassFeedbackRepository.DeleteAsync(feedbackId);
             await _unitOfWork.SaveChangeAsync();
 
@@ -482,7 +462,6 @@ namespace InstruLearn_Application.BLL.Service
 
             var feedbackDto = _mapper.Map<ClassFeedbackDTO>(feedback);
 
-            // Calculate total percentage based on achievements
             if (feedback.Evaluations != null && feedback.Evaluations.Any())
             {
                 decimal totalPercentage = 0;
@@ -652,7 +631,6 @@ namespace InstruLearn_Application.BLL.Service
                     {
                         totalPercentage += evaluation.AchievedPercentage;
 
-                        // Add each evaluation to the DTO with all details
                         feedbackDto.Evaluations.Add(new ClassFeedbackEvaluationDTO
                         {
                             EvaluationId = evaluation.EvaluationId,
@@ -721,7 +699,6 @@ namespace InstruLearn_Application.BLL.Service
                 return feedbackDto;
             }
 
-            // Template-based DTO creation for when no feedback exists (unchanged code)
             var classEntity = await _unitOfWork.ClassRepository.GetByIdAsync(classId);
             if (classEntity == null)
                 return null;
@@ -745,7 +722,6 @@ namespace InstruLearn_Application.BLL.Service
             if (template == null)
                 return null;
 
-            // Create a template-based DTO with complete information
             var templateBasedDto = new ClassFeedbackDTO
             {
                 FeedbackId = 0,
@@ -763,7 +739,6 @@ namespace InstruLearn_Application.BLL.Service
                 TotalWeight = 0
             };
 
-            // Add criteria from template with null achievements
             if (template.Criteria != null)
             {
                 templateBasedDto.TotalWeight = template.Criteria.Sum(c => c.Weight);

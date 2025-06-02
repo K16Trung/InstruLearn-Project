@@ -54,7 +54,6 @@ namespace InstruLearn_Application.BLL.Service
                     classDTO.LevelName = "Chưa được gán";
                 }
 
-                // Set the SyllabusLink from the Level association
                 if (string.IsNullOrEmpty(classDTO.SyllabusLink))
                 {
                     var level = await _unitOfWork.LevelAssignedRepository.GetByIdAsync(classDTO.LevelId);
@@ -210,7 +209,6 @@ namespace InstruLearn_Application.BLL.Service
                         classDTO.LevelName = "Chưa được gán";
                     }
 
-                    // Set the SyllabusLink from the Level association
                     if (string.IsNullOrEmpty(classDTO.SyllabusLink))
                     {
                         var level = await _unitOfWork.LevelAssignedRepository.GetByIdAsync(classDTO.LevelId);
@@ -292,7 +290,6 @@ namespace InstruLearn_Application.BLL.Service
 
             var classDtos = _mapper.Map<List<ClassDTO>>(classes);
 
-            // Set the SyllabusLink for each class
             foreach (var classDto in classDtos)
             {
                 if (string.IsNullOrEmpty(classDto.SyllabusLink))
@@ -758,7 +755,6 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Check if the learner is enrolled in this class
                 var learnerClass = await _unitOfWork.dbContext.Learner_Classes
                     .FirstOrDefaultAsync(lc => lc.LearnerId == eligibilityDTO.LearnerId && lc.ClassId == eligibilityDTO.ClassId);
 
@@ -775,21 +771,18 @@ namespace InstruLearn_Application.BLL.Service
 
                 try
                 {
-                    // Find the learning registration for this learner and class
                     var learningRegis = await _unitOfWork.dbContext.Learning_Registrations
                         .FirstOrDefaultAsync(lr => lr.LearnerId == eligibilityDTO.LearnerId &&
                                                    lr.ClassId == eligibilityDTO.ClassId);
 
                     if (learningRegis != null)
                     {
-                        // Simply update the status without trying to set TestResults
                         learningRegis.Status = eligibilityDTO.IsEligible ?
                             LearningRegis.FullyPaid : LearningRegis.TestFailed;
 
                         await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
                     }
 
-                    // Create notification based on eligibility
                     string notificationMessage;
                     NotificationType notificationType;
                     string notificationTitle;
@@ -890,7 +883,6 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Check if the learner is actually enrolled in this class
                 var learnerClass = await _unitOfWork.LearnerClassRepository.GetByLearnerAndClassAsync(
                     removalDTO.LearnerId, removalDTO.ClassId);
 
@@ -906,12 +898,10 @@ namespace InstruLearn_Application.BLL.Service
                 using var transaction = await _unitOfWork.BeginTransactionAsync();
                 try
                 {
-                    // 1. Remove from Learner_Classes table
                     await _unitOfWork.LearnerClassRepository.RemoveByLearnerAndClassAsync(
                         removalDTO.LearnerId, removalDTO.ClassId);
                     await _unitOfWork.SaveChangeAsync();
 
-                    // 2. Delete Learning Registration records
                     var registrations = await _unitOfWork.LearningRegisRepository.GetQuery()
                         .Where(lr => lr.LearnerId == removalDTO.LearnerId &&
                                    lr.ClassId == removalDTO.ClassId)
@@ -923,7 +913,6 @@ namespace InstruLearn_Application.BLL.Service
                     }
                     await _unitOfWork.SaveChangeAsync();
 
-                    // 3. Remove associated schedules
                     var schedules = await _unitOfWork.ScheduleRepository.GetQuery()
                         .Where(s => s.LearnerId == removalDTO.LearnerId &&
                                   s.ClassId == removalDTO.ClassId)
@@ -935,7 +924,6 @@ namespace InstruLearn_Application.BLL.Service
                     }
                     await _unitOfWork.SaveChangeAsync();
 
-                    // 4. Create notification for the learner
                     var notification = new StaffNotification
                     {
                         LearnerId = removalDTO.LearnerId,

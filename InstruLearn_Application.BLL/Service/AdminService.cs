@@ -50,43 +50,57 @@ namespace InstruLearn_Application.BLL.Service
         {
             var response = new ResponseDTO();
 
-            var accounts = _unitOfWork.AccountRepository.GetFilter(x => x.Email == createAdminDTO.Email);
-            var existingAccount = accounts.Items.FirstOrDefault();
-            if (existingAccount != null)
+            try
             {
-                response.Message = "Email đã tồn tại.";
+                await _unitOfWork.BeginTransactionAsync();
+
+                var accounts = _unitOfWork.AccountRepository.GetFilter(x => x.Email == createAdminDTO.Email);
+                var existingAccount = accounts.Items.FirstOrDefault();
+                if (existingAccount != null)
+                {
+                    response.Message = "Email đã tồn tại.";
+                    return response;
+                }
+
+                var account = new Account
+                {
+                    AccountId = Guid.NewGuid().ToString(),
+                    Username = createAdminDTO.Email,
+                    Email = createAdminDTO.Email,
+                    PasswordHash = HashPassword(createAdminDTO.Password),
+                    Role = AccountRoles.Admin,
+                    IsActive = AccountStatus.Active,
+                    IsEmailVerified = true,
+                    RefreshToken = _jwtHelper.GenerateRefreshToken(),
+                    RefreshTokenExpires = DateTime.Now.AddDays(7)
+                };
+
+                account.Token = _jwtHelper.GenerateJwtToken(account);
+                account.TokenExpires = DateTime.Now.AddHours(1);
+
+                await _unitOfWork.AccountRepository.AddAsync(account);
+
+                var admin = new Admin
+                {
+                    AccountId = account.AccountId,
+                    Fullname = createAdminDTO.Fullname
+                };
+
+                await _unitOfWork.AdminRepository.AddAsync(admin);
+
+                await _unitOfWork.SaveChangeAsync();
+                await _unitOfWork.CommitTransactionAsync();
+
+                response.IsSucceed = true;
+                response.Message = "Quản trị viên đã tạo thành công!";
                 return response;
             }
-
-            var account = new Account
+            catch (Exception ex)
             {
-                AccountId = Guid.NewGuid().ToString(),
-                Username = createAdminDTO.Email,
-                Email = createAdminDTO.Email,
-                PasswordHash = HashPassword(createAdminDTO.Password),
-                Role = AccountRoles.Admin,
-                IsActive = AccountStatus.Active,
-                IsEmailVerified = true, // Set email as verified for Admins
-                RefreshToken = _jwtHelper.GenerateRefreshToken(),
-                RefreshTokenExpires = DateTime.Now.AddDays(7)
-            };
-
-            account.Token = _jwtHelper.GenerateJwtToken(account);
-            account.TokenExpires = DateTime.Now.AddHours(1);
-
-            await _unitOfWork.AccountRepository.AddAsync(account);
-
-            var admin = new Admin
-            {
-                AccountId = account.AccountId,
-                Fullname = createAdminDTO.Fullname
-            };
-
-            await _unitOfWork.AdminRepository.AddAsync(admin);
-
-            response.IsSucceed = true;
-            response.Message = "Quản trị viên đã tạo thành công!";
-            return response;
+                await _unitOfWork.RollbackTransactionAsync();
+                response.Message = $"Error creating admin: {ex.Message}";
+                return response;
+            }
         }
 
         public async Task<ResponseDTO> GetAdminByIdAsync(int adminId)

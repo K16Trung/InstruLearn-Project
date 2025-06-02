@@ -72,7 +72,7 @@ namespace InstruLearn_Application.BLL.Service
             {
                 new ItemData("Add Funds to Wallet", 1, (int)amount)
             };
-            string baseUrl = "https://instru-learn-zpt6.vercel.app/profile?";
+            string baseUrl = "https://instru-learn-cc1.vercel.app/payment-success";
 
             PaymentData paymentData = new PaymentData(
             orderCode: orderCode,
@@ -345,7 +345,6 @@ namespace InstruLearn_Application.BLL.Service
             }
             else
             {
-                // Unknown status
                 return new ResponseDTO
                 {
                     IsSucceed = false,

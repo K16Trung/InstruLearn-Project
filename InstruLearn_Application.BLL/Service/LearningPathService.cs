@@ -79,7 +79,6 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Update completion status
                 session.IsCompleted = isCompleted;
                 await _unitOfWork.LearningPathSessionRepository.UpdateAsync(session);
                 await _unitOfWork.SaveChangeAsync();
@@ -105,7 +104,6 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                // Check if the learning path session exists
                 var session = await _unitOfWork.LearningPathSessionRepository.GetByIdAsync(updateDTO.LearningPathSessionId);
                 if (session == null)
                 {
@@ -116,7 +114,6 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Update the session properties
                 session.SessionNumber = updateDTO.SessionNumber;
                 session.Title = updateDTO.Title;
                 session.Description = updateDTO.Description;
@@ -164,7 +161,6 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Get the learning path sessions
                 var sessions = await _unitOfWork.LearningPathSessionRepository
                     .GetByLearningRegisIdAsync(learningRegisId);
 
@@ -181,7 +177,6 @@ namespace InstruLearn_Application.BLL.Service
 
                 try
                 {
-                    // Make all sessions visible to the learner
                     foreach (var session in sessions)
                     {
                         session.IsVisible = true;
@@ -191,16 +186,13 @@ namespace InstruLearn_Application.BLL.Service
 
                     await _unitOfWork.SaveChangeAsync();
 
-                    // Update the registration to indicate it no longer has pending sessions
                     learningRegis.HasPendingLearningPath = false;
 
-                    // Set payment deadline here (moved from UpdateLearningRegisStatusAsync)
                     learningRegis.PaymentDeadline = DateTime.Now.AddDays(3);
 
                     await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
                     await _unitOfWork.SaveChangeAsync();
 
-                    // Find and mark any related CreateLearningPath notifications as resolved
                     var notifications = await _unitOfWork.StaffNotificationRepository
                         .GetQuery()
                         .Where(n => n.LearningRegisId == learningRegisId &&
@@ -221,21 +213,17 @@ namespace InstruLearn_Application.BLL.Service
                         await _unitOfWork.SaveChangeAsync();
                     }
 
-                    // Get learner details for notification
                     var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(learningRegis.LearnerId);
                     var account = learner != null ? await _unitOfWork.AccountRepository.GetByIdAsync(learner.AccountId) : null;
 
-                    // Calculate payment information (40% of total price)
                     decimal totalPrice = learningRegis.Price ?? 0;
                     decimal paymentAmount = totalPrice * 0.4m;
                     var deadline = learningRegis.PaymentDeadline?.ToString("yyyy-MM-dd HH:mm") ?? "N/A";
 
-                    // Send notification to learner if email is available
                     if (account != null && !string.IsNullOrEmpty(account.Email))
                     {
                         try
                         {
-                            // Construct email content with payment details
                             string subject = "Lộ trình học tập của bạn đã được cập nhật";
                             string body = $@"
                     <html>
@@ -255,7 +243,7 @@ namespace InstruLearn_Application.BLL.Service
                             </div>
                             
                             <div style='background-color: #4CAF50; text-align: center; padding: 15px; margin: 20px 0; border-radius: 5px;'>
-                                <a href='http://localhost:3000/profile/registration-detail/{learningRegisId}?scrollToLearningPath=true' style='color: white; text-decoration: none; font-weight: bold; font-size: 16px;'>
+                                <a href='https://instru-learn-cc1.vercel.app/profile/registration-detail/{learningRegisId}?scrollToLearningPath=true' style='color: white; text-decoration: none; font-weight: bold; font-size: 16px;'>
                                     Xem Lộ Trình Học Tập Của Bạn
                                 </a>
                             </div>
@@ -269,7 +257,6 @@ namespace InstruLearn_Application.BLL.Service
                     </body>
                     </html>";
 
-                            // Use the injected email service with isHtml parameter set to true
                             await _emailService.SendEmailAsync(
                                 account.Email,
                                 subject,
@@ -280,7 +267,6 @@ namespace InstruLearn_Application.BLL.Service
                         catch (Exception emailEx)
                         {
                             _logger.LogError(emailEx, "Error sending learning path notification email");
-                            // Continue even if email fails
                         }
                     }
 
@@ -304,7 +290,7 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     await _unitOfWork.RollbackTransactionAsync();
                     _logger.LogError(ex, "Error confirming learning path: {Message}", ex.Message);
-                    throw; // Re-throw to be caught by outer catch
+                    throw;
                 }
             }
             catch (Exception ex)

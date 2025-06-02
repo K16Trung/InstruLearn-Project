@@ -219,12 +219,6 @@ namespace InstruLearn_Application.BLL.Service
         
         <p>Vui lòng thanh toán số tiền còn lại trước hạn để tiếp tục học tập với giáo viên mới.</p>
         
-        <div style='background-color: #4CAF50; text-align: center; padding: 15px; margin: 20px 0; border-radius: 5px;'>
-            <a href='http://localhost:3000/payment/{registration.LearningRegisId}' style='color: white; text-decoration: none; font-weight: bold; font-size: 16px;'>
-                Thanh Toán Ngay
-            </a>
-        </div>
-        
         <p>Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với đội ngũ hỗ trợ của chúng tôi.</p>
         
         <p>Trân trọng,<br>Đội ngũ InstruLearn</p>
@@ -262,12 +256,6 @@ namespace InstruLearn_Application.BLL.Service
         
         <p>Nếu không thanh toán trước hạn, đăng ký học của bạn sẽ bị hủy tự động.</p>
         
-        <div style='background-color: #4CAF50; text-align: center; padding: 15px; margin: 20px 0; border-radius: 5px;'>
-            <a href='http://localhost:3000/payment/{registration.LearningRegisId}' style='color: white; text-decoration: none; font-weight: bold; font-size: 16px;'>
-                Thanh Toán Ngay
-            </a>
-        </div>
-        
         <p>Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với đội ngũ hỗ trợ của chúng tôi.</p>
         
         <p>Trân trọng,<br>Đội ngũ InstruLearn</p>
@@ -300,12 +288,6 @@ namespace InstruLearn_Application.BLL.Service
         </div>
         
         <p>Nếu không thanh toán trước hạn, đăng ký học của bạn sẽ bị hủy tự động và lịch học đã đặt sẽ bị xóa.</p>
-        
-        <div style='background-color: #4CAF50; text-align: center; padding: 15px; margin: 20px 0; border-radius: 5px;'>
-            <a href='http://localhost:3000/payment/{registration.LearningRegisId}' style='color: white; text-decoration: none; font-weight: bold; font-size: 16px;'>
-                Thanh Toán Ngay
-            </a>
-        </div>
         
         <p>Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với đội ngũ hỗ trợ của chúng tôi.</p>
         
