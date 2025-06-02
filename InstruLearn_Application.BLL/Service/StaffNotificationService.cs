@@ -1023,7 +1023,7 @@ namespace InstruLearn_Application.BLL.Service
             
                     <div style='background-color: #e3f2fd; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #2196F3;'>
                         <h3 style='margin-top: 0; color: #333;'>Kết quả xem xét:</h3>
-                        <p>Sau khi đánh giá, chúng tôi quyết định rằng giáo viên hiện tại của bạn <strong>{newTeacher.Fullname}</strong> vẫn là phù hợp nhất để tiếp tục dạy bạn.</p>
+                        <p>Sau khi đánh giá, chúng tôi quyết định rằng giáo viên hiện tại của bạn <strong>{newTeacher.Fullname}</strong></p>
                         <p><strong>Lý do:</strong> {effectiveReason}</p>
                         <p><strong>Buổi học tiếp theo:</strong> {nextSessionDate}</p>
                     </div>
