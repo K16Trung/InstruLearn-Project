@@ -303,6 +303,10 @@ namespace InstruLearn_Application.BLL.Service
                     }
                 }
 
+                object responseData = scheduleRelationships.Any()
+                    ? new { Schedules = schedules, ScheduleRelationships = scheduleRelationships }
+                    : (object)schedules;
+
                 return new ResponseDTO
                 {
                     IsSucceed = true,
@@ -511,6 +515,10 @@ namespace InstruLearn_Application.BLL.Service
                         }
                     }
                 }
+
+                object responseData = scheduleRelationships.Any()
+                    ? new { Schedules = schedules, ScheduleRelationships = scheduleRelationships }
+                    : (object)schedules;
 
                 return new ResponseDTO
                 {
