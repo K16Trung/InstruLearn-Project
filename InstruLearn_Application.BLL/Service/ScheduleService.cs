@@ -311,11 +311,7 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     IsSucceed = true,
                     Message = "Đã lấy lịch học thành công.",
-                    Data = new
-                    {
-                        Schedules = schedules,
-                        ScheduleRelationships = scheduleRelationships
-                    }
+                    Data = responseData
                 };
             }
             catch (Exception ex)
