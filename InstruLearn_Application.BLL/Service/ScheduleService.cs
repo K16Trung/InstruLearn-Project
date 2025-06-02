@@ -1131,7 +1131,7 @@ namespace InstruLearn_Application.BLL.Service
                         var account = await _unitOfWork.AccountRepository.GetByIdAsync(learner.AccountId);
                         if (account != null && !string.IsNullOrEmpty(account.Email))
                         {
-                            string subject = "Your Schedule Has Been Updated";
+                            string subject = "Lịch học của bạn đã được cập nhật";
                             string body = $@"
                 <html>
                 <body>

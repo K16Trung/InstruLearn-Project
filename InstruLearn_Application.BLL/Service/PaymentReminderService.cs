@@ -214,7 +214,6 @@ namespace InstruLearn_Application.BLL.Service
             <p><strong>Số tiền cần thanh toán ({paymentPercentage}):</strong> {amountDue:N0} VND</p>
             <p><strong>Hạn thanh toán:</strong> {registration.PaymentDeadline?.ToString("dd/MM/yyyy HH:mm")}</p>
             <p><strong>Còn lại:</strong> {(hoursRemaining < 24 ? $"{hoursRemaining} giờ" : $"{daysRemaining} ngày")}</p>
-            <p><strong>ID đăng ký học:</strong> {registration.LearningRegisId}</p>
         </div>
         
         <p>Vui lòng thanh toán số tiền còn lại trước hạn để tiếp tục học tập với giáo viên mới.</p>
