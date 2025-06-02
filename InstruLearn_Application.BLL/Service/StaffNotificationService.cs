@@ -681,9 +681,8 @@ namespace InstruLearn_Application.BLL.Service
                         await _unitOfWork.ScheduleRepository.UpdateAsync(schedule);
                     }
 
-                    notification.Status = NotificationStatus.Resolved;
-                    await _unitOfWork.StaffNotificationRepository.UpdateAsync(notification);
-                    _logger.LogInformation($"Directly marked notification {notificationId} as resolved");
+                    await _unitOfWork.StaffNotificationRepository.MarkAsResolvedAsync(notificationId);
+                    _logger.LogInformation($"Marked notification {notificationId} as resolved");
 
                     var relatedNotifications = await _unitOfWork.StaffNotificationRepository
                         .GetQuery()
