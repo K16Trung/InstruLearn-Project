@@ -92,13 +92,11 @@ namespace InstruLearn_Application.BLL.Service
                     {
                         var originalStatus = notifications[i].Status;
                         var originalType = notifications[i].Type;
-                        // Get the registration data for this notification
                         var registrationData = await _unitOfWork.LearningRegisRepository.GetWithIncludesAsync(
                             lr => lr.LearningRegisId == notifications[i].LearningRegisId.Value &&
                                   lr.Status == LearningRegis.FourtyFeedbackDone,
                             "Teacher,Learner");
 
-                        // Retrieve the feedback to get the teacher change reason
                         var feedback = await _unitOfWork.LearningRegisFeedbackRepository
                             .GetFeedbackByRegistrationIdAsync(notifications[i].LearningRegisId.Value);
 
@@ -106,7 +104,6 @@ namespace InstruLearn_Application.BLL.Service
                         {
                             notificationDTOs[i].TeacherChangeReason = feedback.TeacherChangeReason;
 
-                            // Clean up the message by removing IDs and "Lý do:" prefix
                             if (registrationData != null && registrationData.Any() && registrationData.First().Learner != null)
                             {
                                 var learner = registrationData.First().Learner;
@@ -114,17 +111,14 @@ namespace InstruLearn_Application.BLL.Service
                             }
                             else
                             {
-                                // If we can't get the learner information, simply clean up the message
                                 string message = notificationDTOs[i].Message;
 
-                                // Find the index of "Lý do:" and remove it and everything after
                                 int reasonIndex = message.IndexOf(".Lý do:");
                                 if (reasonIndex > 0)
                                 {
                                     notificationDTOs[i].Message = message.Substring(0, reasonIndex + 1);
                                 }
 
-                                // Remove the ID mentions
                                 notificationDTOs[i].Message = System.Text.RegularExpressions.Regex.Replace(
                                     notificationDTOs[i].Message,
                                     @"\(ID: \d+\)",
@@ -212,7 +206,6 @@ namespace InstruLearn_Application.BLL.Service
                                     d => d.LearningRegisId == regis.LearningRegisId,
                                     "");
 
-                                // Ensure the days collection is initialized
                                 if (regis.LearningRegistrationDay == null)
                                     regis.LearningRegistrationDay = new List<LearningRegistrationDay>();
 
@@ -228,11 +221,9 @@ namespace InstruLearn_Application.BLL.Service
                                 }
                             }
 
-                            // Get all schedules for this registration WITHOUT filtering by date
                             var schedules = await _unitOfWork.ScheduleRepository
                                 .GetSchedulesByLearningRegisIdAsync(regis.LearningRegisId);
 
-                            // Assign ALL schedules to the registration
                             regis.Schedules = schedules ?? new List<Schedules>();
                         }
 
@@ -257,7 +248,6 @@ namespace InstruLearn_Application.BLL.Service
 
                     dto.LearningDays.Clear();
 
-                    // Extract learning days and convert to DayOfWeek values
                     var availableDayValues = new List<DayOfWeek>();
 
                     if (registration?.LearningRegistrationDay != null && registration.LearningRegistrationDay.Any())
@@ -267,7 +257,6 @@ namespace InstruLearn_Application.BLL.Service
                             string dayString = day.DayOfWeek.ToString();
                             dto.LearningDays.Add(dayString);
 
-                            // Convert the enum value to a DayOfWeek
                             if (Enum.TryParse<DayOfWeek>(dayString, true, out var dayOfWeek))
                             {
                                 availableDayValues.Add(dayOfWeek);
@@ -285,32 +274,25 @@ namespace InstruLearn_Application.BLL.Service
                         dto.TimeEnd = registration.TimeStart.AddMinutes(registration.TimeLearning);
                     }
 
-                    // Use ALL schedules from the database, but only include the remaining 60% of sessions (since it's FourtyFeedbackDone status)
                     if (registration?.Schedules != null && registration.Schedules.Any())
                     {
                         _logger.LogInformation($"Processing schedules for registration ID: {registration.LearningRegisId}. Found {registration.Schedules.Count} total schedule(s)");
 
-                        // Calculate how many sessions should be included (60% of total since we're in FourtyFeedbackDone status)
                         int totalSessions = registration.NumberOfSession;
                         int remainingSessions = (int)Math.Ceiling(totalSessions * 0.6);
 
                         _logger.LogInformation($"For registration {registration.LearningRegisId}: Total sessions: {totalSessions}, Remaining sessions (60%): {remainingSessions}");
 
-                        // Order by date and time
                         var orderedSchedules = registration.Schedules
                             .OrderBy(s => s.StartDay)
                             .ThenBy(s => s.TimeStart)
                             .ToList();
 
-                        // Skip 40% and take 60% of sessions
-                        // If we have 10 sessions total, we skip 4 (40%) and take 6 (60%)
                         int sessionsToSkip = totalSessions - remainingSessions;
 
-                        // Make sure we don't skip more than we have
                         if (sessionsToSkip < 0)
                             sessionsToSkip = 0;
 
-                        // Take only the remaining 60% of sessions
                         dto.SessionDates = orderedSchedules
                             .Skip(Math.Min(sessionsToSkip, orderedSchedules.Count))
                             .Take(remainingSessions)
@@ -325,18 +307,15 @@ namespace InstruLearn_Application.BLL.Service
                     {
                         _logger.LogWarning($"No schedules found for registration ID: {registration.LearningRegisId}. Using fallback date calculation.");
 
-                        // Calculate remaining sessions (60% of total for FourtyFeedbackDone status)
                         int remainingSessions = (int)Math.Ceiling(registration.NumberOfSession * 0.6);
 
-                        // Start from today
                         DateOnly currentDate = DateOnly.FromDateTime(DateTime.Today);
 
                         var sessionDates = new List<string>();
                         int sessionsFound = 0;
-                        int maxAttempts = 100; // Safety limit
+                        int maxAttempts = 100;
                         int attempts = 0;
 
-                        // Find the first valid day starting from today
                         if (!availableDayValues.Contains(currentDate.DayOfWeek))
                         {
                             while (!availableDayValues.Contains(currentDate.DayOfWeek) && attempts < maxAttempts)
@@ -347,12 +326,10 @@ namespace InstruLearn_Application.BLL.Service
                         }
 
                         attempts = 0;
-                        // Generate dates for each remaining session
                         while (sessionsFound < remainingSessions && attempts < maxAttempts)
                         {
                             if (availableDayValues.Contains(currentDate.DayOfWeek))
                             {
-                                // Format the date and add to the list
                                 sessionDates.Add($"{currentDate:yyyy-MM-dd} {registration.TimeStart:HH:mm}");
                                 sessionsFound++;
                             }
@@ -396,7 +373,6 @@ namespace InstruLearn_Application.BLL.Service
             {
                 _logger.LogInformation($"Retrieving teacher change request learning registration with ID: {learningRegisId}");
 
-                // First, check if there is a notification with this learning registration ID
                 var notifications = await _unitOfWork.StaffNotificationRepository
                     .GetContinueWithTeacherChangeRequestsAsync();
 
@@ -413,7 +389,6 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Get the learning registration with the specific ID
                 var registration = await _unitOfWork.LearningRegisRepository.GetWithIncludesAsync(
                     lr => lr.LearningRegisId == learningRegisId && lr.Status == LearningRegis.FourtyFeedbackDone,
                     "Teacher,Learner.Account,Major,Classes,LearningRegistrationDay,Learning_Registration_Type,LevelAssigned,Response.ResponseType");
@@ -430,14 +405,12 @@ namespace InstruLearn_Application.BLL.Service
 
                 var regis = registration.First();
 
-                // Load learning registration days if they're not already loaded
                 if (regis.LearningRegistrationDay == null || !regis.LearningRegistrationDay.Any())
                 {
                     var days = await _unitOfWork.LearningRegisDayRepository.GetWithIncludesAsync(
                         d => d.LearningRegisId == regis.LearningRegisId,
                         "");
 
-                    // Ensure the days collection is initialized
                     if (regis.LearningRegistrationDay == null)
                         regis.LearningRegistrationDay = new List<LearningRegistrationDay>();
 
@@ -453,24 +426,19 @@ namespace InstruLearn_Application.BLL.Service
                     }
                 }
 
-                // Get all schedules for this registration (without filtering by date)
                 var schedules = await _unitOfWork.ScheduleRepository
                     .GetSchedulesByLearningRegisIdAsync(regis.LearningRegisId);
 
-                // Assign schedules to the registration
                 regis.Schedules = schedules ?? new List<Schedules>();
 
-                // Map to DTO
                 var dto = _mapper.Map<OneOnOneRegisDTO>(regis);
 
-                // Set response type information
                 if (regis.Response?.ResponseType != null)
                 {
                     dto.ResponseTypeId = regis.Response.ResponseType.ResponseTypeId;
                     dto.ResponseTypeName = regis.Response.ResponseType.ResponseTypeName;
                 }
 
-                // Set learning days
                 if (dto.LearningDays == null)
                     dto.LearningDays = new List<string>();
                 else
@@ -485,7 +453,6 @@ namespace InstruLearn_Application.BLL.Service
                         string dayString = day.DayOfWeek.ToString();
                         dto.LearningDays.Add(dayString);
 
-                        // Convert the enum value to a DayOfWeek
                         if (Enum.TryParse<DayOfWeek>(dayString, true, out var dayOfWeek))
                         {
                             availableDayValues.Add(dayOfWeek);
@@ -493,38 +460,31 @@ namespace InstruLearn_Application.BLL.Service
                     }
                 }
 
-                // Set basic properties
                 dto.StartDay = regis.StartDay;
                 dto.TimeStart = regis.TimeStart;
                 dto.TimeLearning = regis.TimeLearning;
                 dto.NumberOfSession = regis.NumberOfSession;
                 dto.TimeEnd = regis.TimeStart.AddMinutes(regis.TimeLearning);
 
-                // Handle session dates using the same logic as in GetTeacherChangeRequestLearningRegistrationsAsync
                 if (regis.Schedules != null && regis.Schedules.Any())
                 {
                     _logger.LogInformation($"Processing schedules for registration ID: {regis.LearningRegisId}. Found {regis.Schedules.Count} total schedule(s)");
 
-                    // Calculate how many sessions should be included (60% of total since we're in FourtyFeedbackDone status)
                     int totalSessions = regis.NumberOfSession;
                     int remainingSessions = (int)Math.Ceiling(totalSessions * 0.6);
 
                     _logger.LogInformation($"For registration {regis.LearningRegisId}: Total sessions: {totalSessions}, Remaining sessions (60%): {remainingSessions}");
 
-                    // Order by date and time
                     var orderedSchedules = regis.Schedules
                         .OrderBy(s => s.StartDay)
                         .ThenBy(s => s.TimeStart)
                         .ToList();
 
-                    // Skip 40% and take 60% of sessions
                     int sessionsToSkip = totalSessions - remainingSessions;
 
-                    // Make sure we don't skip more than we have
                     if (sessionsToSkip < 0)
                         sessionsToSkip = 0;
 
-                    // Take only the remaining 60% of sessions
                     dto.SessionDates = orderedSchedules
                         .Skip(Math.Min(sessionsToSkip, orderedSchedules.Count))
                         .Take(remainingSessions)
@@ -537,18 +497,15 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     _logger.LogWarning($"No schedules found for registration ID: {regis.LearningRegisId}. Using fallback date calculation.");
 
-                    // Calculate remaining sessions (60% of total for FourtyFeedbackDone status)
                     int remainingSessions = (int)Math.Ceiling(regis.NumberOfSession * 0.6);
 
-                    // Start from today
                     DateOnly currentDate = DateOnly.FromDateTime(DateTime.Today);
 
                     var sessionDates = new List<string>();
                     int sessionsFound = 0;
-                    int maxAttempts = 100; // Safety limit
+                    int maxAttempts = 100;
                     int attempts = 0;
 
-                    // Find the first valid day starting from today
                     if (!availableDayValues.Contains(currentDate.DayOfWeek))
                     {
                         while (!availableDayValues.Contains(currentDate.DayOfWeek) && attempts < maxAttempts)
@@ -559,12 +516,10 @@ namespace InstruLearn_Application.BLL.Service
                     }
 
                     attempts = 0;
-                    // Generate dates for each remaining session
                     while (sessionsFound < remainingSessions && attempts < maxAttempts)
                     {
                         if (availableDayValues.Contains(currentDate.DayOfWeek))
                         {
-                            // Format the date and add to the list
                             sessionDates.Add($"{currentDate:yyyy-MM-dd} {regis.TimeStart:HH:mm}");
                             sessionsFound++;
                         }
@@ -813,12 +768,10 @@ namespace InstruLearn_Application.BLL.Service
                     NotificationType.ClassFeedback
                 };
 
-                // Initialize with empty list to avoid null reference exceptions
                 List<StaffNotification> notifications = new List<StaffNotification>();
 
                 try
                 {
-                    // Step 1: Get direct notifications with included Learner entity
                     var directNotifications = await _unitOfWork.StaffNotificationRepository
                         .GetNotificationsByTeacherIdAsync(teacherId, notificationTypes);
 

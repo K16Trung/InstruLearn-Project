@@ -64,7 +64,6 @@ namespace InstruLearn_Application.BLL.Service
         }
         public async Task<ResponseDTO> GetPurchaseByLearnerIdAsync(int learnerId)
         {
-            // Kiểm tra xem học viên có tồn tại không
             var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(learnerId);
             if (learner == null)
             {
@@ -75,10 +74,8 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
-            // Lấy danh sách các giao dịch mua của học viên
             var purchases = await _unitOfWork.PurchaseRepository.GetByLearnerIdAsync(learnerId);
 
-            // Ánh xạ sang DTO
             var purchaseDtos = _mapper.Map<IEnumerable<PurchaseDTO>>(purchases);
 
             return new ResponseDTO

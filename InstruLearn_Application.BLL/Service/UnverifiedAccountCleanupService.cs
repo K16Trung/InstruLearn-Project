@@ -16,7 +16,7 @@ namespace InstruLearn_Application.BLL.Service
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<UnverifiedAccountCleanupService> _logger;
-        private readonly TimeSpan _checkInterval = TimeSpan.FromSeconds(30); // Check every 30 seconds
+        private readonly TimeSpan _checkInterval = TimeSpan.FromSeconds(30);
 
         public UnverifiedAccountCleanupService(
             IServiceProvider serviceProvider,
@@ -63,7 +63,6 @@ namespace InstruLearn_Application.BLL.Service
             {
                 _logger.LogInformation($"Deleting {expiredAccounts.Count} expired unverified accounts");
 
-                // Delete associated wallets first
                 var accountIds = expiredAccounts.Select(a => a.AccountId).ToList();
                 var learners = await dbContext.Learners
                     .Where(l => accountIds.Contains(l.AccountId))
@@ -79,13 +78,11 @@ namespace InstruLearn_Application.BLL.Service
                     dbContext.Wallets.RemoveRange(wallets);
                 }
 
-                // Delete learners
                 if (learners.Any())
                 {
                     dbContext.Learners.RemoveRange(learners);
                 }
 
-                // Delete accounts
                 dbContext.Accounts.RemoveRange(expiredAccounts);
                 await dbContext.SaveChangesAsync();
 

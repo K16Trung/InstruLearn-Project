@@ -55,7 +55,7 @@ namespace InstruLearn_Application.BLL.Service
                 }
 
                 var startDate = learningRegis.StartDay.Value.ToDateTime(TimeOnly.MinValue);
-                var registrationStartDate = startDate;  // Start from RegistrationStartDay
+                var registrationStartDate = startDate;
                 var schedules = new List<ScheduleDTO>();
                 int sessionCount = 0;
 
@@ -63,8 +63,8 @@ namespace InstruLearn_Application.BLL.Service
 
                 var currentDayOfWeek = registrationStartDate.DayOfWeek;
                 var learningDaysStartingFromRegistration = orderedLearningDays
-                    .Where(day => (DayOfWeek)day.DayOfWeek >= currentDayOfWeek) // Start from the first available learning day
-                    .Concat(orderedLearningDays.Where(day => (DayOfWeek)day.DayOfWeek < currentDayOfWeek)) // Append remaining days
+                    .Where(day => (DayOfWeek)day.DayOfWeek >= currentDayOfWeek)
+                    .Concat(orderedLearningDays.Where(day => (DayOfWeek)day.DayOfWeek < currentDayOfWeek))
                     .ToList();
 
                 while (sessionCount < learningRegis.NumberOfSession)
@@ -84,7 +84,6 @@ namespace InstruLearn_Application.BLL.Service
                                 TimeStart = learningRegis.TimeStart.ToString("HH:mm"),
                                 TimeEnd = learningRegis.TimeStart.AddMinutes(learningRegis.TimeLearning).ToString("HH:mm"),
                                 DayOfWeek = nextSessionDate.DayOfWeek.ToString(),
-                                //StartDay = nextSessionDate.ToString("yyyy-MM-dd"),
                                 TeacherId = learningRegis.TeacherId,
                                 LearnerId = learningRegis.LearnerId,
                                 RegistrationStartDay = learningRegis.StartDay,
@@ -96,7 +95,7 @@ namespace InstruLearn_Application.BLL.Service
                             };
 
                             schedules.Add(schedule);
-                            sessionCount++;  // Increment session count after adding a schedule
+                            sessionCount++;
                         }
 
                         registrationStartDate = nextSessionDate.AddDays(1);
@@ -126,7 +125,6 @@ namespace InstruLearn_Application.BLL.Service
             return startDate.AddDays(daysUntilNextSession);
         }
 
-        // get correct
         public async Task<ResponseDTO> GetSchedulesByLearnerIdAsync(int learnerId)
         {
             try
@@ -176,7 +174,6 @@ namespace InstruLearn_Application.BLL.Service
                         .OrderBy(s => s.SessionNumber)
                         .ToList();
 
-                    // Get ALL schedules for this learner, including makeup classes and changed teachers
                     var existingSchedules = learningRegis.Schedules
                         .Where(s => s.Mode == ScheduleMode.OneOnOne)
                         .OrderBy(s => s.StartDay)
@@ -204,7 +201,6 @@ namespace InstruLearn_Application.BLL.Service
 
                     foreach (var existingSchedule in existingSchedules)
                     {
-                        // Find the right session number based on the original schedule order
                         var sessionPosition = existingSchedule.PreferenceStatus == PreferenceStatus.MakeupClass
                             ? existingSchedules.Where(s => s.PreferenceStatus != PreferenceStatus.MakeupClass)
                                 .OrderBy(s => s.StartDay)
@@ -249,7 +245,7 @@ namespace InstruLearn_Application.BLL.Service
                             LearningRegisId = learningRegis.LearningRegisId,
                             AttendanceStatus = existingSchedule.AttendanceStatus,
                             ChangeReason = existingSchedule.ChangeReason,
-                            PreferenceStatus = existingSchedule.PreferenceStatus, // Include preference status
+                            PreferenceStatus = existingSchedule.PreferenceStatus,
                             MajorId = learningRegis.MajorId,
                             MajorName = learningRegis.Major?.MajorName ?? "N/A",
                             TimeLearning = learningRegis.TimeLearning,
@@ -275,7 +271,6 @@ namespace InstruLearn_Application.BLL.Service
                             scheduleDto.IsSessionCompleted = false;
                         }
 
-                        // Add additional info for makeup classes
                         if (existingSchedule.PreferenceStatus == PreferenceStatus.MakeupClass)
                         {
                             scheduleDto.IsMakeupClass = true;
@@ -325,7 +320,6 @@ namespace InstruLearn_Application.BLL.Service
         }
 
 
-        // get correct
         public async Task<ResponseDTO> GetSchedulesByTeacherIdAsync(int teacherId)
         {
             try
@@ -339,7 +333,6 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Get all schedules for this teacher, including makeup classes
                 var teacherSchedules = await _unitOfWork.ScheduleRepository
                     .GetWhereAsync(s => s.TeacherId == teacherId && s.Mode == ScheduleMode.OneOnOne);
 
@@ -416,7 +409,6 @@ namespace InstruLearn_Application.BLL.Service
                     {
                         DateOnly scheduleStartDate = existingSchedule.StartDay;
 
-                        // Calculate session number based on the original schedule order
                         var allSchedulesPosition = existingSchedule.PreferenceStatus == PreferenceStatus.MakeupClass
                             ? allRegistrationSchedules.Where(s => s.PreferenceStatus != PreferenceStatus.MakeupClass)
                                 .OrderBy(s => s.StartDay)
@@ -458,7 +450,7 @@ namespace InstruLearn_Application.BLL.Service
                                 LearningRegisId = learningRegis.LearningRegisId,
                                 AttendanceStatus = existingSchedule.AttendanceStatus,
                                 ChangeReason = existingSchedule.ChangeReason,
-                                PreferenceStatus = existingSchedule.PreferenceStatus, // Include preference status
+                                PreferenceStatus = existingSchedule.PreferenceStatus,
                                 MajorId = learningRegis.MajorId,
                                 MajorName = learningRegis.Major?.MajorName ?? "N/A",
                                 TimeLearning = learningRegis.TimeLearning,
@@ -594,7 +586,7 @@ namespace InstruLearn_Application.BLL.Service
 
             if (!freeTeacherIds.Any())
             {
-                return new List<ValidTeacherDTO>(); // No available teachers
+                return new List<ValidTeacherDTO>();
             }
 
             var availableTeachers = await _unitOfWork.TeacherRepository
@@ -616,7 +608,6 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Fetch schedules for the learner
                 var schedules = await _unitOfWork.ScheduleRepository.GetClassSchedulesByLearnerIdAsync(learnerId);
 
                 if (schedules == null || !schedules.Any())
@@ -628,37 +619,29 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Get class IDs for fetching class days
                 var classIds = schedules
                     .Where(s => s.ClassId.HasValue)
                     .Select(s => s.ClassId.Value)
                     .Distinct()
                     .ToList();
 
-                // Fetch class days for these classes
                 var classDays = await _unitOfWork.ClassDayRepository.GetQuery()
                     .Where(cd => classIds.Contains(cd.ClassId))
                     .ToListAsync();
 
-                // Group class days by class ID for easy lookup
                 var classDaysByClass = classDays
                     .GroupBy(cd => cd.ClassId)
                     .ToDictionary(g => g.Key, g => g.ToList());
 
-                // Map to DTOs with all the required information
                 var scheduleDTOs = schedules.Select(schedule => {
                     var dto = _mapper.Map<ScheduleDTO>(schedule);
 
-                    // Set DayOfWeek
                     dto.DayOfWeek = schedule.StartDay.DayOfWeek.ToString();
 
-                    // Set LearnerAddress
                     dto.LearnerAddress = schedule.Learner?.Account?.Address;
 
-                    // Set RegistrationStartDay from the Registration
                     dto.RegistrationStartDay = schedule.Registration?.StartDay;
 
-                    // Set ScheduleDays from classDays if we have a ClassId
                     if (schedule.ClassId.HasValue && classDaysByClass.TryGetValue(schedule.ClassId.Value, out var days))
                     {
                         dto.ScheduleDays = days.Select(cd => new ScheduleDaysDTO
@@ -666,7 +649,6 @@ namespace InstruLearn_Application.BLL.Service
                             DayOfWeeks = cd.Day
                         }).ToList();
 
-                        // Also set classDayDTOs
                         dto.classDayDTOs = days.Select(cd => new ClassDayDTO
                         {
                             Day = cd.Day
@@ -754,10 +736,8 @@ namespace InstruLearn_Application.BLL.Service
                 };
             }
 
-            // Get current date as DateOnly
             DateOnly today = DateOnly.FromDateTime(DateTime.Now);
 
-            // Check if the schedule's date is equal to today
             if (schedule.StartDay != today)
             {
                 return new ResponseDTO
@@ -839,10 +819,8 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Calculate the end time for this session
                 TimeOnly timeEnd = timeStart.AddMinutes(durationMinutes);
 
-                // Get all existing registrations for this learner on the same day
                 var existingRegistrations = await _unitOfWork.LearningRegisRepository
                     .GetQuery()
                     .Where(r =>
@@ -854,13 +832,11 @@ namespace InstruLearn_Application.BLL.Service
                          r.Status == LearningRegis.Sixty))
                     .ToListAsync();
 
-                // Check for overlaps with existing registrations
                 foreach (var registration in existingRegistrations)
                 {
                     TimeOnly existingStart = registration.TimeStart;
                     TimeOnly existingEnd = registration.TimeStart.AddMinutes(registration.TimeLearning);
 
-                    // Check for any kind of overlap
                     bool hasOverlap = (timeStart < existingEnd && existingStart < timeEnd);
 
                     if (hasOverlap)
@@ -933,7 +909,6 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Get class information for clear error messages
                 var classInfo = await _unitOfWork.ClassRepository.GetByIdAsync(classId);
                 if (classInfo == null)
                 {
@@ -949,7 +924,6 @@ namespace InstruLearn_Application.BLL.Service
 
                 if (hasConflict)
                 {
-                    // Format conflicting schedules for display
                     var conflictDetails = conflictingSchedules.Select(s => new
                     {
                         ScheduleId = s.ScheduleId,
@@ -999,7 +973,6 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Get all 1-1 registrations
                 var oneOnOneRegistrations = await _unitOfWork.LearningRegisRepository
                     .GetWithIncludesAsync(
                         lr => lr.LearnerId == learnerId &&
@@ -1009,7 +982,6 @@ namespace InstruLearn_Application.BLL.Service
                               lr.Status == LearningRegis.FourtyFeedbackDone),
                         "Teacher,Major");
 
-                // Get all class enrollments
                 var classEnrollments = await _unitOfWork.LearningRegisRepository
                     .GetWithIncludesAsync(
                         lr => lr.LearnerId == learnerId &&
@@ -1019,7 +991,6 @@ namespace InstruLearn_Application.BLL.Service
 
                 var registrationStats = new List<object>();
 
-                // Process one-on-one registrations individually
                 foreach (var regis in oneOnOneRegistrations)
                 {
                     var schedules = await _unitOfWork.ScheduleRepository
@@ -1049,7 +1020,6 @@ namespace InstruLearn_Application.BLL.Service
                     });
                 }
 
-                // Process class enrollments individually
                 foreach (var enrollment in classEnrollments)
                 {
                     if (enrollment.ClassId.HasValue && enrollment.Classes != null)
@@ -1105,12 +1075,10 @@ namespace InstruLearn_Application.BLL.Service
         }
 
 
-        // Add to InstruLearn_Application.BLL/Service/ScheduleService.cs
         public async Task<ResponseDTO> UpdateScheduleTeacherAsync(int scheduleId, int teacherId, string changeReason)
         {
             try
             {
-                // Get the schedule by ID
                 var schedule = await _unitOfWork.ScheduleRepository.GetByIdAsync(scheduleId);
 
                 if (schedule == null)
@@ -1122,7 +1090,6 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Get the teacher to ensure they exist
                 var teacher = await _unitOfWork.TeacherRepository.GetByIdAsync(teacherId);
                 if (teacher == null)
                 {
@@ -1133,21 +1100,18 @@ namespace InstruLearn_Application.BLL.Service
                     };
                 }
 
-                // Store the old teacher ID for notification message
                 var oldTeacherId = schedule.TeacherId;
                 var oldTeacherName = oldTeacherId.HasValue
                     ? (await _unitOfWork.TeacherRepository.GetByIdAsync(oldTeacherId.Value))?.Fullname ?? "Unknown"
                     : "No teacher";
 
-                // Update the schedule with the new teacher ID and change reason
                 schedule.TeacherId = teacherId;
-                schedule.ChangeReason = changeReason; // Store the reason for this change
+                schedule.ChangeReason = changeReason;
                 schedule.PreferenceStatus = PreferenceStatus.ChangeTeacher;
 
                 await _unitOfWork.ScheduleRepository.UpdateAsync(schedule);
                 await _unitOfWork.SaveChangeAsync();
 
-                // Get learner information if available
                 string learnerName = "N/A";
                 if (schedule.LearnerId.HasValue)
                 {
@@ -1155,22 +1119,18 @@ namespace InstruLearn_Application.BLL.Service
                     learnerName = learner?.FullName ?? "N/A";
                 }
 
-                // Format the date and time for better readability
                 string formattedDate = schedule.StartDay.ToString("dd/MM/yyyy");
                 string formattedStartTime = schedule.TimeStart.ToString("HH:mm");
                 string formattedEndTime = schedule.TimeEnd.ToString("HH:mm");
 
-                // If there's a learner associated with this schedule, send them a notification
                 if (schedule.LearnerId.HasValue)
                 {
                     var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(schedule.LearnerId.Value);
                     if (learner != null && learner.Account != null)
                     {
-                        // Get the learner's email address
                         var account = await _unitOfWork.AccountRepository.GetByIdAsync(learner.AccountId);
                         if (account != null && !string.IsNullOrEmpty(account.Email))
                         {
-                            // Send a notification email to the learner
                             string subject = "Your Schedule Has Been Updated";
                             string body = $@"
                 <html>
@@ -1191,8 +1151,7 @@ namespace InstruLearn_Application.BLL.Service
                     }
                 }
 
-                // Send notification to the new teacher
-                if (teacher.AccountId != null) // Check if AccountId is not null
+                if (teacher.AccountId != null)
                 {
                     var teacherAccount = await _unitOfWork.AccountRepository.GetByIdAsync(teacher.AccountId);
                     if (teacherAccount != null && !string.IsNullOrEmpty(teacherAccount.Email))
@@ -1221,11 +1180,10 @@ namespace InstruLearn_Application.BLL.Service
                     }
                 }
 
-                // Check if we need to notify the old teacher too
                 if (oldTeacherId.HasValue && oldTeacherId.Value != teacherId)
                 {
                     var oldTeacher = await _unitOfWork.TeacherRepository.GetByIdAsync(oldTeacherId.Value);
-                    if (oldTeacher != null && oldTeacher.AccountId != null) // Check if AccountId is not null
+                    if (oldTeacher != null && oldTeacher.AccountId != null)
                     {
                         var oldTeacherAccount = await _unitOfWork.AccountRepository.GetByIdAsync(oldTeacher.AccountId);
                         if (oldTeacherAccount != null && !string.IsNullOrEmpty(oldTeacherAccount.Email))
@@ -1382,7 +1340,6 @@ namespace InstruLearn_Application.BLL.Service
                     {
                         if (conflictCheck.Data is List<object> conflicts)
                         {
-                            // Convert to list of dynamic objects
                             var filteredConflicts = conflicts
                                 .Cast<dynamic>()
                                 .Where(c => (int)c.ScheduleId != makeupSchedule.ScheduleId)
@@ -1618,10 +1575,8 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                // Get current date as DateOnly
                 DateOnly today = DateOnly.FromDateTime(DateTime.Now);
 
-                // Get schedules for which attendance status is still NotYet and the date is before today
                 var overdueSchedules = await _unitOfWork.ScheduleRepository
                     .GetWhereAsync(s => s.AttendanceStatus == AttendanceStatus.NotYet &&
                                        s.StartDay < today);
@@ -1641,19 +1596,16 @@ namespace InstruLearn_Application.BLL.Service
 
                 foreach (var schedule in overdueSchedules)
                 {
-                    // Update the attendance status to Absent
                     schedule.AttendanceStatus = AttendanceStatus.Absent;
                     await _unitOfWork.ScheduleRepository.UpdateAsync(schedule);
                     updatedCount++;
 
-                    // Get learner information if available to send email notification
                     if (schedule.LearnerId.HasValue)
                     {
                         var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(schedule.LearnerId.Value);
 
                         if (learner != null && learner.Account != null && !string.IsNullOrEmpty(learner.Account.Email))
                         {
-                            // Get teacher information if available
                             string teacherName = "Your teacher";
                             if (schedule.TeacherId.HasValue)
                             {
@@ -1661,12 +1613,10 @@ namespace InstruLearn_Application.BLL.Service
                                 teacherName = teacher?.Fullname ?? "Your teacher";
                             }
 
-                            // Format the date and time for better readability
                             string formattedDate = schedule.StartDay.ToString("dd/MM/yyyy");
                             string formattedStartTime = schedule.TimeStart.ToString("HH:mm");
                             string formattedEndTime = schedule.TimeEnd.ToString("HH:mm");
 
-                            // Send notification email to the learner
                             string subject = "Missed Class Notification";
                             string body = $@"
                 <html>

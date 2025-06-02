@@ -19,7 +19,6 @@ namespace InstruLearn_Application.BLL.Service
         private readonly ILogger<PaymentReminderService> _logger;
         private readonly IServiceProvider _serviceProvider;
 
-        // Run every hour
         private readonly TimeSpan _checkInterval = TimeSpan.FromMinutes(1);
 
         public PaymentReminderService(
@@ -45,7 +44,6 @@ namespace InstruLearn_Application.BLL.Service
                     _logger.LogError(ex, "Đã xảy ra lỗi khi xử lý nhắc nhở thanh toán");
                 }
 
-                // Wait for the next check interval
                 await Task.Delay(_checkInterval, stoppingToken);
             }
         }
@@ -58,7 +56,6 @@ namespace InstruLearn_Application.BLL.Service
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
             var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
 
-            // Get registration statuses that need reminders
             var registrations = await unitOfWork.LearningRegisRepository
                 .GetWithIncludesAsync(
                     x => (x.Status == LearningRegis.Accepted || x.Status == LearningRegis.FourtyFeedbackDone) &&
@@ -83,7 +80,6 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     if (!registration.PaymentDeadline.HasValue || !registration.LastReminderSent.HasValue)
                     {
-                        // Initialize reminder tracking if not set
                         registration.LastReminderSent = null;
                         registration.ReminderCount = 0;
                     }
@@ -93,17 +89,14 @@ namespace InstruLearn_Application.BLL.Service
                     TimeSpan reminderInterval;
                     int maxReminders;
 
-                    // Determine reminder parameters based on registration status
                     if (registration.Status == LearningRegis.Accepted)
                     {
-                        // Case 1: Learning path confirmation - remind after 24 hours, max 3 reminders
                         reminderInterval = TimeSpan.FromDays(1);
                         maxReminders = 3;
                         reminderType = "LearningPath";
                     }
                     else if (registration.Status == LearningRegis.FourtyFeedbackDone)
                     {
-                        // Case 2: Feedback submission - remind after 6 hours, max 4 reminders
                         reminderInterval = TimeSpan.FromHours(6);
                         maxReminders = 4;
                         reminderType = "Feedback";
@@ -113,7 +106,6 @@ namespace InstruLearn_Application.BLL.Service
                         continue;
                     }
 
-                    // Check if it's time to send a reminder
                     if ((!registration.LastReminderSent.HasValue ||
                          now - registration.LastReminderSent.Value >= reminderInterval) &&
                         registration.ReminderCount < maxReminders &&
@@ -122,7 +114,6 @@ namespace InstruLearn_Application.BLL.Service
                         shouldSendReminder = true;
                     }
 
-                    // Check if this is a special case for teacher change
                     if (registration.Status == LearningRegis.FourtyFeedbackDone &&
                         registration.ChangeTeacherRequested &&
                         registration.TeacherChangeProcessed &&
@@ -142,7 +133,6 @@ namespace InstruLearn_Application.BLL.Service
 
                         if (success)
                         {
-                            // Update reminder tracking
                             registration.LastReminderSent = now;
                             registration.ReminderCount++;
 
@@ -176,7 +166,6 @@ namespace InstruLearn_Application.BLL.Service
     Learning_Registration registration,
     string reminderType)
         {
-            // Check if learner has valid email
             if (registration.Learner?.Account?.Email == null)
             {
                 _logger.LogWarning("Không thể gửi nhắc nhở đến học viên {id} - không tìm thấy địa chỉ email", registration.LearnerId);
@@ -186,12 +175,10 @@ namespace InstruLearn_Application.BLL.Service
             string learnerEmail = registration.Learner.Account.Email;
             string learnerName = registration.Learner.FullName;
 
-            // Calculate remaining time until deadline
             TimeSpan timeUntilDeadline = registration.PaymentDeadline.Value - DateTime.Now;
             int hoursRemaining = Math.Max(0, (int)timeUntilDeadline.TotalHours);
             int daysRemaining = Math.Max(0, (int)timeUntilDeadline.TotalDays);
 
-            // Calculate amount to pay
             decimal amountDue = 0;
             string paymentPercentage = "";
 
@@ -206,13 +193,11 @@ namespace InstruLearn_Application.BLL.Service
                 paymentPercentage = "60%";
             }
 
-            // Create email content based on reminder type
             string subject = "";
             string body = "";
 
             if (reminderType == "TeacherChange")
             {
-                // Special case after teacher change
                 subject = "Giáo viên mới đã được chỉ định - Thanh toán để tiếp tục học";
                 body = $@"
 <html>
@@ -254,7 +239,6 @@ namespace InstruLearn_Application.BLL.Service
 
                 if (reminderType == "LearningPath")
                 {
-                    // Learning path reminders
                     if (reminderNumber == 1) urgencyLevel = "Nhắc nhở";
                     else if (reminderNumber == 2) urgencyLevel = "Nhắc nhở lần 2";
                     else urgencyLevel = "QUAN TRỌNG - Nhắc nhở cuối cùng";
@@ -293,7 +277,6 @@ namespace InstruLearn_Application.BLL.Service
                 }
                 else
                 {
-                    // Feedback reminders
                     if (reminderNumber == 1) urgencyLevel = "Nhắc nhở";
                     else if (reminderNumber == 2) urgencyLevel = "Nhắc nhở lần 2";
                     else if (reminderNumber == 3) urgencyLevel = "Nhắc nhở lần 3";
@@ -342,7 +325,6 @@ namespace InstruLearn_Application.BLL.Service
                     isHtml: true
                 );
 
-                // Create notification in the system
                 var notification = new StaffNotification
                 {
                     Title = subject,
@@ -411,7 +393,6 @@ namespace InstruLearn_Application.BLL.Service
 
                 if (success)
                 {
-                    // Update reminder tracking
                     registration.LastReminderSent = DateTime.Now;
                     registration.ReminderCount++;
 
@@ -459,7 +440,6 @@ namespace InstruLearn_Application.BLL.Service
                 using var scope = _serviceProvider.CreateScope();
                 var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
-                // Get all registrations with pending payments
                 var pendingRegistrations = await unitOfWork.LearningRegisRepository
                     .GetWithIncludesAsync(
                         x => (x.Status == LearningRegis.Accepted || x.Status == LearningRegis.FourtyFeedbackDone) &&

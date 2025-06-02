@@ -175,7 +175,6 @@ namespace InstruLearn_Application.BLL.Service
                 return response;
             }
 
-            // Change status to Banned
             var account = await _unitOfWork.AccountRepository.GetByIdAsync(staff.AccountId);
             account.IsActive = AccountStatus.Active;
 
