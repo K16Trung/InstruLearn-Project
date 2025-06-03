@@ -75,6 +75,21 @@ namespace InstruLearn_Application.BLL.Service
 
                     if (registration != null)
                     {
+
+                        // Add learner address and account details
+                        if (registration.LearnerId > 0)
+                        {
+                            var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(registration.LearnerId);
+                            if (learner != null && !string.IsNullOrEmpty(learner.AccountId))
+                            {
+                                var account = await _unitOfWork.AccountRepository.GetByIdAsync(learner.AccountId);
+                                if (account != null)
+                                {
+                                    enrichedReg["learnerAddress"] = account.Address;
+                                }
+                            }
+                        }
+
                         var learningPathSessions = await _unitOfWork.LearningPathSessionRepository
                             .GetByLearningRegisIdAsync(regDto.LearningRegisId);
 
