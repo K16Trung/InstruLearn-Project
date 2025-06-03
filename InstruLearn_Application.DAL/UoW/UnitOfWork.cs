@@ -210,12 +210,18 @@ namespace InstruLearn_Application.DAL.UoW
         {
             try
             {
-                await _transaction.CommitAsync();
+                if (_transaction != null)
+                {
+                    await _transaction.CommitAsync();
+                }
             }
             finally
             {
-                await _transaction.DisposeAsync();
-                _transaction = null;
+                if (_transaction != null)
+                {
+                    await _transaction.DisposeAsync();
+                    _transaction = null;
+                }
             }
         }
 
@@ -223,12 +229,18 @@ namespace InstruLearn_Application.DAL.UoW
         {
             try
             {
-                await _transaction.RollbackAsync();
+                if (_transaction != null)
+                {
+                    await _transaction.RollbackAsync();
+                }
             }
             finally
             {
-                await _transaction.DisposeAsync();
-                _transaction = null;
+                if (_transaction != null)
+                {
+                    await _transaction.DisposeAsync();
+                    _transaction = null;
+                }
             }
         }
     }

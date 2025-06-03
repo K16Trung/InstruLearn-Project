@@ -72,7 +72,12 @@ namespace InstruLearn_Application.BLL.Service
                     IsActive = AccountStatus.Active,
                     IsEmailVerified = true,
                     RefreshToken = _jwtHelper.GenerateRefreshToken(),
-                    RefreshTokenExpires = DateTime.Now.AddDays(7)
+                    RefreshTokenExpires = DateTime.Now.AddDays(7),
+                    PhoneNumber = createAdminDTO.PhoneNumber ?? "",
+                    DateOfEmployment = DateOnly.FromDateTime(DateTime.Now),
+                    Gender = "",
+                    Address = "",
+                    Avatar = ""
                 };
 
                 account.Token = _jwtHelper.GenerateJwtToken(account);
@@ -98,7 +103,14 @@ namespace InstruLearn_Application.BLL.Service
             catch (Exception ex)
             {
                 await _unitOfWork.RollbackTransactionAsync();
-                response.Message = $"Error creating admin: {ex.Message}";
+
+                var errorMessage = $"Error creating admin: {ex.Message}";
+                if (ex.InnerException != null)
+                {
+                    errorMessage += $" Inner exception: {ex.InnerException.Message}";
+                }
+
+                response.Message = errorMessage;
                 return response;
             }
         }
