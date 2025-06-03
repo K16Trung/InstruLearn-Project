@@ -186,7 +186,7 @@ namespace InstruLearn_Application.BLL.Service
                     {
                         LearnerId = learnerId,
                         CertificationType = CertificationType.CenterLearning,
-                        CertificationName = $"Center Learning Certificate - {classEntity.ClassName} (Class ID: {classId})",
+                        CertificationName = $"{classEntity.ClassName}",
                         TeacherName = teacherName,
                         Subject = majorName
                     };
