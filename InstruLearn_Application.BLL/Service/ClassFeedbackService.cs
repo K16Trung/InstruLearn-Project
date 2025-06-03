@@ -185,13 +185,15 @@ namespace InstruLearn_Application.BLL.Service
             if (totalPercentage > 50)
             {
                 var existingCertificates = await _unitOfWork.CertificationRepository.GetByLearnerIdAsync(feedbackDTO.LearnerId);
-                var existingCertForClass = existingCertificates.FirstOrDefault(c =>
+
+                var existingCertsForClass = existingCertificates.Where(c =>
                     c.CertificationType == CertificationType.CenterLearning &&
                     c.CertificationName != null &&
-                    c.CertificationName.Contains(classEntity.ClassId.ToString()));
+                    c.CertificationName.Contains(classEntity.ClassId.ToString())).ToList();
 
-                bool isTemporaryCert = existingCertForClass != null &&
-                    existingCertForClass.CertificationName.Contains("[TEMPORARY]");
+                var permanentCert = existingCertsForClass.FirstOrDefault(c => !c.CertificationName.Contains("[TEMPORARY]"));
+
+                var temporaryCert = existingCertsForClass.FirstOrDefault(c => c.CertificationName.Contains("[TEMPORARY]"));
 
                 string teacherName = "Unknown Teacher";
                 if (classEntity.Teacher != null)
@@ -221,115 +223,137 @@ namespace InstruLearn_Application.BLL.Service
                     }
                 }
 
-                if (existingCertForClass == null)
+                if (permanentCert == null)
                 {
-                    var certification = new Certification
+                    if (temporaryCert != null)
                     {
-                        LearnerId = feedbackDTO.LearnerId,
-                        CertificationType = CertificationType.CenterLearning,
-                        CertificationName = $"Center Learning Certificate - {classEntity.ClassName} (Class ID: {classEntity.ClassId})",
-                        TeacherName = teacherName,
-                        Subject = majorName,
-                        IssueDate = DateTime.Now
-                    };
+                        temporaryCert.CertificationName = temporaryCert.CertificationName.Replace("[TEMPORARY] ", "");
+                        temporaryCert.IssueDate = DateTime.Now;
 
-                    await _unitOfWork.CertificationRepository.AddAsync(certification);
-                    await _unitOfWork.SaveChangeAsync();
+                        await _unitOfWork.CertificationRepository.UpdateAsync(temporaryCert);
+                        await _unitOfWork.SaveChangeAsync();
 
-                    try
-                    {
-                        var certificationData = new CertificationDataDTO
+                        try
                         {
-                            CertificationId = certification.CertificationId,
-                            LearnerName = learner.FullName,
-                            LearnerEmail = learner.FullName,
-                            CertificationType = certification.CertificationType.ToString(),
-                            CertificationName = certification.CertificationName,
-                            IssueDate = certification.IssueDate,
-                            TeacherName = certification.TeacherName,
-                            Subject = certification.Subject,
-                            FileStatus = String.Empty,
-                            FileLink = String.Empty
-                        };
-
-                        _ = Task.Run(async () =>
-                        {
-                            try
+                            var certificationData = new CertificationDataDTO
                             {
-                                await _googleSheetsService.SaveCertificationDataAsync(certificationData);
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine($"Error saving certificate to Google Sheets: {ex.Message}");
-                            }
-                        });
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Error preparing certificate for Google Sheets: {ex.Message}");
-                    }
+                                CertificationId = temporaryCert.CertificationId,
+                                LearnerName = learner.FullName,
+                                LearnerEmail = learner.FullName,
+                                CertificationType = temporaryCert.CertificationType.ToString(),
+                                CertificationName = temporaryCert.CertificationName,
+                                IssueDate = temporaryCert.IssueDate,
+                                TeacherName = temporaryCert.TeacherName,
+                                Subject = temporaryCert.Subject,
+                                FileStatus = String.Empty,
+                                FileLink = String.Empty
+                            };
 
-                    return new ResponseDTO
-                    {
-                        IsSucceed = true,
-                        Message = "Feedback created successfully and certification issued due to high score",
-                        Data = new
-                        {
-                            FeedbackId = createdFeedback.FeedbackId,
-                            CertificationIssued = true,
-                            Score = totalPercentage
+                            _ = Task.Run(async () =>
+                            {
+                                try
+                                {
+                                    await _googleSheetsService.SaveCertificationDataAsync(certificationData);
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine($"Error saving certificate to Google Sheets: {ex.Message}");
+                                }
+                            });
                         }
-                    };
-                }
-                else if (isTemporaryCert)
-                {
-                    existingCertForClass.CertificationName = existingCertForClass.CertificationName.Replace("[TEMPORARY] ", "");
-                    existingCertForClass.IssueDate = DateTime.Now;
-
-                    await _unitOfWork.CertificationRepository.UpdateAsync(existingCertForClass);
-                    await _unitOfWork.SaveChangeAsync();
-
-                    try
-                    {
-                        var certificationData = new CertificationDataDTO
+                        catch (Exception ex)
                         {
-                            CertificationId = existingCertForClass.CertificationId,
-                            LearnerName = learner.FullName,
-                            LearnerEmail = learner.FullName,
-                            CertificationType = existingCertForClass.CertificationType.ToString(),
-                            CertificationName = existingCertForClass.CertificationName,
-                            IssueDate = existingCertForClass.IssueDate,
-                            TeacherName = existingCertForClass.TeacherName,
-                            Subject = existingCertForClass.Subject,
-                            FileStatus = String.Empty,
-                            FileLink = String.Empty
+                            Console.WriteLine($"Error preparing certificate for Google Sheets: {ex.Message}");
+                        }
+
+                        return new ResponseDTO
+                        {
+                            IsSucceed = true,
+                            Message = "Feedback created successfully and temporary certification upgraded to permanent due to high score",
+                            Data = new
+                            {
+                                FeedbackId = createdFeedback.FeedbackId,
+                                CertificationUpgraded = true,
+                                Score = totalPercentage
+                            }
+                        };
+                    }
+                    else
+                    {
+                        var certification = new Certification
+                        {
+                            LearnerId = feedbackDTO.LearnerId,
+                            CertificationType = CertificationType.CenterLearning,
+                            CertificationName = $"{classEntity.ClassName}",
+                            TeacherName = teacherName,
+                            Subject = majorName,
+                            IssueDate = DateTime.Now
                         };
 
-                        _ = Task.Run(async () =>
+                        await _unitOfWork.CertificationRepository.AddAsync(certification);
+                        await _unitOfWork.SaveChangeAsync();
+
+                        try
                         {
-                            try
+                            var certificationData = new CertificationDataDTO
                             {
-                                await _googleSheetsService.SaveCertificationDataAsync(certificationData);
-                            }
-                            catch (Exception ex)
+                                CertificationId = certification.CertificationId,
+                                LearnerName = learner.FullName,
+                                LearnerEmail = learner.FullName,
+                                CertificationType = certification.CertificationType.ToString(),
+                                CertificationName = certification.CertificationName,
+                                IssueDate = certification.IssueDate,
+                                TeacherName = certification.TeacherName,
+                                Subject = certification.Subject,
+                                FileStatus = String.Empty,
+                                FileLink = String.Empty
+                            };
+
+                            _ = Task.Run(async () =>
                             {
-                                Console.WriteLine($"Error saving certificate to Google Sheets: {ex.Message}");
+                                try
+                                {
+                                    await _googleSheetsService.SaveCertificationDataAsync(certificationData);
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine($"Error saving certificate to Google Sheets: {ex.Message}");
+                                }
+                            });
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Error preparing certificate for Google Sheets: {ex.Message}");
+                        }
+
+                        return new ResponseDTO
+                        {
+                            IsSucceed = true,
+                            Message = "Feedback created successfully and certification issued due to high score",
+                            Data = new
+                            {
+                                FeedbackId = createdFeedback.FeedbackId,
+                                CertificationIssued = true,
+                                Score = totalPercentage
                             }
-                        });
+                        };
                     }
-                    catch (Exception ex)
+                }
+                else
+                {
+                    if (temporaryCert != null)
                     {
-                        Console.WriteLine($"Error preparing certificate for Google Sheets: {ex.Message}");
+                        await _unitOfWork.CertificationRepository.DeleteAsync(temporaryCert.CertificationId);
+                        await _unitOfWork.SaveChangeAsync();
                     }
 
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "Feedback created successfully and temporary certification upgraded to permanent due to high score",
+                        Message = "Feedback created successfully. Learner already has a permanent certificate.",
                         Data = new
                         {
                             FeedbackId = createdFeedback.FeedbackId,
-                            CertificationUpgraded = true,
                             Score = totalPercentage
                         }
                     };
