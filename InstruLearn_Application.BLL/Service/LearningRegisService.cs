@@ -100,7 +100,7 @@ namespace InstruLearn_Application.BLL.Service
 
                         if (registration.Schedules != null && registration.Schedules.Any())
                         {
-                            _logger.LogInformation($"Processing schedules for registration ID: {registration.LearningRegisId}. Found {registration.Schedules.Count} total schedule(s)");
+                            _logger.LogInformation($"Đang xử lý lịch trình cho đăng ký ID: {registration.LearningRegisId}. Đã tìm thấy {registration.Schedules.Count} lịch trình tổng cộng");
 
                             var orderedSchedules = registration.Schedules
                                 .OrderBy(s => s.StartDay)
@@ -115,7 +115,7 @@ namespace InstruLearn_Application.BLL.Service
                                  availableDayValues.Count > 0 &&
                                  registration.NumberOfSession > 0)
                         {
-                            _logger.LogInformation($"No schedules found for registration ID: {registration.LearningRegisId}. Generating dates based on learning days.");
+                            _logger.LogInformation($"Không tìm thấy lịch trình cho đăng ký ID: {registration.LearningRegisId}. Đang tạo ngày dựa trên các ngày học.");
 
                             DateOnly currentDate = registration.StartDay.Value;
 
@@ -138,7 +138,7 @@ namespace InstruLearn_Application.BLL.Service
                         }
                         else
                         {
-                            _logger.LogWarning($"Unable to calculate session dates for registration ID: {registration.LearningRegisId}");
+                            _logger.LogWarning($"Không thể tính toán ngày buổi học cho đăng ký ID: {registration.LearningRegisId}");
                             regDto.SessionDates = new List<string>();
                         }
 
@@ -157,7 +157,7 @@ namespace InstruLearn_Application.BLL.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving learning registrations with payment information");
+                _logger.LogError(ex, "Lỗi khi lấy đăng ký học tập cùng thông tin thanh toán");
                 return new ResponseDTO
                 {
                     IsSucceed = false,
@@ -243,7 +243,7 @@ namespace InstruLearn_Application.BLL.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error retrieving learning registration {learningRegisId} with payment information");
+                _logger.LogError(ex, $"Lỗi khi lấy đăng ký học tập {learningRegisId} cùng thông tin thanh toán");
                 return new ResponseDTO
                 {
                     IsSucceed = false,
@@ -275,7 +275,7 @@ namespace InstruLearn_Application.BLL.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error retrieving registrations for teacher {teacherId}: {ex.Message}");
+                _logger.LogError(ex, $"Lỗi khi lấy đăng ký cho giáo viên {teacherId}: {ex.Message}");
                 return new ResponseDTO
                 {
                     IsSucceed = false,
@@ -288,7 +288,7 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                _logger.LogInformation("Starting learning registration process.");
+                _logger.LogInformation("Bắt đầu quá trình đăng ký học tập.");
 
                 if (createLearningRegisDTO.LearningDays == null || !createLearningRegisDTO.LearningDays.Any())
                 {
@@ -315,7 +315,7 @@ namespace InstruLearn_Application.BLL.Service
                     }
                 }
 
-                _logger.LogInformation($"Checking potential schedule conflicts across {scheduleDates.Count} session dates");
+                _logger.LogInformation($"Đang kiểm tra xung đột lịch trình tiềm năng qua {scheduleDates.Count} ngày buổi học");
 
                 foreach (var date in scheduleDates)
                 {
@@ -362,18 +362,18 @@ namespace InstruLearn_Application.BLL.Service
                     if (depositConfig != null && decimal.TryParse(depositConfig.Value, out decimal configValue))
                     {
                         depositAmount = configValue;
-                        _logger.LogInformation($"Using configured deposit amount: {depositAmount}");
+                        _logger.LogInformation($"Sử dụng số tiền đặt cọc đã cấu hình: {depositAmount}");
                     }
                     else
                     {
-                        _logger.LogInformation($"Using default deposit amount: {depositAmount}");
+                        _logger.LogInformation($"Sử dụng số tiền đặt cọc mặc định: {depositAmount}");
                     }
 
                     var wallet = await _unitOfWork.WalletRepository.GetFirstOrDefaultAsync(w => w.LearnerId == createLearningRegisDTO.LearnerId);
 
                     if (wallet == null)
                     {
-                        _logger.LogWarning($"Wallet not found for learnerId: {createLearningRegisDTO.LearnerId}");
+                        _logger.LogWarning($"Không tìm thấy ví cho học viên: {createLearningRegisDTO.LearnerId}");
                         return new ResponseDTO
                         {
                             IsSucceed = false,
@@ -381,11 +381,11 @@ namespace InstruLearn_Application.BLL.Service
                         };
                     }
 
-                    _logger.LogInformation($"Wallet found for learnerId: {createLearningRegisDTO.LearnerId}, balance: {wallet.Balance}");
+                    _logger.LogInformation($"Đã tìm thấy ví cho học viên: {createLearningRegisDTO.LearnerId}, số dư: {wallet.Balance}");
 
                     if (wallet.Balance < depositAmount)
                     {
-                        _logger.LogWarning($"Insufficient balance for learnerId: {createLearningRegisDTO.LearnerId}. Current balance: {wallet.Balance}, Required deposit: {depositAmount}");
+                        _logger.LogWarning($"Số dư không đủ cho học viên: {createLearningRegisDTO.LearnerId}. Số dư hiện tại: {wallet.Balance}, Số tiền đặt cọc yêu cầu: {depositAmount}");
                         return new ResponseDTO
                         {
                             IsSucceed = false,
@@ -443,7 +443,7 @@ namespace InstruLearn_Application.BLL.Service
 
                     await transaction.CommitAsync();
 
-                    _logger.LogInformation($"Learning registration added successfully. Wallet balance updated with deposit amount: {depositAmount}");
+                    _logger.LogInformation($"Đăng ký học tập đã được thêm thành công. Số dư ví đã được cập nhật với số tiền đặt cọc: {depositAmount}");
 
                     var timeEnd = learningRegis.TimeStart.AddMinutes(createLearningRegisDTO.TimeLearning);
                     var timeEndFormatted = timeEnd.ToString("HH:mm");
@@ -462,7 +462,7 @@ namespace InstruLearn_Application.BLL.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred while processing learning registration.");
+                _logger.LogError(ex, "Đã xảy ra lỗi trong quá trình xử lý đăng ký học tập.");
                 return new ResponseDTO
                 {
                     IsSucceed = false,
@@ -579,7 +579,7 @@ namespace InstruLearn_Application.BLL.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error retrieving learning registrations for learner {learnerId} with payment information");
+                _logger.LogError(ex, $"Lỗi khi lấy đăng ký học tập cho học viên {learnerId} cùng thông tin thanh toán");
                 return new ResponseDTO
                 {
                     IsSucceed = false,
@@ -763,7 +763,7 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                _logger.LogInformation($"Starting class enrollment process for learner ID: {paymentDTO.LearnerId}, class ID: {paymentDTO.ClassId}");
+                _logger.LogInformation($"Bắt đầu quá trình đăng ký lớp học cho học viên ID: {paymentDTO.LearnerId}, lớp ID: {paymentDTO.ClassId}");
                 var classScheduleConflict = await _scheduleService.CheckLearnerClassScheduleConflictAsync(paymentDTO.LearnerId, paymentDTO.ClassId);
 
                 if (!classScheduleConflict.IsSucceed)
@@ -791,11 +791,11 @@ namespace InstruLearn_Application.BLL.Service
                 var classEntity = await _unitOfWork.ClassRepository.GetByIdAsync(paymentDTO.ClassId);
                 if (classEntity == null)
                 {
-                    _logger.LogWarning($"Class with ID {paymentDTO.ClassId} not found");
+                    _logger.LogWarning($"Không tìm thấy lớp với ID {paymentDTO.ClassId}");
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = $"Class with ID {paymentDTO.ClassId} not found."
+                        Message = $"Không tìm thấy lớp học với ID {paymentDTO.ClassId}."
                     };
                 }
 
@@ -803,24 +803,24 @@ namespace InstruLearn_Application.BLL.Service
                 {
                     string statusMessage = classEntity.Status switch
                     {
-                        ClassStatus.OnTestDay => "class is on test day",
-                        ClassStatus.Ongoing => "class has already started",
-                        ClassStatus.Completed => "class has already completed",
-                        _ => "class is not in an enrollable state"
+                        ClassStatus.OnTestDay => "lớp học đang trong ngày kiểm tra",
+                        ClassStatus.Ongoing => "lớp học đã bắt đầu",
+                        ClassStatus.Completed => "lớp học đã kết thúc",
+                        _ => "lớp học không ở trạng thái có thể đăng ký"
                     };
 
-                    _logger.LogWarning($"Learner {paymentDTO.LearnerId} attempted to join class {paymentDTO.ClassId} but {statusMessage}");
+                    _logger.LogWarning($"Học viên {paymentDTO.LearnerId} đã cố gắng tham gia lớp {paymentDTO.ClassId} nhưng {statusMessage}");
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = $"Cannot enroll in this class as the {statusMessage}. Only classes with 'Scheduled' status are available for enrollment."
+                        Message = $"Không thể đăng ký vào lớp học này vì {statusMessage}. Chỉ những lớp học có trạng thái 'Đã lên lịch' mới có thể đăng ký."
                     };
                 }
 
                 DateOnly today = DateOnly.FromDateTime(DateTime.Now);
                 if (classEntity.TestDay == today)
                 {
-                    _logger.LogWarning($"Learner {paymentDTO.LearnerId} attempted to join class {paymentDTO.ClassId} on test day");
+                    _logger.LogWarning($"Học viên {paymentDTO.LearnerId} đã cố gắng tham gia lớp {paymentDTO.ClassId} vào ngày kiểm tra");
                     return new ResponseDTO
                     {
                         IsSucceed = false,
@@ -835,21 +835,21 @@ namespace InstruLearn_Application.BLL.Service
                     int? levelId = classEntity.LevelId;
                     if (!levelId.HasValue)
                     {
-                        _logger.LogWarning($"Class with ID {paymentDTO.ClassId} doesn't have an associated level");
+                        _logger.LogWarning($"Lớp học với ID {paymentDTO.ClassId} không có cấp độ liên kết");
                     }
                     else
                     {
-                        _logger.LogInformation($"Using level ID {levelId} from class {paymentDTO.ClassId}");
+                        _logger.LogInformation($"Sử dụng cấp độ ID {levelId} từ lớp {paymentDTO.ClassId}");
                     }
 
                     var learner = await _unitOfWork.LearnerRepository.GetByIdAsync(paymentDTO.LearnerId);
                     if (learner == null)
                     {
-                        _logger.LogWarning($"Learner with ID {paymentDTO.LearnerId} not found");
+                        _logger.LogWarning($"Không tìm thấy học viên với ID {paymentDTO.LearnerId}");
                         return new ResponseDTO
                         {
                             IsSucceed = false,
-                            Message = $"Learner with ID {paymentDTO.LearnerId} not found."
+                            Message = $"Không tìm thấy học viên với ID {paymentDTO.LearnerId}."
                         };
                     }
 
@@ -858,61 +858,61 @@ namespace InstruLearn_Application.BLL.Service
 
                     if (existingLearnerClassEnrollment != null)
                     {
-                        _logger.LogWarning($"Learner {paymentDTO.LearnerId} is already enrolled in class {paymentDTO.ClassId}");
+                        _logger.LogWarning($"Học viên {paymentDTO.LearnerId} đã đăng ký vào lớp {paymentDTO.ClassId}");
                         return new ResponseDTO
                         {
                             IsSucceed = false,
-                            Message = "You are already enrolled in this class."
+                            Message = "Bạn đã đăng ký vào lớp này."
                         };
                     }
 
                     decimal pricePerDay = classEntity.Price;
                     if (pricePerDay <= 0)
                     {
-                        _logger.LogWarning($"Invalid price for class {paymentDTO.ClassId}: {pricePerDay}");
+                        _logger.LogWarning($"Giá không hợp lệ cho lớp {paymentDTO.ClassId}: {pricePerDay}");
                         return new ResponseDTO
                         {
                             IsSucceed = false,
-                            Message = "Invalid class price."
+                            Message = "Giá lớp học không hợp lệ."
                         };
                     }
 
                     decimal totalClassPrice = pricePerDay * classEntity.totalDays;
                     decimal paymentAmount = Math.Round(totalClassPrice * 0.1m, 2);
 
-                    _logger.LogInformation($"Class price calculation: {pricePerDay} per day × {classEntity.totalDays} days = {totalClassPrice} total. 10% payment: {paymentAmount}");
+                    _logger.LogInformation($"Tính giá lớp học: {pricePerDay} mỗi ngày × {classEntity.totalDays} ngày = {totalClassPrice} tổng cộng. Thanh toán 10%: {paymentAmount}");
 
                     var classRegisType = await _unitOfWork.LearningRegisTypeRepository.GetQuery()
                         .FirstOrDefaultAsync(rt => rt.RegisTypeName.Contains("Center"));
 
                     if (classRegisType == null)
                     {
-                        _logger.LogWarning("Class registration type not found in the database");
+                        _logger.LogWarning("Không tìm thấy loại đăng ký lớp học trong database");
                         return new ResponseDTO
                         {
                             IsSucceed = false,
-                            Message = "Class registration type not found in the system."
+                            Message = "Không tìm thấy loại đăng ký lớp học trong hệ thống."
                         };
                     }
 
                     var wallet = await _unitOfWork.WalletRepository.GetFirstOrDefaultAsync(w => w.LearnerId == paymentDTO.LearnerId);
                     if (wallet == null)
                     {
-                        _logger.LogWarning($"Wallet not found for learner {paymentDTO.LearnerId}");
+                        _logger.LogWarning($"Không tìm thấy ví cho học viên {paymentDTO.LearnerId}");
                         return new ResponseDTO
                         {
                             IsSucceed = false,
-                            Message = "Wallet not found for your account."
+                            Message = "Không tìm thấy ví cho tài khoản của bạn."
                         };
                     }
 
                     if (wallet.Balance < paymentAmount)
                     {
-                        _logger.LogWarning($"Insufficient balance for learner {paymentDTO.LearnerId}. Required: {paymentAmount}, Available: {wallet.Balance}");
+                        _logger.LogWarning($"Số dư không đủ cho học viên {paymentDTO.LearnerId}. Bắt buộc: {paymentAmount}, Có sẵn: {wallet.Balance}");
                         return new ResponseDTO
                         {
                             IsSucceed = false,
-                            Message = $"Insufficient balance. Required: {paymentAmount} (10% of total {totalClassPrice}), Available: {wallet.Balance}"
+                            Message = $"Số dư không đủ. Bắt buộc: {paymentAmount} (10% tổng số {totalClassPrice}), Có sẵn: {wallet.Balance}"
                         };
                     }
 
@@ -967,11 +967,11 @@ namespace InstruLearn_Application.BLL.Service
 
                     if (classEntity.StartDate == today)
                     {
-                        _logger.LogInformation($"Class starts today. Creating temporary certificate for learner {paymentDTO.LearnerId} in class {paymentDTO.ClassId}");
+                        _logger.LogInformation($"Lớp học bắt đầu hôm nay. Tạo chứng chỉ tạm thời cho học viên trong lớp");
 
                         try
                         {
-                            string teacherName = "Unknown Teacher";
+                            string teacherName = "Giáo viên không xác định";
                             if (classEntity.Teacher != null)
                             {
                                 teacherName = classEntity.Teacher.Fullname;
@@ -985,7 +985,7 @@ namespace InstruLearn_Application.BLL.Service
                                 }
                             }
 
-                            string majorName = "Unknown Subject";
+                            string majorName = "Môn học không xác định";
                             if (classEntity.Major != null)
                             {
                                 majorName = classEntity.Major.MajorName;
@@ -1004,7 +1004,7 @@ namespace InstruLearn_Application.BLL.Service
                                 LearnerId = paymentDTO.LearnerId,
                                 ClassId = paymentDTO.ClassId,
                                 CertificationType = CertificationType.CenterLearning,
-                                CertificationName = $"[TEMPORARY] Center Learning Certificate - {classEntity.ClassName}",
+                                CertificationName = $"[TẠM THỜI] Chứng chỉ học tập tại trung tâm - {classEntity.ClassName}",
                                 TeacherName = teacherName,
                                 Subject = majorName
                             };
@@ -1014,12 +1014,12 @@ namespace InstruLearn_Application.BLL.Service
 
                             if (certResult.IsSucceed)
                             {
-                                _logger.LogInformation($"Temporary certificate created successfully for learner {paymentDTO.LearnerId} in class {paymentDTO.ClassId}");
+                                _logger.LogInformation($"Đã tạo thành công chứng chỉ tạm thời cho học viên {paymentDTO.LearnerId} trong lớp {paymentDTO.ClassId}");
 
                                 var staffNotification = new StaffNotification
                                 {
-                                    Title = "Certificate Eligibility Verification Required",
-                                    Message = $"Learner {learner.FullName} (ID: {paymentDTO.LearnerId}) received a temporary certificate for class {classEntity.ClassName} (ID: {paymentDTO.ClassId}). Verify 75% attendance before finalizing certificate.",
+                                    Title = "Yêu cầu xác minh đủ điều kiện cấp chứng chỉ",
+                                    Message = $"Học viên {learner.FullName} đã nhận được chứng chỉ tạm thời cho lớp học {classEntity.ClassName}. Xác minh 75% sự tham dự trước khi hoàn thiện chứng chỉ.",
                                     LearnerId = paymentDTO.LearnerId,
                                     CreatedAt = DateTime.Now.AddDays(classEntity.totalDays / 2),
                                     Status = NotificationStatus.Unread,
@@ -1031,22 +1031,22 @@ namespace InstruLearn_Application.BLL.Service
                             }
                             else
                             {
-                                _logger.LogWarning($"Failed to create temporary certificate: {certResult.Message}");
+                                _logger.LogWarning($"Không thể tạo chứng chỉ tạm thời: {certResult.Message}");
                             }
                         }
                         catch (Exception certEx)
                         {
-                            _logger.LogError(certEx, $"Error creating temporary certificate for learner {paymentDTO.LearnerId} in class {paymentDTO.ClassId}");
+                            _logger.LogError(certEx, $"Lỗi khi tạo chứng chỉ tạm thời cho học viên {paymentDTO.LearnerId} trong lớp {paymentDTO.ClassId}");
                         }
                     }
                     else if (classEntity.StartDate < today)
                     {
-                        _logger.LogInformation($"Class has already started on {classEntity.StartDate}, but learner is joining today ({today}). No certificate will be created immediately.");
+                        _logger.LogInformation($"Lớp học đã bắt đầu vào {classEntity.StartDate}, nhưng học viên sẽ tham gia vào hôm nay ({today}). Sẽ không có chứng chỉ nào được tạo ngay lập tức.");
 
                         var staffNotification = new StaffNotification
                         {
-                            Title = "Late Enrollment - Certificate Eligibility Check Needed",
-                            Message = $"Learner {learner.FullName} (ID: {paymentDTO.LearnerId}) joined class {classEntity.ClassName} (ID: {paymentDTO.ClassId}) after the start date. The class started on {classEntity.StartDate} and learner joined on {today}. Check attendance before issuing certificate.",
+                            Title = "Đăng ký trễ - Cần kiểm tra điều kiện cấp chứng chỉ",
+                            Message = $"Học viên {learner.FullName} đã tham gia lớp {classEntity.ClassName} sau ngày bắt đầu. Lớp học bắt đầu vào {classEntity.StartDate} và học viên đã tham gia vào {today}. Kiểm tra điểm danh trước khi cấp chứng chỉ.",
                             LearnerId = paymentDTO.LearnerId,
                             CreatedAt = DateTime.Now.AddDays(classEntity.totalDays / 2),
                             Status = NotificationStatus.Unread,
@@ -1058,12 +1058,12 @@ namespace InstruLearn_Application.BLL.Service
                     }
                     else
                     {
-                        _logger.LogInformation($"Class starts on {classEntity.StartDate}. Creating notification for future certificate creation");
+                        _logger.LogInformation($"Lớp học bắt đầu vào {classEntity.StartDate}. Tạo thông báo cho việc tạo chứng chỉ trong tương lai");
 
                         var staffNotification = new StaffNotification
                         {
-                            Title = "Certificate Creation Scheduled",
-                            Message = $"Create certificate for learner {learner.FullName} (ID: {paymentDTO.LearnerId}) in class {classEntity.ClassName} (ID: {paymentDTO.ClassId}) on start date {classEntity.StartDate}",
+                            Title = "Đã lên lịch tạo chứng chỉ",
+                            Message = $"Tạo chứng chỉ cho học viên {learner.FullName} trong lớp {classEntity.ClassName} vào ngày bắt đầu {classEntity.StartDate}",
                             LearnerId = paymentDTO.LearnerId,
                             CreatedAt = DateTime.Now,
                             Status = NotificationStatus.Unread,
@@ -1109,35 +1109,35 @@ namespace InstruLearn_Application.BLL.Service
                         await _unitOfWork.StaffNotificationRepository.AddAsync(entranceTestNotification);
                         await _unitOfWork.SaveChangeAsync();
 
-                        _logger.LogInformation($"Created entrance test notification for learner {paymentDTO.LearnerId} for class {paymentDTO.ClassId}");
+                        _logger.LogInformation($"Đã tạo thông báo kiểm tra đầu vào cho học viên {paymentDTO.LearnerId} cho lớp {paymentDTO.ClassId}");
                     }
                     catch (Exception notifEx)
                     {
-                        _logger.LogError(notifEx, $"Failed to create entrance test notification for learner {paymentDTO.LearnerId}");
+                        _logger.LogError(notifEx, $"Không thể tạo thông báo kiểm tra đầu vào cho học viên {paymentDTO.LearnerId}");
                     }
 
                     await _unitOfWork.CommitTransactionAsync();
 
-                    _logger.LogInformation($"Learner {paymentDTO.LearnerId} successfully enrolled in class {paymentDTO.ClassId} with payment of {paymentAmount} (10% of total {totalClassPrice})");
+                    _logger.LogInformation($"Học viên {paymentDTO.LearnerId} đã đăng ký thành công vào lớp {paymentDTO.ClassId} với thanh toán {paymentAmount} (10% tổng số {totalClassPrice})");
 
                     string certificateStatus;
                     if (classEntity.StartDate == today)
                     {
-                        certificateStatus = "Temporary Certificate Created";
+                        certificateStatus = "Đã tạo chứng chỉ tạm thời";
                     }
                     else if (classEntity.StartDate < today)
                     {
-                        certificateStatus = "Will be evaluated based on attendance";
+                        certificateStatus = "Sẽ được đánh giá dựa trên sự tham dự";
                     }
                     else
                     {
-                        certificateStatus = $"Scheduled for {classEntity.StartDate}";
+                        certificateStatus = $"Đã lên lịch cho {classEntity.StartDate}";
                     }
 
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = $"You have successfully enrolled in the class '{classEntity.ClassName}'. Payment of {paymentAmount} (10% of total {totalClassPrice}) has been processed.",
+                        Message = $"Bạn đã đăng ký thành công vào lớp '{classEntity.ClassName}'. Thanh toán {paymentAmount} (10% tổng số {totalClassPrice}) đã được xử lý.",
                         Data = new
                         {
                             LearningRegisId = learningRegis.LearningRegisId,
@@ -1151,10 +1151,10 @@ namespace InstruLearn_Application.BLL.Service
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Detailed error during class enrollment: {Message}", ex.Message);
+                    _logger.LogError(ex, "Lỗi chi tiết trong quá trình đăng ký lớp học: {Message}", ex.Message);
                     if (ex.InnerException != null)
                     {
-                        _logger.LogError("Inner exception: {Message}", ex.InnerException.Message);
+                        _logger.LogError("Lỗi bên trong: {Message}", ex.InnerException.Message);
                     }
 
                     await _unitOfWork.RollbackTransactionAsync();
@@ -1163,12 +1163,12 @@ namespace InstruLearn_Application.BLL.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred while processing class enrollment with payment");
+                _logger.LogError(ex, "Đã xảy ra lỗi trong quá trình xử lý đăng ký lớp học với thanh toán");
 
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Failed to enroll in class: {ex.Message}",
+                    Message = $"Không thể đăng ký vào lớp học: {ex.Message}",
                     Data = null
                 };
             }
@@ -1185,7 +1185,7 @@ namespace InstruLearn_Application.BLL.Service
 
             if (existingLearnerSchedules != null && existingLearnerSchedules.Any())
             {
-                _logger.LogInformation($"Found {existingLearnerSchedules.Count} existing schedules for other learners in class {classId}");
+                _logger.LogInformation($"Đã tìm thấy {existingLearnerSchedules.Count} lịch trình hiện có cho các học viên khác trong lớp {classId}");
 
                 var uniqueDates = existingLearnerSchedules
                     .GroupBy(s => s.StartDay)
@@ -1228,7 +1228,7 @@ namespace InstruLearn_Application.BLL.Service
 
             if (existingTeacherSchedules != null && existingTeacherSchedules.Any())
             {
-                _logger.LogInformation($"Found {existingTeacherSchedules.Count} existing teacher schedules for class {classId}");
+                _logger.LogInformation($"Đã tìm thấy {existingTeacherSchedules.Count} lịch trình giáo viên hiện có cho lớp {classId}");
 
                 int schedulesUsed = 0;
                 var learnerSchedules = new List<Schedules>();
@@ -1260,7 +1260,7 @@ namespace InstruLearn_Application.BLL.Service
                 return;
             }
 
-            _logger.LogWarning($"No existing schedules found for class {classId}, creating new ones");
+            _logger.LogWarning($"Không tìm thấy lịch trình hiện có cho lớp {classId}, đang tạo lịch trình mới");
 
             var classDays = await _unitOfWork.ClassDayRepository.GetQuery()
                 .Where(cd => cd.ClassId == classId)
@@ -1317,7 +1317,7 @@ namespace InstruLearn_Application.BLL.Service
             }
             else
             {
-                _logger.LogWarning($"No class days found for class {classId}. Enrollment may be incomplete.");
+                _logger.LogWarning($"Không tìm thấy ngày học cho lớp {classId}. Việc đăng ký có thể không hoàn chỉnh.");
             }
         }
 
@@ -1325,26 +1325,26 @@ namespace InstruLearn_Application.BLL.Service
         {
             try
             {
-                _logger.LogInformation($"Starting learning registration rejection process for registration ID: {learningRegisId}");
+                _logger.LogInformation($"Bắt đầu quá trình từ chối đăng ký học tập cho đăng ký ID: {learningRegisId}");
 
                 var learningRegis = await _unitOfWork.LearningRegisRepository.GetByIdAsync(learningRegisId);
                 if (learningRegis == null)
                 {
-                    _logger.LogWarning($"Learning Registration with ID {learningRegisId} not found");
+                    _logger.LogWarning($"Không tìm thấy đăng ký học tập với ID {learningRegisId}");
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Learning Registration not found."
+                        Message = "Không tìm thấy đăng ký học tập."
                     };
                 }
 
                 if (learningRegis.Status != LearningRegis.Pending)
                 {
-                    _logger.LogWarning($"Cannot reject registration {learningRegisId} with status {learningRegis.Status}. Only pending registrations can be rejected.");
+                    _logger.LogWarning($"Không thể từ chối đăng ký {learningRegisId} với trạng thái {learningRegis.Status}. Chỉ những đăng ký đang chờ xử lý mới có thể bị từ chối.");
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = $"Cannot reject registration with status {learningRegis.Status}. Only pending registrations can be rejected."
+                        Message = $"Không thể từ chối đăng ký với trạng thái {learningRegis.Status}. Chỉ những đăng ký đang chờ xử lý mới có thể bị từ chối."
                     };
                 }
 
@@ -1352,8 +1352,8 @@ namespace InstruLearn_Application.BLL.Service
                 try
                 {
                     learningRegis.Status = LearningRegis.Rejected;
-                    string responseDescription = "No specific reason provided.";
-                    string responseTypeName = "Other";
+                    string responseDescription = "Không có lý do cụ thể.";
+                    string responseTypeName = "Khác";
 
                     if (responseId.HasValue)
                     {
@@ -1366,7 +1366,7 @@ namespace InstruLearn_Application.BLL.Service
                             return new ResponseDTO
                             {
                                 IsSucceed = false,
-                                Message = $"Response with ID {responseId.Value} not found."
+                                Message = $"Không tìm thấy phản hồi với ID {responseId.Value}."
                             };
                         }
 
@@ -1408,34 +1408,34 @@ namespace InstruLearn_Application.BLL.Service
                             {
                                 string subject = "Đơn đăng kí bị từ chối";
                                 string body = $@"
-                        <html>
-                        <body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
-                            <div style='background-color: #f7f7f7; padding: 20px; border-radius: 5px;'>
-                                <h2 style='color: #333;'>Xin chào {learner.FullName},</h2>
-                                
-                                <p>Chúng tôi rất tiếc phải thông báo rằng đơn đăng ký học tập của bạn đã bị từ chối.</p>
-                                
-                                <div style='background-color: #f0f0f0; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #ff9800;'>
-                                    <h3 style='margin-top: 0; color: #333;'>Chi tiết đơn đăng ký:</h3>
-                                    <p><strong>ID đăng ký học:</strong> {learningRegis.LearningRegisId}</p>
-                                    <p><strong>Lý do từ chối:</strong> {responseDescription}</p>
-                                </div>
-                                
-                                <p>Nếu bạn có bất kỳ câu hỏi nào hoặc muốn biết thêm thông tin, vui lòng liên hệ với nhóm hỗ trợ của chúng tôi.</p>
-                                
-                                <p>Bạn có thể tạo đơn đăng ký mới hoặc cập nhật thông tin đơn đăng ký hiện tại để nộp lại.</p>
-                                
-                                <p>Trân trọng,<br>Đội ngũ InstruLearn</p>
-                            </div>
-                        </body>
-                        </html>";
+                <html>
+                <body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
+                    <div style='background-color: #f7f7f7; padding: 20px; border-radius: 5px;'>
+                        <h2 style='color: #333;'>Xin chào {learner.FullName},</h2>
+                        
+                        <p>Chúng tôi rất tiếc phải thông báo rằng đơn đăng ký học tập của bạn đã bị từ chối.</p>
+                        
+                        <div style='background-color: #f0f0f0; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #ff9800;'>
+                            <h3 style='margin-top: 0; color: #333;'>Chi tiết đơn đăng ký:</h3>
+                            <p><strong>ID đăng ký học:</strong> {learningRegis.LearningRegisId}</p>
+                            <p><strong>Lý do từ chối:</strong> {responseDescription}</p>
+                        </div>
+                        
+                        <p>Nếu bạn có bất kỳ câu hỏi nào hoặc muốn biết thêm thông tin, vui lòng liên hệ với nhóm hỗ trợ của chúng tôi.</p>
+                        
+                        <p>Bạn có thể tạo đơn đăng ký mới hoặc cập nhật thông tin đơn đăng ký hiện tại để nộp lại.</p>
+                        
+                        <p>Trân trọng,<br>Đội ngũ InstruLearn</p>
+                    </div>
+                </body>
+                </html>";
 
                                 await _emailService.SendEmailAsync(account.Email, subject, body, true);
-                                _logger.LogInformation($"Rejection email sent to {account.Email} for learning registration {learningRegisId}");
+                                _logger.LogInformation($"Đã gửi email từ chối đến {account.Email} cho đăng ký học tập {learningRegisId}");
                             }
                             catch (Exception emailEx)
                             {
-                                _logger.LogError(emailEx, $"Error sending rejection email for learning registration {learningRegisId}");
+                                _logger.LogError(emailEx, $"Lỗi khi gửi email từ chối cho đăng ký học tập {learningRegisId}");
                             }
                         }
                     }
@@ -1444,12 +1444,12 @@ namespace InstruLearn_Application.BLL.Service
 
                     await _unitOfWork.CommitTransactionAsync();
 
-                    _logger.LogInformation($"Learning registration {learningRegisId} successfully rejected");
+                    _logger.LogInformation($"Đăng ký học tập {learningRegisId} đã bị từ chối thành công");
 
                     return new ResponseDTO
                     {
                         IsSucceed = true,
-                        Message = "Learning Registration rejected successfully.",
+                        Message = "Từ chối đăng ký học tập thành công.",
                         Data = new
                         {
                             LearningRegisId = learningRegisId,
@@ -1459,18 +1459,18 @@ namespace InstruLearn_Application.BLL.Service
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, $"Error during rejection of learning registration {learningRegisId}: {ex.Message}");
+                    _logger.LogError(ex, $"Lỗi trong quá trình từ chối đăng ký học tập {learningRegisId}: {ex.Message}");
                     await _unitOfWork.RollbackTransactionAsync();
                     throw;
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"An error occurred while processing learning registration rejection: {ex.Message}");
+                _logger.LogError(ex, $"Đã xảy ra lỗi trong quá trình xử lý từ chối đăng ký học tập: {ex.Message}");
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = $"Failed to reject learning registration: {ex.Message}"
+                    Message = $"Không thể từ chối đăng ký học tập: {ex.Message}"
                 };
             }
         }
@@ -1485,7 +1485,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Learning Registration not found."
+                        Message = "Không tìm thấy đăng ký học tập."
                     };
                 }
 
@@ -1494,7 +1494,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = $"Number of learning path sessions ({createDTO.LearningPathSessions.Count}) exceeds the number of sessions ({learningRegis.NumberOfSession})."
+                        Message = $"Số lượng buổi học trong lộ trình ({createDTO.LearningPathSessions.Count}) vượt quá số buổi học đã đăng ký ({learningRegis.NumberOfSession})."
                     };
                 }
 
@@ -1508,7 +1508,7 @@ namespace InstruLearn_Application.BLL.Service
                     return new ResponseDTO
                     {
                         IsSucceed = false,
-                        Message = "Duplicate session numbers found in the request."
+                        Message = "Phát hiện số thứ tự buổi học bị trùng lặp trong yêu cầu."
                     };
                 }
 
@@ -1550,7 +1550,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = true,
-                    Message = $"Learning path sessions created successfully for Learning Registration {createDTO.LearningRegisId}.",
+                    Message = $"Đã tạo thành công các buổi học trong lộ trình cho đăng ký học tập {createDTO.LearningRegisId}.",
                     Data = createDTO.LearningPathSessions.Count
                 };
             }
@@ -1560,7 +1560,7 @@ namespace InstruLearn_Application.BLL.Service
                 return new ResponseDTO
                 {
                     IsSucceed = false,
-                    Message = "Failed to create Learning Path Sessions. " + ex.Message
+                    Message = "Không thể tạo buổi học trong lộ trình. " + ex.Message
                 };
             }
         }
@@ -1605,7 +1605,7 @@ namespace InstruLearn_Application.BLL.Service
                     learningRegis.Status == LearningRegis.Sixty ||
                     learningRegis.Status == LearningRegis.Payment60Rejected)
                 {
-                    _logger.LogInformation($"Learning reg status is {learningRegis.Status}. Setting first payment as completed.");
+                    _logger.LogInformation($"Trạng thái đăng ký học là {learningRegis.Status}. Đặt thanh toán đợt đầu là đã hoàn thành.");
                     firstPaymentCompleted = true;
                     firstPaymentStatus = "Đã thanh toán";
                 }
@@ -1644,7 +1644,7 @@ namespace InstruLearn_Application.BLL.Service
                                 .FirstOrDefault();
 
                             firstPaymentDate = mostRecentPayment.transactionDate;
-                            _logger.LogInformation($"Found payment date: {firstPaymentDate} for 40% payment of registration {learningRegisId}");
+                            _logger.LogInformation($"Đã tìm thấy ngày thanh toán: {firstPaymentDate} cho khoản thanh toán 40% của đăng ký {learningRegisId}");
                         }
                     }
                 }
@@ -1689,7 +1689,7 @@ namespace InstruLearn_Application.BLL.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error getting first payment period info for registration {learningRegisId}");
+                _logger.LogError(ex, $"Lỗi khi lấy thông tin giai đoạn thanh toán đầu tiên cho đăng ký {learningRegisId}");
                 return null;
             }
         }
@@ -1713,7 +1713,7 @@ namespace InstruLearn_Application.BLL.Service
 
                 if (learningRegis.Status == LearningRegis.Sixty)
                 {
-                    _logger.LogInformation($"Learning reg status is {learningRegis.Status}. Setting second payment as completed.");
+                    _logger.LogInformation($"Trạng thái đăng ký học là {learningRegis.Status}. Đặt thanh toán đợt hai là đã hoàn thành.");
                     secondPaymentCompleted = true;
                     secondPaymentStatus = "Đã thanh toán";
                 }
@@ -1736,7 +1736,7 @@ namespace InstruLearn_Application.BLL.Service
                             if (Math.Abs(payment.AmountPaid - secondPaymentAmount) < 0.1m && secondPaymentDate == null)
                             {
                                 secondPaymentDate = transaction.TransactionDate;
-                                _logger.LogInformation($"Found payment date: {secondPaymentDate} for 60% payment of registration {learningRegisId}");
+                                _logger.LogInformation($"Đã tìm thấy ngày thanh toán: {secondPaymentDate} cho khoản thanh toán 60% của đăng ký {learningRegisId}");
                             }
                         }
                     }
@@ -1754,7 +1754,7 @@ namespace InstruLearn_Application.BLL.Service
                     if (learningRegis.ChangeTeacherRequested && !learningRegis.TeacherChangeProcessed)
                     {
                         secondPaymentStatus = "Đang chờ thay đổi giáo viên";
-                        _logger.LogInformation($"Learning registration {learningRegisId} is waiting for teacher change");
+                        _logger.LogInformation($"Đăng ký học tập {learningRegisId} đang chờ thay đổi giáo viên");
                     }
                     else if (learningRegis.PaymentDeadline.HasValue)
                     {
@@ -1800,7 +1800,7 @@ namespace InstruLearn_Application.BLL.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error getting second payment period info for registration {learningRegisId}");
+                _logger.LogError(ex, $"Lỗi khi lấy thông tin giai đoạn thanh toán thứ hai cho đăng ký {learningRegisId}");
                 return null;
             }
         }
