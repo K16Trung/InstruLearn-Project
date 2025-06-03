@@ -73,7 +73,7 @@ namespace InstruLearn_Application.BLL.Service
                     IsEmailVerified = true,
                     RefreshToken = _jwtHelper.GenerateRefreshToken(),
                     RefreshTokenExpires = DateTime.Now.AddDays(7),
-                    PhoneNumber = createAdminDTO.PhoneNumber ?? "",
+                    PhoneNumber = "",
                     DateOfEmployment = DateOnly.FromDateTime(DateTime.Now),
                     Gender = "",
                     Address = "",
