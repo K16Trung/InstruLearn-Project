@@ -28,6 +28,7 @@ namespace InstruLearn_Application.BLL.Service
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
+
         public async Task<List<ResponseDTO>> GetAllTeacherMajorAsync()
         {
             var teacherMajorList = await _unitOfWork.TeacherMajorRepository.GetAllAsync();
@@ -50,6 +51,7 @@ namespace InstruLearn_Application.BLL.Service
                         {
                             TeacherId = teacher.TeacherId,
                             Fullname = teacher.Fullname,
+                            Avatar = teacher.Account?.Avatar, // Added avatar property from the linked Account
                             Majors = new List<MajorjustNameDTO>
                     {
                         new MajorjustNameDTO
@@ -72,6 +74,7 @@ namespace InstruLearn_Application.BLL.Service
 
             return responseList;
         }
+
         public async Task<ResponseDTO> GetTeacherMajorByIdAsync(int teacherMajorId)
         {
             var teacherMajor = await _unitOfWork.TeacherMajorRepository.GetByIdAsync(teacherMajorId);

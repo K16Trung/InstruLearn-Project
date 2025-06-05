@@ -12,5 +12,6 @@ namespace InstruLearn_Application.Model.Models.DTO.TeacherMajor
         public List<MajorjustNameDTO> Majors { get; set; } = new List<MajorjustNameDTO>();
         public int TeacherId { get; set; }
         public string Fullname { get; set; }
+        public string? Avatar { get; set; }
     }
 }
