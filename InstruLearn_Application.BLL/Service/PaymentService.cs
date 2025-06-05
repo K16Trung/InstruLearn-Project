@@ -785,7 +785,7 @@ namespace InstruLearn_Application.BLL.Service
                                 IsFullyPaid = false,
                                 RemainingAmount = totalClassPrice * 0.9m,
                                 PaymentSource = "Wallet Transaction",
-                                IsEligible = false
+                                IsEligible = true
                             };
                         }
 
@@ -805,7 +805,8 @@ namespace InstruLearn_Application.BLL.Service
                             RegistrationDate = reg.RequestDate,
                             IsFullyPaid = false,
                             RemainingAmount = totalClassPrice * 0.9m,
-                            PaymentSource = "Payment Record"
+                            PaymentSource = "Payment Record",
+                            IsEligible = true
                         };
                     })
                     .Where(item => item != null)

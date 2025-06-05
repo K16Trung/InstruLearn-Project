@@ -746,7 +746,7 @@ namespace InstruLearn_Application.BLL.Service
                 }
 
                 DateOnly currentDate = DateOnly.FromDateTime(DateTime.Now);
-                if (currentDate > classEntity.TestDay)
+                if (currentDate != classEntity.TestDay)
                 {
                     return new ResponseDTO
                     {
@@ -778,7 +778,7 @@ namespace InstruLearn_Application.BLL.Service
                     if (learningRegis != null)
                     {
                         learningRegis.Status = eligibilityDTO.IsEligible ?
-                            LearningRegis.FullyPaid : LearningRegis.TestFailed;
+                            LearningRegis.Accepted : LearningRegis.TestFailed;
 
                         await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
                     }
