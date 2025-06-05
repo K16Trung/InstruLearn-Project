@@ -778,7 +778,7 @@ namespace InstruLearn_Application.BLL.Service
                     if (learningRegis != null)
                     {
                         learningRegis.Status = eligibilityDTO.IsEligible ?
-                            LearningRegis.Accepted : LearningRegis.TestFailed;
+                            LearningRegis.FullyPaid : LearningRegis.TestFailed;
 
                         await _unitOfWork.LearningRegisRepository.UpdateAsync(learningRegis);
                     }
