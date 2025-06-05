@@ -12,6 +12,7 @@ namespace InstruLearn_Application.DAL.Repository.IRepository
     public interface ITeacherMajorRepository : IGenericRepository<TeacherMajor>
     {
         Task<bool> UpdateStatusAsync(int teacherMajorId, TeacherMajorStatus newStatus);
+        Task<IEnumerable<TeacherMajor>> GetByTeacherIdAsync(int teacherId);
 
     }
 }

@@ -51,7 +51,7 @@ namespace InstruLearn_Application.BLL.Service
                         {
                             TeacherId = teacher.TeacherId,
                             Fullname = teacher.Fullname,
-                            Avatar = teacher.Account?.Avatar, // Added avatar property from the linked Account
+                            Avatar = teacher.Account?.Avatar,
                             Majors = new List<MajorjustNameDTO>
                     {
                         new MajorjustNameDTO
@@ -127,6 +127,69 @@ namespace InstruLearn_Application.BLL.Service
             return response;
         }
 
+        public async Task<List<ResponseDTO>> GetTeacherMajorsByTeacherIdAsync(int teacherId)
+        {
+            // Get all teacher majors for this teacher
+            var teacherMajors = await _unitOfWork.TeacherMajorRepository.GetAllAsync();
+            var teacherMajorsForTeacher = teacherMajors.Where(tm => tm.TeacherId == teacherId).ToList();
+
+            if (teacherMajorsForTeacher == null || !teacherMajorsForTeacher.Any())
+            {
+                return new List<ResponseDTO>
+        {
+            new ResponseDTO
+            {
+                IsSucceed = false,
+                Message = $"Không tìm thấy chuyên ngành nào cho giáo viên có ID {teacherId}."
+            }
+        };
+            }
+
+            var teacher = teacherMajorsForTeacher.First().Teacher;
+            var account = teacher.Account;
+
+            var responseList = new List<ResponseDTO>();
+
+            // Create individual response for each teacher major
+            foreach (var teacherMajor in teacherMajorsForTeacher)
+            {
+                var teacherMajorDto = new TeacherMajorDTO
+                {
+                    TeacherMajorId = teacherMajor.TeacherMajorId,
+                    Status = teacherMajor.Status,
+                    teacher = new TeacherMajorDetailDTO
+                    {
+                        TeacherId = teacher.TeacherId,
+                        Fullname = teacher.Fullname,
+                        Avatar = account?.Avatar,
+                        Heading = teacher.Heading,
+                        Details = teacher.Details,
+                        Links = teacher.Links,
+                        PhoneNumber = account?.PhoneNumber,
+                        Gender = account?.Gender,
+                        Address = account?.Address,
+                        DateOfEmployment = account?.DateOfEmployment,
+                        Majors = new List<MajorjustNameDTO>
+                {
+                    new MajorjustNameDTO
+                    {
+                        MajorId = teacherMajor.Major.MajorId,
+                        MajorName = teacherMajor.Major.MajorName
+                    }
+                }
+                    }
+                };
+
+                responseList.Add(new ResponseDTO
+                {
+                    IsSucceed = true,
+                    Message = "Lấy ra chuyên ngành giáo viên thành công.",
+                    Data = teacherMajorDto
+                });
+            }
+
+            return responseList;
+        }
 
         public async Task<ResponseDTO> DeleteTeacherMajorAsync(int teacherMajorId)
         {
