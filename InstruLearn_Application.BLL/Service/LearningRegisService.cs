@@ -1101,6 +1101,7 @@ namespace InstruLearn_Application.BLL.Service
                             "<p>Cảm ơn bạn đã đăng ký tham gia lớp học " + classEntity.ClassName + " tại InstruLearn.</p>" +
                             "<p>Để hoàn tất việc xếp lớp, bạn vui lòng đến trung tâm InstruLearn vào lúc " + formattedClassTime + " ngày " + formattedTestDay + " để thực hiện kiểm tra chất lượng đầu vào.</p>" +
                             "<p>Việc kiểm tra này giúp chúng tôi sắp xếp lớp phù hợp với trình độ hiện tại của bạn và thực hiện thanh toán.</p>" +
+                            "<p>Học viên sẽ thực hiện thanh toán phần học phí còn lại tại trung tâm. Nếu học viên không nộp học phí, thì học viên sẽ bị loại ra khỏi lớp.</p>" +
                             "<p><strong>Lưu ý:</strong><br>" +
                             "Học viên vui lòng bỏ qua thông báo này nếu:</p>" +
                             "<ul>" +
@@ -1761,7 +1762,8 @@ namespace InstruLearn_Application.BLL.Service
                 DateTime? secondPaymentDeadline = null;
 
                 bool isInSecondPaymentPhase =
-                    (learningRegis.Status == LearningRegis.FourtyFeedbackDone) &&
+                    (learningRegis.Status == LearningRegis.FourtyFeedbackDone ||
+                     learningRegis.Status == LearningRegis.Fourty) &&
                     !secondPaymentCompleted;
 
                 if (isInSecondPaymentPhase)
@@ -1771,31 +1773,38 @@ namespace InstruLearn_Application.BLL.Service
                         secondPaymentStatus = "Đang chờ thay đổi giáo viên";
                         _logger.LogInformation($"Đăng ký học tập {learningRegisId} đang chờ thay đổi giáo viên");
                     }
-                    else if (learningRegis.PaymentDeadline.HasValue)
+
+                    if (learningRegis.PaymentDeadline.HasValue)
                     {
                         secondPaymentDeadline = learningRegis.PaymentDeadline;
+                        _logger.LogInformation($"Sử dụng thời hạn thanh toán hiện có: {secondPaymentDeadline} cho đăng ký {learningRegisId}");
+                    }
 
-                        DateTime now = DateTime.Now;
-                        DateTime deadline = secondPaymentDeadline.Value;
+                    else
+                    {
+                        secondPaymentDeadline = DateTime.Now.AddDays(7);
+                        _logger.LogInformation($"Tạo thời hạn thanh toán mới: {secondPaymentDeadline} cho đăng ký {learningRegisId} vì không có thời hạn");
+                    }
 
-                        int daysDifference = (deadline.Date - now.Date).Days;
+                    DateTime now = DateTime.Now;
+                    DateTime deadline = secondPaymentDeadline.Value;
+                    int daysDifference = (deadline.Date - now.Date).Days;
 
-                        if (now.Date == deadline.Date)
-                        {
-                            secondPaymentRemainingDays = 0;
-                        }
-                        else
-                        {
-                            secondPaymentRemainingDays = daysDifference;
-                        }
+                    if (now.Date == deadline.Date)
+                    {
+                        secondPaymentRemainingDays = 0;
+                    }
+                    else
+                    {
+                        secondPaymentRemainingDays = daysDifference;
+                    }
 
-                        if (secondPaymentRemainingDays < 0)
-                            secondPaymentRemainingDays = 0;
+                    if (secondPaymentRemainingDays < 0)
+                        secondPaymentRemainingDays = 0;
 
-                        if (daysDifference < 0 && !secondPaymentCompleted)
-                        {
-                            secondPaymentStatus = "Đã quá hạn thanh toán 60%";
-                        }
+                    if (daysDifference < 0 && !secondPaymentCompleted)
+                    {
+                        secondPaymentStatus = "Đã quá hạn thanh toán 60%";
                     }
                 }
 
